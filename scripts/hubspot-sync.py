@@ -112,9 +112,8 @@ def create_contact(lead, token):
 
 def create_deal(lead, contact_id, token, pipeline_id="default"):
     """Create a deal associated with the contact."""
-    service = lead.get("service_interest", "General Inquiry")
     name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip()
-    deal_name = f"{name} - {service}" if name else service
+    deal_name = name or lead.get("service_interest", "New Lead")
 
     properties = {
         "dealname": deal_name,
