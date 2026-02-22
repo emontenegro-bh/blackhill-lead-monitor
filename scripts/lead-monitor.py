@@ -353,6 +353,34 @@ SPAM_EMAIL_DOMAINS = [
     "rambler.ru", "rambler.com", "yandex.ru", "mail.ru",
 ]
 
+# Money/income scam keywords (common in bot form spam)
+MONEY_SCAM_KEYWORDS = [
+    "automate your income", "passive income", "monthly income",
+    "make money", "earn money", "profit flips", "high-margin",
+    "without selling", "without the need for", "investment of",
+    "one-time investment", "generates all your content",
+    "direct payments", "arbitrage", "does all the heavy lifting",
+    "$3,000 monthly", "$2,000 monthly", "$5,000 monthly",
+    "$1,000 monthly", "per month income", "daily income",
+]
+
+# Foreign street address prefixes (non-US address formats)
+FOREIGN_ADDRESS_PREFIXES = [
+    "via ", "rue ", "strasse ", "calle ", "rua ", "ulitsa ",
+    "prospekt ", "platz ", "piazza ", "corso ", "viale ",
+]
+
+# Video/streaming link patterns in form messages (bots embed promo links)
+VIDEO_LINK_PATTERNS = [
+    "youtube.com/watch", "youtu.be/", "vimeo.com/", "rumble.com/",
+    "bitchute.com/", "odysee.com/",
+]
+
+# Bounce-back / NDR sender patterns
+BOUNCE_SENDERS = [
+    "microsoftexchange", "mailer-daemon", "postmaster",
+]
+
 # Texas cities in the DFW service area (lowercase)
 DFW_CITIES = [
     "fort worth", "arlington", "keller", "southlake", "grapevine",
@@ -454,6 +482,27 @@ def classify_email(message, config):
     if "t.me/" in full_text or "@netxmix" in full_text:
         score += 4
         reasons.append("Telegram bot/channel link")
+
+    # Video/streaming links in message (bots embed promo YouTube links)
+    for pattern in VIDEO_LINK_PATTERNS:
+        if pattern in full_text or pattern in form_message:
+            score += 5
+            reasons.append(f"Video link in message: {pattern}")
+            break
+
+    # Money/income scam keywords
+    for kw in MONEY_SCAM_KEYWORDS:
+        if kw in full_text or kw in form_message:
+            score += 4
+            reasons.append(f"Money scam keyword: '{kw}'")
+            break
+
+    # Foreign street address format (Via Duomo, Rue de la Paix, etc.)
+    for prefix in FOREIGN_ADDRESS_PREFIXES:
+        if form_address.startswith(prefix):
+            score += 3
+            reasons.append(f"Foreign address format: '{form_address}'")
+            break
 
     # Russian spam email domains in form email field
     for domain in SPAM_EMAIL_DOMAINS:
@@ -574,7 +623,7 @@ def classify_email(message, config):
         reasons.append("Traffic from Google Ads")
 
     # Direct website traffic with page URL
-    if form.get("page url", "") and "meangreenlawncare.com" in form.get("page url", ""):
+    if form.get("page url", "") and ("blackhilllandscaping.com" in form.get("page url", "") or "meangreenlawncare.com" in form.get("page url", "")):
         score -= 2
         reasons.append("Submitted from website contact page")
 
@@ -1075,6 +1124,23 @@ def process_messages(token, config, state):
             continue
 
         log(f"\nProcessing: {subject[:60]} (from: {sender})")
+
+        # Bounce-back / NDR detection (skip entirely, no auto-reply)
+        is_bounce = False
+        sender_lower = sender.lower()
+        subject_lower = subject.lower()
+        for bp in BOUNCE_SENDERS:
+            if bp in sender_lower:
+                is_bounce = True
+                break
+        if "undeliverable" in subject_lower or ("delivery" in subject_lower and "failed" in subject_lower):
+            is_bounce = True
+        if is_bounce:
+            log(f"  Skipping: Bounce-back / NDR email")
+            mark_as_read(token, config, msg_id)
+            state["processed_ids"].append(msg_id)
+            state["stats"]["total_spam"] = state["stats"].get("total_spam", 0) + 1
+            continue
 
         # Classify
         score, reasons = classify_email(msg, config)
