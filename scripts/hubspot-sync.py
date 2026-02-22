@@ -25,7 +25,7 @@ DRY_RUN = "--dry-run" in sys.argv
 # --- Owner Assignment ---
 
 OWNER_EVELIN = "88710208"
-OWNER_DENISSE = None  # Set after she's invited to HubSpot
+OWNER_DENISSE = "162535167"
 
 def get_round_robin_next():
     """Get next owner in round robin rotation. Returns owner ID."""
@@ -66,7 +66,7 @@ def assign_owner(lead):
 
     # Irrigation -> Denisse
     if "irrigation" in service or "sprinkler" in service or "irrigation" in message:
-        return OWNER_DENISSE or OWNER_EVELIN  # Fall back to Evelin if Denisse not set
+        return OWNER_DENISSE
 
     # Commercial Maintenance -> Evelin
     if "commercial" in service and "maint" in service:
