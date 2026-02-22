@@ -21,6 +21,7 @@ jobs:
         run: pip install msal
 
       - name: Run lead monitor
+        continue-on-error: true
         env:
           MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
