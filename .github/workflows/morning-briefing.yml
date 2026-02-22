@@ -38,7 +38,7 @@ jobs:
           GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
           # SendGrid (email-to-SMS gateway)
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          SMS_FROM_EMAIL: ${{ secrets.SMS_FROM_EMAIL }}
+          SMS_FROM_EMAIL: ${{ secrets.NOTIFY_FROM_EMAIL }}
           # Phones
           PHONE_PERSONAL: ${{ secrets.PHONE_PERSONAL }}
           PHONE_WORK: ${{ secrets.PHONE_WORK }}
