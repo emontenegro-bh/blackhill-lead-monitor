@@ -1252,11 +1252,12 @@ def process_messages(token, config, state):
         # Mailchimp
         mc_status = add_to_mailchimp(config, lead)
 
-        # HubSpot CRM
-        hubspot_id = create_hubspot_contact(config, lead)
-
-        # Aspire (Phase 2)
+        # Aspire CRM (runs first so HubSpot note can include status)
         aspire_id = create_aspire_contact(config, lead)
+
+        # HubSpot CRM
+        lead["_aspire_status"] = aspire_id or "not_created"
+        hubspot_id = create_hubspot_contact(config, lead)
 
         # Notify owners
         notify_new_lead(config, lead, aspire_id=aspire_id, hubspot_id=hubspot_id, mailchimp_status=mc_status)

@@ -238,11 +238,26 @@ def create_deal_note(lead, deal_id, contact_id, token):
     message = lead.get("message", "").strip()
     received = lead.get("received_at", "")
 
+    # Aspire status
+    aspire_status = lead.get("_aspire_status", "")
+    if aspire_status and aspire_status not in ("not_created",):
+        if aspire_status == "exists":
+            aspire_line = "Aspire: Contact already existed"
+        elif aspire_status == "dry-run":
+            aspire_line = "Aspire: Dry run (not created)"
+        else:
+            aspire_line = f"Aspire: Contact created ({aspire_status})"
+    elif aspire_status == "not_created":
+        aspire_line = "Aspire: Not created"
+    else:
+        aspire_line = "Aspire: Not configured"
+
     note_lines = [f"Service: {service}"]
     if message:
         note_lines.append(f"\n{message}")
+    note_lines.append(f"\n{aspire_line}")
     if received:
-        note_lines.append(f"\nReceived: {received}")
+        note_lines.append(f"Received: {received}")
 
     note_body = "\n".join(note_lines)
 
