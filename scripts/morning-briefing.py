@@ -2,7 +2,7 @@
 """Morning briefing for Black Hill Landscaping.
 
 Pulls calendar events, Google Ads data, calculates drive times,
-and delivers via SMS (Twilio).
+and delivers via SMS using email-to-SMS gateways (SendGrid).
 
 Runs via GitHub Actions Sun-Fri at 6am CST, or locally with --test.
 
@@ -21,8 +21,16 @@ from datetime import datetime, timedelta, timezone
 CENTRAL_TIME = timezone(timedelta(hours=-6))
 
 # --- Mode Detection ---
-CLOUD_MODE = bool(os.environ.get("TWILIO_ACCOUNT_SID"))
+CLOUD_MODE = bool(os.environ.get("SENDGRID_API_KEY"))
 TEST_MODE = "--test" in sys.argv
+
+# --- Email-to-SMS carrier gateways ---
+CARRIER_GATEWAYS = {
+    "tmobile": "tmomail.net",
+    "att": "txt.att.net",
+    "verizon": "vtext.com",
+    "sprint": "messaging.sprintpcs.com",
+}
 
 # --- Config ---
 
@@ -55,11 +63,12 @@ def load_config_from_env():
             "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
             "customer_id": os.environ.get("GOOGLE_ADS_CUSTOMER_ID", ""),
         },
-        "twilio": {
-            "account_sid": os.environ.get("TWILIO_ACCOUNT_SID", ""),
-            "auth_token": os.environ.get("TWILIO_AUTH_TOKEN", ""),
-            "from_number": os.environ.get("TWILIO_FROM_NUMBER", ""),
-        },
+        "sendgrid_api_key": os.environ.get("SENDGRID_API_KEY", ""),
+        "sms_from_email": os.environ.get("SMS_FROM_EMAIL", "briefing@blackhilltx.com"),
+        "sms_recipients": [
+            {"phone": os.environ.get("PHONE_PERSONAL", ""), "carrier": "tmobile"},
+            {"phone": os.environ.get("PHONE_WORK", ""), "carrier": "att"},
+        ],
     }
 
 
@@ -354,48 +363,50 @@ def get_checkin_reminder():
     return None
 
 
-# --- Send SMS via Twilio ---
+# --- Send SMS via email-to-SMS gateway (SendGrid) ---
 
-def send_sms(phone, message):
-    """Send an SMS via Twilio REST API (no SDK needed)."""
-    if CLOUD_MODE:
-        twilio = CFG["twilio"]
-    else:
-        twilio = CFG.get("twilio", {})
-
-    account_sid = twilio.get("account_sid", "")
-    auth_token = twilio.get("auth_token", "")
-    from_number = twilio.get("from_number", "")
-
-    if not all([account_sid, auth_token, from_number]):
-        print(f"Twilio not configured, skipping SMS to {phone}", file=sys.stderr)
+def send_sms(phone, carrier, message):
+    """Send an SMS via carrier email-to-SMS gateway using SendGrid."""
+    gateway = CARRIER_GATEWAYS.get(carrier)
+    if not gateway:
+        print(f"Unknown carrier '{carrier}' for {phone}", file=sys.stderr)
         return False
 
-    # Normalize phone to E.164 format
-    clean = phone.replace("-", "").replace("(", "").replace(")", "").replace(" ", "")
-    if not clean.startswith("+"):
-        clean = "+1" + clean
+    api_key = CFG.get("sendgrid_api_key", "")
+    from_email = CFG.get("sms_from_email", "briefing@blackhilltx.com")
+    if not api_key:
+        print("SendGrid API key not configured", file=sys.stderr)
+        return False
 
-    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
-    data = urllib.parse.urlencode({
-        "To": clean,
-        "From": from_number,
-        "Body": message,
+    # Build email-to-SMS address
+    clean = phone.replace("-", "").replace("(", "").replace(")", "").replace(" ", "").replace("+1", "").replace("+", "")
+    to_email = f"{clean}@{gateway}"
+
+    payload = json.dumps({
+        "personalizations": [{"to": [{"email": to_email}]}],
+        "from": {"email": from_email, "name": "Black Hill"},
+        "subject": "Briefing",
+        "content": [{"type": "text/plain", "value": message}],
     }).encode()
 
-    req = urllib.request.Request(url, data=data)
-    cred = base64.b64encode(f"{account_sid}:{auth_token}".encode()).decode()
-    req.add_header("Authorization", f"Basic {cred}")
+    req = urllib.request.Request(
+        "https://api.sendgrid.net/v3/mail/send",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
 
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read())
-            sid = result.get("sid", "unknown")
-            print(f"SMS sent to {phone} (SID: {sid})")
-            return True
+            pass  # 202 Accepted = success
+        print(f"SMS sent to {phone} via {gateway}")
+        return True
     except urllib.error.HTTPError as e:
         body = e.read().decode()
-        print(f"Twilio error ({phone}): {e.code} - {body}", file=sys.stderr)
+        print(f"SendGrid error ({phone}): {e.code} - {body}", file=sys.stderr)
         return False
     except Exception as e:
         print(f"SMS error ({phone}): {e}", file=sys.stderr)
@@ -456,16 +467,22 @@ if __name__ == "__main__":
         print("\n[TEST MODE - not sending]")
         sys.exit(0)
 
-    phones = CFG.get("phones", {})
-    phone_list = [p for p in [phones.get("personal"), phones.get("work")] if p]
+    recipients = CFG.get("sms_recipients", [])
+    if not recipients:
+        # Fall back to phones dict for local mode
+        phones = CFG.get("phones", {})
+        if phones.get("personal"):
+            recipients.append({"phone": phones["personal"], "carrier": "tmobile"})
+        if phones.get("work"):
+            recipients.append({"phone": phones["work"], "carrier": "att"})
 
-    if not phone_list:
+    if not recipients:
         print("No phone numbers configured", file=sys.stderr)
         sys.exit(1)
 
     success = False
-    for phone in phone_list:
-        if send_sms(phone, briefing):
+    for r in recipients:
+        if r.get("phone") and send_sms(r["phone"], r["carrier"], briefing):
             success = True
 
     if not success:

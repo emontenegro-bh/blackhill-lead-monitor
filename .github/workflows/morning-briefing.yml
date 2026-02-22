@@ -36,10 +36,9 @@ jobs:
           GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
           GOOGLE_ADS_LOGIN_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
           GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
-          # Twilio SMS
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          # SendGrid (email-to-SMS gateway)
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SMS_FROM_EMAIL: ${{ secrets.SMS_FROM_EMAIL }}
           # Phones
           PHONE_PERSONAL: ${{ secrets.PHONE_PERSONAL }}
           PHONE_WORK: ${{ secrets.PHONE_WORK }}
