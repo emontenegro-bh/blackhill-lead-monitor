@@ -16,6 +16,7 @@ Returns JSON to stdout:
 """
 
 import json, os, sys, urllib.request, urllib.error
+from datetime import datetime, timezone
 
 CONFIG_FILE = os.path.expanduser("~/.config/hubspot/config.json")
 DRY_RUN = "--dry-run" in sys.argv
@@ -110,6 +111,24 @@ def create_contact(lead, token):
     return api_request("POST", "/crm/v3/objects/contacts", {"properties": properties}, token)
 
 
+def classify_traffic_source(traffic_raw):
+    """Map raw traffic source string to HubSpot lead_source enum value."""
+    t = (traffic_raw or "").lower()
+    if "cpc" in t or "ads" in t or "paid" in t:
+        return "google_ads"
+    elif "organic" in t:
+        return "organic_search"
+    elif "direct" in t:
+        return "direct"
+    elif "referral" in t or "referred" in t:
+        return "referral"
+    elif "social" in t or "facebook" in t or "instagram" in t or "linkedin" in t:
+        return "social_media"
+    elif t:
+        return "other"
+    return None
+
+
 def create_deal(lead, contact_id, token, pipeline_id="default"):
     """Create a deal associated with the contact."""
     name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip()
@@ -118,9 +137,17 @@ def create_deal(lead, contact_id, token, pipeline_id="default"):
     properties = {
         "dealname": deal_name,
         "pipeline": pipeline_id,
-        "dealstage": "appointmentscheduled",  # First stage in default pipeline
-        "description": lead.get("message", "")[:1000],
+        "dealstage": "appointmentscheduled",  # "New Lead" stage
     }
+
+    # Set filterable properties
+    source_val = classify_traffic_source(lead.get("traffic_source", ""))
+    if source_val:
+        properties["lead_source"] = source_val
+
+    service = lead.get("service_interest", "")
+    if service:
+        properties["service_interest"] = service
 
     # Create deal
     deal_resp, deal_status = api_request(
@@ -138,7 +165,46 @@ def create_deal(lead, contact_id, token, pipeline_id="default"):
             None, token
         )
 
+    # Add note with project details
+    if deal_id:
+        create_deal_note(lead, deal_id, contact_id, token)
+
     return deal_resp, deal_status
+
+
+def create_deal_note(lead, deal_id, contact_id, token):
+    """Add a note to the deal with service interest and message."""
+    service = lead.get("service_interest", "Not specified")
+    message = lead.get("message", "").strip()
+    received = lead.get("received_at", "")
+
+    note_lines = [f"Service: {service}"]
+    if message:
+        note_lines.append(f"\n{message}")
+    if received:
+        note_lines.append(f"\nReceived: {received}")
+
+    note_body = "\n".join(note_lines)
+
+    data = {
+        "properties": {
+            "hs_timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            "hs_note_body": note_body,
+        },
+        "associations": [
+            {
+                "to": {"id": deal_id},
+                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 214}]
+            },
+        ]
+    }
+    if contact_id:
+        data["associations"].append({
+            "to": {"id": contact_id},
+            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 202}]
+        })
+
+    api_request("POST", "/crm/v3/objects/notes", data, token)
 
 
 # --- Main ---
