@@ -1,0 +1,46 @@
+name: Morning Briefing
+
+on:
+  schedule:
+    # 6:00 AM CST = 12:00 UTC (Sun-Fri)
+    # Cron: minute hour day month weekday
+    - cron: '0 12 * * 0-5'
+  workflow_dispatch: {}
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-ads
+
+      - name: Send morning briefing
+        env:
+          # Microsoft Graph (calendar access)
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+          # Google Ads
+          GOOGLE_ADS_DEVELOPER_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
+          GOOGLE_ADS_CLIENT_ID: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_CLIENT_SECRET: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+          GOOGLE_ADS_LOGIN_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
+          GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
+          # Twilio SMS
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          # Phones
+          PHONE_PERSONAL: ${{ secrets.PHONE_PERSONAL }}
+          PHONE_WORK: ${{ secrets.PHONE_WORK }}
+        run: python scripts/morning-briefing.py
