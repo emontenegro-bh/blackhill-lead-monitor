@@ -307,6 +307,12 @@ def update_aspire_status(email, aspire_url, token):
     if not deal_id:
         return False
 
+    # Check the "Added to Aspire" checkbox on the deal
+    api_request(
+        "PATCH", f"/crm/v3/objects/deals/{deal_id}",
+        {"properties": {"added_to_aspire": "true"}}, token
+    )
+
     # Add note about Aspire
     if "http" in str(aspire_url):
         note_body = f"Aspire: Contact created ({aspire_url})"
