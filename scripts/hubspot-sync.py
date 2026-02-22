@@ -248,9 +248,9 @@ def create_deal_note(lead, deal_id, contact_id, token):
         else:
             aspire_line = f"Aspire: Contact created ({aspire_status})"
     elif aspire_status == "not_created":
-        aspire_line = "Aspire: Not created"
+        aspire_line = "Aspire: Pending (syncs when Mac is on)"
     else:
-        aspire_line = "Aspire: Not configured"
+        aspire_line = "Aspire: Pending (syncs when Mac is on)"
 
     note_lines = [f"Service: {service}"]
     if message:
@@ -280,6 +280,57 @@ def create_deal_note(lead, deal_id, contact_id, token):
         })
 
     api_request("POST", "/crm/v3/objects/notes", data, token)
+
+
+def update_aspire_status(email, aspire_url, token):
+    """Find HubSpot contact by email and add an Aspire status note to their deal."""
+    if not email:
+        return False
+
+    # Find contact
+    contact = search_contact_by_email(email, token)
+    if not contact:
+        return False
+
+    contact_id = contact["id"]
+
+    # Find associated deals
+    resp, status = api_request(
+        "GET",
+        f"/crm/v3/objects/contacts/{contact_id}/associations/deals",
+        None, token
+    )
+    if status != 200 or not resp.get("results"):
+        return False
+
+    deal_id = resp["results"][0].get("id")
+    if not deal_id:
+        return False
+
+    # Add note about Aspire
+    if "http" in str(aspire_url):
+        note_body = f"Aspire: Contact created ({aspire_url})"
+    else:
+        note_body = f"Aspire: Contact created"
+
+    data = {
+        "properties": {
+            "hs_timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            "hs_note_body": note_body,
+        },
+        "associations": [
+            {
+                "to": {"id": deal_id},
+                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 214}]
+            },
+            {
+                "to": {"id": contact_id},
+                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 202}]
+            },
+        ]
+    }
+    _, note_status = api_request("POST", "/crm/v3/objects/notes", data, token)
+    return note_status in (200, 201)
 
 
 # --- Main ---
@@ -355,6 +406,23 @@ if __name__ == "__main__":
 
     if "--test" in sys.argv:
         ok = test_connection(token)
+        sys.exit(0 if ok else 1)
+
+    # Update Aspire status on existing deal
+    # Usage: --update-aspire --email X --aspire-url Y
+    if "--update-aspire" in sys.argv:
+        email = None
+        aspire_url = None
+        for i, arg in enumerate(sys.argv):
+            if arg == "--email" and i + 1 < len(sys.argv):
+                email = sys.argv[i + 1]
+            if arg == "--aspire-url" and i + 1 < len(sys.argv):
+                aspire_url = sys.argv[i + 1]
+        if not email:
+            print(json.dumps({"success": False, "message": "No --email provided"}))
+            sys.exit(1)
+        ok = update_aspire_status(email, aspire_url or "created", token)
+        print(json.dumps({"success": ok, "action": "aspire_updated" if ok else "not_found"}))
         sys.exit(0 if ok else 1)
 
     # Parse lead from CLI arg
