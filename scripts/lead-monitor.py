@@ -205,9 +205,12 @@ def graph_request(token, method, url, body=None):
     })
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
-            if resp.status == 204:
+            if resp.status in (202, 204):
                 return {}
-            return json.loads(resp.read())
+            response_body = resp.read()
+            if not response_body:
+                return {}
+            return json.loads(response_body)
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8", errors="replace")[:500]
         log(f"ERROR: Graph API {method} {url[:80]} -> {e.code}: {error_body}")
