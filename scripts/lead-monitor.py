@@ -103,6 +103,10 @@ def load_config_from_env():
             "allowed_senders": [],
         },
         "mailchimp": {"enabled": False},
+        "hubspot": {
+            "enabled": bool(os.environ.get("HUBSPOT_ACCESS_TOKEN")),
+            "access_token": os.environ.get("HUBSPOT_ACCESS_TOKEN", ""),
+        },
         "aspire": {"enabled": False},
         "auto_reply": {
             "enabled": os.environ.get("AUTO_REPLY_ENABLED", "true").lower() == "true",
@@ -816,93 +820,139 @@ def add_to_mailchimp(config, lead):
         return None
 
 
+# --- HubSpot CRM ---
+
+def create_hubspot_contact(config, lead):
+    """Create a contact and deal in HubSpot CRM via API."""
+    hubspot_cfg = config.get("hubspot", {})
+    if not hubspot_cfg.get("enabled"):
+        return None
+
+    if DRY_RUN:
+        desc = lead.get("email") or f"{lead.get('first_name', '')} {lead.get('last_name', '')}"
+        log(f"  DRY RUN: Would create HubSpot contact for {desc}")
+        return "dry-run"
+
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "hubspot-sync.py")
+    if not os.path.exists(script_path):
+        log(f"  ERROR: HubSpot sync script not found at {script_path}")
+        return None
+
+    lead_json = json.dumps(lead)
+    try:
+        import subprocess
+        env = os.environ.copy()
+        # Support cloud mode: pass token via env if config has it
+        hs_token = hubspot_cfg.get("access_token") or os.environ.get("HUBSPOT_ACCESS_TOKEN")
+        if hs_token:
+            env["HUBSPOT_ACCESS_TOKEN"] = hs_token
+
+        result = subprocess.run(
+            ["python3", script_path, "--lead-json", lead_json],
+            capture_output=True, text=True, timeout=30, env=env,
+        )
+        if result.stdout.strip():
+            response = json.loads(result.stdout.strip())
+            action = response.get("action", "unknown")
+
+            if action == "created":
+                contact_url = response.get("contact_url", "")
+                deal_id = response.get("deal_id", "")
+                log(f"  HubSpot: Contact + deal created ({contact_url})")
+                return contact_url or "created"
+            elif action == "exists":
+                log(f"  HubSpot: Contact already exists")
+                return "exists"
+            elif not response.get("success"):
+                log(f"  HubSpot: {response.get('message', 'Unknown error')}")
+                return None
+            else:
+                log(f"  HubSpot: {response.get('message', 'Done')}")
+                return action
+        else:
+            stderr_tail = (result.stderr or "")[-300:]
+            log(f"  ERROR: HubSpot sync returned no output. stderr: {stderr_tail}")
+            return None
+
+    except subprocess.TimeoutExpired:
+        log("  ERROR: HubSpot sync timed out (30s)")
+        return None
+    except Exception as e:
+        log(f"  ERROR: HubSpot sync failed: {e}")
+        return None
+
+
 # --- Aspire CRM ---
 
 def create_aspire_contact(config, lead):
-    """Create a contact in Aspire CRM (Phase 2)."""
+    """Create a contact in Aspire CRM via Playwright browser automation."""
     aspire_cfg = config.get("aspire", {})
     if not aspire_cfg.get("enabled"):
         return None
-    if DRY_RUN:
-        log(f"  DRY RUN: Would create Aspire contact for {lead['email']}")
-        return "dry-run"
 
     aspire_config_file = os.path.expanduser(aspire_cfg.get("config_file", ""))
     if not os.path.exists(aspire_config_file):
         log("  Aspire config not found. Skipping CRM creation.")
         return None
 
+    # Check if the Aspire config has automation enabled
     try:
         with open(aspire_config_file) as f:
             asp_cfg = json.load(f)
+        if not asp_cfg.get("enabled"):
+            log("  Aspire automation disabled in config. Skipping.")
+            return None
+    except Exception as e:
+        log(f"  ERROR: Could not read Aspire config: {e}")
+        return None
 
-        # Get auth token
-        auth_url = f"{asp_cfg['base_url']}/Authorization"
-        auth_payload = json.dumps({
-            "username": asp_cfg["username"],
-            "password": asp_cfg["password"],
-        }).encode("utf-8")
-        auth_req = urllib.request.Request(auth_url, data=auth_payload, headers={
-            "Content-Type": "application/json",
-        })
-        with urllib.request.urlopen(auth_req, timeout=15) as resp:
-            auth_result = json.loads(resp.read())
-        token = auth_result.get("token") or auth_result.get("Token")
-        if not token:
-            log("  ERROR: Could not get Aspire token")
+    if DRY_RUN:
+        desc = lead.get("email") or f"{lead.get('first_name','')} {lead.get('last_name','')}"
+        log(f"  DRY RUN: Would create Aspire contact for {desc}")
+        return "dry-run"
+
+    # Call the Playwright automation script as a subprocess
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "aspire-create-contact.py")
+    if not os.path.exists(script_path):
+        log(f"  ERROR: Aspire script not found at {script_path}")
+        return None
+
+    lead_json = json.dumps(lead)
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["python3", script_path, "--lead-json", lead_json],
+            capture_output=True, text=True, timeout=120,
+        )
+        # The script prints JSON to stdout
+        if result.stdout.strip():
+            response = json.loads(result.stdout.strip())
+            action = response.get("action", "unknown")
+            success = response.get("success", False)
+
+            if action == "created":
+                contact_url = response.get("contact_url", "")
+                log(f"  Aspire: Contact created ({contact_url})")
+                return contact_url or "created"
+            elif action == "exists":
+                log(f"  Aspire: Contact already exists")
+                return "exists"
+            elif not success:
+                log(f"  Aspire: {response.get('message', 'Unknown error')}")
+                return None
+            else:
+                log(f"  Aspire: {response.get('message', 'Done')}")
+                return action
+        else:
+            stderr_tail = (result.stderr or "")[-300:]
+            log(f"  ERROR: Aspire script returned no output. stderr: {stderr_tail}")
             return None
 
-        # Check for existing contact
-        check_url = (
-            f"{asp_cfg['base_url']}/Contacts"
-            f"?$filter=Email eq '{lead['email']}'"
-            f"&$top=1"
-            f"&api-version={asp_cfg.get('api_version', '1.0')}"
-        )
-        check_req = urllib.request.Request(check_url, headers={
-            "Authorization": f"Bearer {token}",
-        })
-        with urllib.request.urlopen(check_req, timeout=15) as resp:
-            existing = json.loads(resp.read())
-        if existing.get("value") and len(existing["value"]) > 0:
-            contact_id = existing["value"][0].get("ContactID") or existing["value"][0].get("Id")
-            log(f"  Aspire: Contact already exists (ID: {contact_id})")
-            return contact_id
-
-        # Create new contact
-        contact_payload = {
-            "Contact": {
-                "FirstName": lead.get("first_name") or "Unknown",
-                "LastName": lead.get("last_name") or "Unknown",
-                "Email": lead["email"],
-                "MobilePhone": lead.get("phone", ""),
-                "Notes": f"Web form lead: {lead.get('service_interest', '')}. {lead.get('message', '')[:200]}",
-                "Active": True,
-            },
-            "ContactTags": aspire_cfg.get("contact_tag", "Web Lead"),
-        }
-        if aspire_cfg.get("contact_type_id"):
-            contact_payload["Contact"]["ContactTypeID"] = aspire_cfg["contact_type_id"]
-        if lead.get("address"):
-            contact_payload["OfficeAddress"] = {
-                "AddressLine1": lead["address"],
-                "City": lead.get("city", ""),
-                "StateProvinceCode": "TX",
-                "ZipCode": lead.get("zip", ""),
-            }
-
-        create_url = f"{asp_cfg['base_url']}/Contacts?api-version={asp_cfg.get('api_version', '1.0')}"
-        create_data = json.dumps(contact_payload).encode("utf-8")
-        create_req = urllib.request.Request(create_url, data=create_data, method="POST", headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        })
-        with urllib.request.urlopen(create_req, timeout=15) as resp:
-            created = json.loads(resp.read())
-        contact_id = created.get("ContactID") or created.get("Id")
-        log(f"  Aspire: Created contact (ID: {contact_id})")
-        return contact_id
-
+    except subprocess.TimeoutExpired:
+        log("  ERROR: Aspire contact creation timed out (120s)")
+        return None
     except Exception as e:
         log(f"  ERROR: Aspire contact creation failed: {e}")
         return None
@@ -945,7 +995,7 @@ def send_notification(config, subject, body, recipients):
         log(f"  ERROR: SendGrid notification failed: {e}")
 
 
-def notify_new_lead(config, lead, aspire_id=None, mailchimp_status=None):
+def notify_new_lead(config, lead, aspire_id=None, hubspot_id=None, mailchimp_status=None):
     """Notify owners of a new legitimate lead."""
     recipients = config["notifications"].get("lead_recipients", [])
     if not recipients:
@@ -956,6 +1006,7 @@ def notify_new_lead(config, lead, aspire_id=None, mailchimp_status=None):
 
     subject = f"New Web Lead: {name} - {service}"
 
+    hubspot_line = f"HubSpot: {hubspot_id}" if hubspot_id else "HubSpot: Not configured"
     aspire_line = f"Aspire Contact ID: {aspire_id}" if aspire_id else "Aspire: Not configured"
     mc_line = f"Mailchimp: {mailchimp_status}" if mailchimp_status else "Mailchimp: Not configured"
 
@@ -973,6 +1024,7 @@ Message:
 {lead.get('message', '(no message)')[:400]}
 
 {'=' * 45}
+{hubspot_line}
 {aspire_line}
 {mc_line}
 Auto-reply: Sent
@@ -1200,11 +1252,14 @@ def process_messages(token, config, state):
         # Mailchimp
         mc_status = add_to_mailchimp(config, lead)
 
+        # HubSpot CRM
+        hubspot_id = create_hubspot_contact(config, lead)
+
         # Aspire (Phase 2)
         aspire_id = create_aspire_contact(config, lead)
 
         # Notify owners
-        notify_new_lead(config, lead, aspire_id=aspire_id, mailchimp_status=mc_status)
+        notify_new_lead(config, lead, aspire_id=aspire_id, hubspot_id=hubspot_id, mailchimp_status=mc_status)
 
         # Mark as read
         mark_as_read(token, config, msg_id)
@@ -1280,6 +1335,26 @@ def verify_health(config):
     else:
         log("[INFO] Mailchimp disabled")
 
+    # HubSpot
+    hubspot = config.get("hubspot", {})
+    if hubspot.get("enabled"):
+        hs_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "hubspot-sync.py")
+        if os.path.exists(hs_script):
+            log("[OK] HubSpot sync script exists")
+        else:
+            log("[WARN] HubSpot enabled but sync script missing")
+            issues.append(f"Create {hs_script}")
+        hs_config = os.path.expanduser("~/.config/hubspot/config.json")
+        has_token = bool(hubspot.get("access_token") or os.environ.get("HUBSPOT_ACCESS_TOKEN") or os.path.exists(hs_config))
+        if has_token:
+            log("[OK] HubSpot credentials available")
+        else:
+            log("[WARN] HubSpot enabled but no access token found")
+            issues.append("Set HUBSPOT_ACCESS_TOKEN env var or create ~/.config/hubspot/config.json")
+    else:
+        log("[INFO] HubSpot disabled")
+
     # Aspire
     aspire = config.get("aspire", {})
     if aspire.get("enabled"):
@@ -1288,9 +1363,16 @@ def verify_health(config):
             log("[OK] Aspire config file exists")
         else:
             log("[WARN] Aspire enabled but config file missing")
-            issues.append(f"Create {aspire_file} with API credentials")
+            issues.append(f"Create {aspire_file}")
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "aspire-create-contact.py")
+        if os.path.exists(script):
+            log("[OK] Aspire contact creation script exists")
+        else:
+            log("[WARN] Aspire script missing")
+            issues.append(f"Create {script}")
     else:
-        log("[INFO] Aspire disabled (Phase 2)")
+        log("[INFO] Aspire disabled")
 
     # Directories
     log(f"[OK] Leads dir: {LEADS_DIR}")

@@ -21,7 +21,6 @@ jobs:
         run: pip install msal
 
       - name: Run lead monitor
-        continue-on-error: true
         env:
           MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
@@ -32,4 +31,5 @@ jobs:
           SPAM_RECIPIENTS: ${{ secrets.SPAM_RECIPIENTS }}
           NOTIFY_FROM_EMAIL: ${{ secrets.NOTIFY_FROM_EMAIL }}
           AUTO_REPLY_FROM: ${{ secrets.AUTO_REPLY_FROM }}
+          HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
         run: python scripts/lead-monitor.py
