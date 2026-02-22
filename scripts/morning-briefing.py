@@ -15,8 +15,9 @@ Usage:
   python3 scripts/morning-briefing.py --test      # Build & print, don't send
 """
 
-import json, os, sys, base64, urllib.request, urllib.parse
+import json, os, sys, base64, smtplib, urllib.request, urllib.parse
 from datetime import datetime, timedelta, timezone
+from email.mime.text import MIMEText
 
 CENTRAL_TIME = timezone(timedelta(hours=-6))
 
@@ -363,10 +364,10 @@ def get_checkin_reminder():
     return None
 
 
-# --- Send SMS via email-to-SMS gateway (SendGrid) ---
+# --- Send SMS via email-to-SMS gateway (SendGrid SMTP) ---
 
 def send_sms(phone, carrier, message):
-    """Send an SMS via carrier email-to-SMS gateway using SendGrid."""
+    """Send an SMS via carrier email-to-SMS gateway using SendGrid SMTP."""
     gateway = CARRIER_GATEWAYS.get(carrier)
     if not gateway:
         print(f"Unknown carrier '{carrier}' for {phone}", file=sys.stderr)
@@ -382,32 +383,18 @@ def send_sms(phone, carrier, message):
     clean = phone.replace("-", "").replace("(", "").replace(")", "").replace(" ", "").replace("+1", "").replace("+", "")
     to_email = f"{clean}@{gateway}"
 
-    payload = json.dumps({
-        "personalizations": [{"to": [{"email": to_email}]}],
-        "from": {"email": from_email, "name": "Black Hill"},
-        "subject": "Briefing",
-        "content": [{"type": "text/plain", "value": message}],
-    }).encode()
-
-    req = urllib.request.Request(
-        "https://api.sendgrid.net/v3/mail/send",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
+    msg = MIMEText(message)
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg["Subject"] = "Briefing"
 
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            pass  # 202 Accepted = success
+        with smtplib.SMTP("smtp.sendgrid.net", 587, timeout=15) as server:
+            server.starttls()
+            server.login("apikey", api_key)
+            server.sendmail(from_email, [to_email], msg.as_string())
         print(f"SMS sent to {phone} via {gateway}")
         return True
-    except urllib.error.HTTPError as e:
-        body = e.read().decode()
-        print(f"SendGrid error ({phone}): {e.code} - {body}", file=sys.stderr)
-        return False
     except Exception as e:
         print(f"SMS error ({phone}): {e}", file=sys.stderr)
         return False
