@@ -19,7 +19,62 @@ import json, os, sys, urllib.request, urllib.error
 from datetime import datetime, timezone
 
 CONFIG_FILE = os.path.expanduser("~/.config/hubspot/config.json")
+ROUND_ROBIN_FILE = os.path.expanduser("~/.config/hubspot/round-robin.json")
 DRY_RUN = "--dry-run" in sys.argv
+
+# --- Owner Assignment ---
+
+OWNER_EVELIN = "88710208"
+OWNER_DENISSE = None  # Set after she's invited to HubSpot
+
+def get_round_robin_next():
+    """Get next owner in round robin rotation. Returns owner ID."""
+    owners = [OWNER_EVELIN, OWNER_DENISSE]
+    owners = [o for o in owners if o]  # Skip None until Denisse is added
+    if len(owners) < 2:
+        return owners[0] if owners else None
+
+    try:
+        with open(ROUND_ROBIN_FILE) as f:
+            state = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        state = {"last_index": -1}
+
+    next_index = (state.get("last_index", -1) + 1) % len(owners)
+    state["last_index"] = next_index
+
+    try:
+        os.makedirs(os.path.dirname(ROUND_ROBIN_FILE), exist_ok=True)
+        with open(ROUND_ROBIN_FILE, "w") as f:
+            json.dump(state, f)
+    except Exception:
+        pass
+
+    return owners[next_index]
+
+
+def assign_owner(lead):
+    """Determine deal owner based on service interest.
+
+    Rules:
+      - Irrigation -> Denisse
+      - Commercial Maintenance -> Evelin
+      - Everything else -> Round robin
+    """
+    service = (lead.get("service_interest", "") or "").lower()
+    message = (lead.get("message", "") or "").lower()
+
+    # Irrigation -> Denisse
+    if "irrigation" in service or "sprinkler" in service or "irrigation" in message:
+        return OWNER_DENISSE or OWNER_EVELIN  # Fall back to Evelin if Denisse not set
+
+    # Commercial Maintenance -> Evelin
+    if "commercial" in service and "maint" in service:
+        return OWNER_EVELIN
+
+    # Everything else -> round robin
+    return get_round_robin_next()
+
 
 # --- Config ---
 
@@ -139,6 +194,11 @@ def create_deal(lead, contact_id, token, pipeline_id="default"):
         "pipeline": pipeline_id,
         "dealstage": "appointmentscheduled",  # "New Lead" stage
     }
+
+    # Assign owner
+    owner_id = assign_owner(lead)
+    if owner_id:
+        properties["hubspot_owner_id"] = owner_id
 
     # Set filterable properties
     source_val = classify_traffic_source(lead.get("traffic_source", ""))
