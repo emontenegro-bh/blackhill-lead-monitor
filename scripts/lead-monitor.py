@@ -107,7 +107,11 @@ def load_config_from_env():
             "enabled": bool(os.environ.get("HUBSPOT_ACCESS_TOKEN")),
             "access_token": os.environ.get("HUBSPOT_ACCESS_TOKEN", ""),
         },
-        "aspire": {"enabled": False},
+        "aspire": {
+            "enabled": bool(os.environ.get("ASPIRE_CLIENT_ID")),
+            "api_client_id": os.environ.get("ASPIRE_CLIENT_ID", ""),
+            "api_secret": os.environ.get("ASPIRE_SECRET", ""),
+        },
         "auto_reply": {
             "enabled": os.environ.get("AUTO_REPLY_ENABLED", "true").lower() == "true",
             "from_name": "Black Hill Landscaping",
@@ -909,25 +913,9 @@ def create_hubspot_contact(config, lead):
 # --- Aspire CRM ---
 
 def create_aspire_contact(config, lead):
-    """Create a contact in Aspire CRM via Playwright browser automation."""
+    """Create a contact in Aspire CRM via REST API."""
     aspire_cfg = config.get("aspire", {})
     if not aspire_cfg.get("enabled"):
-        return None
-
-    aspire_config_file = os.path.expanduser(aspire_cfg.get("config_file", ""))
-    if not os.path.exists(aspire_config_file):
-        log("  Aspire config not found. Skipping CRM creation.")
-        return None
-
-    # Check if the Aspire config has automation enabled
-    try:
-        with open(aspire_config_file) as f:
-            asp_cfg = json.load(f)
-        if not asp_cfg.get("enabled"):
-            log("  Aspire automation disabled in config. Skipping.")
-            return None
-    except Exception as e:
-        log(f"  ERROR: Could not read Aspire config: {e}")
         return None
 
     if DRY_RUN:
@@ -935,21 +923,27 @@ def create_aspire_contact(config, lead):
         log(f"  DRY RUN: Would create Aspire contact for {desc}")
         return "dry-run"
 
-    # Call the Playwright automation script as a subprocess
+    # Call the API sync script as a subprocess
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               "aspire-create-contact.py")
+                               "aspire-api-sync.py")
     if not os.path.exists(script_path):
-        log(f"  ERROR: Aspire script not found at {script_path}")
+        log(f"  ERROR: Aspire API script not found at {script_path}")
         return None
+
+    # Pass credentials via env vars if available (cloud), otherwise script reads config file
+    env = os.environ.copy()
+    if aspire_cfg.get("api_client_id"):
+        env["ASPIRE_CLIENT_ID"] = aspire_cfg["api_client_id"]
+    if aspire_cfg.get("api_secret"):
+        env["ASPIRE_SECRET"] = aspire_cfg["api_secret"]
 
     lead_json = json.dumps(lead)
     try:
         import subprocess
         result = subprocess.run(
             ["python3", script_path, "--lead-json", lead_json],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=30, env=env,
         )
-        # The script prints JSON to stdout
         if result.stdout.strip():
             response = json.loads(result.stdout.strip())
             action = response.get("action", "unknown")
@@ -970,11 +964,11 @@ def create_aspire_contact(config, lead):
                 return action
         else:
             stderr_tail = (result.stderr or "")[-300:]
-            log(f"  ERROR: Aspire script returned no output. stderr: {stderr_tail}")
+            log(f"  ERROR: Aspire API script returned no output. stderr: {stderr_tail}")
             return None
 
     except subprocess.TimeoutExpired:
-        log("  ERROR: Aspire contact creation timed out (120s)")
+        log("  ERROR: Aspire contact creation timed out (30s)")
         return None
     except Exception as e:
         log(f"  ERROR: Aspire contact creation failed: {e}")
@@ -1385,18 +1379,17 @@ def verify_health(config):
     # Aspire
     aspire = config.get("aspire", {})
     if aspire.get("enabled"):
-        aspire_file = os.path.expanduser(aspire.get("config_file", ""))
-        if os.path.exists(aspire_file):
-            log("[OK] Aspire config file exists")
+        if aspire.get("api_client_id"):
+            log("[OK] Aspire API credentials configured")
         else:
-            log("[WARN] Aspire enabled but config file missing")
-            issues.append(f"Create {aspire_file}")
+            log("[WARN] Aspire enabled but no API credentials")
+            issues.append("Set ASPIRE_CLIENT_ID and ASPIRE_SECRET env vars")
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              "aspire-create-contact.py")
+                              "aspire-api-sync.py")
         if os.path.exists(script):
-            log("[OK] Aspire contact creation script exists")
+            log("[OK] Aspire API sync script exists")
         else:
-            log("[WARN] Aspire script missing")
+            log("[WARN] Aspire API script missing")
             issues.append(f"Create {script}")
     else:
         log("[INFO] Aspire disabled")
