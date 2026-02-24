@@ -344,6 +344,15 @@ SOLICITATION_KEYWORDS = [
     "virtual assistant", "appointment setting", "drip campaign",
     "fill your calendar", "we provide", "we offer", "prospecting",
     "i tried emailing you", "reaching out here instead",
+    # AI traffic / SEO service solicitations (common form spam 2026)
+    "visitors to your website", "visitors to your site",
+    "traffic to your website", "traffic to your site",
+    "ai-optimized", "ai optimized", "ai can fix",
+    "missing out on leads", "more affordable than",
+    "less than paid ads", "less than paid ad campaigns",
+    "high-intent", "location-targeted traffic", "location-specific",
+    "start scaling now", "start now to see", "see the impact",
+    "keyword and location", "keyword-targeted",
 ]
 
 SERVICE_KEYWORDS = [
@@ -368,16 +377,17 @@ MONEY_SCAM_KEYWORDS = [
     "$1,000 monthly", "per month income", "daily income",
 ]
 
-# Foreign street address prefixes (non-US address formats)
+# Foreign street address patterns (non-US address formats)
+# Checked with "in" (not startswith) to handle house numbers before the prefix
 FOREIGN_ADDRESS_PREFIXES = [
-    "via ", "rue ", "strasse ", "calle ", "rua ", "ulitsa ",
+    "via ", "rue ", "strasse", "straße", "calle ", "rua ", "ulitsa ",
     "prospekt ", "platz ", "piazza ", "corso ", "viale ",
 ]
 
 # Video/streaming link patterns in form messages (bots embed promo links)
 VIDEO_LINK_PATTERNS = [
-    "youtube.com/watch", "youtu.be/", "vimeo.com/", "rumble.com/",
-    "bitchute.com/", "odysee.com/",
+    "youtube.com/watch", "youtube.com/shorts/", "youtu.be/",
+    "vimeo.com/", "rumble.com/", "bitchute.com/", "odysee.com/",
 ]
 
 # Bounce-back / NDR sender patterns
@@ -474,8 +484,9 @@ def classify_email(message, config):
         reasons.append("BBCode [url=] tags (forum spam)")
 
     # URL shorteners in message body
-    shorteners = ["tiny.cc", "cutt.us", "bit.ly", "t.co", "tinyurl.com",
-                   "mub.me", "put2.me", "4ty.me", "tt.vg", "citly.me"]
+    shorteners = ["tiny.cc", "cutt.us", "cutt.ly", "bit.ly", "t.co",
+                   "tinyurl.com", "mub.me", "put2.me", "4ty.me", "tt.vg",
+                   "citly.me", "rb.gy", "is.gd", "v.gd", "shorturl.at"]
     for s in shorteners:
         if s in full_text:
             score += 4
@@ -501,9 +512,10 @@ def classify_email(message, config):
             reasons.append(f"Money scam keyword: '{kw}'")
             break
 
-    # Foreign street address format (Via Duomo, Rue de la Paix, etc.)
+    # Foreign street address format (Via Duomo, 63 Rue de la Paix, etc.)
+    # Check if address starts with prefix OR has prefix after a house number
     for prefix in FOREIGN_ADDRESS_PREFIXES:
-        if form_address.startswith(prefix):
+        if prefix in form_address:
             score += 3
             reasons.append(f"Foreign address format: '{form_address}'")
             break
@@ -519,6 +531,12 @@ def classify_email(message, config):
     if "@" in form_contact:
         score += 3
         reasons.append("Phone field contains email address (not a real phone)")
+
+    # Phone field has wrong digit count (not 10 or 11 digits = not US)
+    phone_digits = re.sub(r"\D", "", form_contact)
+    if phone_digits and len(phone_digits) not in (10, 11):
+        score += 2
+        reasons.append(f"Non-US phone number ({len(phone_digits)} digits: {form_contact})")
 
     # No real US phone number anywhere in body
     us_phone = re.search(r"\(?\d{3}\)?[\s\-\.]?\d{3}[\s\-\.]?\d{4}", body)
@@ -573,6 +591,11 @@ def classify_email(message, config):
     if form_address in ["123 main st", "123 main street", "test", "asdf", "na", "n/a"]:
         score += 3
         reasons.append(f"Fake address: {form_address}")
+
+    # URL in the "message" field (real leads rarely include URLs)
+    if form_message and re.search(r"https?://", form_message):
+        score += 3
+        reasons.append("URL found in message field")
 
     # --- MEDIUM SPAM SIGNALS ---
 
@@ -1237,6 +1260,9 @@ def process_messages(token, config, state):
 
         # Legitimate lead (new)
         log(f"  Classification: LEAD (score {score})")
+        if reasons:
+            for r in reasons:
+                log(f"    {r}")
         lead = parse_lead(msg)
         log(f"  Parsed: {lead['first_name']} {lead['last_name']} | {lead['email']} | {lead['phone']} | {lead['service_interest']}")
 
