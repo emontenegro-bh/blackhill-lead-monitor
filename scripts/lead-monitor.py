@@ -123,8 +123,18 @@ def load_config_from_env():
 
 # --- State ---
 
+CLOUD_STATE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "processed-state.json")
+
+
 def load_state():
+    # Cloud mode: persist state in repo's data/ directory
     if CLOUD_MODE:
+        if os.path.exists(CLOUD_STATE_FILE):
+            try:
+                with open(CLOUD_STATE_FILE) as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, IOError):
+                pass
         return {"processed_ids": [], "stats": {"total_leads": 0, "total_spam": 0}}
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE) as f:
@@ -133,14 +143,17 @@ def load_state():
 
 
 def save_state(state):
-    if CLOUD_MODE:
-        return
-    state["last_run"] = datetime.now().isoformat()
+    state["last_run"] = datetime.now(timezone.utc).isoformat()
     # Cap processed_ids at 5000 entries (FIFO)
     if len(state["processed_ids"]) > 5000:
         state["processed_ids"] = state["processed_ids"][-5000:]
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
+    if CLOUD_MODE:
+        os.makedirs(os.path.dirname(CLOUD_STATE_FILE), exist_ok=True)
+        with open(CLOUD_STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+    else:
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
 
 
 # --- Microsoft Graph API ---
@@ -226,12 +239,35 @@ def graph_request(token, method, url, body=None):
 
 
 def fetch_unread_messages(token, config):
+    """Fetch unread messages (legacy, used by --test)."""
     mailbox = config["microsoft"]["shared_mailbox"]
     max_msgs = config["polling"].get("max_messages_per_run", 20)
     url = (
         f"https://graph.microsoft.com/v1.0/users/{mailbox}/messages"
         f"?$filter=isRead%20eq%20false"
         f"&$select=id,subject,from,receivedDateTime,body,bodyPreview,hasAttachments"
+        f"&$orderby=receivedDateTime%20desc"
+        f"&$top={max_msgs}"
+    )
+    result = graph_request(token, "GET", url)
+    if result is None:
+        return []
+    return result.get("value", [])
+
+
+def fetch_recent_messages(token, config, lookback_minutes=120):
+    """Fetch messages received in the last N minutes, regardless of read status.
+
+    This prevents missed leads when someone reads the email before the monitor
+    checks (the isRead filter caused Aubrey Kass to be missed on 2025-02-25).
+    """
+    mailbox = config["microsoft"]["shared_mailbox"]
+    max_msgs = config["polling"].get("max_messages_per_run", 20)
+    since = (datetime.now(timezone.utc) - timedelta(minutes=lookback_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    url = (
+        f"https://graph.microsoft.com/v1.0/users/{mailbox}/messages"
+        f"?$filter=receivedDateTime%20ge%20{since}"
+        f"&$select=id,subject,from,receivedDateTime,body,bodyPreview,hasAttachments,isRead"
         f"&$orderby=receivedDateTime%20desc"
         f"&$top={max_msgs}"
     )
@@ -1173,13 +1209,18 @@ def should_auto_reply(lead, config):
 # --- Main Processing ---
 
 def process_messages(token, config, state):
-    """Main processing loop."""
-    messages = fetch_unread_messages(token, config)
+    """Main processing loop.
+
+    Fetches recent messages (last 2 hours) regardless of read status, then
+    skips any already in processed_ids. This prevents missed leads when someone
+    reads the email in Outlook before the 5-minute monitor cycle.
+    """
+    messages = fetch_recent_messages(token, config, lookback_minutes=120)
     if not messages:
-        log("No unread messages found.")
+        log("No recent messages found.")
         return
 
-    log(f"Found {len(messages)} unread message(s)")
+    log(f"Found {len(messages)} recent message(s)")
     auto_filter = config.get("spam", {}).get("auto_filter", False)
 
     for msg in messages:

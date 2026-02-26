@@ -35,3 +35,13 @@ jobs:
           ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
           ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
         run: python scripts/lead-monitor.py
+
+      - name: Persist processed state
+        if: always()
+        run: |
+          if [ -f data/processed-state.json ]; then
+            git config user.name "Lead Monitor Bot"
+            git config user.email "noreply@blackhilltx.com"
+            git add data/processed-state.json
+            git diff --cached --quiet || git commit -m "Update processed state" && git push || true
+          fi
