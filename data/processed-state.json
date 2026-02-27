@@ -1,8 +1,11 @@
 {
-  "processed_ids": [],
+  "processed_ids": [
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADEQJT5AAA="
+  ],
   "stats": {
-    "total_leads": 0,
-    "total_spam": 0
+    "total_leads": 1,
+    "total_spam": 0,
+    "last_lead": "2026-02-27T11:47:55.303226"
   },
-  "last_run": "2026-02-27T10:05:27.154034+00:00"
+  "last_run": "2026-02-27T11:47:55.303241+00:00"
 }
