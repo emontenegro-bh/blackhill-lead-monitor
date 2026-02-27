@@ -135,7 +135,6 @@ def load_state():
                     return json.load(f)
             except (json.JSONDecodeError, IOError):
                 pass
-        return {"processed_ids": [], "stats": {"total_leads": 0, "total_spam": 0}}
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE) as f:
             return json.load(f)
@@ -259,7 +258,7 @@ def fetch_recent_messages(token, config, lookback_minutes=120):
     """Fetch messages received in the last N minutes, regardless of read status.
 
     This prevents missed leads when someone reads the email before the monitor
-    checks (the isRead filter caused Aubrey Kass to be missed on 2025-02-25).
+    checks (the isRead filter caused leads to be missed).
     """
     mailbox = config["microsoft"]["shared_mailbox"]
     max_msgs = config["polling"].get("max_messages_per_run", 20)
@@ -393,6 +392,22 @@ SOLICITATION_KEYWORDS = [
     "high-intent", "location-targeted traffic", "location-specific",
     "start scaling now", "start now to see", "see the impact",
     "keyword and location", "keyword-targeted",
+    # YouTube / social media growth solicitations
+    "youtube subscribers", "youtube channel", "new subscribers",
+    "build a dedicated audience", "growth process",
+    "handle the entire", "set one up for you",
+    "we help website owners", "we help businesses",
+    "guaranteed subscribers", "guarantee 400",
+    "monthly subscribers", "real, human subscribers",
+    # Generic B2B solicitation phrases
+    "i'm reaching out because we", "reaching out because we",
+    "we can guarantee", "we specialize in",
+    "book a quick call", "book a call",
+    "schedule a quick demo", "schedule a demo",
+    "free audit", "free consultation",
+    "our agency", "our team can help",
+    "increase your revenue", "grow your business",
+    "lead generation service", "leads for your business",
 ]
 
 SERVICE_KEYWORDS = [
@@ -441,6 +456,12 @@ MONEY_SCAM_KEYWORDS = [
     "direct payments", "arbitrage", "does all the heavy lifting",
     "$3,000 monthly", "$2,000 monthly", "$5,000 monthly",
     "$1,000 monthly", "per month income", "daily income",
+    # Crypto / trading scams
+    "crypto trading", "bitcoin", "forex signal",
+    "trading bot", "nft project",
+    # AI tool solicitation scams
+    "flipninja", "unfair data advantage", "profit flips across",
+    "stop guessing", "next high-margin deal",
 ]
 
 # Foreign street address patterns (non-US address formats)
@@ -704,6 +725,27 @@ def classify_email(message, config):
         score += 3
         reasons.append("URL found in message field")
 
+    # Message about services WE don't provide (solicitations posing as inquiries)
+    # Real leads describe their property/project; spam describes what THEY sell
+    selling_phrases = [
+        "we help", "we can", "we specialize", "we guarantee",
+        "our service", "our team", "our agency",
+        "i can help", "i specialize",
+        "for [company", "for your business", "for your company",
+    ]
+    selling_count = sum(1 for p in selling_phrases if p in form_message)
+    if selling_count >= 2:
+        score += 4
+        reasons.append(f"Message contains selling language ({selling_count} phrases)")
+    elif selling_count == 1:
+        score += 2
+        reasons.append(f"Message contains selling language")
+
+    # Empty city AND empty zip (real leads almost always provide location)
+    if not form_city and not form.get("zip code", "").strip():
+        score += 1
+        reasons.append("No city or zip provided")
+
     # --- MEDIUM SPAM SIGNALS ---
 
     # SEO/marketing keywords
@@ -719,9 +761,9 @@ def classify_email(message, config):
             reasons.append(f"Marketing keyword: '{kw}'")
             break
 
-    # Business solicitation keywords
+    # Business solicitation keywords (check both full text AND form message)
     for kw in SOLICITATION_KEYWORDS:
-        if kw in full_text:
+        if kw in full_text or kw in form_message:
             score += 3
             reasons.append(f"Solicitation: '{kw}'")
             break
@@ -1251,6 +1293,45 @@ NO_REPLY_PATTERNS = [
     r"mailer-daemon@", r"postmaster@", r"bounce@",
 ]
 
+# Own addresses that should never be processed as leads or replied to
+OWN_ADDRESSES = [
+    "inquiry@blackhilltx.com",
+    "sales@meangreenlawncare.com",
+    "info@meangreenlawncare.com",
+    "info@blackhilltx.com",
+]
+
+
+def is_own_email(message, config):
+    """Check if this message was sent by the monitor itself (auto-reply loop).
+
+    Returns True if the message should be skipped entirely.
+    """
+    sender = (message.get("from", {}).get("emailAddress", {}).get("address") or "").lower()
+    subject = (message.get("subject") or "").lower()
+    mailbox = config["microsoft"]["shared_mailbox"].lower()
+    auto_reply_subject = config.get("auto_reply", {}).get("subject", "").lower()
+    auto_reply_from = config.get("auto_reply", {}).get("from_email", "").lower()
+
+    # Skip emails FROM our own auto-reply address
+    if sender == auto_reply_from:
+        return True
+
+    # Skip emails FROM any of our own addresses
+    for addr in OWN_ADDRESSES:
+        if sender == addr:
+            return True
+
+    # Skip emails FROM the shared mailbox itself
+    if sender == mailbox:
+        return True
+
+    # Skip emails whose subject IS our auto-reply subject (sent by us)
+    if auto_reply_subject and subject == auto_reply_subject:
+        return True
+
+    return False
+
 
 def should_auto_reply(lead, config):
     """Check if we should send an auto-reply (prevent loops)."""
@@ -1260,6 +1341,11 @@ def should_auto_reply(lead, config):
     # Never reply to ourselves
     if email == mailbox:
         return False
+
+    # Never reply to our own addresses
+    for addr in OWN_ADDRESSES:
+        if email == addr:
+            return False
 
     # Never reply to no-reply addresses
     for pattern in NO_REPLY_PATTERNS:
@@ -1301,6 +1387,13 @@ def process_messages(token, config, state):
             continue
 
         log(f"\nProcessing: {subject[:60]} (from: {sender})")
+
+        # Own-email detection (auto-reply loop prevention)
+        if is_own_email(msg, config):
+            log(f"  Skipping: Own email / auto-reply loop (from: {sender})")
+            mark_as_read(token, config, msg_id)
+            state["processed_ids"].append(msg_id)
+            continue
 
         # Bounce-back / NDR detection (skip entirely, no auto-reply)
         is_bounce = False
