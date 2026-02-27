@@ -404,6 +404,32 @@ SERVICE_KEYWORDS = [
 
 SPAM_EMAIL_DOMAINS = [
     "rambler.ru", "rambler.com", "yandex.ru", "mail.ru",
+    "melssa.com", "mailnesia.com", "guerrillamail.com", "tempmail.com",
+    "throwaway.email", "sharklasers.com", "grr.la", "guerrillamailblock.com",
+    "pokemail.net", "spam4.me", "binkmail.com", "safetymail.info",
+]
+
+# Known bot name suffixes (Elementor form bots use Eastern European names + suffixes)
+BOT_NAME_SUFFIXES = [
+    "gek", "bot", "async", "sync", "dot", "stand", "leakquity",
+    "ergyozo", "daync", "nergy", "coin", "cripto", "crypto",
+]
+
+# Out-of-state cities (clearly not in the greater Fort Worth service area)
+OUT_OF_STATE_CITIES = [
+    "las vegas", "los angeles", "new york", "chicago", "miami", "phoenix",
+    "seattle", "denver", "portland", "san francisco", "san diego", "boston",
+    "atlanta", "orlando", "tampa", "charlotte", "nashville", "detroit",
+    "minneapolis", "st louis", "kansas city", "indianapolis", "columbus",
+    "pittsburgh", "baltimore", "philadelphia", "houston", "san antonio",
+    "austin", "el paso", "lubbock", "amarillo", "corpus christi", "laredo",
+    "brownsville", "mcallen", "new orleans", "memphis", "oklahoma city", "tulsa",
+]
+
+# Valid US area code first digits (area codes start with 2-9, second digit 0-9)
+# We check that the phone starts with a plausible US area code pattern
+INVALID_US_PHONE_STARTS = [
+    "0", "1",  # US area codes never start with 0 or 1
 ]
 
 # Money/income scam keywords (common in bot form spam)
@@ -560,12 +586,39 @@ def classify_email(message, config):
             reasons.append(f"Foreign address format: '{form_address}'")
             break
 
-    # Russian spam email domains in form email field
+    # Spam email domains in form email field
     for domain in SPAM_EMAIL_DOMAINS:
         if domain in form_email:
             score += 4
-            reasons.append(f"Russian email domain: {domain}")
+            reasons.append(f"Spam email domain: {domain}")
             break
+
+    # Gibberish/random email local part (e.g. "0rq2i@", "x7k3m@")
+    if form_email and "@" in form_email:
+        local_part = form_email.split("@")[0]
+        digit_ratio = sum(1 for c in local_part if c.isdigit()) / max(len(local_part), 1)
+        has_no_vowels = not any(c in "aeiou" for c in local_part.lower())
+        if len(local_part) <= 6 and digit_ratio >= 0.3 and has_no_vowels:
+            score += 4
+            reasons.append(f"Gibberish email local part: {local_part}")
+        elif len(local_part) <= 3:
+            score += 3
+            reasons.append(f"Very short email local part: {local_part}")
+
+    # Bot name detection (names ending with known bot suffixes like "LarisaGek")
+    form_name = form.get("name", "").strip().lower()
+    for suffix in BOT_NAME_SUFFIXES:
+        if form_name.endswith(suffix):
+            score += 4
+            reasons.append(f"Bot name suffix: '{suffix}' in '{form_name}'")
+            break
+
+    # Service field contains label text instead of actual selection (bot didn't use dropdown)
+    form_service = form.get("what type of service do you need?", "").strip().lower()
+    if form_service in ["type of service you need", "what type of service do you need?",
+                         "what type of service do you need", "select", "choose", "--"]:
+        score += 3
+        reasons.append(f"Service field contains label text: '{form_service}'")
 
     # Phone field contains @ sign (spammers put email instead of phone)
     if "@" in form_contact:
@@ -577,6 +630,17 @@ def classify_email(message, config):
     if phone_digits and len(phone_digits) not in (10, 11):
         score += 2
         reasons.append(f"Non-US phone number ({len(phone_digits)} digits: {form_contact})")
+
+    # Phone starts with 0 or 1 (not valid US area code) or invalid area code
+    if phone_digits and len(phone_digits) >= 10:
+        area_code = phone_digits[-10:-7] if len(phone_digits) == 11 else phone_digits[:3]
+        if area_code[0] in ("0", "1"):
+            score += 3
+            reasons.append(f"Invalid US area code: {area_code} (starts with {area_code[0]})")
+        elif area_code[1] == "9" and area_code[2] == "0":
+            # x90 area codes don't exist in the US
+            score += 2
+            reasons.append(f"Suspicious area code: {area_code}")
 
     # No real US phone number anywhere in body
     us_phone = re.search(r"\(?\d{3}\)?[\s\-\.]?\d{3}[\s\-\.]?\d{4}", body)
@@ -595,6 +659,9 @@ def classify_email(message, config):
         if form_city in foreign_indicators:
             score += 4
             reasons.append(f"Foreign city: {form_city}")
+        elif form_city in OUT_OF_STATE_CITIES:
+            score += 3
+            reasons.append(f"Out-of-state city: {form_city}")
         elif not any(form_city == c for c in DFW_CITIES):
             score += 1
             reasons.append(f"Non-DFW city: {form_city}")
