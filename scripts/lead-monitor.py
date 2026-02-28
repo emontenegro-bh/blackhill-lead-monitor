@@ -263,8 +263,10 @@ def fetch_recent_messages(token, config, lookback_minutes=120):
     mailbox = config["microsoft"]["shared_mailbox"]
     max_msgs = config["polling"].get("max_messages_per_run", 20)
     since = (datetime.now(timezone.utc) - timedelta(minutes=lookback_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Query only the Inbox folder to avoid picking up our own Sent Items
+    # (auto-replies saved to Sent Items were being re-processed as leads)
     url = (
-        f"https://graph.microsoft.com/v1.0/users/{mailbox}/messages"
+        f"https://graph.microsoft.com/v1.0/users/{mailbox}/mailFolders/Inbox/messages"
         f"?$filter=receivedDateTime%20ge%20{since}"
         f"&$select=id,subject,from,receivedDateTime,body,bodyPreview,hasAttachments,isRead"
         f"&$orderby=receivedDateTime%20desc"
@@ -563,6 +565,12 @@ def classify_email(message, config):
     form_address = form.get("address", "").lower().strip()
     form_traffic = form.get("traffic source", "").lower().strip()
 
+    # Strip HTML tags from body for plain-text pattern matching (fallback when
+    # form parsing misses fields due to non-standard HTML structure)
+    body_plain = re.sub(r"<[^>]+>", " ", message.get("body", {}).get("content", ""))
+    body_plain = re.sub(r"&nbsp;|&amp;|&lt;|&gt;|&#\d+;", " ", body_plain).lower()
+    body_plain = re.sub(r"\s+", " ", body_plain)
+
     # --- HIGH-CONFIDENCE SPAM SIGNALS ---
 
     # BBCode [url=...] tags — classic forum spam, never from real leads
@@ -587,24 +595,24 @@ def classify_email(message, config):
 
     # Video/streaming links in message (bots embed promo YouTube links)
     for pattern in VIDEO_LINK_PATTERNS:
-        if pattern in full_text or pattern in form_message:
+        if pattern in full_text or pattern in form_message or pattern in body_plain:
             score += 5
             reasons.append(f"Video link in message: {pattern}")
             break
 
     # Money/income scam keywords
     for kw in MONEY_SCAM_KEYWORDS:
-        if kw in full_text or kw in form_message:
+        if kw in full_text or kw in form_message or kw in body_plain:
             score += 4
             reasons.append(f"Money scam keyword: '{kw}'")
             break
 
     # Foreign street address format (Via Duomo, 63 Rue de la Paix, etc.)
-    # Check if address starts with prefix OR has prefix after a house number
+    # Check form address field AND plain body text as fallback
     for prefix in FOREIGN_ADDRESS_PREFIXES:
-        if prefix in form_address:
+        if prefix in form_address or prefix in body_plain:
             score += 3
-            reasons.append(f"Foreign address format: '{form_address}'")
+            reasons.append(f"Foreign address format: '{form_address or prefix}'")
             break
 
     # Spam email domains in form email field
@@ -721,7 +729,8 @@ def classify_email(message, config):
         reasons.append(f"Fake address: {form_address}")
 
     # URL in the "message" field (real leads rarely include URLs)
-    if form_message and re.search(r"https?://", form_message):
+    msg_text = form_message or body_plain
+    if msg_text and re.search(r"https?://", msg_text):
         score += 3
         reasons.append("URL found in message field")
 
@@ -732,8 +741,11 @@ def classify_email(message, config):
         "our service", "our team", "our agency",
         "i can help", "i specialize",
         "for [company", "for your business", "for your company",
+        "scale your", "automate your", "boost your",
+        "secure an unfair", "data advantage", "stop guessing",
     ]
-    selling_count = sum(1 for p in selling_phrases if p in form_message)
+    selling_text = form_message or body_plain
+    selling_count = sum(1 for p in selling_phrases if p in selling_text)
     if selling_count >= 2:
         score += 4
         reasons.append(f"Message contains selling language ({selling_count} phrases)")
@@ -746,24 +758,51 @@ def classify_email(message, config):
         score += 1
         reasons.append("No city or zip provided")
 
+    # No name AND no phone = not a real lead (bots often skip both)
+    form_name_raw = form.get("name", "").strip()
+    if not form_name_raw and not phone_digits:
+        score += 3
+        reasons.append("No name and no phone (likely bot)")
+
+    # Non-ASCII heavy text (many foreign spam messages)
+    non_ascii = sum(1 for c in body_plain if ord(c) > 127)
+    if non_ascii > 20:
+        score += 3
+        reasons.append(f"High non-ASCII character count ({non_ascii})")
+
+    # Disposable / throwaway email providers (expanded list)
+    disposable_domains = [
+        "mailinator.com", "10minutemail.com", "trashmail.com", "fakeinbox.com",
+        "yopmail.com", "dispostable.com", "maildrop.cc", "temp-mail.org",
+        "emailondeck.com", "getairmail.com", "mohmal.com", "mailnator.com",
+        "getnada.com", "inboxbear.com", "mytemp.email", "spamgourmet.com",
+        "mailcatch.com", "trashmail.net", "mintemail.com", "tempr.email",
+        "burnermail.io", "discard.email", "mailsac.com", "tmail.com",
+    ]
+    for d in disposable_domains:
+        if d in form_email or d in sender:
+            score += 4
+            reasons.append(f"Disposable email: {d}")
+            break
+
     # --- MEDIUM SPAM SIGNALS ---
 
     # SEO/marketing keywords
     for kw in SPAM_KEYWORDS:
-        if kw in full_text:
+        if kw in full_text or kw in body_plain:
             score += 3
             reasons.append(f"SEO keyword: '{kw}'")
             break
 
     for kw in MARKETING_KEYWORDS:
-        if kw in full_text:
+        if kw in full_text or kw in body_plain:
             score += 3
             reasons.append(f"Marketing keyword: '{kw}'")
             break
 
-    # Business solicitation keywords (check both full text AND form message)
+    # Business solicitation keywords (check full text, form message, AND plain body)
     for kw in SOLICITATION_KEYWORDS:
-        if kw in full_text or kw in form_message:
+        if kw in full_text or kw in form_message or kw in body_plain:
             score += 3
             reasons.append(f"Solicitation: '{kw}'")
             break
@@ -1306,28 +1345,47 @@ def is_own_email(message, config):
     """Check if this message was sent by the monitor itself (auto-reply loop).
 
     Returns True if the message should be skipped entirely.
+    Uses multiple detection layers because SendGrid relay addresses may differ
+    from the configured from_email in the Graph API envelope.
     """
     sender = (message.get("from", {}).get("emailAddress", {}).get("address") or "").lower()
+    sender_name = (message.get("from", {}).get("emailAddress", {}).get("name") or "").lower()
     subject = (message.get("subject") or "").lower()
+    body = (message.get("body", {}).get("content") or "").lower()
     mailbox = config["microsoft"]["shared_mailbox"].lower()
     auto_reply_subject = config.get("auto_reply", {}).get("subject", "").lower()
     auto_reply_from = config.get("auto_reply", {}).get("from_email", "").lower()
 
-    # Skip emails FROM our own auto-reply address
-    if sender == auto_reply_from:
+    # Skip emails FROM our own auto-reply address (exact or partial match)
+    if auto_reply_from and auto_reply_from in sender:
         return True
 
-    # Skip emails FROM any of our own addresses
+    # Skip emails FROM any of our own addresses (partial match for relay wrappers)
     for addr in OWN_ADDRESSES:
-        if sender == addr:
+        if addr in sender:
             return True
 
     # Skip emails FROM the shared mailbox itself
-    if sender == mailbox:
+    if mailbox in sender:
         return True
 
-    # Skip emails whose subject IS our auto-reply subject (sent by us)
-    if auto_reply_subject and subject == auto_reply_subject:
+    # Skip emails whose subject matches our auto-reply subject (exact or as reply)
+    if auto_reply_subject and auto_reply_subject in subject:
+        return True
+
+    # Skip emails whose body contains our auto-reply signature text
+    # This catches auto-replies even when sender/subject don't match (relay routing)
+    auto_reply_fingerprints = [
+        "our 5-10 rule",
+        "inquiries received before 5 pm",
+        "a member of our team will be following up shortly",
+    ]
+    for fingerprint in auto_reply_fingerprints:
+        if fingerprint in body:
+            return True
+
+    # Skip emails from SendGrid relay on our behalf
+    if "sendgrid" in sender or "sendgrid" in sender_name:
         return True
 
     return False
