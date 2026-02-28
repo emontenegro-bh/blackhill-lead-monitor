@@ -1039,6 +1039,16 @@ def create_hubspot_contact(config, lead):
     if not hubspot_cfg.get("enabled"):
         return None
 
+    # Never create contacts for our own addresses or internal emails
+    lead_email = (lead.get("email") or "").lower()
+    for addr in OWN_ADDRESSES:
+        if addr in lead_email:
+            log(f"  Skipping HubSpot: own address ({lead_email})")
+            return None
+    if lead_email.endswith("@meangreenlawncare.com") or lead_email.endswith("@blackhilltx.com"):
+        log(f"  Skipping HubSpot: internal email ({lead_email})")
+        return None
+
     if DRY_RUN:
         desc = lead.get("email") or f"{lead.get('first_name', '')} {lead.get('last_name', '')}"
         log(f"  DRY RUN: Would create HubSpot contact for {desc}")
