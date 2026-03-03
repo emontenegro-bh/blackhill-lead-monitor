@@ -218,7 +218,7 @@ def create_contact(lead, config, token):
     city = lead.get("city", "").strip()
     zipcode = lead.get("zip", "").strip()
     if address or city or zipcode:
-        contact_data["HomeAddress"] = {
+        contact_data["OfficeAddress"] = {
             "AddressLine1": address,
             "City": city,
             "StateProvinceCode": "TX",
