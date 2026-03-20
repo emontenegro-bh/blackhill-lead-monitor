@@ -185,7 +185,7 @@ def classify_traffic_source(traffic_raw):
 
 
 def create_deal(lead, contact_id, token, pipeline_id="default"):
-    """Create a deal associated with the contact."""
+    """Create a deal associated with the contact. Returns (deal_resp, deal_status, owner_id)."""
     name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip()
     deal_name = name or lead.get("service_interest", "New Lead")
 
@@ -214,7 +214,7 @@ def create_deal(lead, contact_id, token, pipeline_id="default"):
         "POST", "/crm/v3/objects/deals", {"properties": properties}, token
     )
     if deal_status not in (200, 201):
-        return deal_resp, deal_status
+        return deal_resp, deal_status, owner_id
 
     # Associate deal with contact
     deal_id = deal_resp.get("id")
@@ -229,7 +229,7 @@ def create_deal(lead, contact_id, token, pipeline_id="default"):
     if deal_id:
         create_deal_note(lead, deal_id, contact_id, token)
 
-    return deal_resp, deal_status
+    return deal_resp, deal_status, owner_id
 
 
 def create_deal_note(lead, deal_id, contact_id, token):
@@ -376,7 +376,7 @@ def process_lead(lead, token, portal_id=None):
     contact_url = f"https://app-na2.hubspot.com/contacts/{portal_id or ''}/record/0-1/{contact_id}"
 
     # Create deal
-    deal_resp, deal_status = create_deal(lead, contact_id, token)
+    deal_resp, deal_status, owner_id = create_deal(lead, contact_id, token)
     deal_id = deal_resp.get("id") if deal_status in (200, 201) else None
     deal_url = f"https://app-na2.hubspot.com/contacts/{portal_id or ''}/record/0-3/{deal_id}" if deal_id else None
 
@@ -387,6 +387,7 @@ def process_lead(lead, token, portal_id=None):
         "contact_url": contact_url,
         "deal_id": deal_id,
         "deal_url": deal_url,
+        "owner_id": owner_id,
     }
 
 
