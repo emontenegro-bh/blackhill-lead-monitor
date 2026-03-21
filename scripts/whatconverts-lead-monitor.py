@@ -474,15 +474,29 @@ def send_owner_notification(config, lead, owner_name, owner_email, aspire_url=No
     name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip() or "Unknown"
     service = lead.get("service_interest", "General Inquiry")
 
-    aspire_line = f'<a href="{aspire_url}">View in Aspire</a>' if aspire_url and aspire_url.startswith("http") else "Not created"
-    hubspot_line = hubspot_status or "Not created"
+    if aspire_url and aspire_url.startswith("http"):
+        aspire_line = f'Added to Aspire - <a href="{aspire_url}">View Contact</a>'
+    elif aspire_url == "exists":
+        aspire_line = "Already in Aspire"
+    else:
+        aspire_line = "Not added to Aspire"
+
+    if hubspot_status and hubspot_status.startswith("http"):
+        hubspot_line = f'Added to HubSpot - <a href="{hubspot_status}">View Contact</a>'
+    elif hubspot_status == "created":
+        hubspot_line = "Added to HubSpot"
+    elif hubspot_status == "exists":
+        hubspot_line = "Already in HubSpot"
+    else:
+        hubspot_line = "Not added to HubSpot"
 
     html = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
-<h2 style="color: #115E00; margin-bottom: 4px;">New Lead Assigned to You</h2>
+<h2 style="color: #115E00; margin-bottom: 4px;">New Lead Assigned to {owner_name}</h2>
 <p style="color: #666; margin-top: 0;">Black Hill Landscaping</p>
 <hr style="border: 1px solid #C8A951;">
 <table style="width: 100%; border-collapse: collapse;">
-<tr><td style="padding: 8px; font-weight: bold; width: 140px;">Name</td><td style="padding: 8px;">{name}</td></tr>
+<tr><td style="padding: 8px; font-weight: bold; width: 140px;">Assigned To</td><td style="padding: 8px; font-weight: bold; color: #115E00;">{owner_name}</td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; width: 140px;">Name</td><td style="padding: 8px;">{name}</td></tr>
 <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Phone</td><td style="padding: 8px;"><a href="tel:{lead.get('phone', '')}">{lead.get('phone', 'Not provided')}</a></td></tr>
 <tr><td style="padding: 8px; font-weight: bold;">Email</td><td style="padding: 8px;"><a href="mailto:{lead.get('email', '')}">{lead.get('email', 'Not provided')}</a></td></tr>
 <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Address</td><td style="padding: 8px;">{lead.get('address', '')} {lead.get('city', '')} {lead.get('state', '')} {lead.get('zip', '')}</td></tr>
@@ -492,7 +506,7 @@ def send_owner_notification(config, lead, owner_name, owner_email, aspire_url=No
 <div style="background: #f5f5f5; padding: 12px; margin: 16px 0; border-left: 4px solid #C8A951;">
 <strong>Message:</strong><br>{lead.get('message', '(no message)')[:400]}
 </div>
-<p style="font-size: 13px; color: #888;">Aspire: {aspire_line} | HubSpot: {hubspot_line}<br>Auto-reply sent to lead.</p>
+<p style="font-size: 13px; color: #888;">Aspire: {aspire_line}<br>HubSpot: {hubspot_line}<br>Auto-reply sent to lead.</p>
 </div>"""
 
     payload = json.dumps({
