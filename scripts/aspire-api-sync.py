@@ -115,7 +115,7 @@ def api_request(method, endpoint, config, token, data=None):
     # Split path and query, encode query params properly
     if "?" in endpoint:
         path, query = endpoint.split("?", 1)
-        safe_chars = "=&$,'()"
+        safe_chars = "=&$,'()@"
         encoded_query = urllib.parse.quote(query, safe=safe_chars)
         url = f"{base}{path}?{encoded_query}"
     else:
