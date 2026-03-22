@@ -351,11 +351,28 @@ def process_lead(lead, token, portal_id=None):
         if existing:
             contact_id = existing["id"]
             contact_url = f"https://app-na2.hubspot.com/contacts/{portal_id or ''}/record/0-1/{contact_id}"
+            # Look up existing deal owner
+            existing_owner_id = None
+            try:
+                assoc_resp, assoc_status = api_request(
+                    "GET", f"/crm/v3/objects/contacts/{contact_id}/associations/deals", None, token
+                )
+                if assoc_status == 200 and assoc_resp.get("results"):
+                    deal_id = assoc_resp["results"][0].get("id")
+                    if deal_id:
+                        deal_resp, deal_status = api_request(
+                            "GET", f"/crm/v3/objects/deals/{deal_id}?properties=hubspot_owner_id", None, token
+                        )
+                        if deal_status == 200:
+                            existing_owner_id = deal_resp.get("properties", {}).get("hubspot_owner_id", "")
+            except Exception:
+                pass
             return {
                 "success": True,
                 "action": "exists",
                 "contact_id": contact_id,
                 "contact_url": contact_url,
+                "owner_id": existing_owner_id,
                 "message": f"Contact already exists: {existing.get('properties', {}).get('firstname', '')} {existing.get('properties', {}).get('lastname', '')}"
             }
 

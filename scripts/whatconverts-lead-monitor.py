@@ -567,6 +567,59 @@ def send_spam_notification(config, lead_data, reason):
         pass
 
 
+# --- Repeat Submission Notification ---
+
+def send_repeat_notification(config, lead, original_owner_name):
+    """Notify BOTH owners that a lead submitted the form again."""
+    api_key = config["notifications"].get("sendgrid_api_key", "")
+    if not api_key or DRY_RUN:
+        return
+
+    name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip() or "Unknown"
+    service = lead.get("service_interest", "General Inquiry")
+
+    html = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
+<h2 style="color: #B8860B; margin-bottom: 4px;">Repeat Form Submission</h2>
+<p style="color: #666; margin-top: 0;">This lead has submitted the contact form again.</p>
+<hr style="border: 1px solid #C8A951;">
+<table style="width: 100%; border-collapse: collapse;">
+<tr><td style="padding: 8px; font-weight: bold; width: 160px;">Originally Assigned To</td><td style="padding: 8px; font-weight: bold; color: #B8860B;">{original_owner_name}</td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Name</td><td style="padding: 8px;">{name}</td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Phone</td><td style="padding: 8px;"><a href="tel:{lead.get('phone', '')}">{lead.get('phone', 'Not provided')}</a></td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Email</td><td style="padding: 8px;"><a href="mailto:{lead.get('email', '')}">{lead.get('email', 'Not provided')}</a></td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Address</td><td style="padding: 8px;">{lead.get('address', '')} {lead.get('city', '')} {lead.get('state', '')} {lead.get('zip', '')}</td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Service</td><td style="padding: 8px;">{service}</td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Source</td><td style="padding: 8px;">{lead.get('traffic_source', 'unknown')}</td></tr>
+</table>
+<div style="background: #FFF8E7; padding: 12px; margin: 16px 0; border-left: 4px solid #B8860B;">
+<strong>Message:</strong><br>{lead.get('message', '(no message)')[:400]}
+</div>
+<p style="font-size: 13px; color: #888;">This person already exists in HubSpot and Aspire. No duplicate was created.<br>They submitted the website form again, which may indicate they haven't been contacted yet.</p>
+</div>"""
+
+    # Send to both Evelin and Denisse
+    recipients = config["notifications"].get("lead_recipients", [])
+    for recipient in recipients:
+        payload = json.dumps({
+            "personalizations": [{"to": [{"email": recipient}]}],
+            "from": {"email": config["notifications"]["from_email"], "name": config["notifications"]["from_name"]},
+            "subject": f"Repeat Submission: {name} - {service} (assigned to {original_owner_name})",
+            "content": [{"type": "text/html", "value": html}],
+        }).encode()
+
+        req = urllib.request.Request(
+            "https://api.sendgrid.com/v3/mail/send",
+            data=payload,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                log(f"  Repeat notification sent to {recipient} ({resp.status})")
+        except Exception as e:
+            log(f"  ERROR: Repeat notification to {recipient} failed: {e}")
+
+
 # --- HubSpot CRM ---
 
 def create_hubspot_contact(config, lead):
@@ -749,8 +802,16 @@ def process_leads(config, state):
         # HubSpot CRM (returns owner_id for notification routing)
         hubspot_status, owner_id = create_hubspot_contact(config, lead)
 
-        # Notify the assigned owner
-        if owner_id:
+        # Check if this is a repeat submission (contact already existed)
+        is_repeat = hubspot_status == "exists" or aspire_url == "exists"
+
+        if is_repeat:
+            # Repeat submission: notify BOTH owners with original assignee info
+            original_owner_name = get_owner_info(owner_id)[0] if owner_id else "Unassigned"
+            log(f"  Repeat submission detected (originally assigned to {original_owner_name})")
+            send_repeat_notification(config, lead, original_owner_name)
+        elif owner_id:
+            # New lead: notify the assigned owner only
             owner_name, owner_email = get_owner_info(owner_id)
             send_owner_notification(config, lead, owner_name, owner_email,
                                     aspire_url=aspire_url, hubspot_status=hubspot_status)
