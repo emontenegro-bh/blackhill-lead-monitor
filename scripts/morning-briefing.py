@@ -15,7 +15,7 @@ Usage:
   python3 scripts/morning-briefing.py --test      # Build & print, don't send
 """
 
-import json, os, sys, base64, smtplib, urllib.request, urllib.parse
+import json, os, sys, base64, smtplib, time, urllib.request, urllib.parse
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 
@@ -307,14 +307,29 @@ def get_ads_data():
                 FROM customer
                 WHERE segments.date {date_clause}
             """
-            response = ga_service.search(customer_id=customer_id, query=query)
-            for row in response:
-                m = row.metrics
-                spend = m.cost_micros / 1_000_000
-                cpl = m.cost_per_conversion / 1_000_000 if m.conversions > 0 else 0
-                return {"spend": spend, "impressions": m.impressions,
-                        "clicks": m.clicks, "leads": m.conversions, "cpl": cpl}
-            return {"spend": 0, "impressions": 0, "clicks": 0, "leads": 0, "cpl": 0}
+            last_err = None
+            for attempt in range(4):
+                try:
+                    response = ga_service.search(
+                        customer_id=customer_id, query=query, timeout=30
+                    )
+                    for row in response:
+                        m = row.metrics
+                        spend = m.cost_micros / 1_000_000
+                        cpl = m.cost_per_conversion / 1_000_000 if m.conversions > 0 else 0
+                        return {"spend": spend, "impressions": m.impressions,
+                                "clicks": m.clicks, "leads": m.conversions, "cpl": cpl}
+                    return {"spend": 0, "impressions": 0, "clicks": 0, "leads": 0, "cpl": 0}
+                except Exception as e:
+                    last_err = e
+                    err_str = str(e).lower()
+                    if any(k in err_str for k in ["503", "timeout", "timed out", "unavailable"]):
+                        wait = 2 ** (attempt + 1)
+                        print(f"Google Ads API retry {attempt + 1}/3 after {wait}s: {e}", file=sys.stderr)
+                        time.sleep(wait)
+                        continue
+                    raise
+            raise last_err
 
         y = query_metrics(f"= '{yesterday}'")
         mtd = query_metrics(f"BETWEEN '{mtd_start}' AND '{mtd_end}'")
