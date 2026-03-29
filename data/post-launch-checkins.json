@@ -1,0 +1,55 @@
+{
+  "purpose": "Post-launch marketing check-in schedule for new website (blackhilllandscaping.com)",
+  "baseline_date": "2026-02-19",
+  "launch_date": "2026-02-20",
+  "baseline_report": ".claude/reports/marketing/pre-launch-baseline-2026-02-19.md",
+  "baseline_docx": "Pre-Launch-Marketing-Baseline-BlackHill.docx",
+  "checkins": [
+    {
+      "name": "Smoke Test (Day 2-3)",
+      "date": "2026-02-22",
+      "status": "pending",
+      "focus": "Verify nothing broke — ads serving, conversion tracking, GBP status, 301 redirects, WhatConverts",
+      "action": "Run smoke test, fix any broken items"
+    },
+    {
+      "name": "2-Week Review",
+      "date": "2026-03-05",
+      "status": "pending",
+      "focus": "First directional data — CTR trend, conversion rate direction, GBP name change settled",
+      "action": "Pull data, compare trends, flag problems"
+    },
+    {
+      "name": "30-Day Comparison",
+      "date": "2026-03-20",
+      "status": "pending",
+      "focus": "Full month comparison — CPA, conversions, lead volume, GBP engagement",
+      "action": "Generate full comparison report (docx), measure CPA improvement"
+    },
+    {
+      "name": "90-Day Final Baseline",
+      "date": "2026-05-20",
+      "status": "pending",
+      "focus": "True long-term impact — algorithm adjusted, Quality Scores recalculated, GBP settled",
+      "action": "Generate final comparison report (docx), measure total ROI of website investment"
+    }
+  ],
+  "baseline_metrics": {
+    "google_ads_spend_30d": 2399.17,
+    "google_ads_conversions_30d": 18,
+    "google_ads_cpa": 133.29,
+    "google_ads_ctr": 3.18,
+    "google_ads_clicks": 231,
+    "gbp_score": 85,
+    "gbp_reviews": 43,
+    "gbp_rating": 4.7,
+    "gbp_reviews_30d": 6,
+    "gbp_posts_month": 0,
+    "whatconverts_leads": 1,
+    "lead_monitor_auto_reply": false
+  },
+  "meta": {
+    "last_updated": "2026-02-19",
+    "created_by": "pre-launch baseline session"
+  }
+}

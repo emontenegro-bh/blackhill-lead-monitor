@@ -2,69 +2,164 @@
 """Morning briefing for Black Hill Landscaping.
 
 Pulls calendar events, Google Ads data, calculates drive times,
-and sends an iMessage to both phones at 6am.
+and delivers via SMS using email-to-SMS gateways (SendGrid).
 
-Runs via launchd Sun-Fri at 6:00am.
+Runs via GitHub Actions Sun-Fri at 6am CST, or locally with --test.
 
-Usage: python3 scripts/morning-briefing.py [--test]
+Supports two modes:
+  - Local: Reads config from ~/.config/morning-briefing/config.json, uses MSAL cache
+  - Cloud: Reads config from environment variables, uses client credentials
+
+Usage:
+  python3 scripts/morning-briefing.py            # Normal run
+  python3 scripts/morning-briefing.py --test      # Build & print, don't send
 """
 
-import json, os, subprocess, warnings, sys
+import json, os, sys, base64, smtplib, urllib.request, urllib.parse
 from datetime import datetime, timedelta, timezone
+from email.mime.text import MIMEText
 
-warnings.filterwarnings("ignore")
-from google.ads.googleads.client import GoogleAdsClient
-from google.ads.googleads.errors import GoogleAdsException
-import msal
+CENTRAL_TIME = timezone(timedelta(hours=-6))
+
+# --- Mode Detection ---
+CLOUD_MODE = bool(os.environ.get("SENDGRID_API_KEY"))
+TEST_MODE = "--test" in sys.argv
+
+# --- Email-to-SMS carrier gateways ---
+CARRIER_GATEWAYS = {
+    "tmobile": "tmomail.net",
+    "att": "txt.att.net",
+    "verizon": "vtext.com",
+    "sprint": "messaging.sprintpcs.com",
+}
 
 # --- Config ---
-ADS_CONFIG = os.path.expanduser("~/.config/google-ads/config.json")
-BRIEFING_CONFIG = os.path.expanduser("~/.config/morning-briefing/config.json")
 
-with open(BRIEFING_CONFIG) as f:
-    briefing_cfg = json.load(f)
+def load_config():
+    if CLOUD_MODE:
+        return load_config_from_env()
+    config_path = os.path.expanduser("~/.config/morning-briefing/config.json")
+    with open(config_path) as f:
+        return json.load(f)
 
-PHONES = [briefing_cfg["phones"]["personal"], briefing_cfg["phones"]["work"]]
-OFFICE_ADDRESS = briefing_cfg["office_address"]
+
+def load_config_from_env():
+    return {
+        "office_address": os.environ.get("OFFICE_ADDRESS", "230 S Grants Ln, White Settlement, TX"),
+        "phones": {
+            "personal": os.environ.get("PHONE_PERSONAL", ""),
+            "work": os.environ.get("PHONE_WORK", ""),
+        },
+        "microsoft": {
+            "client_id": os.environ.get("MS_CLIENT_ID", ""),
+            "tenant_id": os.environ.get("MS_TENANT_ID", ""),
+            "client_secret": os.environ.get("MS_CLIENT_SECRET", ""),
+            "user_email": os.environ.get("MS_USER_EMAIL", ""),
+        },
+        "google_ads": {
+            "developer_token": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN", ""),
+            "client_id": os.environ.get("GOOGLE_ADS_CLIENT_ID", ""),
+            "client_secret": os.environ.get("GOOGLE_ADS_CLIENT_SECRET", ""),
+            "refresh_token": os.environ.get("GOOGLE_ADS_REFRESH_TOKEN", ""),
+            "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
+            "customer_id": os.environ.get("GOOGLE_ADS_CUSTOMER_ID", ""),
+        },
+        "sendgrid_api_key": os.environ.get("SENDGRID_API_KEY", ""),
+        "sms_from_email": os.environ.get("SMS_FROM_EMAIL", "briefing@blackhilltx.com"),
+        "sms_recipients": [
+            {"phone": os.environ.get("PHONE_PERSONAL", ""), "carrier": "tmobile"},
+            {"phone": os.environ.get("PHONE_WORK", ""), "carrier": "att"},
+        ],
+    }
+
+
+CFG = load_config()
+
 
 # --- Calendar via Microsoft Graph API ---
-MS_TOKEN_CACHE = os.path.expanduser("~/.config/morning-briefing/msal_token_cache.json")
-MS_SCOPES = ["Calendars.Read"]
-CENTRAL_TIME = timezone(timedelta(hours=-6))
+
+VIRTUAL_KEYWORDS = ["zoom.us", "teams.microsoft", "meet.google", "webex",
+                     "microsoft teams", "teams meeting", "zoom meeting"]
+
+
+def _get_graph_token_cloud():
+    """Acquire token using client credentials flow (cloud/GitHub Actions)."""
+    ms = CFG["microsoft"]
+    url = f"https://login.microsoftonline.com/{ms['tenant_id']}/oauth2/v2.0/token"
+    data = urllib.parse.urlencode({
+        "client_id": ms["client_id"],
+        "client_secret": ms["client_secret"],
+        "scope": "https://graph.microsoft.com/.default",
+        "grant_type": "client_credentials",
+    }).encode()
+    req = urllib.request.Request(url, data=data)
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        result = json.loads(resp.read())
+    return result["access_token"]
+
+
+def _get_graph_token_local():
+    """Acquire token using MSAL cache (local/laptop)."""
+    try:
+        import msal
+        ms = CFG.get("microsoft", {})
+        client_id = ms.get("client_id", "")
+        tenant_id = ms.get("tenant_id", "")
+        if not client_id:
+            return None
+
+        cache_path = os.path.expanduser("~/.config/morning-briefing/msal_token_cache.json")
+        cache = msal.SerializableTokenCache()
+        if os.path.exists(cache_path):
+            with open(cache_path) as f:
+                cache.deserialize(f.read())
+        else:
+            return None
+
+        app = msal.PublicClientApplication(
+            client_id,
+            authority=f"https://login.microsoftonline.com/{tenant_id}",
+            token_cache=cache,
+        )
+        accounts = app.get_accounts()
+        if not accounts:
+            return None
+        result = app.acquire_token_silent(["Calendars.Read"], account=accounts[0])
+        if result and "access_token" in result:
+            with open(cache_path, "w") as f:
+                f.write(cache.serialize())
+            return result["access_token"]
+    except Exception as e:
+        print(f"Local token error: {e}", file=sys.stderr)
+    return None
 
 
 def _get_graph_token():
-    """Acquire a Microsoft Graph token silently from the MSAL cache."""
-    ms_cfg = briefing_cfg.get("microsoft", {})
-    client_id = ms_cfg.get("client_id", "")
-    tenant_id = ms_cfg.get("tenant_id", "")
-    if not client_id or client_id == "YOUR_CLIENT_ID_HERE":
-        return None
+    if CLOUD_MODE:
+        return _get_graph_token_cloud()
+    return _get_graph_token_local()
 
-    cache = msal.SerializableTokenCache()
-    if os.path.exists(MS_TOKEN_CACHE):
-        with open(MS_TOKEN_CACHE) as f:
-            cache.deserialize(f.read())
-    else:
-        return None
 
-    app = msal.PublicClientApplication(
-        client_id,
-        authority=f"https://login.microsoftonline.com/{tenant_id}",
-        token_cache=cache,
-    )
+def _time_sort_key(evt):
+    """Convert 8:30AM / 3:00PM to minutes since midnight for sorting."""
+    t = evt["time"].upper()
+    try:
+        is_pm = "PM" in t
+        t = t.replace("AM", "").replace("PM", "")
+        h, m = t.split(":")
+        h, m = int(h), int(m)
+        if is_pm and h != 12:
+            h += 12
+        if not is_pm and h == 12:
+            h = 0
+        return h * 60 + m
+    except Exception:
+        return 9999
 
-    accounts = app.get_accounts()
-    if not accounts:
-        return None
 
-    result = app.acquire_token_silent(MS_SCOPES, account=accounts[0])
-    if result and "access_token" in result:
-        # Save refreshed cache
-        with open(MS_TOKEN_CACHE, "w") as f:
-            f.write(cache.serialize())
-        return result["access_token"]
-    return None
+def _is_virtual(location):
+    loc = location.lower()
+    return loc.startswith("http") or any(kw in loc for kw in VIRTUAL_KEYWORDS)
 
 
 def get_todays_events():
@@ -72,15 +167,21 @@ def get_todays_events():
     try:
         token = _get_graph_token()
         if not token:
-            return [{"time": "", "title": "(Calendar: run ms-auth-setup.py)", "location": ""}]
+            return [{"time": "", "title": "(Calendar unavailable)", "location": ""}]
 
-        import urllib.request
         now = datetime.now(CENTRAL_TIME)
         start = now.replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:%S")
         end = now.replace(hour=23, minute=59, second=59, microsecond=0).strftime("%Y-%m-%dT%H:%M:%S")
 
+        # Cloud mode: access specific user's calendar; local mode: access /me
+        if CLOUD_MODE:
+            user_email = CFG["microsoft"].get("user_email", "")
+            base = f"https://graph.microsoft.com/v1.0/users/{user_email}/calendarview"
+        else:
+            base = "https://graph.microsoft.com/v1.0/me/calendarview"
+
         url = (
-            f"https://graph.microsoft.com/v1.0/me/calendarview"
+            f"{base}"
             f"?startdatetime={start}&enddatetime={end}"
             f"&$select=subject,start,end,location,isOnlineMeeting,isAllDay,isCancelled,bodyPreview"
             f"&$orderby=start/dateTime"
@@ -105,7 +206,6 @@ def get_todays_events():
                 time_str = "All day"
             elif start_dt:
                 try:
-                    # Trim excess decimals for Python 3.9 fromisoformat compat
                     clean_dt = start_dt.split(".")[0]
                     t = datetime.fromisoformat(clean_dt)
                     time_str = t.strftime("%-I:%M%p")
@@ -117,8 +217,6 @@ def get_todays_events():
             subject = evt.get("subject", "(no title)")
             loc = evt.get("location", {}).get("displayName", "")
 
-            # Use Graph's isOnlineMeeting for reliable virtual detection,
-            # plus fall back to body text scanning
             if evt.get("isOnlineMeeting"):
                 loc = "Virtual"
             elif not loc:
@@ -134,86 +232,66 @@ def get_todays_events():
         return [{"time": "", "title": f"(Calendar error: {e})", "location": ""}]
 
 
-VIRTUAL_KEYWORDS = ["zoom.us", "teams.microsoft", "meet.google", "webex",
-                     "microsoft teams", "teams meeting", "zoom meeting"]
+# --- Drive time via OSRM ---
 
-def _is_virtual(location):
-    """Check if a location is a virtual meeting (URL or known platform)."""
-    loc = location.lower()
-    return loc.startswith("http") or any(kw in loc for kw in VIRTUAL_KEYWORDS)
-
-
-def _time_sort_key(evt):
-    """Convert 8:30AM / 3:00PM to minutes since midnight for sorting."""
-    t = evt["time"].upper()
-    try:
-        is_pm = "PM" in t
-        t = t.replace("AM", "").replace("PM", "")
-        h, m = t.split(":")
-        h, m = int(h), int(m)
-        if is_pm and h != 12:
-            h += 12
-        if not is_pm and h == 12:
-            h = 0
-        return h * 60 + m
-    except Exception:
-        return 9999
-
-
-# --- Drive time via OSRM (free routing API) ---
 def get_drive_time(from_addr, to_addr):
     """Get drive time in minutes using OpenStreetMap + OSRM."""
     try:
-        import urllib.request, urllib.parse
-        # Use Open Source Routing Machine (free, no API key)
-        # First geocode the addresses
         from_enc = urllib.parse.quote(from_addr)
         to_enc = urllib.parse.quote(to_addr)
 
-        # Geocode origin
-        url = f"https://nominatim.openstreetmap.org/search?q={from_enc}&format=json&limit=1"
-        req = urllib.request.Request(url, headers={"User-Agent": "BlackHillBriefing/1.0"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            from_geo = json.loads(resp.read())[0]
-        from_lon, from_lat = from_geo["lon"], from_geo["lat"]
+        def geocode(enc):
+            url = f"https://nominatim.openstreetmap.org/search?q={enc}&format=json&limit=1"
+            req = urllib.request.Request(url, headers={"User-Agent": "BlackHillBriefing/1.0"})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                return json.loads(resp.read())[0]
 
-        # Geocode destination
-        url = f"https://nominatim.openstreetmap.org/search?q={to_enc}&format=json&limit=1"
-        req = urllib.request.Request(url, headers={"User-Agent": "BlackHillBriefing/1.0"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            to_geo = json.loads(resp.read())[0]
-        to_lon, to_lat = to_geo["lon"], to_geo["lat"]
+        from_geo = geocode(from_enc)
+        to_geo = geocode(to_enc)
 
-        # Get route from OSRM
-        url = f"https://router.project-osrm.org/route/v1/driving/{from_lon},{from_lat};{to_lon},{to_lat}?overview=false"
+        url = (f"https://router.project-osrm.org/route/v1/driving/"
+               f"{from_geo['lon']},{from_geo['lat']};{to_geo['lon']},{to_geo['lat']}?overview=false")
         req = urllib.request.Request(url, headers={"User-Agent": "BlackHillBriefing/1.0"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             route = json.loads(resp.read())
-        duration_sec = route["routes"][0]["duration"]
-        return round(duration_sec / 60)
+        return round(route["routes"][0]["duration"] / 60)
     except Exception:
         return None
 
 
 # --- Google Ads ---
+
 def get_ads_data():
     """Pull yesterday and MTD Google Ads metrics."""
     try:
-        with open(ADS_CONFIG) as f:
-            config = json.load(f)
+        if CLOUD_MODE:
+            ads = CFG["google_ads"]
+            credentials = {
+                "developer_token": ads["developer_token"],
+                "client_id": ads["client_id"],
+                "client_secret": ads["client_secret"],
+                "refresh_token": ads["refresh_token"],
+                "login_customer_id": ads["login_customer_id"],
+                "use_proto_plus": True,
+            }
+            customer_id = ads["customer_id"]
+        else:
+            ads_config_path = os.path.expanduser("~/.config/google-ads/config.json")
+            with open(ads_config_path) as f:
+                config = json.load(f)
+            credentials = {
+                "developer_token": config["developer_token"],
+                "client_id": config["client_id"],
+                "client_secret": config["client_secret"],
+                "refresh_token": config["refresh_token"],
+                "login_customer_id": config["login_customer_id"],
+                "use_proto_plus": True,
+            }
+            customer_id = config["customer_id"]
 
-        credentials = {
-            "developer_token": config["developer_token"],
-            "client_id": config["client_id"],
-            "client_secret": config["client_secret"],
-            "refresh_token": config["refresh_token"],
-            "login_customer_id": config["login_customer_id"],
-            "use_proto_plus": True,
-        }
-
+        from google.ads.googleads.client import GoogleAdsClient
         client = GoogleAdsClient.load_from_dict(credentials)
         ga_service = client.get_service("GoogleAdsService")
-        customer_id = config["customer_id"]
 
         now = datetime.now()
         yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -253,29 +331,81 @@ def get_ads_data():
         return f"Ads: Error - {e}"
 
 
-# --- Send iMessage ---
-def send_imessage(phone, message):
-    """Send an iMessage via AppleScript."""
-    # Escape special characters for AppleScript
-    escaped = message.replace("\\", "\\\\").replace('"', '\\"')
-    script = f'''
-    tell application "Messages"
-        set targetService to 1st account whose service type = iMessage
-        set targetBuddy to participant "{phone}" of targetService
-        send "{escaped}" to targetBuddy
-    end tell
-    '''
+# --- Check-in reminders ---
+
+def get_checkin_reminder():
+    """Check if today matches a scheduled marketing check-in date."""
     try:
-        subprocess.run(["osascript", "-e", script], capture_output=True, timeout=10)
-        return True
+        # Look for the state file relative to the script or in the repo
+        candidates = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         "data", "post-launch-checkins.json"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         ".claude", "states", "post-launch-checkins.json"),
+        ]
+        state = None
+        for path in candidates:
+            if os.path.exists(path):
+                with open(path) as f:
+                    state = json.load(f)
+                break
+        if not state:
+            return None
+
+        today = datetime.now(CENTRAL_TIME).strftime("%Y-%m-%d")
+        for checkin in state.get("checkins", []):
+            if checkin["date"] == today and checkin["status"] == "pending":
+                return (
+                    f">>> MARKETING CHECK-IN TODAY: {checkin['name']} <<<\n"
+                    f"Focus: {checkin['focus']}"
+                )
     except Exception:
+        pass
+    return None
+
+
+# --- Send SMS via email-to-SMS gateway (SendGrid SMTP) ---
+
+def send_sms(phone, carrier, message):
+    """Send an SMS via carrier email-to-SMS gateway using SendGrid SMTP."""
+    gateway = CARRIER_GATEWAYS.get(carrier)
+    if not gateway:
+        print(f"Unknown carrier '{carrier}' for {phone}", file=sys.stderr)
+        return False
+
+    api_key = CFG.get("sendgrid_api_key", "")
+    from_email = CFG.get("sms_from_email", "briefing@blackhilltx.com")
+    if not api_key:
+        print("SendGrid API key not configured", file=sys.stderr)
+        return False
+
+    # Build email-to-SMS address
+    clean = phone.replace("-", "").replace("(", "").replace(")", "").replace(" ", "").replace("+1", "").replace("+", "")
+    to_email = f"{clean}@{gateway}"
+
+    msg = MIMEText(message)
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg["Subject"] = "Briefing"
+
+    try:
+        with smtplib.SMTP("smtp.sendgrid.net", 587, timeout=15) as server:
+            server.starttls()
+            server.login("apikey", api_key)
+            server.sendmail(from_email, [to_email], msg.as_string())
+        print(f"SMS sent to {phone} via {gateway}")
+        return True
+    except Exception as e:
+        print(f"SMS error ({phone}): {e}", file=sys.stderr)
         return False
 
 
 # --- Build the briefing ---
+
 def build_briefing():
-    now = datetime.now()
-    header = now.strftime("6am Briefing — %a %b %-d")
+    now = datetime.now(CENTRAL_TIME)
+    header = now.strftime("6am Briefing - %a %b %-d")
+    office = CFG.get("office_address", "230 S Grants Ln, White Settlement, TX")
 
     # Calendar events
     events = get_todays_events()
@@ -286,7 +416,7 @@ def build_briefing():
         if loc and _is_virtual(loc):
             line += " (Virtual)"
         elif loc:
-            drive = get_drive_time(OFFICE_ADDRESS, loc)
+            drive = get_drive_time(office, loc)
             if drive:
                 line += f" @ {loc} ({drive} min drive)"
             else:
@@ -296,8 +426,14 @@ def build_briefing():
     # Ads data
     ads = get_ads_data()
 
+    # Check-in reminders
+    checkin = get_checkin_reminder()
+
     # Assemble
     parts = [header, ""]
+    if checkin:
+        parts.append(checkin)
+        parts.append("")
     if event_lines:
         parts.extend(event_lines)
     else:
@@ -309,22 +445,35 @@ def build_briefing():
 
 
 # --- Main ---
-if __name__ == "__main__":
-    test_mode = "--test" in sys.argv
-    briefing = build_briefing()
 
+if __name__ == "__main__":
+    briefing = build_briefing()
     print(briefing)
 
-    if test_mode:
-        print("\n[TEST MODE — not sending texts]")
-    else:
-        for phone in PHONES:
-            ok = send_imessage(phone, briefing)
-            status = "sent" if ok else "FAILED"
-            print(f"iMessage to {phone}: {status}")
+    if TEST_MODE:
+        print("\n[TEST MODE - not sending]")
+        sys.exit(0)
 
-    # Save to file for reference
-    data_file = os.path.expanduser("~/.config/morning-briefing/data.txt")
-    os.makedirs(os.path.dirname(data_file), exist_ok=True)
-    with open(data_file, "w") as f:
-        f.write(briefing)
+    recipients = CFG.get("sms_recipients", [])
+    if not recipients:
+        # Fall back to phones dict for local mode
+        phones = CFG.get("phones", {})
+        if phones.get("personal"):
+            recipients.append({"phone": phones["personal"], "carrier": "tmobile"})
+        if phones.get("work"):
+            recipients.append({"phone": phones["work"], "carrier": "att"})
+
+    if not recipients:
+        print("No phone numbers configured", file=sys.stderr)
+        sys.exit(1)
+
+    success = False
+    for r in recipients:
+        if r.get("phone") and send_sms(r["phone"], r["carrier"], briefing):
+            success = True
+
+    if not success:
+        print("FAILED: No SMS sent successfully", file=sys.stderr)
+        sys.exit(1)
+
+    print("Morning briefing sent successfully")
