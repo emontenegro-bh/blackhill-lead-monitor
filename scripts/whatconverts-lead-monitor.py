@@ -175,27 +175,28 @@ def wc_api_request(config, endpoint, params=None):
 
 
 def fetch_recent_leads(config, lookback_minutes=130):
-    """Fetch web form leads from the last N minutes."""
+    """Fetch web form and phone call leads from the last N minutes."""
     since = (datetime.now(timezone.utc) - timedelta(minutes=lookback_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
     profile_id = config["whatconverts"]["profile_id"]
 
     all_leads = []
-    page = 1
-    while True:
-        result = wc_api_request(config, "/leads", {
-            "profile_id": profile_id,
-            "lead_type": "web_form",
-            "start_date": since,
-            "leads_per_page": 50,
-            "page_number": page,
-        })
-        if not result:
-            break
-        leads = result.get("leads", [])
-        all_leads.extend(leads)
-        if page >= result.get("total_pages", 1):
-            break
-        page += 1
+    for lead_type in ("web_form", "phone_call"):
+        page = 1
+        while True:
+            result = wc_api_request(config, "/leads", {
+                "profile_id": profile_id,
+                "lead_type": lead_type,
+                "start_date": since,
+                "leads_per_page": 50,
+                "page_number": page,
+            })
+            if not result:
+                break
+            leads = result.get("leads", [])
+            all_leads.extend(leads)
+            if page >= result.get("total_pages", 1):
+                break
+            page += 1
 
     return all_leads
 
@@ -237,6 +238,22 @@ OWN_ADDRESSES = [
     "evelin@blackhilltx.com", "denisse@blackhilltx.com",
 ]
 
+# Our own phone numbers (tracking numbers + business line — never process as leads)
+OWN_PHONE_NUMBERS = [
+    "+18179950324", "+18174056883", "+18174054340", "+18174054439",
+    "+18172904711", "+18173456954", "+18173808161", "+18173829016",
+]
+
+# Known vendor/supplier phone numbers — skip these, not customer leads.
+# Add numbers here as vendors are identified.
+VENDOR_PHONE_NUMBERS = [
+    # Format: "+1XXXXXXXXXX"  # Vendor Name
+]
+
+# Minimum call duration (seconds) to consider a call a real lead.
+# Unanswered calls shorter than this are skipped.
+MIN_CALL_DURATION_SECONDS = 15
+
 # Service detection
 SERVICE_MAP = {
     "Irrigation & Sprinklers": ["irrigation", "sprinkler", "drip system", "water line"],
@@ -270,10 +287,52 @@ def is_spam_lead(lead_data):
     if lead_data.get("spam", False):
         return True, "WhatConverts flagged as spam"
 
+    is_call = lead_data.get("lead_type", "").lower() == "phone call"
+
+    if is_call:
+        return _is_spam_call(lead_data)
+    return _is_spam_form(lead_data)
+
+
+def _is_spam_call(lead_data):
+    """Check if a phone call lead should be skipped."""
+    caller = (lead_data.get("caller_number") or lead_data.get("contact_phone_number") or "").strip()
+    digits = re.sub(r"\D", "", caller)
+    if len(digits) == 11 and digits.startswith("1"):
+        normalized = f"+{digits}"
+    elif len(digits) == 10:
+        normalized = f"+1{digits}"
+    else:
+        normalized = caller
+
+    # Our own numbers
+    if normalized in OWN_PHONE_NUMBERS:
+        return True, f"Own number: {normalized}"
+
+    # Known vendor numbers
+    if normalized in VENDOR_PHONE_NUMBERS:
+        return True, f"Vendor number: {normalized}"
+
+    # Short unanswered calls — not real leads
+    duration = lead_data.get("call_duration_seconds", 0) or 0
+    answer_status = (lead_data.get("answer_status") or "").lower()
+    if duration < MIN_CALL_DURATION_SECONDS and answer_status != "answered":
+        return True, f"Short unanswered call ({duration}s, {answer_status})"
+
+    # No caller number at all
+    if not digits:
+        return True, "No caller number"
+
+    return False, ""
+
+
+def _is_spam_form(lead_data):
+    """Check if a web form lead is spam."""
     fields = lead_data.get("additional_fields", {})
+    if isinstance(fields, list):
+        fields = {}
     email = (lead_data.get("contact_email_address") or fields.get("Email", "") or "").lower()
     message = (fields.get("Anything else you would like to share?", "") or "").lower()
-    name = (fields.get("Name", "") or "").lower()
 
     # Check email domain
     for domain in SPAM_EMAIL_DOMAINS:
@@ -300,7 +359,17 @@ def is_spam_lead(lead_data):
 
 def parse_wc_lead(lead_data):
     """Parse a WhatConverts lead into our standard lead dict."""
+    is_call = lead_data.get("lead_type", "").lower() == "phone call"
+    if is_call:
+        return _parse_call_lead(lead_data)
+    return _parse_form_lead(lead_data)
+
+
+def _parse_form_lead(lead_data):
+    """Parse a web form lead."""
     fields = lead_data.get("additional_fields", {})
+    if isinstance(fields, list):
+        fields = {}
 
     # Name
     full_name = (fields.get("Name", "") or lead_data.get("contact_name", "")).strip()
@@ -355,6 +424,77 @@ def parse_wc_lead(lead_data):
         "received_at": lead_data.get("date_created", ""),
         "wc_lead_id": str(lead_data.get("lead_id", "")),
         "wc_lead_status": lead_data.get("lead_status", ""),
+    }
+
+
+def _parse_call_lead(lead_data):
+    """Parse a phone call lead."""
+    # Name from caller ID (carrier data — often partial like "Ferrington C.")
+    caller_name = (lead_data.get("caller_name") or lead_data.get("contact_name") or "").strip()
+    first_name = ""
+    last_name = ""
+    if caller_name:
+        # Clean up carrier-style names (trailing periods, initials)
+        caller_name = caller_name.rstrip(". ")
+        parts = caller_name.split(None, 1)
+        first_name = parts[0] if parts else ""
+        last_name = parts[1].rstrip(".") if len(parts) > 1 else ""
+
+    # Phone
+    phone = (lead_data.get("caller_number") or lead_data.get("contact_phone_number") or "").strip()
+
+    # Location from caller ID
+    city = (lead_data.get("caller_city") or lead_data.get("city") or "").strip()
+    state = (lead_data.get("caller_state") or lead_data.get("state") or "TX").strip()
+    zip_code = (lead_data.get("caller_zip") or lead_data.get("zip") or "").strip()
+
+    # Try to detect service from call transcription
+    transcription = (lead_data.get("call_transcription") or "").strip()
+    service = detect_service(transcription) if transcription else "General Inquiry"
+
+    # Call details for the message field
+    duration = lead_data.get("call_duration", "")
+    answer_status = lead_data.get("answer_status", "")
+    message_parts = []
+    if answer_status:
+        message_parts.append(f"Call: {answer_status}")
+    if duration:
+        message_parts.append(f"Duration: {duration}")
+    if transcription:
+        # Include first 300 chars of transcription
+        message_parts.append(f"Transcription: {transcription[:300]}")
+    message_text = " | ".join(message_parts)
+
+    # Source info
+    source = lead_data.get("lead_source", "")
+    medium = lead_data.get("lead_medium", "")
+    if source and medium:
+        traffic_source = f"{source} / {medium}"
+    else:
+        traffic_source = source or medium or "unknown"
+
+    # Tracking number name helps identify channel
+    phone_name = lead_data.get("phone_name", "")
+
+    return {
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": "",
+        "phone": phone,
+        "service_interest": service,
+        "address": "",
+        "city": city,
+        "state": state if state != "Texas" else "TX",
+        "zip": zip_code,
+        "message": message_text[:500],
+        "source": "phone_call",
+        "traffic_source": traffic_source,
+        "received_at": lead_data.get("date_created", ""),
+        "wc_lead_id": str(lead_data.get("lead_id", "")),
+        "wc_lead_status": lead_data.get("lead_status", ""),
+        "call_duration_seconds": lead_data.get("call_duration_seconds", 0),
+        "answer_status": lead_data.get("answer_status", ""),
+        "phone_name": phone_name,
     }
 
 
@@ -684,19 +824,20 @@ def create_hubspot_contact(config, lead):
 # --- Aspire CRM ---
 
 def create_aspire_contact(config, lead):
-    """Create a contact in Aspire via the aspire-api-sync.py script."""
+    """Create a contact in Aspire via the aspire-api-sync.py script.
+    Returns (url_or_status, contact_id) tuple."""
     aspire_cfg = config.get("aspire", {})
     if not aspire_cfg.get("enabled"):
-        return None
+        return None, None
 
     if DRY_RUN:
         log(f"  DRY RUN: Would create Aspire contact for {lead.get('email')}")
-        return "dry-run"
+        return "dry-run", None
 
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "aspire-api-sync.py")
     if not os.path.exists(script_path):
         log(f"  ERROR: Aspire API script not found at {script_path}")
-        return None
+        return None, None
 
     env = os.environ.copy()
     if aspire_cfg.get("api_client_id"):
@@ -714,25 +855,26 @@ def create_aspire_contact(config, lead):
         if result.stdout.strip():
             response = json.loads(result.stdout.strip())
             action = response.get("action", "unknown")
+            contact_id = response.get("contact_id", "")
             if action == "created":
                 contact_url = response.get("contact_url", "")
                 log(f"  Aspire: Contact created ({contact_url})")
-                return contact_url or "created"
+                return contact_url or "created", contact_id
             elif action == "exists":
                 log(f"  Aspire: Contact already exists")
-                return "exists"
+                return "exists", contact_id
             elif not response.get("success"):
                 log(f"  Aspire: {response.get('message', 'Unknown error')}")
-                return None
+                return None, None
             else:
-                return action
+                return action, contact_id
         else:
             stderr_tail = (result.stderr or "")[-300:]
             log(f"  ERROR: Aspire returned no output. stderr: {stderr_tail}")
-            return None
+            return None, None
     except Exception as e:
         log(f"  ERROR: Aspire contact creation failed: {e}")
-        return None
+        return None, None
 
 
 # --- Owner ID to Name/Email Mapping ---
@@ -754,10 +896,12 @@ def process_leads(config, state):
     """Main processing loop: fetch WhatConverts leads and process new ones."""
     leads = fetch_recent_leads(config, lookback_minutes=130)
     if not leads:
-        log("No recent web form leads found.")
+        log("No recent leads found.")
         return
 
-    log(f"Found {len(leads)} recent web form lead(s)")
+    forms = [l for l in leads if l.get("lead_type", "").lower() != "phone call"]
+    calls = [l for l in leads if l.get("lead_type", "").lower() == "phone call"]
+    log(f"Found {len(leads)} recent lead(s) ({len(forms)} forms, {len(calls)} calls)")
     processed_ids = state.get("processed_ids", [])
 
     for lead_data in leads:
@@ -769,15 +913,29 @@ def process_leads(config, state):
         if lead_id in processed_ids:
             continue
 
-        name = (lead_data.get("additional_fields", {}).get("Name", "") or lead_data.get("contact_name", "unknown"))
-        email = lead_data.get("contact_email_address", "unknown")
-        log(f"\nProcessing: {name} ({email}) [WC #{lead_id}]")
+        is_call = lead_data.get("lead_type", "").lower() == "phone call"
+        lead_type_label = "CALL" if is_call else "FORM"
+
+        # Log entry
+        if is_call:
+            caller = lead_data.get("caller_name") or lead_data.get("contact_phone_number") or "unknown"
+            phone = lead_data.get("caller_number", "")
+            duration = lead_data.get("call_duration", "")
+            log(f"\nProcessing {lead_type_label}: {caller} ({phone}) [{duration}] [WC #{lead_id}]")
+        else:
+            fields = lead_data.get("additional_fields", {})
+            if isinstance(fields, list):
+                fields = {}
+            name = fields.get("Name", "") or lead_data.get("contact_name", "unknown")
+            email = lead_data.get("contact_email_address", "unknown")
+            log(f"\nProcessing {lead_type_label}: {name} ({email}) [WC #{lead_id}]")
 
         # Spam check
         is_spam, spam_reason = is_spam_lead(lead_data)
         if is_spam:
-            log(f"  SPAM: {spam_reason}")
-            send_spam_notification(config, lead_data, spam_reason)
+            log(f"  SKIP: {spam_reason}")
+            if not is_call:
+                send_spam_notification(config, lead_data, spam_reason)
             processed_ids.append(lead_id)
             state["stats"]["total_spam"] = state["stats"].get("total_spam", 0) + 1
             continue
@@ -788,16 +946,18 @@ def process_leads(config, state):
 
         # Parse into standard lead dict
         lead = parse_wc_lead(lead_data)
-        log(f"  Parsed: {lead['first_name']} {lead['last_name']} | {lead['email']} | {lead['phone']} | {lead['service_interest']}")
+        log(f"  Parsed: {lead['first_name']} {lead['last_name']} | {lead['email'] or '(no email)'} | {lead['phone']} | {lead['service_interest']}")
 
-        # Send auto-reply
-        if lead.get("email") and "@" in lead.get("email", ""):
+        # Send auto-reply (forms only — callers already contacted us)
+        if not is_call and lead.get("email") and "@" in lead.get("email", ""):
             send_auto_reply(config, lead)
+        elif is_call:
+            log("  Skipping auto-reply: phone call lead")
         else:
             log("  Skipping auto-reply: no valid email")
 
         # Aspire CRM
-        aspire_url = create_aspire_contact(config, lead)
+        aspire_url, aspire_contact_id = create_aspire_contact(config, lead)
 
         # HubSpot CRM (returns owner_id for notification routing)
         hubspot_status, owner_id = create_hubspot_contact(config, lead)
@@ -824,7 +984,20 @@ def process_leads(config, state):
         # Update state
         processed_ids.append(lead_id)
         state["stats"]["total_leads"] = state["stats"].get("total_leads", 0) + 1
+        if is_call:
+            state["stats"]["total_calls"] = state["stats"].get("total_calls", 0) + 1
         state["stats"]["last_lead"] = datetime.now().isoformat()
+
+        # Store WC lead ID → Aspire contact ID mapping for ROI sync
+        if aspire_contact_id:
+            lead_mappings = state.setdefault("lead_mappings", {})
+            lead_mappings[str(lead_id)] = {
+                "aspire_contact_id": str(aspire_contact_id),
+                "traffic_source": lead.get("traffic_source", ""),
+                "service": lead.get("service_interest", ""),
+                "lead_type": lead.get("source", "web_form"),
+                "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            }
 
     state["processed_ids"] = processed_ids
 

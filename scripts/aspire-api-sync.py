@@ -170,6 +170,21 @@ def search_contact_by_name(first_name, last_name, config, token):
     return None
 
 
+def search_contact_by_phone(phone, config, token):
+    """Search for existing contact by mobile phone. Returns contact dict or None."""
+    if not phone:
+        return None
+    formatted = format_phone(phone)
+    if not formatted:
+        return None
+    safe_phone = formatted.replace("'", "''")
+    endpoint = f"/Contacts?$filter=MobilePhone eq '{safe_phone}'&$top=1"
+    resp, status = api_request("GET", endpoint, config, token)
+    if status == 200 and isinstance(resp, list) and len(resp) > 0:
+        return resp[0]
+    return None
+
+
 def format_phone(phone):
     """Format phone to XXX-XXX-XXXX for Aspire."""
     if not phone:
@@ -198,14 +213,19 @@ def create_contact(lead, config, token):
 
     # Add notes
     notes_parts = []
+    lead_source_type = lead.get("source", "web_form")
+    if lead_source_type == "phone_call":
+        notes_parts.append("Phone Call Lead")
+    else:
+        notes_parts.append("Web Lead")
     service = lead.get("service_interest", "")
-    if service:
+    if service and service != "General Inquiry":
         notes_parts.append(f"Service: {service}")
     message = lead.get("message", "").strip()
     if message:
         notes_parts.append(message)
     source = lead.get("traffic_source", "") or lead.get("source", "")
-    if source:
+    if source and source not in ("web_form", "phone_call"):
         notes_parts.append(f"Source: {source}")
     received = lead.get("received_at", "")
     if received:
@@ -235,10 +255,25 @@ def process_lead(lead, config, token):
     email = lead.get("email", "").strip()
     first_name = lead.get("first_name", "").strip()
     last_name = lead.get("last_name", "").strip()
+    phone = lead.get("phone", "").strip()
 
     # Dedup by email first
     if email:
         existing = search_contact_by_email(email, config, token)
+        if existing:
+            cid = existing.get("ContactID", "")
+            contact_url = f"{ASPIRE_PORTAL}/app/contacts/{cid}" if cid else ""
+            return {
+                "success": True,
+                "action": "exists",
+                "contact_id": str(cid),
+                "contact_url": contact_url,
+                "message": f"Contact already exists: {existing.get('FirstName', '')} {existing.get('LastName', '')}",
+            }
+
+    # Dedup by phone (important for call leads which have no email)
+    if phone:
+        existing = search_contact_by_phone(phone, config, token)
         if existing:
             cid = existing.get("ContactID", "")
             contact_url = f"{ASPIRE_PORTAL}/app/contacts/{cid}" if cid else ""

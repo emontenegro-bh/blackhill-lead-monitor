@@ -45,6 +45,6 @@ jobs:
           if [ -f data/processed-state.json ]; then
             git config user.name "Lead Monitor Bot"
             git config user.email "noreply@blackhilltx.com"
-            git add data/processed-state.json
+            git add data/processed-state.json data/roi-sync-state.json 2>/dev/null
             git diff --cached --quiet || git commit -m "Update processed state" && git push || true
           fi
