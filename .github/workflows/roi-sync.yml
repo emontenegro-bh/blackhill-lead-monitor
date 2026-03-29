@@ -38,5 +38,9 @@ jobs:
         run: |
           git config user.name "ROI Sync Bot"
           git config user.email "noreply@blackhilltx.com"
-          git add data/processed-state.json data/roi-sync-state.json
-          git diff --cached --quiet || git commit -m "Update ROI sync state" && git push || true
+          git add data/processed-state.json data/roi-sync-state.json 2>/dev/null
+          if ! git diff --cached --quiet; then
+            git pull --rebase origin main || true
+            git commit -m "Update ROI sync state"
+            git push || true
+          fi

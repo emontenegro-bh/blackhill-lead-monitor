@@ -46,5 +46,9 @@ jobs:
             git config user.name "Lead Monitor Bot"
             git config user.email "noreply@blackhilltx.com"
             git add data/processed-state.json data/roi-sync-state.json 2>/dev/null
-            git diff --cached --quiet || git commit -m "Update processed state" && git push || true
+            if ! git diff --cached --quiet; then
+              git pull --rebase origin main || true
+              git commit -m "Update processed state"
+              git push || true
+            fi
           fi
