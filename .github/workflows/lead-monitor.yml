@@ -47,8 +47,10 @@ jobs:
             git config user.email "noreply@blackhilltx.com"
             git add data/processed-state.json data/roi-sync-state.json 2>/dev/null || true
             if ! git diff --cached --quiet; then
-              git pull --rebase origin main || true
               git commit -m "Update processed state"
-              git push || true
+              for i in 1 2 3; do
+                git pull --rebase origin main || true
+                git push && break || sleep 2
+              done
             fi
           fi
