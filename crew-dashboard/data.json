@@ -1,0 +1,675 @@
+{
+  "generated": "2026-03-15T10:40:43",
+  "bonus_threshold": 97.0,
+  "scorecard": {
+    "route_weekly": {
+      "weeks": [
+        "2/16-2/20",
+        "2/23-2/27",
+        "3/2-3/6",
+        "3/9-3/13"
+      ],
+      "rows": [
+        {
+          "name": "Maint 4 - Yellow/Amarillo",
+          "total": 131.1,
+          "weekly_values": [
+            100.9,
+            121.9,
+            135.1,
+            null
+          ]
+        },
+        {
+          "name": "Maint 3 - White/Blanco",
+          "total": 116.2,
+          "weekly_values": [
+            103.7,
+            115.2,
+            121.7,
+            null
+          ]
+        },
+        {
+          "name": "Irrigation",
+          "total": 28.9,
+          "weekly_values": [
+            0.0,
+            127.3,
+            105.3,
+            6.2
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.2,
+        "weekly_values": [
+          99.4,
+          119.0,
+          132.8,
+          6.2
+        ]
+      },
+      "overall_efficiency": 124.2
+    },
+    "route_daily": {
+      "weeks": [
+        "2/16",
+        "2/17",
+        "2/18",
+        "2/19",
+        "2/20",
+        "2/23",
+        "2/24",
+        "2/25",
+        "2/26",
+        "2/27",
+        "3/2",
+        "3/3",
+        "3/4",
+        "3/5",
+        "3/6",
+        "3/9",
+        "3/10",
+        "3/11",
+        "3/12",
+        "3/13"
+      ],
+      "rows": [
+        {
+          "name": "Maint 4 - Yellow/Amarillo",
+          "total": 131.1,
+          "weekly_values": [
+            null,
+            null,
+            null,
+            100.9,
+            null,
+            null,
+            null,
+            133.0,
+            101.6,
+            141.8,
+            135.0,
+            96.7,
+            141.8,
+            86.8,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "name": "Maint 3 - White/Blanco",
+          "total": 116.2,
+          "weekly_values": [
+            null,
+            null,
+            null,
+            103.7,
+            null,
+            null,
+            117.0,
+            115.6,
+            114.5,
+            null,
+            103.2,
+            96.6,
+            null,
+            119.4,
+            275.1,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "name": "Irrigation",
+          "total": 28.9,
+          "weekly_values": [
+            null,
+            null,
+            null,
+            null,
+            0.0,
+            null,
+            null,
+            null,
+            null,
+            127.3,
+            null,
+            null,
+            null,
+            null,
+            105.3,
+            null,
+            null,
+            6.2,
+            null,
+            null
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.2,
+        "weekly_values": [
+          null,
+          null,
+          null,
+          102.3,
+          0.0,
+          null,
+          117.0,
+          125.6,
+          108.1,
+          139.3,
+          122.1,
+          96.6,
+          141.8,
+          102.5,
+          238.7,
+          null,
+          null,
+          6.2,
+          null,
+          null
+        ]
+      },
+      "overall_efficiency": 124.2
+    },
+    "route_monthly": {
+      "weeks": [
+        "Feb 2026",
+        "Mar 2026"
+      ],
+      "rows": [
+        {
+          "name": "Maint 4 - Yellow/Amarillo",
+          "total": 131.1,
+          "weekly_values": [
+            115.4,
+            135.1
+          ]
+        },
+        {
+          "name": "Maint 3 - White/Blanco",
+          "total": 116.2,
+          "weekly_values": [
+            111.4,
+            121.7
+          ]
+        },
+        {
+          "name": "Irrigation",
+          "total": 28.9,
+          "weekly_values": [
+            78.1,
+            16.6
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.2,
+        "weekly_values": [
+          112.7,
+          128.7
+        ]
+      },
+      "overall_efficiency": 124.2
+    },
+    "crew_weekly": {
+      "weeks": [
+        "2/16-2/20",
+        "2/23-2/27",
+        "3/2-3/6",
+        "3/9-3/13"
+      ],
+      "rows": [
+        {
+          "name": "Jorge Torres Conde",
+          "total": 131.1,
+          "weekly_values": [
+            100.9,
+            121.9,
+            135.1,
+            null
+          ]
+        },
+        {
+          "name": "Gustavo Aguilar",
+          "total": 116.2,
+          "weekly_values": [
+            103.7,
+            115.2,
+            121.7,
+            null
+          ]
+        },
+        {
+          "name": "Jorge Luciano",
+          "total": 28.9,
+          "weekly_values": [
+            0.0,
+            127.3,
+            105.3,
+            6.2
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.2,
+        "weekly_values": [
+          99.4,
+          119.0,
+          132.8,
+          6.2
+        ]
+      },
+      "overall_efficiency": 124.2
+    },
+    "crew_daily": {
+      "weeks": [
+        "2/16",
+        "2/17",
+        "2/18",
+        "2/19",
+        "2/20",
+        "2/23",
+        "2/24",
+        "2/25",
+        "2/26",
+        "2/27",
+        "3/2",
+        "3/3",
+        "3/4",
+        "3/5",
+        "3/6",
+        "3/9",
+        "3/10",
+        "3/11",
+        "3/12",
+        "3/13"
+      ],
+      "rows": [
+        {
+          "name": "Jorge Torres Conde",
+          "total": 131.1,
+          "weekly_values": [
+            null,
+            null,
+            null,
+            100.9,
+            null,
+            null,
+            null,
+            133.0,
+            101.6,
+            141.8,
+            135.0,
+            96.7,
+            141.8,
+            86.8,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "name": "Gustavo Aguilar",
+          "total": 116.2,
+          "weekly_values": [
+            null,
+            null,
+            null,
+            103.7,
+            null,
+            null,
+            117.0,
+            115.6,
+            114.5,
+            null,
+            103.2,
+            96.6,
+            null,
+            119.4,
+            275.1,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "name": "Jorge Luciano",
+          "total": 28.9,
+          "weekly_values": [
+            null,
+            null,
+            null,
+            null,
+            0.0,
+            null,
+            null,
+            null,
+            null,
+            127.3,
+            null,
+            null,
+            null,
+            null,
+            105.3,
+            null,
+            null,
+            6.2,
+            null,
+            null
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.2,
+        "weekly_values": [
+          null,
+          null,
+          null,
+          102.3,
+          0.0,
+          null,
+          117.0,
+          125.6,
+          108.1,
+          139.3,
+          122.1,
+          96.6,
+          141.8,
+          102.5,
+          238.7,
+          null,
+          null,
+          6.2,
+          null,
+          null
+        ]
+      },
+      "overall_efficiency": 124.2
+    },
+    "crew_monthly": {
+      "weeks": [
+        "Feb 2026",
+        "Mar 2026"
+      ],
+      "rows": [
+        {
+          "name": "Jorge Torres Conde",
+          "total": 131.1,
+          "weekly_values": [
+            115.4,
+            135.1
+          ]
+        },
+        {
+          "name": "Gustavo Aguilar",
+          "total": 116.2,
+          "weekly_values": [
+            111.4,
+            121.7
+          ]
+        },
+        {
+          "name": "Jorge Luciano",
+          "total": 28.9,
+          "weekly_values": [
+            78.1,
+            16.6
+          ]
+        },
+        {
+          "name": "Evelin Montenegro",
+          "total": null,
+          "weekly_values": [
+            null,
+            null
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.7,
+        "weekly_values": [
+          112.7,
+          129.4
+        ]
+      },
+      "overall_efficiency": 124.7
+    },
+    "division_weekly": {
+      "weeks": [
+        "2/16-2/20",
+        "2/23-2/27",
+        "3/2-3/6",
+        "3/9-3/13"
+      ],
+      "rows": [
+        {
+          "name": "Maintenance",
+          "total": 127.4,
+          "weekly_values": [
+            102.3,
+            118.9,
+            132.9,
+            null
+          ]
+        },
+        {
+          "name": "Unknown",
+          "total": 28.9,
+          "weekly_values": [
+            0.0,
+            127.3,
+            105.3,
+            6.2
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.2,
+        "weekly_values": [
+          99.4,
+          119.0,
+          132.8,
+          6.2
+        ]
+      },
+      "overall_efficiency": 124.2
+    },
+    "division_daily": {
+      "weeks": [
+        "2/16",
+        "2/17",
+        "2/18",
+        "2/19",
+        "2/20",
+        "2/23",
+        "2/24",
+        "2/25",
+        "2/26",
+        "2/27",
+        "3/2",
+        "3/3",
+        "3/4",
+        "3/5",
+        "3/6",
+        "3/9",
+        "3/10",
+        "3/11",
+        "3/12",
+        "3/13"
+      ],
+      "rows": [
+        {
+          "name": "Maintenance",
+          "total": 127.4,
+          "weekly_values": [
+            null,
+            null,
+            null,
+            102.3,
+            null,
+            null,
+            117.0,
+            125.6,
+            108.1,
+            141.8,
+            122.1,
+            96.6,
+            141.8,
+            102.5,
+            275.1,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "name": "Unknown",
+          "total": 28.9,
+          "weekly_values": [
+            null,
+            null,
+            null,
+            null,
+            0.0,
+            null,
+            null,
+            null,
+            null,
+            127.3,
+            null,
+            null,
+            null,
+            null,
+            105.3,
+            null,
+            null,
+            6.2,
+            null,
+            null
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.2,
+        "weekly_values": [
+          null,
+          null,
+          null,
+          102.3,
+          0.0,
+          null,
+          117.0,
+          125.6,
+          108.1,
+          139.3,
+          122.1,
+          96.6,
+          141.8,
+          102.5,
+          238.7,
+          null,
+          null,
+          6.2,
+          null,
+          null
+        ]
+      },
+      "overall_efficiency": 124.2
+    },
+    "division_monthly": {
+      "weeks": [
+        "Feb 2026",
+        "Mar 2026"
+      ],
+      "rows": [
+        {
+          "name": "Maintenance",
+          "total": 127.4,
+          "weekly_values": [
+            113.5,
+            132.9
+          ]
+        },
+        {
+          "name": "Unknown",
+          "total": 28.9,
+          "weekly_values": [
+            78.1,
+            16.6
+          ]
+        }
+      ],
+      "total_row": {
+        "total": 124.2,
+        "weekly_values": [
+          112.7,
+          128.7
+        ]
+      },
+      "overall_efficiency": 124.2
+    }
+  },
+  "mtd": {
+    "period": {
+      "label": "March 2026",
+      "start": "2026-03-01",
+      "end": "2026-03-15"
+    },
+    "leaderboard": [
+      {
+        "crew_leader": "Jorge Torres Conde",
+        "actual_hours": 397.5,
+        "estimated_hours": 537.0,
+        "labor_variance_pct": 135.1,
+        "bonus_eligible": true,
+        "rank": 1,
+        "trend": "same",
+        "rank_change": 0
+      },
+      {
+        "crew_leader": "Gustavo Aguilar",
+        "actual_hours": 75.7,
+        "estimated_hours": 92.2,
+        "labor_variance_pct": 121.7,
+        "bonus_eligible": true,
+        "rank": 2,
+        "trend": "same",
+        "rank_change": 0
+      }
+    ],
+    "bonus_eligible_count": 2,
+    "company_avg_variance": 129.4,
+    "total_crew_leaders": 2,
+    "tickets_analyzed": 32
+  },
+  "prior_week": {
+    "period": {
+      "label": "Week of 3/9-3/13",
+      "start": "2026-03-09",
+      "end": "2026-03-13"
+    },
+    "leaderboard": [],
+    "bonus_eligible_count": 0,
+    "company_avg_variance": 6.2,
+    "total_crew_leaders": 0,
+    "tickets_analyzed": 1
+  }
+}

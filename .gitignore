@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+
+# Secrets and tokens
+*.token
+*token_cache*
+config.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Data output
+new-venture/fcc-data/

@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black Hill Landscaping - Ops Dashboard</title>
+<style>
+:root {
+  --bh-black: #1a1a1a;
+  --bh-gold: #C8A951;
+  --bh-gold-light: #d4b96a;
+  --bh-dark: #111111;
+  --green: #22c55e;
+  --green-bg: rgba(34, 197, 94, 0.12);
+  --yellow: #eab308;
+  --yellow-bg: rgba(234, 179, 8, 0.12);
+  --red: #ef4444;
+  --red-bg: rgba(239, 68, 68, 0.12);
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --bg: #ffffff;
+  --surface: var(--gray-50);
+  --text: var(--gray-900);
+  --text-secondary: var(--gray-500);
+  --border: var(--gray-200);
+}
+
+.dark {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --text: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --border: #2a2a2a;
+  --gray-50: #1a1a1a;
+  --gray-100: #222222;
+  --gray-200: #333333;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  background: var(--bh-black);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-brand h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.header-brand .tagline {
+  color: var(--bh-gold);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.header-stats {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.header-stat {
+  text-align: center;
+}
+
+.header-stat .value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.header-stat .label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+
+.header-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-icon {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.btn-icon:hover { background: rgba(255,255,255,0.2); }
+
+.period-toggle {
+  display: flex;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.period-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.period-btn:hover { color: white; }
+
+.period-btn.active {
+  background: var(--bh-gold);
+  color: #000;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+
+.tab {
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.tab:hover { color: var(--text); }
+
+.tab.active {
+  color: var(--bh-gold);
+  border-bottom-color: var(--bh-gold);
+}
+
+/* Content */
+.content {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* Bonus bar */
+.bonus-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.bonus-bar .target {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.bonus-bar .target strong {
+  color: var(--bh-gold);
+  font-size: 18px;
+}
+
+.bonus-bar .eligible {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bonus-bar .eligible .count {
+  color: var(--green);
+  font-size: 20px;
+}
+
+/* Leaderboard table */
+.leaderboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+
+.leaderboard-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.leaderboard-table th:last-child { text-align: right; }
+
+.leaderboard-row {
+  background: var(--surface);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.leaderboard-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.leaderboard-row td {
+  padding: 14px 12px;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.leaderboard-row td:first-child { border-radius: 10px 0 0 10px; }
+.leaderboard-row td:last-child { border-radius: 0 10px 10px 0; text-align: right; }
+
+/* Rank */
+.rank {
+  font-weight: 700;
+  font-size: 18px;
+  width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-1 { color: var(--bh-gold); }
+
+.trophy { font-size: 20px; }
+
+/* Trend */
+.trend {
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 50px;
+}
+
+.trend.up { color: var(--green); }
+.trend.down { color: var(--red); }
+.trend.same { color: var(--text-secondary); }
+.trend.new {
+  color: var(--bh-gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Crew name */
+.crew-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Hours */
+.hours {
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+/* Variance badge */
+.variance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.variance-badge.bonus {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.variance-badge.close {
+  background: var(--yellow-bg);
+  color: var(--yellow);
+}
+
+.variance-badge.over {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.bonus-check { font-size: 14px; }
+
+/* Hours bar */
+.hours-bar-container {
+  width: 120px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.hours-bar-track {
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.hours-bar-actual {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.hours-bar-labels {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Bonus status */
+.bonus-status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.bonus-status.eligible {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.bonus-status.not-eligible {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+/* Ops Scorecard (Capsa-style) */
+.sc-layout {
+  display: flex;
+  gap: 20px;
+}
+
+.sc-controls {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding-right: 20px;
+}
+
+.sc-control-section {
+  margin-bottom: 24px;
+}
+
+.sc-control-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--bh-gold);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.sc-pill {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: default;
+  line-height: 1.3;
+}
+
+.sc-pill.active {
+  background: var(--bh-gold);
+  color: #000;
+  border-color: var(--bh-gold);
+}
+
+.sc-pill-sub {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.sc-view-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all 0.15s;
+}
+
+.sc-view-btn:hover:not(.disabled) { background: var(--surface); }
+
+.sc-view-btn.active {
+  background: var(--bh-gold);
+  color: #000;
+  border-color: var(--bh-gold);
+  font-weight: 600;
+}
+
+.sc-view-btn.disabled {
+  color: var(--gray-300);
+  cursor: default;
+}
+
+.sc-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sc-metric-card {
+  display: inline-block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 24px;
+  margin-bottom: 20px;
+}
+
+.sc-metric-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+.sc-metric-value {
+  font-size: 36px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-matrix-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-matrix-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sc-view-label {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+.sc-matrix-toggles {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.sc-toggle {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sc-toggle:hover:not(.disabled) { background: var(--surface); }
+
+.sc-toggle.active {
+  background: var(--bh-gold);
+  color: #000;
+  border-color: var(--bh-gold);
+}
+
+.sc-toggle.disabled {
+  color: var(--gray-300);
+  cursor: default;
+}
+
+.sc-toggle-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.sc-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 12px;
+}
+
+/* Matrix table */
+.matrix-wrap {
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.matrix-table th {
+  padding: 10px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+
+.matrix-table th:first-child,
+.matrix-table th:nth-child(2) {
+  text-align: left;
+}
+
+.matrix-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.matrix-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.matrix-table td:nth-child(2) {
+  text-align: center;
+  font-weight: 700;
+}
+
+.matrix-table tr:hover td {
+  background: var(--surface);
+}
+
+.matrix-table tr.total-row td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+}
+
+.matrix-cell {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.matrix-cell.good { color: var(--green); }
+.matrix-cell.ok { color: var(--yellow); }
+.matrix-cell.bad { color: var(--red); }
+.matrix-cell.empty { color: var(--gray-300); }
+
+/* Trend line chart */
+.trend-chart-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.trend-chart-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.trend-chart-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.trend-svg {
+  width: 100%;
+  height: 200px;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.footer .updated { margin-bottom: 4px; }
+.footer .period { color: var(--bh-gold); font-weight: 600; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .header { padding: 12px 16px; }
+  .header-brand h1 { font-size: 16px; }
+  .header-stats { gap: 16px; }
+  .header-stat .value { font-size: 18px; }
+  .content { padding: 12px; }
+  .tabs { padding: 0 12px; }
+  .tab { padding: 12px 14px; font-size: 13px; }
+
+  .leaderboard-table { font-size: 13px; }
+  .leaderboard-table th { padding: 6px 8px; font-size: 10px; }
+  .leaderboard-row td { padding: 10px 8px; }
+
+  .col-bar { display: none; }
+
+  .sc-layout { flex-direction: column; }
+  .sc-controls { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding-right: 0; padding-bottom: 12px; display: flex; gap: 16px; }
+  .sc-control-section { margin-bottom: 0; }
+  .sc-metric-value { font-size: 28px; }
+  .matrix-table th, .matrix-table td { padding: 6px 8px; font-size: 11px; }
+}
+
+/* TV fullscreen */
+@media (min-width: 1400px) {
+  .header-brand h1 { font-size: 24px; }
+  .header-stat .value { font-size: 32px; }
+  .leaderboard-row td { padding: 18px 16px; font-size: 16px; }
+  .rank { font-size: 24px; }
+  .crew-name { font-size: 18px; }
+  .variance-badge { font-size: 18px; padding: 6px 16px; }
+  .scorecard-efficiency .big-number { font-size: 52px; }
+  .matrix-table th, .matrix-table td { padding: 14px 16px; font-size: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-brand">
+    <div>
+      <h1>BLACK HILL LANDSCAPING</h1>
+      <div class="tagline">Ops Dashboard</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="header-stat">
+      <div class="value" id="stat-variance">--</div>
+      <div class="label">Company Avg</div>
+    </div>
+    <div class="header-stat">
+      <div class="value" id="stat-eligible">--</div>
+      <div class="label">Bonus Eligible</div>
+    </div>
+    <div class="header-stat">
+      <div class="value" id="stat-tickets">--</div>
+      <div class="label">Tickets</div>
+    </div>
+  </div>
+  <div class="header-controls">
+    <div class="period-toggle">
+      <button class="period-btn active" data-period="mtd" onclick="switchPeriod('mtd')">Month</button>
+      <button class="period-btn" data-period="prior_week" onclick="switchPeriod('prior_week')">Last Week</button>
+    </div>
+    <button class="btn-icon" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <span id="dark-icon">&#9789;</span>
+    </button>
+    <button class="btn-icon" onclick="toggleFullscreen()" title="Fullscreen (TV mode)" aria-label="Fullscreen">&#9974;</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" data-view="leaderboard">Ops Leaderboard</button>
+  <button class="tab" data-view="routes">Route Scorecard</button>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- Leaderboard View -->
+  <div id="view-leaderboard" class="view active">
+    <div class="bonus-bar">
+      <div class="target">
+        Monthly Bonus Target: <strong id="bonus-target">&#8805;97%</strong> Efficiency Score
+      </div>
+      <div class="eligible">
+        <span class="count" id="bonus-count">--</span> of <span id="bonus-total">--</span> crews eligible
+      </div>
+    </div>
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Trend</th>
+          <th>Crew Leader</th>
+          <th>Actual Hrs</th>
+          <th>Est. Hrs</th>
+          <th>Efficiency</th>
+          <th class="col-bar">Hours</th>
+          <th>Bonus</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Ops Scorecard View (Capsa-style) -->
+  <div id="view-routes" class="view">
+    <div class="sc-layout">
+      <!-- Left: Controls -->
+      <div class="sc-controls">
+        <div class="sc-control-section">
+          <div class="sc-control-label">Metric</div>
+          <button class="sc-pill active">Efficiency<br><span class="sc-pill-sub">Est hours / actual hours</span></button>
+        </div>
+        <div class="sc-control-section">
+          <div class="sc-control-label">View By</div>
+          <button class="sc-view-btn active" data-view-by="route" onclick="switchViewBy('route')">Route</button>
+          <button class="sc-view-btn" data-view-by="crew" onclick="switchViewBy('crew')">Crew Leader</button>
+          <button class="sc-view-btn" data-view-by="division" onclick="switchViewBy('division')">Division</button>
+        </div>
+      </div>
+      <!-- Right: Data -->
+      <div class="sc-main">
+        <!-- Big number -->
+        <div class="sc-metric-card">
+          <div class="sc-metric-label">Efficiency</div>
+          <div class="sc-metric-value" id="sc-overall">--</div>
+        </div>
+        <!-- Matrix controls -->
+        <div class="sc-matrix-header">
+          <div class="sc-matrix-title">Weekly Matrix<span class="sc-view-label" id="sc-view-label">View By: Route</span></div>
+          <div class="sc-matrix-toggles">
+            <button class="sc-toggle" data-time="daily" onclick="switchTime('daily')">Daily</button>
+            <button class="sc-toggle active" data-time="weekly" onclick="switchTime('weekly')">Weekly</button>
+            <button class="sc-toggle" data-time="monthly" onclick="switchTime('monthly')">Monthly</button>
+            <span class="sc-toggle-sep"></span>
+            <button class="sc-toggle" onclick="toggleSortOrder()" id="sc-sort-btn">Newest &gt; Oldest</button>
+          </div>
+        </div>
+        <div class="sc-note">Data includes Complete/Reviewed tickets with both actual and estimated hours only.</div>
+        <!-- Matrix -->
+        <div class="matrix-wrap">
+          <table class="matrix-table" id="scorecard-matrix">
+            <thead><tr id="matrix-header"></tr></thead>
+            <tbody id="matrix-body"></tbody>
+          </table>
+        </div>
+        <!-- Trend chart -->
+        <div class="trend-chart-container">
+          <div class="trend-chart-title">Total - Efficiency</div>
+          <div class="trend-chart-subtitle">Weekly trend over time</div>
+          <div id="trend-chart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="updated">Last updated: <span id="footer-updated">--</span></div>
+  <div class="period" id="footer-period">--</div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let dashboardData = null;
+let darkMode = false;
+let activePeriod = (() => { try { return localStorage.getItem('bh-active-period') || 'mtd'; } catch(e) { return 'mtd'; } })();
+
+// ---------------------------------------------------------------------------
+// Data loading
+// ---------------------------------------------------------------------------
+async function loadData() {
+  try {
+    const resp = await fetch('data.json?' + Date.now());
+    if (!resp.ok) throw new Error('Failed to load data');
+    dashboardData = await resp.json();
+    render();
+  } catch (e) {
+    console.error('Data load error:', e);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+function render() {
+  if (!dashboardData) return;
+  const view = dashboardData[activePeriod];
+  if (!view) return;
+
+  // Header stats
+  const avgEl = document.getElementById('stat-variance');
+  avgEl.textContent = view.company_avg_variance + '%';
+  avgEl.style.color = varianceColor(view.company_avg_variance);
+
+  document.getElementById('stat-eligible').textContent =
+    view.bonus_eligible_count + '/' + view.total_crew_leaders;
+  document.getElementById('stat-tickets').textContent = view.tickets_analyzed;
+
+  // Bonus bar
+  document.getElementById('bonus-count').textContent = view.bonus_eligible_count;
+  document.getElementById('bonus-total').textContent = view.total_crew_leaders;
+
+  // Footer
+  const gen = new Date(dashboardData.generated);
+  document.getElementById('footer-updated').textContent = gen.toLocaleString();
+  document.getElementById('footer-period').textContent = view.period.label;
+
+  renderLeaderboard(view.leaderboard);
+  renderScorecard(getActiveScorecard());
+}
+
+function switchPeriod(period) {
+  activePeriod = period;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
+  try { localStorage.setItem('bh-active-period', period); } catch(e) {}
+  render();
+}
+
+function varianceColor(pct) {
+  if (pct >= 100) return 'var(--green)';
+  if (pct >= 97) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function varianceClass(pct) {
+  if (pct >= 100) return 'bonus';
+  if (pct >= 97) return 'close';
+  return 'over';
+}
+
+function renderLeaderboard(entries) {
+  const tbody = document.getElementById('leaderboard-body');
+  tbody.innerHTML = '';
+
+  entries.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.className = 'leaderboard-row';
+
+    // Find max hours for bar scaling
+    const maxHrs = Math.max(...entries.map(x => Math.max(x.actual_hours, x.estimated_hours)));
+    const barPct = (e.actual_hours / maxHrs) * 100;
+    const barColor = e.actual_hours <= e.estimated_hours ? 'var(--green)' : 'var(--red)';
+
+    // Trend content
+    let trendHTML = '';
+    if (e.trend === 'up') {
+      trendHTML = `<span class="trend up">&uarr; +${e.rank_change}</span>`;
+    } else if (e.trend === 'down') {
+      trendHTML = `<span class="trend down">&darr; ${e.rank_change}</span>`;
+    } else if (e.trend === 'new') {
+      trendHTML = `<span class="trend new">NEW</span>`;
+    } else {
+      trendHTML = `<span class="trend same">&mdash;</span>`;
+    }
+
+    // Rank display
+    const rankHTML = e.rank === 1
+      ? `<span class="rank rank-1"><span class="trophy">&#127942;</span></span>`
+      : `<span class="rank">${e.rank}</span>`;
+
+    // Bonus status
+    const bonusHTML = e.bonus_eligible
+      ? `<span class="bonus-status eligible">Eligible</span>`
+      : `<span class="bonus-status not-eligible">Not Yet</span>`;
+
+    tr.innerHTML = `
+      <td>${rankHTML}</td>
+      <td>${trendHTML}</td>
+      <td><span class="crew-name">${e.crew_leader}</span></td>
+      <td class="hours">${e.actual_hours.toFixed(1)}h</td>
+      <td class="hours">${e.estimated_hours.toFixed(1)}h</td>
+      <td>
+        <span class="variance-badge ${varianceClass(e.labor_variance_pct)}">
+          ${e.labor_variance_pct.toFixed(1)}%
+          ${e.bonus_eligible ? '<span class="bonus-check">&#10003;</span>' : ''}
+        </span>
+      </td>
+      <td class="col-bar">
+        <div class="hours-bar-container">
+          <div class="hours-bar-track">
+            <div class="hours-bar-actual" style="width:${barPct}%;background:${barColor}"></div>
+          </div>
+          <div class="hours-bar-labels">
+            <span>A: ${e.actual_hours.toFixed(0)}</span>
+            <span>E: ${e.estimated_hours.toFixed(0)}</span>
+          </div>
+        </div>
+      </td>
+      <td>${bonusHTML}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+let scViewBy = 'route';
+let scTime = 'weekly';
+let scSortNewest = true;
+
+function switchViewBy(view) {
+  scViewBy = view;
+  document.querySelectorAll('.sc-view-btn').forEach(b => b.classList.toggle('active', b.dataset.viewBy === view));
+  const labels = { route: 'Route', crew: 'Crew Leader', division: 'Division' };
+  document.getElementById('sc-view-label').textContent = 'View By: ' + (labels[view] || view);
+  updateMatrixTitle();
+  renderScorecard(getActiveScorecard());
+}
+
+function switchTime(time) {
+  scTime = time;
+  document.querySelectorAll('.sc-toggle[data-time]').forEach(b => b.classList.toggle('active', b.dataset.time === time));
+  updateMatrixTitle();
+  renderScorecard(getActiveScorecard());
+}
+
+function updateMatrixTitle() {
+  const timeLabels = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' };
+  const el = document.querySelector('.sc-matrix-title');
+  const viewLabel = document.getElementById('sc-view-label').textContent;
+  el.innerHTML = (timeLabels[scTime] || 'Weekly') + ' Matrix<span class="sc-view-label" id="sc-view-label">' + viewLabel + '</span>';
+}
+
+function toggleSortOrder() {
+  scSortNewest = !scSortNewest;
+  document.getElementById('sc-sort-btn').textContent = scSortNewest ? 'Newest > Oldest' : 'Oldest > Newest';
+  renderScorecard(getActiveScorecard());
+}
+
+function getActiveScorecard() {
+  if (!dashboardData || !dashboardData.scorecard) return null;
+  const key = scViewBy + '_' + scTime;
+  return dashboardData.scorecard[key];
+}
+
+function renderScorecard(sc) {
+  if (!sc) return;
+
+  // Overall efficiency
+  const overallEl = document.getElementById('sc-overall');
+  if (sc.overall_efficiency) {
+    overallEl.textContent = sc.overall_efficiency + '%';
+    overallEl.style.color = varianceColor(sc.overall_efficiency);
+  }
+
+  // Column order
+  const weekOrder = scSortNewest ? [...sc.weeks].reverse() : sc.weeks;
+  const weekIndices = scSortNewest ? sc.weeks.map((_, i) => i).reverse() : sc.weeks.map((_, i) => i);
+
+  // Matrix header
+  const colLabels = { route: 'Route', crew: 'Crew Leader', division: 'Division' };
+  const firstCol = colLabels[scViewBy] || 'Route';
+  const headerRow = document.getElementById('matrix-header');
+  headerRow.innerHTML = `<th>${firstCol}</th><th>Total</th>`;
+  weekOrder.forEach(w => { headerRow.innerHTML += `<th>${w}</th>`; });
+
+  // Matrix body
+  const tbody = document.getElementById('matrix-body');
+  tbody.innerHTML = '';
+
+  function cellClass(val) {
+    if (val === null) return 'empty';
+    if (val >= 100) return 'good';
+    if (val >= 97) return 'ok';
+    return 'bad';
+  }
+
+  sc.rows.forEach(r => {
+    const tr = document.createElement('tr');
+    const tCls = cellClass(r.total);
+    tr.innerHTML = `<td>${r.name}</td><td><span class="matrix-cell ${tCls}">${r.total != null ? r.total + '%' : '—'}</span></td>`;
+    weekIndices.forEach(i => {
+      const v = r.weekly_values[i];
+      const cls = cellClass(v);
+      tr.innerHTML += `<td><span class="matrix-cell ${cls}">${v != null ? v + '%' : '—'}</span></td>`;
+    });
+    tbody.appendChild(tr);
+  });
+
+  // Total row
+  const totalTr = document.createElement('tr');
+  totalTr.className = 'total-row';
+  const totCls = cellClass(sc.total_row.total);
+  totalTr.innerHTML = `<td>Total</td><td><span class="matrix-cell ${totCls}">${sc.total_row.total != null ? sc.total_row.total + '%' : '—'}</span></td>`;
+  weekIndices.forEach(i => {
+    const v = sc.total_row.weekly_values[i];
+    const cls = cellClass(v);
+    totalTr.innerHTML += `<td><span class="matrix-cell ${cls}">${v != null ? v + '%' : '—'}</span></td>`;
+  });
+  tbody.appendChild(totalTr);
+
+  // SVG Line Chart
+  const chart = document.getElementById('trend-chart');
+  const points = sc.weeks.map((w, i) => ({ week: w, val: sc.total_row.weekly_values[i] })).filter(p => p.val !== null);
+  if (points.length < 2) { chart.innerHTML = '<div style="color:var(--text-secondary);padding:20px">Not enough data for trend line</div>'; return; }
+
+  const vals = points.map(p => p.val);
+  const minY = Math.min(...vals, 90);
+  const maxY = Math.max(...vals, 110);
+  const padY = (maxY - minY) * 0.15 || 10;
+  const yMin = Math.floor(minY - padY);
+  const yMax = Math.ceil(maxY + padY);
+  const yRange = yMax - yMin || 1;
+
+  const svgW = 700, svgH = 200;
+  const ml = 45, mr = 15, mt = 15, mb = 30;
+  const cw = svgW - ml - mr, ch = svgH - mt - mb;
+
+  function xPos(i) { return ml + (i / (points.length - 1)) * cw; }
+  function yPos(v) { return mt + ch - ((v - yMin) / yRange) * ch; }
+
+  // Build path
+  const linePts = points.map((p, i) => `${xPos(i).toFixed(1)},${yPos(p.val).toFixed(1)}`);
+  const targetY = yPos(97);
+
+  // Y-axis ticks
+  const yTicks = [];
+  const step = yRange > 40 ? 20 : yRange > 15 ? 10 : 5;
+  for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) yTicks.push(v);
+
+  let svg = `<svg class="trend-svg" viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet">`;
+  // Grid lines + Y labels
+  yTicks.forEach(v => {
+    const y = yPos(v);
+    svg += `<line x1="${ml}" y1="${y}" x2="${svgW - mr}" y2="${y}" stroke="var(--gray-200)" stroke-width="1"/>`;
+    svg += `<text x="${ml - 6}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--text-secondary)">${v}%</text>`;
+  });
+  // Target line
+  svg += `<line x1="${ml}" y1="${targetY}" x2="${svgW - mr}" y2="${targetY}" stroke="var(--bh-gold)" stroke-width="1.5" stroke-dasharray="6,4"/>`;
+  svg += `<text x="${svgW - mr + 2}" y="${targetY + 3}" font-size="9" fill="var(--bh-gold)" font-weight="600">97%</text>`;
+  // Line
+  svg += `<polyline fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linejoin="round" points="${linePts.join(' ')}"/>`;
+  // Dots + X labels
+  points.forEach((p, i) => {
+    const x = xPos(i), y = yPos(p.val);
+    const rawColor = varianceColor(p.val);
+    const color = rawColor === 'var(--green)' ? '#22c55e' : rawColor === 'var(--yellow)' ? '#eab308' : '#ef4444';
+    svg += `<circle cx="${x}" cy="${y}" r="4" fill="${color}" stroke="var(--bg)" stroke-width="2"/>`;
+    svg += `<text x="${x}" y="${svgH - 6}" text-anchor="middle" font-size="9" fill="var(--text-secondary)">${p.week}</text>`;
+  });
+  svg += '</svg>';
+  chart.innerHTML = svg;
+}
+
+// ---------------------------------------------------------------------------
+// Tab switching
+// ---------------------------------------------------------------------------
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.view).classList.add('active');
+    try { localStorage.setItem('bh-active-tab', tab.dataset.view); } catch(e) {}
+  });
+});
+
+// Restore active tab
+try {
+  const savedTab = localStorage.getItem('bh-active-tab');
+  if (savedTab) {
+    const tab = document.querySelector(`.tab[data-view="${savedTab}"]`);
+    if (tab) tab.click();
+  }
+} catch(e) {}
+
+// ---------------------------------------------------------------------------
+// Dark mode
+// ---------------------------------------------------------------------------
+function toggleDarkMode() {
+  darkMode = !darkMode;
+  document.body.classList.toggle('dark', darkMode);
+  document.getElementById('dark-icon').textContent = darkMode ? '\u2600' : '\u263D';
+  try { localStorage.setItem('bh-dark', darkMode ? '1' : '0'); } catch(e) {}
+}
+
+// Restore dark mode preference
+try {
+  if (localStorage.getItem('bh-dark') === '1') {
+    darkMode = true;
+    document.body.classList.add('dark');
+    document.getElementById('dark-icon').textContent = '\u2600';
+  }
+} catch(e) {}
+
+// ---------------------------------------------------------------------------
+// Fullscreen
+// ---------------------------------------------------------------------------
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Auto-refresh (every 5 minutes)
+// ---------------------------------------------------------------------------
+loadData();
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
