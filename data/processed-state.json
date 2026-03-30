@@ -138,19 +138,27 @@
     "226998632",
     "227338255",
     "227449721",
-    "227515990"
+    "227515990",
+    "227589997"
   ],
   "stats": {
-    "total_leads": 82,
+    "total_leads": 83,
     "total_spam": 26,
-    "last_lead": "2026-03-30T02:00:15.472476"
+    "last_lead": "2026-03-30T18:00:17.709104"
   },
-  "last_run": "2026-03-30T17:55:12.154229+00:00",
+  "last_run": "2026-03-30T18:00:17.709815+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
       "traffic_source": "google / organic",
       "service": "Drainage Solutions",
+      "lead_type": "web_form",
+      "date": "2026-03-30"
+    },
+    "227589997": {
+      "aspire_contact_id": "2536",
+      "traffic_source": "(direct) / (none)",
+      "service": "Commercial Maintenance",
       "lead_type": "web_form",
       "date": "2026-03-30"
     }
