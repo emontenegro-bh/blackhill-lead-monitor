@@ -38,7 +38,8 @@ jobs:
         run: |
           git config user.name "ROI Sync Bot"
           git config user.email "noreply@blackhilltx.com"
-          git add data/processed-state.json data/roi-sync-state.json 2>/dev/null || true
+          git add data/processed-state.json 2>/dev/null || true
+          git add data/roi-sync-state.json 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Update ROI sync state"
             for i in 1 2 3; do
