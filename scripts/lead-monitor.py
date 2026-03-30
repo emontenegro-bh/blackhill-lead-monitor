@@ -426,6 +426,11 @@ SPAM_EMAIL_DOMAINS = [
     "pokemail.net", "spam4.me", "binkmail.com", "safetymail.info",
 ]
 
+# Known spam contact names (exact match, case-insensitive)
+SPAM_NAMES = [
+    "susan smith",
+]
+
 # Known bot name suffixes (Elementor form bots use Eastern European names + suffixes)
 BOT_NAME_SUFFIXES = [
     "gek", "bot", "async", "sync", "dot", "stand", "leakquity",
@@ -640,6 +645,13 @@ def classify_email(message, config):
         if form_name.endswith(suffix):
             score += 4
             reasons.append(f"Bot name suffix: '{suffix}' in '{form_name}'")
+            break
+
+    # Known spam names (exact match)
+    for spam_name in SPAM_NAMES:
+        if form_name == spam_name:
+            score += 10
+            reasons.append(f"Blocked name: {spam_name}")
             break
 
     # Service field contains label text instead of actual selection (bot didn't use dropdown)

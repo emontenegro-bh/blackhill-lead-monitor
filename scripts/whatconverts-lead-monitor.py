@@ -281,11 +281,26 @@ def detect_service(text):
     return "General Inquiry"
 
 
+# Known spam contact names (exact match, case-insensitive)
+SPAM_NAMES = [
+    "susan smith",
+]
+
+
 def is_spam_lead(lead_data):
     """Check if a WhatConverts lead is spam using multiple signals."""
     # WhatConverts built-in spam flag
     if lead_data.get("spam", False):
         return True, "WhatConverts flagged as spam"
+
+    # Check blocked names
+    fields = lead_data.get("additional_fields", {})
+    if isinstance(fields, list):
+        fields = {}
+    contact_name = (fields.get("Name", "") or lead_data.get("contact_name", "")).strip().lower()
+    for spam_name in SPAM_NAMES:
+        if contact_name == spam_name:
+            return True, f"Blocked name: {spam_name}"
 
     is_call = lead_data.get("lead_type", "").lower() == "phone call"
 
