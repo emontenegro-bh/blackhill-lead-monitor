@@ -139,14 +139,16 @@
     "227338255",
     "227449721",
     "227515990",
-    "227589997"
+    "227589997",
+    "227598951"
   ],
   "stats": {
-    "total_leads": 83,
+    "total_leads": 84,
     "total_spam": 26,
-    "last_lead": "2026-03-30T18:00:17.709104"
+    "last_lead": "2026-03-30T18:30:15.170508",
+    "total_calls": 1
   },
-  "last_run": "2026-03-30T18:25:08.645127+00:00",
+  "last_run": "2026-03-30T18:30:15.171186+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -160,6 +162,13 @@
       "traffic_source": "(direct) / (none)",
       "service": "Commercial Maintenance",
       "lead_type": "web_form",
+      "date": "2026-03-30"
+    },
+    "227598951": {
+      "aspire_contact_id": "2537",
+      "traffic_source": "google / cpc",
+      "service": "Landscape Design & Install",
+      "lead_type": "phone_call",
       "date": "2026-03-30"
     }
   }
