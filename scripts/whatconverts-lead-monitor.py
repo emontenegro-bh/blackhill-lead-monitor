@@ -180,7 +180,7 @@ def fetch_recent_leads(config, lookback_minutes=130):
     profile_id = config["whatconverts"]["profile_id"]
 
     all_leads = []
-    for lead_type in ("web_form", "phone_call"):
+    for lead_type in ("web_form",):
         page = 1
         while True:
             result = wc_api_request(config, "/leads", {
