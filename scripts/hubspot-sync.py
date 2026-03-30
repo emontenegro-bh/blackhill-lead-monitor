@@ -136,6 +136,35 @@ def search_contact_by_email(email, token):
     return None
 
 
+def search_contact_by_phone(phone, token):
+    """Search for an existing contact by phone number. Returns contact dict or None."""
+    import re
+    digits = re.sub(r"\D", "", phone)
+    if len(digits) == 11 and digits.startswith("1"):
+        digits = digits[1:]
+    if len(digits) != 10:
+        return None
+    data = {
+        "filterGroups": [{
+            "filters": [{
+                "propertyName": "phone",
+                "operator": "CONTAINS_TOKEN",
+                "value": digits[-7:]
+            }]
+        }],
+        "properties": ["firstname", "lastname", "email", "phone"],
+        "limit": 5
+    }
+    resp, status = api_request("POST", "/crm/v3/objects/contacts/search", data, token)
+    if status == 200 and resp.get("total", 0) > 0:
+        # Match against full digits to avoid false positives
+        for result in resp.get("results", []):
+            result_phone = re.sub(r"\D", "", result.get("properties", {}).get("phone", ""))
+            if result_phone.endswith(digits) or digits.endswith(result_phone):
+                return result
+    return None
+
+
 def create_contact(lead, token):
     """Create a new HubSpot contact from lead data. Returns (contact_dict, status)."""
     properties = {
@@ -344,11 +373,18 @@ def update_aspire_status(email, aspire_url, token):
 def process_lead(lead, token, portal_id=None):
     """Process a lead: dedup, create contact, create deal. Returns result dict."""
     email = lead.get("email", "").strip()
+    phone = lead.get("phone", "").strip()
 
     # Check for existing contact by email
+    existing = None
     if email:
         existing = search_contact_by_email(email, token)
-        if existing:
+
+    # Fall back to phone dedup for call leads without email
+    if not existing and not email and phone:
+        existing = search_contact_by_phone(phone, token)
+
+    if existing:
             contact_id = existing["id"]
             contact_url = f"https://app-na2.hubspot.com/contacts/{portal_id or ''}/record/0-1/{contact_id}"
             # Look up existing deal owner

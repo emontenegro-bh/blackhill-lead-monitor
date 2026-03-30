@@ -999,6 +999,11 @@ def process_leads(config, state):
                 "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             }
 
+        # Save state after each lead to prevent re-processing on timeout
+        state["processed_ids"] = processed_ids
+        if not DRY_RUN:
+            save_state(state)
+
     state["processed_ids"] = processed_ids
 
 
