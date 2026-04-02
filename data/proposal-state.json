@@ -1,7 +1,11 @@
 {
-  "processed_ids": [],
+  "processed_ids": [
+    "102124134",
+    "65151668",
+    "102208811"
+  ],
   "stats": {
-    "total_proposals": 0
+    "total_proposals": 3
   },
-  "last_run": "2026-04-02T21:06:01.106012+00:00"
+  "last_run": "2026-04-02T21:50:51.585824+00:00"
 }
