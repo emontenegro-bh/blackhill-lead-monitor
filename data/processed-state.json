@@ -145,15 +145,16 @@
     "227745395",
     "227745008",
     "228041682",
-    "228088713"
+    "228088713",
+    "228103753"
   ],
   "stats": {
-    "total_leads": 87,
+    "total_leads": 88,
     "total_spam": 28,
-    "last_lead": "2026-04-01T23:50:15.032660",
+    "last_lead": "2026-04-02T05:50:13.195360",
     "total_calls": 2
   },
-  "last_run": "2026-04-02T05:45:10.888252+00:00",
+  "last_run": "2026-04-02T05:50:13.195908+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -189,6 +190,13 @@
       "service": "Lawn Services",
       "lead_type": "web_form",
       "date": "2026-04-01"
+    },
+    "228103753": {
+      "aspire_contact_id": "2543",
+      "traffic_source": "google / cpc",
+      "service": "Sprinkler Services",
+      "lead_type": "web_form",
+      "date": "2026-04-02"
     }
   }
 }
