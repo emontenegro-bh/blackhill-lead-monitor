@@ -14,7 +14,7 @@ CAMPAIGN_ID = 22815919817
 
 BASELINE = {
     "sprinkler head replacement":       {"qs": 3, "ad_rel": "ABOVE_AVERAGE",  "exp_ctr": "BELOW_AVERAGE", "land_page": "BELOW_AVERAGE"},
-    "irrigation repair fort worth":     {"qs": 3, "ad_rel": "BELOW_AVERAGE",  "exp_ctr": "BELOW_AVERAGE", "land_page": "AVERAGE"},
+    "irrigation repair fort worth":     {"qs": 6, "ad_rel": "AVERAGE",        "exp_ctr": "BELOW_AVERAGE", "land_page": "ABOVE_AVERAGE"},
     "sprinkler valve repair":           {"qs": 4, "ad_rel": "AVERAGE",        "exp_ctr": "BELOW_AVERAGE", "land_page": "AVERAGE"},
     "drainage solutions":               {"qs": 5, "ad_rel": "ABOVE_AVERAGE",  "exp_ctr": "BELOW_AVERAGE", "land_page": "AVERAGE"},
     "yard drainage fort worth":         {"qs": 5, "ad_rel": "ABOVE_AVERAGE",  "exp_ctr": "BELOW_AVERAGE", "land_page": "AVERAGE"},
@@ -40,6 +40,22 @@ NEW_KEYWORDS_MAR29 = [
 ]
 
 RANK = {"BELOW_AVERAGE": 0, "AVERAGE": 1, "ABOVE_AVERAGE": 2, "UNSPECIFIED": -1}
+
+# Protobuf enum int→name mapping (consistent across library versions)
+BUCKET_MAP = {0: "UNSPECIFIED", 1: "UNKNOWN", 2: "BELOW_AVERAGE", 3: "AVERAGE", 4: "ABOVE_AVERAGE"}
+
+
+def bucket_name(enum_val):
+    """Convert QS bucket enum to standard string regardless of library version."""
+    try:
+        return enum_val.name
+    except AttributeError:
+        pass
+    try:
+        return BUCKET_MAP.get(int(str(enum_val)), str(enum_val))
+    except (ValueError, TypeError):
+        s = str(enum_val)
+        return s.split(".")[-1] if "." in s else s
 
 
 def build_client():
@@ -76,9 +92,9 @@ def query_scores(client):
             "ad_group": row.ad_group.name,
             "keyword": row.ad_group_criterion.keyword.text,
             "qs": qi.quality_score if qi.quality_score > 0 else None,
-            "ad_rel": str(qi.creative_quality_score).split(".")[-1],
-            "exp_ctr": str(qi.search_predicted_ctr).split(".")[-1],
-            "land_page": str(qi.post_click_quality_score).split(".")[-1],
+            "ad_rel": bucket_name(qi.creative_quality_score),
+            "exp_ctr": bucket_name(qi.search_predicted_ctr),
+            "land_page": bucket_name(qi.post_click_quality_score),
         })
     return rows
 
