@@ -243,7 +243,7 @@ def calculate_mulch(length_ft, width_ft, depth_inches=2):
 def call_claude(config, system_prompt, user_content):
     """Call Claude API with text and optional images."""
     payload = {
-        "model": "claude-sonnet-4-6-20250514",
+        "model": "claude-sonnet-4-20250514",
         "max_tokens": 4096,
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_content}],
