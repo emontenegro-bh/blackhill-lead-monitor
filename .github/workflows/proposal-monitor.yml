@@ -1,0 +1,51 @@
+name: Proposal Monitor
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: proposal-monitor
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate proposals from CompanyCam
+        env:
+          COMPANYCAM_TOKEN: ${{ secrets.COMPANYCAM_TOKEN }}
+          COMPANYCAM_CREATOR_ID: '3069835'
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          PROPOSAL_RECIPIENT: ${{ secrets.PROPOSAL_RECIPIENT }}
+        run: python scripts/proposal-monitor.py
+
+      - name: Persist proposal state
+        if: always()
+        run: |
+          if [ -f data/proposal-state.json ]; then
+            git config user.name "Proposal Monitor Bot"
+            git config user.email "noreply@blackhilltx.com"
+            git add data/proposal-state.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Update proposal state"
+              for i in 1 2 3; do
+                git pull --rebase origin main || true
+                git push && break || sleep 2
+              done
+            fi
+          fi
