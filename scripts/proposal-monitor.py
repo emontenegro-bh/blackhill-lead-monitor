@@ -135,10 +135,10 @@ def cc_request(path, config):
 
 
 def fetch_recent_projects(config, lookback_minutes=130):
-    """Fetch projects updated in the last N minutes."""
+    """Fetch projects created in the last N minutes."""
     since = datetime.now(timezone.utc) - timedelta(minutes=lookback_minutes)
     since_ts = int(since.timestamp())
-    projects = cc_request(f"/projects?per_page=50&filter[updated_after]={since_ts}", config)
+    projects = cc_request(f"/projects?per_page=50&filter[created_after]={since_ts}", config)
     return projects or []
 
 
