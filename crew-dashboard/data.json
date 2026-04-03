@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-02T05:00:35",
+  "generated": "2026-04-03T05:00:08",
   "bonus_threshold": 97.0,
   "scorecard": {
     "route_weekly": {
@@ -12,12 +12,12 @@
       "rows": [
         {
           "name": "Maint 1 - Blue/Azul",
-          "total": 158.6,
+          "total": 125.9,
           "weekly_values": [
             null,
             null,
             94.0,
-            174.8
+            132.0
           ]
         },
         {
@@ -72,15 +72,15 @@
         }
       ],
       "total_row": {
-        "total": 114.8,
+        "total": 109.8,
         "weekly_values": [
           116.2,
           100.3,
           90.3,
-          140.7
+          118.3
         ]
       },
-      "overall_efficiency": 114.8
+      "overall_efficiency": 109.8
     },
     "route_daily": {
       "weeks": [
@@ -108,7 +108,7 @@
       "rows": [
         {
           "name": "Maint 1 - Blue/Azul",
-          "total": 158.6,
+          "total": 125.9,
           "weekly_values": [
             null,
             null,
@@ -125,7 +125,7 @@
             90.0,
             null,
             null,
-            174.8,
+            132.0,
             null,
             null,
             null,
@@ -264,7 +264,7 @@
         }
       ],
       "total_row": {
-        "total": 114.8,
+        "total": 109.8,
         "weekly_values": [
           122.1,
           96.6,
@@ -281,14 +281,14 @@
           101.2,
           116.8,
           null,
-          160.3,
+          125.7,
           94.7,
           96.1,
           104.9,
           91.3
         ]
       },
-      "overall_efficiency": 114.8
+      "overall_efficiency": 109.8
     },
     "route_monthly": {
       "weeks": [
@@ -297,9 +297,9 @@
       "rows": [
         {
           "name": "Maint 1 - Blue/Azul",
-          "total": 158.6,
+          "total": 125.9,
           "weekly_values": [
-            158.6
+            125.9
           ]
         },
         {
@@ -339,12 +339,12 @@
         }
       ],
       "total_row": {
-        "total": 114.8,
+        "total": 109.8,
         "weekly_values": [
-          114.8
+          109.8
         ]
       },
-      "overall_efficiency": 114.8
+      "overall_efficiency": 109.8
     },
     "crew_weekly": {
       "weeks": [
@@ -366,12 +366,12 @@
         },
         {
           "name": "Saul Cruz Morales",
-          "total": 158.6,
+          "total": 125.9,
           "weekly_values": [
             null,
             null,
             94.0,
-            174.8
+            132.0
           ]
         },
         {
@@ -436,15 +436,15 @@
         }
       ],
       "total_row": {
-        "total": 114.5,
+        "total": 109.6,
         "weekly_values": [
           116.2,
           94.5,
           90.3,
-          141.5
+          119.8
         ]
       },
-      "overall_efficiency": 114.5
+      "overall_efficiency": 109.6
     },
     "crew_daily": {
       "weeks": [
@@ -498,7 +498,7 @@
         },
         {
           "name": "Saul Cruz Morales",
-          "total": 158.6,
+          "total": 125.9,
           "weekly_values": [
             null,
             null,
@@ -515,7 +515,7 @@
             90.0,
             null,
             null,
-            174.8,
+            132.0,
             null,
             null,
             null,
@@ -680,7 +680,7 @@
         }
       ],
       "total_row": {
-        "total": 114.5,
+        "total": 109.6,
         "weekly_values": [
           122.1,
           96.6,
@@ -697,14 +697,14 @@
           101.2,
           116.8,
           null,
-          160.3,
+          125.7,
           94.7,
           96.1,
           104.9,
           126.1
         ]
       },
-      "overall_efficiency": 114.5
+      "overall_efficiency": 109.6
     },
     "crew_monthly": {
       "weeks": [
@@ -720,9 +720,9 @@
         },
         {
           "name": "Saul Cruz Morales",
-          "total": 158.6,
+          "total": 125.9,
           "weekly_values": [
-            158.6
+            125.9
           ]
         },
         {
@@ -769,12 +769,12 @@
         }
       ],
       "total_row": {
-        "total": 114.5,
+        "total": 109.6,
         "weekly_values": [
-          114.5
+          109.6
         ]
       },
-      "overall_efficiency": 114.5
+      "overall_efficiency": 109.6
     },
     "division_weekly": {
       "weeks": [
@@ -796,12 +796,12 @@
         },
         {
           "name": "Maintenance",
-          "total": 116.0,
+          "total": 110.6,
           "weekly_values": [
             116.2,
             100.3,
             86.1,
-            148.9
+            123.2
           ]
         },
         {
@@ -816,15 +816,15 @@
         }
       ],
       "total_row": {
-        "total": 114.8,
+        "total": 109.8,
         "weekly_values": [
           116.2,
           100.3,
           90.3,
-          140.7
+          118.3
         ]
       },
-      "overall_efficiency": 114.8
+      "overall_efficiency": 109.8
     },
     "division_daily": {
       "weeks": [
@@ -878,7 +878,7 @@
         },
         {
           "name": "Maintenance",
-          "total": 116.0,
+          "total": 110.6,
           "weekly_values": [
             122.1,
             96.6,
@@ -895,7 +895,7 @@
             83.4,
             136.2,
             null,
-            163.1,
+            127.4,
             93.1,
             107.1,
             114.8,
@@ -930,7 +930,7 @@
         }
       ],
       "total_row": {
-        "total": 114.8,
+        "total": 109.8,
         "weekly_values": [
           122.1,
           96.6,
@@ -947,14 +947,14 @@
           101.2,
           116.8,
           null,
-          160.3,
+          125.7,
           94.7,
           96.1,
           104.9,
           91.3
         ]
       },
-      "overall_efficiency": 114.8
+      "overall_efficiency": 109.8
     },
     "division_monthly": {
       "weeks": [
@@ -970,9 +970,9 @@
         },
         {
           "name": "Maintenance",
-          "total": 116.0,
+          "total": 110.6,
           "weekly_values": [
-            116.0
+            110.6
           ]
         },
         {
@@ -984,25 +984,36 @@
         }
       ],
       "total_row": {
-        "total": 114.8,
+        "total": 109.8,
         "weekly_values": [
-          114.8
+          109.8
         ]
       },
-      "overall_efficiency": 114.8
+      "overall_efficiency": 109.8
     }
   },
   "mtd": {
     "period": {
       "label": "April 2026",
       "start": "2026-04-01",
-      "end": "2026-04-02"
+      "end": "2026-04-03"
     },
-    "leaderboard": [],
-    "bonus_eligible_count": 0,
-    "company_avg_variance": 60.1,
-    "total_crew_leaders": 0,
-    "tickets_analyzed": 1
+    "leaderboard": [
+      {
+        "crew_leader": "Jorge Torres Conde",
+        "actual_hours": 26.9,
+        "estimated_hours": 36.0,
+        "labor_variance_pct": 133.7,
+        "bonus_eligible": true,
+        "rank": 1,
+        "trend": "up",
+        "rank_change": 2
+      }
+    ],
+    "bonus_eligible_count": 1,
+    "company_avg_variance": 116.3,
+    "total_crew_leaders": 1,
+    "tickets_analyzed": 11
   },
   "prior_week": {
     "period": {
@@ -1012,23 +1023,23 @@
     },
     "leaderboard": [
       {
-        "crew_leader": "Saul Cruz Morales",
-        "actual_hours": 314.6,
-        "estimated_hours": 550.0,
-        "labor_variance_pct": 174.8,
-        "bonus_eligible": true,
-        "rank": 1,
-        "trend": "up",
-        "rank_change": 1
-      },
-      {
         "crew_leader": "Edgar Herrera Palafox",
         "actual_hours": 23.0,
         "estimated_hours": 37.0,
         "labor_variance_pct": 160.9,
         "bonus_eligible": true,
-        "rank": 2,
+        "rank": 1,
         "trend": "new",
+        "rank_change": 0
+      },
+      {
+        "crew_leader": "Saul Cruz Morales",
+        "actual_hours": 416.7,
+        "estimated_hours": 550.0,
+        "labor_variance_pct": 132.0,
+        "bonus_eligible": true,
+        "rank": 2,
+        "trend": "same",
         "rank_change": 0
       },
       {
@@ -1063,7 +1074,7 @@
       }
     ],
     "bonus_eligible_count": 4,
-    "company_avg_variance": 141.5,
+    "company_avg_variance": 119.8,
     "total_crew_leaders": 5,
     "tickets_analyzed": 39
   }
