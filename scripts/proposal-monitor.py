@@ -135,11 +135,18 @@ def cc_request(path, config):
 
 
 def fetch_recent_projects(config, lookback_minutes=130):
-    """Fetch projects created in the last N minutes."""
+    """Fetch projects created in the last N minutes.
+
+    CompanyCam API only supports updated_after, so we fetch recently updated
+    projects and filter client-side to only those created within the window.
+    """
     since = datetime.now(timezone.utc) - timedelta(minutes=lookback_minutes)
     since_ts = int(since.timestamp())
-    projects = cc_request(f"/projects?per_page=50&filter[created_after]={since_ts}", config)
-    return projects or []
+    projects = cc_request(f"/projects?per_page=50&filter[updated_after]={since_ts}", config)
+    if not projects:
+        return []
+    # Client-side filter: only projects created within the lookback window
+    return [p for p in projects if p.get("created_at", 0) >= since_ts]
 
 
 def get_project_details(project_id, config):
@@ -523,7 +530,7 @@ def process_project(project_id, config):
 def process_projects(config, state):
     """Poll for new projects and process them."""
     projects = fetch_recent_projects(config, LOOKBACK_MINUTES)
-    log(f"Found {len(projects)} projects updated in last {LOOKBACK_MINUTES} minutes")
+    log(f"Found {len(projects)} new projects created in last {LOOKBACK_MINUTES} minutes")
 
     new_count = 0
     for project in projects:
