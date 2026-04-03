@@ -146,15 +146,16 @@
     "227745008",
     "228041682",
     "228088713",
-    "228103753"
+    "228103753",
+    "228299281"
   ],
   "stats": {
-    "total_leads": 88,
+    "total_leads": 89,
     "total_spam": 28,
-    "last_lead": "2026-04-02T05:50:13.195360",
+    "last_lead": "2026-04-03T05:25:13.114335",
     "total_calls": 2
   },
-  "last_run": "2026-04-03T05:20:26.063440+00:00",
+  "last_run": "2026-04-03T05:25:13.115113+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -341,6 +342,13 @@
       "traffic_source": "gmb / organic",
       "service": "",
       "date": "2026-02-19"
+    },
+    "228299281": {
+      "aspire_contact_id": "2546",
+      "traffic_source": "(direct) / (none)",
+      "service": "Commercial Maintenance",
+      "lead_type": "web_form",
+      "date": "2026-04-03"
     }
   }
 }
