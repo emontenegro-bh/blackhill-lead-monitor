@@ -1,21 +1,29 @@
-name: Proposal Monitor
+name: Proposal Pipeline
 
 on:
   schedule:
     - cron: '*/10 * * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'Process a specific CompanyCam project ID'
+        required: false
+      dry_run:
+        description: 'Run without sending emails or saving state'
+        type: boolean
+        default: false
 
 concurrency:
-  group: proposal-monitor
+  group: proposal-pipeline
   cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
-  monitor:
+  pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
 
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +32,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Generate proposals from CompanyCam
+      - name: Run proposal pipeline
         env:
           COMPANYCAM_TOKEN: ${{ secrets.COMPANYCAM_TOKEN }}
           COMPANYCAM_CREATOR_ID: '3069835'
@@ -32,20 +40,29 @@ jobs:
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           PROPOSAL_RECIPIENT: ${{ secrets.PROPOSAL_RECIPIENT }}
-        run: python scripts/proposal-monitor.py
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="--dry-run"
+          fi
+          if [ -n "${{ inputs.project_id }}" ]; then
+            ARGS="$ARGS --project ${{ inputs.project_id }}"
+          fi
+          python scripts/proposal-pipeline.py $ARGS
 
-      - name: Persist proposal state
+      - name: Persist pipeline state
         if: always()
         run: |
           if [ -f data/proposal-state.json ]; then
-            git config user.name "Proposal Monitor Bot"
+            git config user.name "Proposal Pipeline Bot"
             git config user.email "noreply@blackhilltx.com"
             git add data/proposal-state.json
             if ! git diff --cached --quiet; then
-              git commit -m "Update proposal state"
+              git commit -m "Update proposal pipeline state"
               for i in 1 2 3; do
                 git pull --rebase origin main || true
-                git push && break || sleep 2
+                if git push; then break; fi
+                sleep 2
               done
             fi
           fi
