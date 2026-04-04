@@ -1,0 +1,84 @@
+name: API Health Monitor
+
+on:
+  schedule:
+    # Every 6 hours: midnight, 6am, noon, 6pm UTC
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Mode: test, diagnose, or heal'
+        required: false
+        default: 'heal'
+      api:
+        description: 'Single API to check (aspire, whatconverts, companycam, google_ads, hubspot)'
+        required: false
+        default: ''
+
+concurrency:
+  group: api-health
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-ads
+
+      - name: Run API health monitor
+        id: health
+        env:
+          # Aspire (both clients)
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
+          ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
+          # WhatConverts
+          WC_API_TOKEN: ${{ secrets.WC_API_TOKEN }}
+          WC_API_SECRET: ${{ secrets.WC_API_SECRET }}
+          WC_PROFILE_ID: ${{ secrets.WC_PROFILE_ID }}
+          # CompanyCam
+          COMPANYCAM_TOKEN: ${{ secrets.COMPANYCAM_TOKEN }}
+          # Google Ads
+          GOOGLE_ADS_DEVELOPER_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
+          GOOGLE_ADS_CLIENT_ID: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_CLIENT_SECRET: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+          GOOGLE_ADS_LOGIN_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
+          GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
+          # HubSpot
+          HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
+          # GitHub token for PR creation
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          MODE="${{ github.event.inputs.mode || 'heal' }}"
+          API_FLAG=""
+          if [ -n "${{ github.event.inputs.api }}" ]; then
+            API_FLAG="--api ${{ github.event.inputs.api }}"
+          fi
+
+          python scripts/api-health-monitor.py --${MODE} ${API_FLAG} 2>&1 | tee health-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "exit_code=${EXIT_CODE}" >> $GITHUB_OUTPUT
+          exit ${EXIT_CODE}
+
+      - name: Upload health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-health-report-${{ github.run_number }}
+          path: health-output.txt
+          retention-days: 30
