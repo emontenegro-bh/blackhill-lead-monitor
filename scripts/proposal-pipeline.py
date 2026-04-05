@@ -719,32 +719,45 @@ def send_proposal_email(config, result):
 
 
 def push_to_teams(result):
-    """Push proposal draft to Teams channel via the bot's /api/push endpoint."""
-    bot_url = os.environ.get("TEAMS_BOT_URL", "")
-    pipeline_key = os.environ.get("PIPELINE_API_KEY", "")
-    if not bot_url:
+    """Push proposal draft to Teams channel via Power Automate Workflows webhook."""
+    webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
+    if not webhook_url:
         return
 
     project = result["project_data"]["project"]
     address = project.get("address", {})
     addr_str = f"{address.get('street_address_1', '')}, {address.get('city', '')}"
+    service_type = result.get("service_type", "Landscape")
+    proposal_text = result.get("proposal_html", result.get("description", ""))
+
+    # Strip HTML tags for Teams display
+    import re as _re
+    clean_text = _re.sub(r"<[^>]+>", "", proposal_text)[:3000]
 
     payload = {
-        "address": addr_str,
-        "service_type": result.get("service_type", "Landscape"),
-        "proposal": result.get("proposal_html", result.get("description", "")),
+        "type": "message",
+        "attachments": [{
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "type": "AdaptiveCard",
+                "version": "1.4",
+                "body": [
+                    {"type": "TextBlock", "text": f"New Proposal: {service_type}", "weight": "Bolder", "size": "Medium"},
+                    {"type": "TextBlock", "text": addr_str, "isSubtle": True},
+                    {"type": "TextBlock", "text": clean_text, "wrap": True},
+                ],
+            },
+        }],
     }
 
     try:
         req = urllib.request.Request(
-            f"{bot_url}/api/push",
+            webhook_url,
             data=json.dumps(payload).encode(),
-            headers={
-                "Content-Type": "application/json",
-                "X-API-Key": pipeline_key,
-            },
+            headers={"Content-Type": "application/json"},
         )
-        urllib.request.urlopen(req, timeout=10)
+        urllib.request.urlopen(req, timeout=15)
         log(f"TEAMS: Proposal pushed to Teams channel — {addr_str}")
     except Exception as e:
         log(f"TEAMS: Push failed (non-fatal): {e}")

@@ -40,6 +40,7 @@ jobs:
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           PROPOSAL_RECIPIENT: ${{ secrets.PROPOSAL_RECIPIENT }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
         run: |
           ARGS=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
