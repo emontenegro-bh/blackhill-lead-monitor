@@ -500,10 +500,18 @@ def build_briefing():
     # System health
     health = get_system_health()
 
+    # Sunday reminder
+    sunday_reminder = ""
+    if now.weekday() == 6:  # Sunday
+        sunday_reminder = ">>> Run /skill-discovery today <<<"
+
     # Assemble
     parts = [header, ""]
     parts.append(health)
     parts.append("")
+    if sunday_reminder:
+        parts.append(sunday_reminder)
+        parts.append("")
     if checkin:
         parts.append(checkin)
         parts.append("")
