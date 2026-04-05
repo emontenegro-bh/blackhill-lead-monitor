@@ -114,7 +114,7 @@ def get_all_aspire_contacts(token, base):
     skip = 0
     while True:
         endpoint = (
-            f"/Contacts?$select=ContactID,FirstName,LastName,Email,MobilePhone,HomePhone,OfficePhone"
+            f"/Contacts?$select=ContactID,FirstName,LastName,Email,MobilePhone,HomePhone,OfficePhone,Notes"
             f"&$filter=Active eq true&$top=200&$skip={skip}"
         )
         resp, status = aspire_query(endpoint, token, base)
@@ -183,6 +183,43 @@ def phone_match(phone_a, phone_b):
     return 0.0
 
 
+def normalize_address(addr):
+    """Normalize address for comparison: lowercase, strip common suffixes."""
+    if not addr:
+        return ""
+    a = addr.lower().strip()
+    # Standardize common abbreviations
+    for full, abbr in [("street", "st"), ("drive", "dr"), ("avenue", "ave"),
+                        ("boulevard", "blvd"), ("lane", "ln"), ("court", "ct"),
+                        ("circle", "cir"), ("road", "rd"), ("place", "pl")]:
+        a = re.sub(rf"\b{full}\b", abbr, a)
+        a = re.sub(rf"\b{abbr}\.\b", abbr, a)
+    return a
+
+
+def address_match(lead_address, aspire_notes):
+    """Check if lead address appears in Aspire contact Notes field."""
+    if not lead_address or not aspire_notes:
+        return 0.0
+    addr = normalize_address(lead_address)
+    notes = aspire_notes.lower()
+
+    # Extract street number + name from lead address
+    m = re.match(r"(\d+)\s+(.+)", addr)
+    if not m:
+        return 0.0
+    street_num = m.group(1)
+    street_name = m.group(2).split(",")[0].strip()  # Before city
+
+    # Check if street number and first word of street name appear in notes
+    if street_num in notes and street_name.split()[0] in notes:
+        return 0.90
+    # Just street number match (weaker)
+    if street_num in notes and len(street_num) >= 4:
+        return 0.50
+    return 0.0
+
+
 def score_match(lead, aspire_contact):
     """Score a lead against an Aspire contact. Returns (score, method)."""
     scores = []
@@ -206,6 +243,13 @@ def score_match(lead, aspire_contact):
     ns = fuzzy_name_score(lead_name, aspire_name)
     if ns > 0.5:
         scores.append((ns, "name"))
+
+    # Address match (check lead address against Aspire Notes field)
+    lead_addr = lead.get("address", "")
+    aspire_notes = aspire_contact.get("Notes", "") or ""
+    addr_score = address_match(lead_addr, aspire_notes)
+    if addr_score > 0:
+        scores.append((addr_score, "address"))
 
     if not scores:
         return 0.0, "none"
@@ -321,6 +365,8 @@ def run():
                 "last_name": parts[1] if len(parts) > 1 else "",
                 "email": lead.get("contact_email_address", "") or additional.get("Email", ""),
                 "phone": lead.get("contact_phone_number", "") or additional.get("Contact No", ""),
+                "address": additional.get("Address", "") or lead.get("mapped_address", ""),
+                "city": additional.get("City", "") or lead.get("mapped_city", ""),
                 "date": lead.get("date_created", "")[:10],
                 "source": f"{lead.get('lead_source', '')} / {lead.get('lead_medium', '')}",
             }

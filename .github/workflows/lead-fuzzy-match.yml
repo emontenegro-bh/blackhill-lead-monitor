@@ -2,8 +2,8 @@ name: Lead Fuzzy Match
 
 on:
   schedule:
-    # Weekly Wednesday 8:00 AM CST = 14:00 UTC
-    - cron: '0 14 * * 3'
+    # Daily 7:00 AM CST = 13:00 UTC
+    - cron: '0 13 * * *'
   workflow_dispatch: {}
 
 concurrency:
