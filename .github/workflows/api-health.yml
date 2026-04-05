@@ -82,3 +82,11 @@ jobs:
           name: api-health-report-${{ github.run_number }}
           path: health-output.txt
           retention-days: 30
+
+  notify-failure:
+    needs: [health-check]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "API Health Monitor"
+    secrets: inherit

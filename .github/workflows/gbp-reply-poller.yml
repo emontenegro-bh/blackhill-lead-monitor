@@ -1,0 +1,63 @@
+name: GBP Reply Poller
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: gbp-reply-poller
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  poller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-auth google-auth-httplib2 google-api-python-client requests
+
+      - name: Poll Gmail for review replies
+        env:
+          GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
+          GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
+          GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}
+          GBP_ACCOUNT_ID: ${{ secrets.GBP_ACCOUNT_ID }}
+          GBP_LOCATION_ID: ${{ secrets.GBP_LOCATION_ID }}
+          GBP_GMAIL_CLIENT_ID: ${{ secrets.GBP_GMAIL_CLIENT_ID }}
+          GBP_GMAIL_CLIENT_SECRET: ${{ secrets.GBP_GMAIL_CLIENT_SECRET }}
+          GBP_GMAIL_REFRESH_TOKEN: ${{ secrets.GBP_GMAIL_REFRESH_TOKEN }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+        run: python scripts/gbp-reply-poller.py
+
+      - name: Persist GBP state
+        if: always()
+        run: |
+          git config user.name "GBP Reply Bot"
+          git config user.email "noreply@blackhilltx.com"
+          git add data/gbp/ 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Update GBP reply state"
+            for i in 1 2 3; do
+              git pull --rebase origin main || true
+              git push && break || sleep 2
+            done
+          fi
+
+  notify-failure:
+    needs: [poller]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "GBP Reply Poller"
+    secrets: inherit

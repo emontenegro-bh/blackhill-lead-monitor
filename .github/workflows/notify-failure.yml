@@ -1,0 +1,50 @@
+name: Notify on Failure
+
+on:
+  workflow_call:
+    inputs:
+      workflow_name:
+        description: 'Human-readable name of the failed workflow'
+        required: true
+        type: string
+
+jobs:
+  send-alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+
+    steps:
+      - name: Send failure email
+        env:
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          WORKFLOW_NAME: ${{ inputs.workflow_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 -c "
+          import smtplib, os
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+
+          name = os.environ['WORKFLOW_NAME']
+          url = os.environ['RUN_URL']
+
+          msg = MIMEMultipart('alternative')
+          msg['Subject'] = f'[ALERT] {name} failed'
+          msg['From'] = f'Black Hill Assistant <{os.environ[\"GMAIL_EMAIL\"]}>'
+          msg['To'] = 'evelin@blackhilltx.com'
+
+          body = f'''<h3>Workflow Failure: {name}</h3>
+          <p>A GitHub Actions workflow failed and needs attention.</p>
+          <p><a href=\"{url}\">View failed run</a></p>
+          <p style=\"color:#888;font-size:12px\">Sent by Black Hill automation monitor</p>'''
+
+          msg.attach(MIMEText(f'{name} failed. View: {url}', 'plain'))
+          msg.attach(MIMEText(body, 'html'))
+
+          with smtplib.SMTP('smtp.gmail.com', 587) as s:
+              s.starttls()
+              s.login(os.environ['GMAIL_EMAIL'], os.environ['GMAIL_APP_PASSWORD'])
+              s.sendmail(os.environ['GMAIL_EMAIL'], 'evelin@blackhilltx.com', msg.as_string())
+          print(f'Failure alert sent for: {name}')
+          "

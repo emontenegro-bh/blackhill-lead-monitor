@@ -65,3 +65,11 @@ jobs:
               done
             fi
           fi
+
+  notify-failure:
+    needs: [pipeline]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Reply Pipeline"
+    secrets: inherit

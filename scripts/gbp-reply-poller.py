@@ -29,7 +29,12 @@ from email.mime.multipart import MIMEMultipart
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-CONFIG_DIR = os.path.expanduser("~/.config/gbp")
+_CLOUD_MODE = bool(os.environ.get("GBP_CLIENT_ID"))
+if _CLOUD_MODE:
+    _DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "gbp")
+    CONFIG_DIR = _DATA_DIR
+else:
+    CONFIG_DIR = os.path.expanduser("~/.config/gbp")
 PENDING_DIR = os.path.join(CONFIG_DIR, "pending-responses")
 RESPONDED_DIR = os.path.join(CONFIG_DIR, "responded")
 LOG_FILE = os.path.join(CONFIG_DIR, "reply-poller.log")
@@ -201,12 +206,13 @@ def send_confirmation(reviewer, stars, response_text, was_custom):
         log("DRY RUN - Would send confirmation email")
         return
 
-    if not os.path.exists(SENDGRID_KEY_FILE):
-        log("No SendGrid API key. Confirmation email skipped.")
-        return
-
-    with open(SENDGRID_KEY_FILE) as f:
-        api_key = f.read().strip()
+    api_key = os.environ.get("SENDGRID_API_KEY", "")
+    if not api_key:
+        if not os.path.exists(SENDGRID_KEY_FILE):
+            log("No SendGrid API key. Confirmation email skipped.")
+            return
+        with open(SENDGRID_KEY_FILE) as f:
+            api_key = f.read().strip()
 
     action = "custom response" if was_custom else "draft response"
     subject = f"GBP Review Response Posted ({reviewer})"

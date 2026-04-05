@@ -1,0 +1,63 @@
+name: Booking Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: booking-monitor
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install msal
+
+      - name: Poll bookings and sync CRM
+        env:
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
+        run: python scripts/booking-monitor.py
+
+      - name: Persist booking state
+        if: always()
+        run: |
+          if [ -f data/booking-state.json ]; then
+            git config user.name "Booking Monitor Bot"
+            git config user.email "noreply@blackhilltx.com"
+            git add data/booking-state.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Update booking state"
+              for i in 1 2 3; do
+                git pull --rebase origin main || true
+                git push && break || sleep 2
+              done
+            fi
+          fi
+
+  notify-failure:
+    needs: [monitor]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Booking Monitor"
+    secrets: inherit

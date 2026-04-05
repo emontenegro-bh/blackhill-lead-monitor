@@ -47,3 +47,11 @@ jobs:
               git push && break || sleep 2
             done
           fi
+
+  notify-failure:
+    needs: [sync]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "ROI Sync"
+    secrets: inherit

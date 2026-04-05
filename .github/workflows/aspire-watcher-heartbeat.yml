@@ -1,0 +1,73 @@
+name: Aspire Watcher Heartbeat Check
+
+on:
+  schedule:
+    # Daily 8:00 AM CST = 14:00 UTC
+    - cron: '0 14 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check heartbeat freshness
+        env:
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          python3 -c "
+          import json, os, sys
+          from datetime import datetime, timedelta
+
+          hb_file = 'data/aspire-watcher-heartbeat.json'
+          if not os.path.exists(hb_file):
+              print('WARNING: No heartbeat file found. Aspire watcher may never have run.')
+              sys.exit(1)
+
+          with open(hb_file) as f:
+              hb = json.load(f)
+
+          last_run = datetime.fromisoformat(hb['last_run'])
+          age_hours = (datetime.now() - last_run).total_seconds() / 3600
+
+          if age_hours > 24:
+              print(f'STALE: Last heartbeat {age_hours:.1f}h ago ({hb[\"last_run\"]})')
+              # Send alert email
+              import smtplib
+              from email.mime.text import MIMEText
+              from email.mime.multipart import MIMEMultipart
+
+              msg = MIMEMultipart('alternative')
+              msg['Subject'] = '[ALERT] Aspire Watcher offline >24h'
+              msg['From'] = f'Black Hill Assistant <{os.environ[\"GMAIL_EMAIL\"]}>'
+              msg['To'] = 'evelin@blackhilltx.com'
+
+              body = f'''<h3>Aspire Lead Watcher Offline</h3>
+              <p>The Aspire lead watcher has not run in {age_hours:.0f} hours.</p>
+              <p>Last heartbeat: {hb['last_run']} on {hb.get('hostname', 'unknown')}</p>
+              <p>This usually means your laptop has been closed or the LaunchAgent stopped.</p>
+              <p>New leads from WhatConverts will queue but won\\'t be synced to Aspire CRM until the watcher resumes.</p>'''
+
+              msg.attach(MIMEText(body, 'html'))
+
+              with smtplib.SMTP('smtp.gmail.com', 587) as s:
+                  s.starttls()
+                  s.login(os.environ['GMAIL_EMAIL'], os.environ['GMAIL_APP_PASSWORD'])
+                  s.sendmail(os.environ['GMAIL_EMAIL'], 'evelin@blackhilltx.com', msg.as_string())
+              print('Alert email sent.')
+              sys.exit(1)
+          else:
+              print(f'OK: Last heartbeat {age_hours:.1f}h ago ({hb[\"last_run\"]})')
+          "
+
+  notify-failure:
+    needs: [check]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Aspire Watcher Heartbeat"
+    secrets: inherit

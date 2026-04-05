@@ -1,16 +1,19 @@
-name: Morning Briefing
+name: Weekly Google Ads Report
 
 on:
   schedule:
-    # 6:00 AM CST = 12:00 UTC (Sun-Fri)
-    # Cron: minute hour day month weekday
-    - cron: '0 12 * * 0-5'
+    # Sunday 9:00 AM CST = 15:00 UTC
+    - cron: '0 15 * * 0'
   workflow_dispatch: {}
 
+concurrency:
+  group: ads-weekly-report
+  cancel-in-progress: true
+
 jobs:
-  briefing:
+  report:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v4
@@ -22,34 +25,21 @@ jobs:
       - name: Install dependencies
         run: pip install google-ads
 
-      - name: Send morning briefing
+      - name: Generate and send weekly report
         env:
-          # Microsoft Graph (calendar access)
-          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
-          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
-          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
-          MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
-          # Google Ads
           GOOGLE_ADS_DEVELOPER_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
           GOOGLE_ADS_CLIENT_ID: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
           GOOGLE_ADS_CLIENT_SECRET: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
           GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
           GOOGLE_ADS_LOGIN_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
           GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
-          # SendGrid (email-to-SMS gateway)
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          SMS_FROM_EMAIL: ${{ secrets.NOTIFY_FROM_EMAIL }}
-          # Phones
-          PHONE_PERSONAL: ${{ secrets.PHONE_PERSONAL }}
-          PHONE_WORK: ${{ secrets.PHONE_WORK }}
-          # GitHub API (system health check)
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: python scripts/morning-briefing.py
+        run: python scripts/ads-weekly-report.py
 
   notify-failure:
-    needs: [briefing]
+    needs: [report]
     if: failure()
     uses: ./.github/workflows/notify-failure.yml
     with:
-      workflow_name: "Morning Briefing"
+      workflow_name: "Weekly Google Ads Report"
     secrets: inherit

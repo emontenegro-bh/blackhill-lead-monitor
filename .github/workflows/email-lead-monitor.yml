@@ -1,4 +1,4 @@
-name: Lead Monitor
+name: Email Lead Monitor
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: lead-monitor
+  group: email-lead-monitor
   cancel-in-progress: true
 
 permissions:
@@ -24,11 +24,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Run WhatConverts lead monitor
+      - name: Install dependencies
+        run: pip install msal
+
+      - name: Poll email for leads
         env:
-          WC_API_TOKEN: ${{ secrets.WC_API_TOKEN }}
-          WC_API_SECRET: ${{ secrets.WC_API_SECRET }}
-          WC_PROFILE_ID: ${{ secrets.WC_PROFILE_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           LEAD_RECIPIENTS: ${{ secrets.LEAD_RECIPIENTS }}
           SPAM_RECIPIENTS: ${{ secrets.SPAM_RECIPIENTS }}
@@ -37,23 +41,20 @@ jobs:
           HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
           ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
           ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
-        run: python scripts/whatconverts-lead-monitor.py
+        run: python scripts/lead-monitor.py
 
-      - name: Persist processed state
+      - name: Persist state
         if: always()
         run: |
-          if [ -f data/processed-state.json ]; then
-            git config user.name "Lead Monitor Bot"
-            git config user.email "noreply@blackhilltx.com"
-            git add data/processed-state.json
-            git add data/roi-sync-state.json 2>/dev/null || true
-            if ! git diff --cached --quiet; then
-              git commit -m "Update processed state"
-              for i in 1 2 3; do
-                git pull --rebase origin main || true
-                git push && break || sleep 2
-              done
-            fi
+          git config user.name "Email Lead Monitor Bot"
+          git config user.email "noreply@blackhilltx.com"
+          git add data/processed-state.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Update email lead monitor state"
+            for i in 1 2 3; do
+              git pull --rebase origin main || true
+              git push && break || sleep 2
+            done
           fi
 
   notify-failure:
@@ -61,5 +62,5 @@ jobs:
     if: failure()
     uses: ./.github/workflows/notify-failure.yml
     with:
-      workflow_name: "Lead Monitor"
+      workflow_name: "Email Lead Monitor"
     secrets: inherit

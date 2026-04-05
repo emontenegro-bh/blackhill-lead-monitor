@@ -31,3 +31,11 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           NOTIFY_FROM_EMAIL: ${{ secrets.NOTIFY_FROM_EMAIL }}
         run: python scripts/qs-recheck.py
+
+  notify-failure:
+    needs: [recheck]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "QS Recheck"
+    secrets: inherit

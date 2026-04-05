@@ -415,6 +415,59 @@ def send_sms(phone, carrier, message):
         return False
 
 
+# --- System Health ---
+
+def get_system_health():
+    """Check GitHub Actions workflow health for the last 24 hours."""
+    gh_pat = os.environ.get("GH_PAT", "")
+    if not gh_pat:
+        return "Systems: (no GH_PAT configured)"
+
+    repos = [
+        ("emontenegro-bh/blackhill-lead-monitor", "lead-monitor"),
+        ("emontenegro-bh/blackhill-ops-dashboard", "ops-dashboard"),
+    ]
+    failures = []
+    total_workflows = 0
+
+    for repo, short_name in repos:
+        try:
+            url = f"https://api.github.com/repos/{repo}/actions/runs?status=failure&per_page=20"
+            req = urllib.request.Request(url, headers={
+                "Authorization": f"Bearer {gh_pat}",
+                "Accept": "application/vnd.github+json",
+            })
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read())
+
+            # Filter to last 24h
+            cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+            for run in data.get("workflow_runs", []):
+                if run.get("created_at", "") > cutoff:
+                    wf_name = run.get("name", "unknown")
+                    created = run.get("created_at", "")[:16].replace("T", " ")
+                    failures.append(f"  - {wf_name} ({created})")
+
+            # Count total workflows in repo
+            wf_url = f"https://api.github.com/repos/{repo}/actions/workflows"
+            wf_req = urllib.request.Request(wf_url, headers={
+                "Authorization": f"Bearer {gh_pat}",
+                "Accept": "application/vnd.github+json",
+            })
+            with urllib.request.urlopen(wf_req, timeout=15) as resp:
+                wf_data = json.loads(resp.read())
+            total_workflows += wf_data.get("total_count", 0)
+        except Exception as e:
+            failures.append(f"  - {short_name}: health check error ({e})")
+
+    if failures:
+        # Deduplicate (same workflow can fail multiple times)
+        unique = list(dict.fromkeys(failures))
+        return f"ALERT: {len(unique)} failure(s) in 24h\n" + "\n".join(unique[:5])
+    else:
+        return f"Systems: All OK ({total_workflows} workflows green)"
+
+
 # --- Build the briefing ---
 
 def build_briefing():
@@ -444,8 +497,13 @@ def build_briefing():
     # Check-in reminders
     checkin = get_checkin_reminder()
 
+    # System health
+    health = get_system_health()
+
     # Assemble
     parts = [header, ""]
+    parts.append(health)
+    parts.append("")
     if checkin:
         parts.append(checkin)
         parts.append("")
