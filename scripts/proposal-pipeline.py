@@ -718,6 +718,38 @@ def send_proposal_email(config, result):
         return False
 
 
+def push_to_teams(result):
+    """Push proposal draft to Teams channel via the bot's /api/push endpoint."""
+    bot_url = os.environ.get("TEAMS_BOT_URL", "")
+    pipeline_key = os.environ.get("PIPELINE_API_KEY", "")
+    if not bot_url:
+        return
+
+    project = result["project_data"]["project"]
+    address = project.get("address", {})
+    addr_str = f"{address.get('street_address_1', '')}, {address.get('city', '')}"
+
+    payload = {
+        "address": addr_str,
+        "service_type": result.get("service_type", "Landscape"),
+        "proposal": result.get("proposal_html", result.get("description", "")),
+    }
+
+    try:
+        req = urllib.request.Request(
+            f"{bot_url}/api/push",
+            data=json.dumps(payload).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "X-API-Key": pipeline_key,
+            },
+        )
+        urllib.request.urlopen(req, timeout=10)
+        log(f"TEAMS: Proposal pushed to Teams channel — {addr_str}")
+    except Exception as e:
+        log(f"TEAMS: Push failed (non-fatal): {e}")
+
+
 # ===================================================================
 # Orchestration
 # ===================================================================
@@ -749,6 +781,7 @@ def process_single_project(project_id, config, cc_client, claude_client, state):
         return True
 
     if send_proposal_email(config, result):
+        push_to_teams(result)
         state["processed_ids"].append(str(project_id))
         state["stats"]["total_proposals"] = state["stats"].get("total_proposals", 0) + 1
         return True
@@ -774,6 +807,7 @@ def run_pipeline(config, state):
             continue
 
         if send_proposal_email(config, result):
+            push_to_teams(result)
             state["processed_ids"].append(pid)
             state["stats"]["total_proposals"] = state["stats"].get("total_proposals", 0) + 1
             success_count += 1
