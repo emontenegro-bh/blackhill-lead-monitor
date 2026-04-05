@@ -718,9 +718,9 @@ def send_proposal_email(config, result):
         return False
 
 
-def push_to_teams(result):
-    """Push proposal draft to Teams channel via Power Automate Workflows webhook."""
-    webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
+def push_to_slack(result):
+    """Push proposal draft to Slack #proposals channel via incoming webhook."""
+    webhook_url = os.environ.get("SLACK_WEBHOOK_URL", "")
     if not webhook_url:
         return
 
@@ -730,25 +730,30 @@ def push_to_teams(result):
     service_type = result.get("service_type", "Landscape")
     proposal_text = result.get("proposal_html", result.get("description", ""))
 
-    # Strip HTML tags for Teams display
+    # Strip HTML tags for Slack display
     import re as _re
     clean_text = _re.sub(r"<[^>]+>", "", proposal_text)[:3000]
 
     payload = {
-        "type": "message",
-        "attachments": [{
-            "contentType": "application/vnd.microsoft.card.adaptive",
-            "content": {
-                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                "type": "AdaptiveCard",
-                "version": "1.4",
-                "body": [
-                    {"type": "TextBlock", "text": f"New Proposal: {service_type}", "weight": "Bolder", "size": "Medium"},
-                    {"type": "TextBlock", "text": addr_str, "isSubtle": True},
-                    {"type": "TextBlock", "text": clean_text, "wrap": True},
-                ],
+        "blocks": [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": f"New Proposal: {service_type}"},
             },
-        }],
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": f"*{addr_str}*"},
+            },
+            {"type": "divider"},
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": clean_text[:3000]},
+            },
+            {
+                "type": "context",
+                "elements": [{"type": "mrkdwn", "text": "Reply to this thread and tag @Claude to refine this proposal."}],
+            },
+        ],
     }
 
     try:
@@ -758,9 +763,9 @@ def push_to_teams(result):
             headers={"Content-Type": "application/json"},
         )
         urllib.request.urlopen(req, timeout=15)
-        log(f"TEAMS: Proposal pushed to Teams channel — {addr_str}")
+        log(f"SLACK: Proposal pushed to #proposals — {addr_str}")
     except Exception as e:
-        log(f"TEAMS: Push failed (non-fatal): {e}")
+        log(f"SLACK: Push failed (non-fatal): {e}")
 
 
 # ===================================================================
@@ -794,7 +799,7 @@ def process_single_project(project_id, config, cc_client, claude_client, state):
         return True
 
     if send_proposal_email(config, result):
-        push_to_teams(result)
+        push_to_slack(result)
         state["processed_ids"].append(str(project_id))
         state["stats"]["total_proposals"] = state["stats"].get("total_proposals", 0) + 1
         return True
@@ -820,7 +825,7 @@ def run_pipeline(config, state):
             continue
 
         if send_proposal_email(config, result):
-            push_to_teams(result)
+            push_to_slack(result)
             state["processed_ids"].append(pid)
             state["stats"]["total_proposals"] = state["stats"].get("total_proposals", 0) + 1
             success_count += 1
