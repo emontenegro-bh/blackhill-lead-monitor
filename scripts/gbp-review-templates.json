@@ -1,0 +1,74 @@
+{
+  "5_star": [
+    {
+      "id": "5a",
+      "template": "Thank you for sharing your experience, {name}. Knowing that {service_reference} met your expectations reinforces the standards we hold every crew to. We appreciate your trust in Black Hill Landscaping."
+    },
+    {
+      "id": "5b",
+      "template": "We appreciate you taking the time, {name}. Your feedback on {service_reference} is exactly the kind of detail that helps us maintain the Black Hill Standard across every property. Thank you for choosing Black Hill Landscaping."
+    },
+    {
+      "id": "5c",
+      "template": "{name}, thank you. Hearing that {service_reference} delivered the results you expected confirms we are doing our job right. We look forward to continuing to serve your property."
+    }
+  ],
+  "4_star": [
+    {
+      "id": "4a",
+      "template": "Thank you for the feedback, {name}. We are glad {service_reference} met your needs. If there is anything we can refine to earn that fifth star, we would welcome the conversation. Our commitment is to continuous improvement on every property we serve."
+    },
+    {
+      "id": "4b",
+      "template": "{name}, we appreciate your review. Four stars tells us we are close but not perfect, and that matters to us. If you have specific feedback on how we can improve, please reach out directly at (817) 995-0324."
+    },
+    {
+      "id": "4c",
+      "template": "Thank you, {name}. We take every piece of feedback seriously at Black Hill Landscaping. If there is a detail we can sharpen on your next service, we want to hear it."
+    }
+  ],
+  "3_star": [
+    {
+      "id": "3a",
+      "template": "{name}, thank you for your honest feedback. Three stars tells us there is room to improve, and we want to understand what fell short. Please call us directly at (817) 995-0324 so we can discuss your experience and make it right."
+    },
+    {
+      "id": "3b",
+      "template": "We appreciate you sharing this, {name}. Your experience does not reflect the standard we hold ourselves to at Black Hill Landscaping. We would like the opportunity to discuss this further. Please reach out at (817) 995-0324 at your convenience."
+    },
+    {
+      "id": "3c",
+      "template": "{name}, thank you for taking the time to leave this review. We want every client to feel confident in the work we deliver. Please contact us at (817) 995-0324 so we can better understand what happened and how we can improve."
+    }
+  ],
+  "2_star": [
+    {
+      "id": "2a",
+      "template": "{name}, we are sorry to hear your experience did not meet expectations. This is not the standard we set for ourselves at Black Hill Landscaping. We would like to understand what went wrong and work toward a resolution. Please call us at (817) 995-0324."
+    },
+    {
+      "id": "2b",
+      "template": "Thank you for bringing this to our attention, {name}. We take this seriously. Please reach out to us directly at (817) 995-0324 so we can discuss your experience and determine how we can address your concerns."
+    }
+  ],
+  "1_star": [
+    {
+      "id": "1a",
+      "template": "{name}, we are genuinely concerned to read this. Every client's experience matters to us, and we want to understand what happened. Please call us directly at (817) 995-0324 so we can discuss this and find a path forward."
+    },
+    {
+      "id": "1b",
+      "template": "We are sorry about your experience, {name}. This does not reflect the standard we hold at Black Hill Landscaping. We would welcome the chance to speak with you directly and address your concerns. Please reach out at (817) 995-0324."
+    }
+  ],
+  "service_references": {
+    "default": "the work on your property",
+    "lawn": "the lawn care service",
+    "tree": "the tree work",
+    "irrigation": "the irrigation service",
+    "hardscape": "the hardscaping project",
+    "design": "the landscape design",
+    "install": "the landscape installation",
+    "commercial": "the commercial maintenance"
+  }
+}
