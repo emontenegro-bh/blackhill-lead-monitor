@@ -742,7 +742,7 @@ def push_to_slack(result):
             },
             {
                 "type": "section",
-                "text": {"type": "mrkdwn", "text": f"*{addr_str}*"},
+                "text": {"type": "mrkdwn", "text": f"*{addr_str}*\n:sunny: {result.get('sun_exposure', 'Unknown')}"},
             },
             {"type": "divider"},
             {
