@@ -230,7 +230,7 @@ SPAM_EMAIL_DOMAINS = [
     "throwaway.email", "sharklasers.com", "circuitprompt.com",
     "consoleaidly.com", "parallelaid.com", "fusionescort.com",
     "vettedvas.com", "smartclerical.com", "sendproud.com",
-    "cachehelper.com",
+    "cachehelper.com", "scopeadjunct.com",
 ]
 
 # Our own addresses (never process as leads)
@@ -366,8 +366,25 @@ def _is_spam_form(lead_data):
         if email == addr:
             return True, f"Own address: {addr}"
 
+    # Fake address detection (bots use "123 Main St" pattern)
+    address = (fields.get("Address", "") or lead_data.get("address", "") or "").lower()
+    if "123 main st" in address:
+        return True, "Fake address: 123 Main St"
+
+    # Non-Texas area code with no local signals
+    phone = fields.get("Contact No", "") or ""
+    if phone:
+        digits = "".join(c for c in phone if c.isdigit())
+        if len(digits) >= 10:
+            area_code = digits[:3] if not digits.startswith("1") else digits[1:4]
+            tx_area_codes = {"210", "214", "254", "281", "325", "346", "361", "409",
+                             "430", "432", "469", "512", "682", "713", "726", "737",
+                             "806", "817", "830", "832", "903", "915", "936", "940",
+                             "945", "956", "972", "979"}
+            if area_code not in tx_area_codes and "(direct)" in (lead_data.get("source", "") or "").lower():
+                return True, f"Non-TX area code ({area_code}) with direct/unknown source"
+
     # No email and no phone = likely spam
-    phone = fields.get("Contact No", "")
     if not email and not phone:
         return True, "No email and no phone"
 
