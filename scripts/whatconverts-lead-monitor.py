@@ -228,7 +228,8 @@ SPAM_EMAIL_DOMAINS = [
     "rambler.ru", "yandex.ru", "mail.ru", "melssa.com",
     "mailnesia.com", "guerrillamail.com", "tempmail.com",
     "throwaway.email", "sharklasers.com", "circuitprompt.com",
-    "consoleaidly.com",
+    "consoleaidly.com", "parallelaid.com", "fusionescort.com",
+    "vettedvas.com", "smartclerical.com", "sendproud.com",
 ]
 
 # Our own addresses (never process as leads)
