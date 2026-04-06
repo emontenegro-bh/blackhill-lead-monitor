@@ -147,15 +147,16 @@
     "228041682",
     "228088713",
     "228103753",
-    "228375438"
+    "228375438",
+    "228643522"
   ],
   "stats": {
-    "total_leads": 88,
+    "total_leads": 89,
     "total_spam": 29,
-    "last_lead": "2026-04-02T05:50:13.195360",
+    "last_lead": "2026-04-06T13:25:13.096867",
     "total_calls": 2
   },
-  "last_run": "2026-04-06T13:20:09.225606+00:00",
+  "last_run": "2026-04-06T13:25:13.097519+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -396,6 +397,13 @@
       "traffic_source": "google / cpc",
       "service": "",
       "date": "2026-03-31"
+    },
+    "228643522": {
+      "aspire_contact_id": "2550",
+      "traffic_source": "google / organic",
+      "service": "Landscaping",
+      "lead_type": "web_form",
+      "date": "2026-04-06"
     }
   }
 }
