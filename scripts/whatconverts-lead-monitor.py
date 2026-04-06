@@ -230,6 +230,7 @@ SPAM_EMAIL_DOMAINS = [
     "throwaway.email", "sharklasers.com", "circuitprompt.com",
     "consoleaidly.com", "parallelaid.com", "fusionescort.com",
     "vettedvas.com", "smartclerical.com", "sendproud.com",
+    "cachehelper.com",
 ]
 
 # Our own addresses (never process as leads)
@@ -920,6 +921,9 @@ def process_leads(config, state):
     log(f"Found {len(leads)} recent lead(s) ({len(forms)} forms, {len(calls)} calls)")
     processed_ids = state.get("processed_ids", [])
 
+    # Track emails flagged as spam within this run
+    spam_emails = set()
+
     for lead_data in leads:
         lead_id = str(lead_data.get("lead_id", ""))
         if not lead_id:
@@ -946,10 +950,20 @@ def process_leads(config, state):
             email = lead_data.get("contact_email_address", "unknown")
             log(f"\nProcessing {lead_type_label}: {name} ({email}) [WC #{lead_id}]")
 
+        # Check if this email was already flagged as spam in this run
+        lead_email = (lead_data.get("contact_email_address") or "").strip().lower()
+        if lead_email and lead_email in spam_emails:
+            log(f"  SKIP: Email already flagged as spam in this run")
+            processed_ids.append(lead_id)
+            state["stats"]["total_spam"] = state["stats"].get("total_spam", 0) + 1
+            continue
+
         # Spam check
         is_spam, spam_reason = is_spam_lead(lead_data)
         if is_spam:
             log(f"  SKIP: {spam_reason}")
+            if lead_email:
+                spam_emails.add(lead_email)
             if not is_call:
                 send_spam_notification(config, lead_data, spam_reason)
             processed_ids.append(lead_id)
