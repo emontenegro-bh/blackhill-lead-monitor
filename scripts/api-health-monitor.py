@@ -397,26 +397,34 @@ def test_wc_auth(config):
                       f"HTTP {status}", {"body": body})
 
 
-def test_wc_field_names(config):
+def test_wc_field_names(config, max_retries=3):
     url = f"https://app.whatconverts.com/api/v1/leads?leads_per_page=1&profile_id={config['profile_id']}"
-    body, status = http_request("GET", url, headers=wc_auth_header(config))
-    if status != 200:
-        return TestResult("whatconverts", "field names", False,
-                          f"HTTP {status}")
-    leads = body.get("leads", [])
-    if not leads:
+    for attempt in range(max_retries):
+        body, status = http_request("GET", url, headers=wc_auth_header(config))
+        if status != 200:
+            if attempt < max_retries - 1:
+                time.sleep(2)
+                continue
+            return TestResult("whatconverts", "field names", False,
+                              f"HTTP {status} after {max_retries} attempts")
+        leads = body.get("leads", [])
+        if not leads:
+            return TestResult("whatconverts", "field names", True,
+                              "No leads to verify (empty profile)")
+        keys = set(leads[0].keys())
+        expected = {"id", "lead_type", "date_created"}
+        missing = expected - keys
+        if missing:
+            if attempt < max_retries - 1:
+                time.sleep(2)
+                continue
+            return TestResult("whatconverts", "field names", False,
+                              f"Missing expected fields: {missing} (after {max_retries} attempts)",
+                              {"expected": sorted(expected), "actual": sorted(keys)})
+        retried = f" (passed on attempt {attempt + 1})" if attempt > 0 else ""
         return TestResult("whatconverts", "field names", True,
-                          "No leads to verify (empty profile)")
-    keys = set(leads[0].keys())
-    expected = {"id", "lead_type", "date_created"}
-    missing = expected - keys
-    if missing:
-        return TestResult("whatconverts", "field names", False,
-                          f"Missing expected fields: {missing}",
-                          {"expected": sorted(expected), "actual": sorted(keys)})
-    return TestResult("whatconverts", "field names", True,
-                      f"Structure OK ({len(keys)} fields)",
-                      {"keys": sorted(keys)})
+                          f"Structure OK ({len(keys)} fields){retried}",
+                          {"keys": sorted(keys)})
 
 
 def test_wc_write_persist(config):
