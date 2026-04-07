@@ -423,6 +423,15 @@
       "service": "Lawn Services",
       "lead_type": "web_form",
       "date": "2026-04-06"
+    },
+    "228760538": {
+      "aspire_contact_id": "2554",
+      "traffic_source": "(direct) / (none)",
+      "service": "fuzzy-matched",
+      "lead_type": "web_form",
+      "date": "2026-04-06",
+      "match_score": 1.0,
+      "match_method": "exact_email"
     }
   }
 }
