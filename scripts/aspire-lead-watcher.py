@@ -276,6 +276,19 @@ HEARTBEAT_REPO_PATH = "data/aspire-watcher-heartbeat.json"
 HEARTBEAT_PUSH_INTERVAL_SEC = 55 * 60  # ~1 push/hour
 
 
+def _resolve_gh_bin():
+    """Find the `gh` CLI. launchd strips PATH so fall back to known install
+    locations (Homebrew on Apple Silicon + Intel) before giving up."""
+    import shutil
+    found = shutil.which("gh")
+    if found:
+        return found
+    for candidate in ("/opt/homebrew/bin/gh", "/usr/local/bin/gh"):
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return None
+
+
 def write_heartbeat():
     """Write heartbeat timestamp for remote monitoring.
 
@@ -314,10 +327,15 @@ def write_heartbeat():
     except Exception:
         pass  # corrupt state file — proceed and overwrite it below
 
+    gh_bin = _resolve_gh_bin()
+    if not gh_bin:
+        log.warning("Heartbeat push skipped: gh CLI not found")
+        return
+
     try:
         # Get current file sha on main (required for the PUT update)
         sha_res = subprocess.run(
-            ["gh", "api",
+            [gh_bin, "api",
              f"repos/{HEARTBEAT_REPO}/contents/{HEARTBEAT_REPO_PATH}",
              "--jq", ".sha"],
             capture_output=True, text=True, timeout=15,
@@ -333,7 +351,7 @@ def write_heartbeat():
             content_b64 = base64.b64encode(f.read()).decode("ascii")
 
         put_res = subprocess.run(
-            ["gh", "api", "-X", "PUT",
+            [gh_bin, "api", "-X", "PUT",
              f"repos/{HEARTBEAT_REPO}/contents/{HEARTBEAT_REPO_PATH}",
              "-f", "message=chore: aspire watcher heartbeat",
              "-f", f"content={content_b64}",
