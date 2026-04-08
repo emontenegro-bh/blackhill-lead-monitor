@@ -270,8 +270,27 @@ def reprocess_lead(filename):
     save_state(state)
 
 
+HEARTBEAT_PUSH_STATE = os.path.expanduser("~/.config/aspire/heartbeat-last-push.txt")
+HEARTBEAT_REPO = "emontenegro-bh/blackhill-lead-monitor"
+HEARTBEAT_REPO_PATH = "data/aspire-watcher-heartbeat.json"
+HEARTBEAT_PUSH_INTERVAL_SEC = 55 * 60  # ~1 push/hour
+
+
 def write_heartbeat():
-    """Write heartbeat timestamp for remote monitoring."""
+    """Write heartbeat timestamp for remote monitoring.
+
+    Also periodically pushes the heartbeat file to origin/main via the
+    GitHub Contents API (using `gh api`) so the GHA 'Aspire Watcher
+    Heartbeat Check' workflow can see a fresh timestamp. Uses the API
+    directly instead of `git push` so it never touches the working tree
+    of the host repo (which typically has unrelated WIP and is far behind
+    origin due to workflow state-file commits). Throttled to ~1 push/hour.
+    All remote operations are silent-on-failure so the watcher stays
+    resilient to network/API hiccups.
+    """
+    import base64
+    import time
+
     try:
         os.makedirs(os.path.dirname(HEARTBEAT_FILE), exist_ok=True)
         with open(HEARTBEAT_FILE, "w") as f:
@@ -280,7 +299,54 @@ def write_heartbeat():
                 "hostname": os.uname().nodename,
             }, f, indent=2)
     except Exception:
-        pass
+        return
+
+    # Throttle: skip if we pushed recently
+    try:
+        if os.path.exists(HEARTBEAT_PUSH_STATE):
+            with open(HEARTBEAT_PUSH_STATE) as f:
+                last_push = float(f.read().strip() or "0")
+            if (time.time() - last_push) < HEARTBEAT_PUSH_INTERVAL_SEC:
+                return
+    except Exception:
+        pass  # corrupt state file — proceed and overwrite it below
+
+    try:
+        # Get current file sha on main (required for the PUT update)
+        sha_res = subprocess.run(
+            ["gh", "api",
+             f"repos/{HEARTBEAT_REPO}/contents/{HEARTBEAT_REPO_PATH}",
+             "--jq", ".sha"],
+            capture_output=True, text=True, timeout=15,
+        )
+        if sha_res.returncode != 0:
+            log.warning(f"Heartbeat sha lookup failed: {sha_res.stderr.strip()[:200]}")
+            return
+        current_sha = sha_res.stdout.strip()
+        if not current_sha:
+            return
+
+        with open(HEARTBEAT_FILE, "rb") as f:
+            content_b64 = base64.b64encode(f.read()).decode("ascii")
+
+        put_res = subprocess.run(
+            ["gh", "api", "-X", "PUT",
+             f"repos/{HEARTBEAT_REPO}/contents/{HEARTBEAT_REPO_PATH}",
+             "-f", "message=chore: aspire watcher heartbeat",
+             "-f", f"content={content_b64}",
+             "-f", f"sha={current_sha}",
+             "-f", "branch=main"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if put_res.returncode != 0:
+            log.warning(f"Heartbeat push failed: {put_res.stderr.strip()[:200]}")
+            return
+
+        os.makedirs(os.path.dirname(HEARTBEAT_PUSH_STATE), exist_ok=True)
+        with open(HEARTBEAT_PUSH_STATE, "w") as f:
+            f.write(str(time.time()))
+    except Exception as e:
+        log.warning(f"Heartbeat push exception: {e}")
 
 
 if __name__ == "__main__":
