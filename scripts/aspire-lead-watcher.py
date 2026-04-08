@@ -294,8 +294,11 @@ def write_heartbeat():
     try:
         os.makedirs(os.path.dirname(HEARTBEAT_FILE), exist_ok=True)
         with open(HEARTBEAT_FILE, "w") as f:
+            # Naive UTC — matches the GHA heartbeat check which uses
+            # datetime.now() on runners (UTC). Writing local time caused
+            # a 5h ghost age from the CDT↔UTC offset.
             json.dump({
-                "last_run": datetime.now().isoformat(),
+                "last_run": datetime.utcnow().isoformat(),
                 "hostname": os.uname().nodename,
             }, f, indent=2)
     except Exception:
