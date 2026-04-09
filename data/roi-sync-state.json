@@ -151,10 +151,18 @@
       "sales_value": 0,
       "traffic_source": "google / organic",
       "synced_at": "2026-04-03T23:49:11.960639+00:00"
+    },
+    "228643522": {
+      "last_status": "Delivered",
+      "opp_number": 3234,
+      "quote_value": 6625,
+      "sales_value": 0,
+      "traffic_source": "google / organic",
+      "synced_at": "2026-04-09T17:46:57.311331+00:00"
     }
   },
   "stats": {
-    "total_synced": 19,
-    "last_run": "2026-04-09T16:43:05.022888+00:00"
+    "total_synced": 20,
+    "last_run": "2026-04-09T17:46:58.583192+00:00"
   }
 }
