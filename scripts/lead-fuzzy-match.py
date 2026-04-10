@@ -34,6 +34,11 @@ WC_CONFIG_FILE = os.path.expanduser("~/.config/whatconverts/config.json")
 # Thresholds
 HIGH_CONFIDENCE = 0.90   # Auto-link if --auto-link
 REVIEW_THRESHOLD = 0.65  # Show in review digest
+# Name-only matches need a higher bar — low fuzzy-name scores
+# produce garbage (e.g. "Darren Harlow" → "Dean Low" at 67% because
+# "harlow" ends with "low"). Require >=0.80 when no corroborating
+# signal (phone, email, address) exists.
+NAME_ONLY_THRESHOLD = 0.80
 
 # Known spam domains (from spam-detector.py)
 SPAM_DOMAINS = {
@@ -385,9 +390,17 @@ def run():
         print("No unmapped leads to process.")
         return
 
+    # Dismissed matches: WC lead IDs that were reviewed and rejected.
+    # Prevents false positives from re-appearing in every report.
+    dismissed = set(state.get("dismissed_matches", []))
+
     # Fuzzy match each unmapped lead
     results = {"high": [], "review": [], "no_match": []}
     for lead in unmapped:
+        wc_id = lead.get("wc_id", "")
+        if wc_id in dismissed:
+            continue
+
         best_score = 0.0
         best_contact = None
         best_method = "none"
@@ -405,14 +418,17 @@ def run():
                 best_contact = contact
                 best_method = method
 
-        lead_name = f"{lead['first_name']} {lead['last_name']}".strip()
+        # Name-only matches use a stricter threshold — low fuzzy name
+        # scores are unreliable without a corroborating signal.
+        is_name_only = best_method == "name"
+        effective_review_threshold = NAME_ONLY_THRESHOLD if is_name_only else REVIEW_THRESHOLD
 
         if best_score >= HIGH_CONFIDENCE:
             results["high"].append({
                 "lead": lead, "contact": best_contact,
                 "score": best_score, "method": best_method,
             })
-        elif best_score >= REVIEW_THRESHOLD:
+        elif best_score >= effective_review_threshold:
             results["review"].append({
                 "lead": lead, "contact": best_contact,
                 "score": best_score, "method": best_method,
