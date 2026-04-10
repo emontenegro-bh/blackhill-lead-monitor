@@ -413,7 +413,7 @@ def test_wc_field_names(config, max_retries=3):
             return TestResult("whatconverts", "field names", True,
                               "No leads to verify (empty profile)")
         keys = set(leads[0].keys())
-        expected = {"id", "lead_type", "date_created"}
+        expected = {"lead_id", "lead_type", "date_created"}
         missing = expected - keys
         if missing:
             if attempt < max_retries - 1:
