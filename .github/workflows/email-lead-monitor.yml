@@ -41,6 +41,7 @@ jobs:
           HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
           ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
           ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          SPAM_AUTO_FILTER: "true"
         run: python scripts/lead-monitor.py
 
       - name: Persist state
