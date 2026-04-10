@@ -410,6 +410,14 @@ SOLICITATION_KEYWORDS = [
     "our agency", "our team can help",
     "increase your revenue", "grow your business",
     "lead generation service", "leads for your business",
+    # SEO pitch patterns (Massi B. / stepconceptagency 2026-04-08)
+    "hurting your rankings", "rankings on google",
+    "push you to page 1", "page 1 faster", "get to page 1",
+    "low-competition keywords", "low competition keywords",
+    "recorded a quick video", "recorded a video",
+    "breaking down the issues", "mind if i share",
+    "i was checking out", "noticed a few things",
+    "missing some opportunities", "missing opportunities",
 ]
 
 SERVICE_KEYWORDS = [
@@ -424,6 +432,8 @@ SPAM_EMAIL_DOMAINS = [
     "melssa.com", "mailnesia.com", "guerrillamail.com", "tempmail.com",
     "throwaway.email", "sharklasers.com", "grr.la", "guerrillamailblock.com",
     "pokemail.net", "spam4.me", "binkmail.com", "safetymail.info",
+    # Junk mail services (Elementor bot submissions 2026-04)
+    "polosmail.com",
 ]
 
 # Known spam contact names (exact match, case-insensitive)
@@ -471,6 +481,19 @@ MONEY_SCAM_KEYWORDS = [
     "stop guessing", "next high-margin deal",
 ]
 
+# Country names used as city — bots fill "Madagascar", "Brazil", etc.
+COUNTRY_NAMES = [
+    "madagascar", "brazil", "nigeria", "india", "pakistan", "bangladesh",
+    "indonesia", "philippines", "vietnam", "thailand", "malaysia",
+    "china", "japan", "south korea", "taiwan", "russia", "ukraine",
+    "poland", "romania", "hungary", "turkey", "egypt", "morocco",
+    "south africa", "kenya", "ghana", "cameroon", "senegal",
+    "argentina", "colombia", "peru", "chile", "mexico", "canada",
+    "united kingdom", "england", "france", "germany", "spain", "italy",
+    "netherlands", "belgium", "sweden", "norway", "denmark", "finland",
+    "australia", "new zealand", "ireland", "scotland", "wales",
+]
+
 # Foreign street address patterns (non-US address formats)
 # Checked with "in" (not startswith) to handle house numbers before the prefix
 FOREIGN_ADDRESS_PREFIXES = [
@@ -514,6 +537,38 @@ FORT_WORTH_ZIPS = [
     "76185", "76191", "76192", "76193", "76196", "76197", "76198", "76199",
     "76244", "76248", "76262",
 ]
+
+
+def _is_gibberish(text):
+    """Detect random/bot-generated text (names, messages, addresses).
+    Returns True for strings like 'NATREGTEGH779280NERTHRTYHR' or
+    'METYUTYJ779280MAWRERGTRH' that are clearly not human input."""
+    if not text or len(text.strip()) < 4:
+        return False
+    t = text.strip()
+
+    # ALL CAPS with digits mixed in and length > 10 (e.g. "NATREGTEGH779280NERTHRTYHR")
+    if len(t) > 10 and t == t.upper() and any(c.isdigit() for c in t):
+        return True
+
+    # No spaces in a long string (>15 chars) — human names always have a space
+    if " " not in t and len(t) > 15:
+        return True
+
+    # Very low vowel ratio in alpha chars (random consonant strings)
+    alpha = [c for c in t.lower() if c.isalpha()]
+    if len(alpha) > 6:
+        vowel_ratio = sum(1 for c in alpha if c in "aeiou") / len(alpha)
+        if vowel_ratio < 0.15:
+            return True
+
+    # Digits make up >30% of the string and string is >8 chars
+    if len(t) > 8:
+        digit_ratio = sum(1 for c in t if c.isdigit()) / len(t)
+        if digit_ratio > 0.30:
+            return True
+
+    return False
 
 
 def _parse_form_fields(body_text):
@@ -664,8 +719,27 @@ def classify_email(message, config):
     for spam_name in SPAM_NAMES:
         if form_name == spam_name:
             score += 10
+            hard_spam = True
             reasons.append(f"Blocked name: {spam_name}")
             break
+
+    # Gibberish name (e.g. "NATREGTEGH779280NERTHRTYHR")
+    if _is_gibberish(form_name):
+        score += 5
+        hard_spam = True
+        reasons.append(f"Gibberish name: '{form_name[:30]}'")
+
+    # Gibberish message (e.g. "METYUTYJ779280MAWRERGTRH")
+    if _is_gibberish(form_message) or _is_gibberish(body_plain[:200]):
+        score += 4
+        hard_spam = True
+        reasons.append("Gibberish message content")
+
+    # Country name used as city (bots fill "Madagascar", "Brazil", etc.)
+    if form_city and form_city in COUNTRY_NAMES:
+        score += 5
+        hard_spam = True
+        reasons.append(f"Country name as city: {form_city}")
 
     # Service field contains label text instead of actual selection (bot didn't use dropdown)
     form_service = form.get("what type of service do you need?", "").strip().lower()
@@ -697,6 +771,12 @@ def classify_email(message, config):
             score += 2
             reasons.append(f"Suspicious area code: {area_code}")
 
+    # 11-digit phone not starting with 1 (US numbers are 10 digits or 1+10)
+    if phone_digits and len(phone_digits) == 11 and not phone_digits.startswith("1"):
+        score += 3
+        hard_spam = True
+        reasons.append(f"Non-US phone format: {phone_digits} (11 digits, starts with {phone_digits[0]})")
+
     # No real US phone number anywhere in body
     us_phone = re.search(r"\(?\d{3}\)?[\s\-\.]?\d{3}[\s\-\.]?\d{4}", body)
     if not us_phone:
@@ -714,6 +794,9 @@ def classify_email(message, config):
             "campinas", "sao paulo", "são paulo", "rio de janeiro",
             "belo horizonte", "salvador", "brasilia", "fortaleza",
             "curitiba", "recife", "porto alegre",
+            # UK towns (SEO solicitation bots)
+            "culcheth", "london", "manchester", "birmingham", "leeds",
+            "liverpool", "bristol", "edinburgh", "glasgow", "cardiff",
         ]
         if form_city in foreign_indicators:
             score += 4
