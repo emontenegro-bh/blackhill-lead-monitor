@@ -560,6 +560,12 @@ def classify_email(message, config):
 
     score = 0
     reasons = []
+    # Tripped by any high-confidence spam signal. When True, we skip the
+    # "lead signal" credits entirely — a Brazilian bot with a foreign
+    # address should not be rehabilitated by "has a dropdown value" or
+    # "has 10 digits in a phone field". See Joanna Riggs / video pitch
+    # case 2026-04-09 for the original miss.
+    hard_spam = False
 
     # --- Parse form fields for smarter checks ---
     form = _parse_form_fields(message.get("body", {}).get("content", ""))
@@ -581,6 +587,7 @@ def classify_email(message, config):
     # BBCode [url=...] tags — classic forum spam, never from real leads
     if "[url=" in full_text or "[/url]" in full_text:
         score += 5
+        hard_spam = True
         reasons.append("BBCode [url=] tags (forum spam)")
 
     # URL shorteners in message body
@@ -590,18 +597,21 @@ def classify_email(message, config):
     for s in shorteners:
         if s in full_text:
             score += 4
+            hard_spam = True
             reasons.append(f"URL shortener: {s}")
             break
 
     # Telegram bot links
     if "t.me/" in full_text or "@netxmix" in full_text:
         score += 4
+        hard_spam = True
         reasons.append("Telegram bot/channel link")
 
     # Video/streaming links in message (bots embed promo YouTube links)
     for pattern in VIDEO_LINK_PATTERNS:
         if pattern in full_text or pattern in form_message or pattern in body_plain:
             score += 5
+            hard_spam = True
             reasons.append(f"Video link in message: {pattern}")
             break
 
@@ -609,6 +619,7 @@ def classify_email(message, config):
     for kw in MONEY_SCAM_KEYWORDS:
         if kw in full_text or kw in form_message or kw in body_plain:
             score += 4
+            hard_spam = True
             reasons.append(f"Money scam keyword: '{kw}'")
             break
 
@@ -617,6 +628,7 @@ def classify_email(message, config):
     for prefix in FOREIGN_ADDRESS_PREFIXES:
         if prefix in form_address or prefix in body_plain:
             score += 3
+            hard_spam = True
             reasons.append(f"Foreign address format: '{form_address or prefix}'")
             break
 
@@ -624,6 +636,7 @@ def classify_email(message, config):
     for domain in SPAM_EMAIL_DOMAINS:
         if domain in form_email:
             score += 4
+            hard_spam = True
             reasons.append(f"Spam email domain: {domain}")
             break
 
@@ -677,6 +690,7 @@ def classify_email(message, config):
         area_code = phone_digits[-10:-7] if len(phone_digits) == 11 else phone_digits[:3]
         if area_code[0] in ("0", "1"):
             score += 3
+            hard_spam = True
             reasons.append(f"Invalid US area code: {area_code} (starts with {area_code[0]})")
         elif area_code[1] == "9" and area_code[2] == "0":
             # x90 area codes don't exist in the US
@@ -696,9 +710,14 @@ def classify_email(message, config):
             "moscow", "basra", "dharan", "lilongwe", "addis ababa", "brcko",
             "molodesjnaja", "duverge", "gilcrest", "pritchett", "kiev",
             "mumbai", "lagos", "nairobi", "bogota", "manila", "karachi",
+            # Brazilian cities (Elementor bots commonly use these)
+            "campinas", "sao paulo", "são paulo", "rio de janeiro",
+            "belo horizonte", "salvador", "brasilia", "fortaleza",
+            "curitiba", "recife", "porto alegre",
         ]
         if form_city in foreign_indicators:
             score += 4
+            hard_spam = True
             reasons.append(f"Foreign city: {form_city}")
         elif form_city in OUT_OF_STATE_CITIES:
             score += 3
@@ -711,11 +730,13 @@ def classify_email(message, config):
     form_zip = form.get("zip code", "").strip()
     if form_zip and not re.match(r"^\d{5}(-\d{4})?$", form_zip):
         score += 3
+        hard_spam = True
         reasons.append(f"Non-US zip code: {form_zip}")
 
     # Cyrillic characters in body
     if re.search(r"[\u0400-\u04FF]", body):
         score += 3
+        hard_spam = True
         reasons.append("Cyrillic characters in body")
 
     # Known spam tool names
@@ -755,11 +776,23 @@ def classify_email(message, config):
         "for [company", "for your business", "for your company",
         "scale your", "automate your", "boost your",
         "secure an unfair", "data advantage", "stop guessing",
+        # Cold-outreach templates (2026-04 video pitch case)
+        "i just visited", "i came across your", "i was browsing",
+        "ever considered", "have you considered", "have you ever",
+        "our prices start", "prices start from",
+        "samples of our", "samples of previous", "previous work",
+        "our videos", "impactful video", "video to advertise",
+        "video for your business", "advertise your business",
+        "across social media", "on social media",
+        "generate impressive results", "impressive results",
+        "let me know if you're interested", "let me know if you are interested",
+        "if you're interested in seeing",
     ]
     selling_text = form_message or body_plain
     selling_count = sum(1 for p in selling_phrases if p in selling_text)
     if selling_count >= 2:
         score += 4
+        hard_spam = True
         reasons.append(f"Message contains selling language ({selling_count} phrases)")
     elif selling_count == 1:
         score += 2
@@ -794,6 +827,7 @@ def classify_email(message, config):
     for d in disposable_domains:
         if d in form_email or d in sender:
             score += 4
+            hard_spam = True
             reasons.append(f"Disposable email: {d}")
             break
 
@@ -843,47 +877,54 @@ def classify_email(message, config):
         reasons.append("No page URL (bot submission)")
 
     # --- LEAD SIGNALS (reduce score) ---
+    # Gated: only apply these credits if no hard-spam signal fired.
+    # Otherwise a Brazilian bot filling the dropdown + a bare phone number
+    # can fully offset "foreign address + invalid area code" (Joanna Riggs
+    # video pitch case, 2026-04-09).
+    if not hard_spam:
+        # Google Ads traffic source
+        if "google ads" in form_traffic:
+            score -= 3
+            reasons.append("Traffic from Google Ads")
 
-    # Google Ads traffic source
-    if "google ads" in form_traffic:
-        score -= 3
-        reasons.append("Traffic from Google Ads")
-
-    # Direct website traffic with page URL
-    if form.get("page url", "") and ("blackhilllandscaping.com" in form.get("page url", "") or "meangreenlawncare.com" in form.get("page url", "")):
-        score -= 2
-        reasons.append("Submitted from website contact page")
-
-    # Fort Worth area references
-    if "fort worth" in full_text or "tarrant" in full_text or "dfw" in full_text:
-        score -= 2
-        reasons.append("Fort Worth area reference")
-
-    # DFW city match
-    if form_city in DFW_CITIES:
-        score -= 3
-        reasons.append(f"DFW city: {form_city}")
-
-    # Fort Worth zip code
-    for zip_code in FORT_WORTH_ZIPS:
-        if zip_code in body:
+        # Direct website traffic with page URL
+        if form.get("page url", "") and ("blackhilllandscaping.com" in form.get("page url", "") or "meangreenlawncare.com" in form.get("page url", "")):
             score -= 2
-            reasons.append(f"Fort Worth zip: {zip_code}")
-            break
+            reasons.append("Submitted from website contact page")
 
-    # Service keywords
-    for kw in SERVICE_KEYWORDS:
-        if kw in full_text:
-            score -= 1
-            reasons.append(f"Service keyword: '{kw}'")
-            break
+        # Fort Worth area references
+        if "fort worth" in full_text or "tarrant" in full_text or "dfw" in full_text:
+            score -= 2
+            reasons.append("Fort Worth area reference")
 
-    # Real US phone number present
-    if us_phone:
-        score -= 2
-        reasons.append("Contains US phone number")
+        # DFW city match
+        if form_city in DFW_CITIES:
+            score -= 3
+            reasons.append(f"DFW city: {form_city}")
 
-    # Allowed senders from config
+        # Fort Worth zip code
+        for zip_code in FORT_WORTH_ZIPS:
+            if zip_code in body:
+                score -= 2
+                reasons.append(f"Fort Worth zip: {zip_code}")
+                break
+
+        # Service keywords
+        for kw in SERVICE_KEYWORDS:
+            if kw in full_text:
+                score -= 1
+                reasons.append(f"Service keyword: '{kw}'")
+                break
+
+        # Real US phone number present
+        if us_phone:
+            score -= 2
+            reasons.append("Contains US phone number")
+    else:
+        reasons.append("Lead credits skipped (hard spam signal fired)")
+
+    # Allowed senders from config — NOT gated by hard_spam because a
+    # real explicit allow-list should always win.
     allowed = config.get("spam", {}).get("allowed_senders", [])
     for allowed_sender in allowed:
         if allowed_sender.lower() in sender or allowed_sender.lower() in form_email:
