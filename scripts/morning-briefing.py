@@ -525,6 +525,41 @@ def build_briefing():
     return "\n".join(parts)
 
 
+def send_email_fallback(message):
+    """Send briefing via Gmail SMTP when SMS fails."""
+    gmail_email = os.environ.get("GMAIL_EMAIL", "")
+    gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
+    if not gmail_email or not gmail_password:
+        print("Gmail credentials not configured for email fallback", file=sys.stderr)
+        return False
+
+    from email.mime.multipart import MIMEMultipart
+    from email.utils import formataddr
+
+    now = datetime.now(CENTRAL_TIME)
+    subject = f"Morning Briefing — {now.strftime('%A %b %-d')}"
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = formataddr(("Black Hill Assistant", gmail_email))
+    msg["To"] = "evelin@blackhilltx.com"
+
+    msg.attach(MIMEText(message, "plain"))
+    html = f"<pre style='font-family:system-ui;font-size:14px;line-height:1.5'>{message}</pre>"
+    msg.attach(MIMEText(html, "html"))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.starttls()
+            server.login(gmail_email, gmail_password)
+            server.sendmail(gmail_email, ["evelin@blackhilltx.com"], msg.as_string())
+        print("Briefing sent via email fallback")
+        return True
+    except Exception as e:
+        print(f"Email fallback error: {e}", file=sys.stderr)
+        return False
+
+
 # --- Main ---
 
 if __name__ == "__main__":
@@ -562,40 +597,3 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print("Morning briefing sent successfully")
-
-
-def send_email_fallback(message):
-    """Send briefing via Gmail SMTP when SMS fails."""
-    gmail_email = os.environ.get("GMAIL_EMAIL", "")
-    gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
-    if not gmail_email or not gmail_password:
-        print("Gmail credentials not configured for email fallback", file=sys.stderr)
-        return False
-
-    from email.mime.multipart import MIMEMultipart
-    from email.utils import formataddr
-
-    now = datetime.now(CENTRAL_TIME)
-    subject = f"Morning Briefing — {now.strftime('%A %b %-d')}"
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = formataddr(("Black Hill Assistant", gmail_email))
-    msg["To"] = "evelin@blackhilltx.com"
-
-    # Plain text version
-    msg.attach(MIMEText(message, "plain"))
-    # Simple HTML version (preserve line breaks)
-    html = f"<pre style='font-family:system-ui;font-size:14px;line-height:1.5'>{message}</pre>"
-    msg.attach(MIMEText(html, "html"))
-
-    try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-            server.starttls()
-            server.login(gmail_email, gmail_password)
-            server.sendmail(gmail_email, ["evelin@blackhilltx.com"], msg.as_string())
-        print("Briefing sent via email fallback")
-        return True
-    except Exception as e:
-        print(f"Email fallback error: {e}", file=sys.stderr)
-        return False
