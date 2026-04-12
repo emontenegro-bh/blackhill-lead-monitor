@@ -45,8 +45,20 @@ QS_HISTORY_FILE = os.path.expanduser(
 )
 
 # --- Load credentials ---
-with open(os.path.expanduser("~/.config/google-ads/config.json")) as f:
-    ads_config = json.load(f)
+# Prefer environment variables (GitHub Actions), fall back to local config file
+config_file = os.path.expanduser("~/.config/google-ads/config.json")
+if os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN"):
+    ads_config = {
+        "developer_token": os.environ["GOOGLE_ADS_DEVELOPER_TOKEN"],
+        "client_id": os.environ["GOOGLE_ADS_CLIENT_ID"],
+        "client_secret": os.environ["GOOGLE_ADS_CLIENT_SECRET"],
+        "refresh_token": os.environ["GOOGLE_ADS_REFRESH_TOKEN"],
+        "login_customer_id": os.environ["GOOGLE_ADS_LOGIN_CUSTOMER_ID"],
+        "customer_id": os.environ["GOOGLE_ADS_CUSTOMER_ID"],
+    }
+else:
+    with open(config_file) as f:
+        ads_config = json.load(f)
 
 credentials = {
     "developer_token": ads_config["developer_token"],
