@@ -44,6 +44,9 @@ jobs:
           PHONE_WORK: ${{ secrets.PHONE_WORK }}
           # GitHub API (system health check)
           GH_PAT: ${{ secrets.GH_PAT }}
+          # Gmail fallback (when SendGrid SMS fails)
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python scripts/morning-briefing.py
 
   notify-failure:
