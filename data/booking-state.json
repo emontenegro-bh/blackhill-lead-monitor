@@ -1,10 +1,491 @@
 {
-  "processed": {},
-  "business_id": null,
+  "processed": {
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABuIV2dAAA=": {
+      "customer_name": "michael ross",
+      "customer_email": "mbross6816@gmail.com",
+      "appointment_date": "2026-04-13T14:00:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2566"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470529816297",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320805830371"
+      },
+      "processed_at": "2026-04-13T14:57:09.531452+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABuIV2cAAA=": {
+      "customer_name": "michael ross",
+      "customer_email": "mbross6816@gmail.com",
+      "appointment_date": "2026-04-09T21:00:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2566"
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470529816297",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:57:11.192508+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABuIV2bAAA=": {
+      "customer_name": "Max Greer",
+      "customer_email": "max@tophatpm.com",
+      "appointment_date": "2026-04-15T18:30:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2568"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470562685637",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320812650210"
+      },
+      "processed_at": "2026-04-13T14:57:13.982012+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABuIV2aAAA=": {
+      "customer_name": "Bryan Parker",
+      "customer_email": "bryan.parker33@yahoo.com",
+      "appointment_date": "2026-04-09T15:00:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2567"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470355272401",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320787489479"
+      },
+      "processed_at": "2026-04-13T14:57:16.321573+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABuIV2ZAAA=": {
+      "customer_name": "JEFFREY VOTAW",
+      "customer_email": "jvotaw1102@gmail.com",
+      "appointment_date": "2026-04-07T14:00:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2549"
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/466137972463",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:57:18.024502+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABrytwRAAA=": {
+      "customer_name": "Sam Schein",
+      "customer_email": "schein.sam@gmail.com",
+      "appointment_date": "2026-04-01T20:30:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2539"
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/464294884032",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:57:19.443601+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABrIWPaAAA=": {
+      "customer_name": "Nea Dean",
+      "customer_email": "nfdean207@yahoo.com",
+      "appointment_date": "2026-03-30T17:00:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2533"
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/462998712034",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:57:20.887831+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABoyuYJAAA=": {
+      "customer_name": "Casey Hudson",
+      "customer_email": "caseyhudsonrealty@gmail.com",
+      "appointment_date": "2026-03-26T18:45:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "created",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2569"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470550093514",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320727125743"
+      },
+      "processed_at": "2026-04-13T14:57:25.632949+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABngLPTAAA=": {
+      "customer_name": "Marcy Selander",
+      "customer_email": "daveandmarcy@hotmail.com",
+      "appointment_date": "2026-03-25T17:30:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2521"
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/461444521680",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:57:27.138523+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABkvRcgAAA=": {
+      "customer_name": "steve thielen",
+      "customer_email": "stevethielen@gmail.com",
+      "appointment_date": "2026-03-23T14:30:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2508"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470545432268",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320787489482"
+      },
+      "processed_at": "2026-04-13T14:57:29.584217+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABkvRcfAAA=": {
+      "customer_name": "Alexandria Lutley",
+      "customer_email": "alexandria.lutley@gmail.com",
+      "appointment_date": "2026-03-26T15:00:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2532"
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/462909501155",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:57:30.823795+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABeQLMkAAA=": {
+      "customer_name": "Lynn Lynch",
+      "customer_email": "lynchlynn@hotmail.com",
+      "appointment_date": "2026-03-26T17:30:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2281"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470538534629",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320787355325"
+      },
+      "processed_at": "2026-04-13T14:57:33.379087+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABeQLMjAAA=": {
+      "customer_name": "Umair Sajid",
+      "customer_email": "umairmg3417@gmail.com",
+      "appointment_date": "2026-03-10T20:00:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "created",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2570"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470538918637",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320727125749"
+      },
+      "processed_at": "2026-04-13T14:57:36.692479+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABeQLMiAAA=": {
+      "customer_name": "test",
+      "customer_email": "test@gmail.com",
+      "appointment_date": "2026-03-20T18:30:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2570"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470566704831",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320789776093"
+      },
+      "processed_at": "2026-04-13T14:57:39.174300+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABbb9h_AAA=": {
+      "customer_name": "Lynda Losen",
+      "customer_email": "lynda.losen@gmail.com",
+      "appointment_date": "2026-03-06T22:45:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2481"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470546177783",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320787423967"
+      },
+      "processed_at": "2026-04-13T14:57:41.535204+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABbb9h9AAA=": {
+      "customer_name": "Jesse Smith",
+      "customer_email": "jls0454@gmail.com",
+      "appointment_date": "2026-03-06T16:00:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2476"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470556733142",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320805986005"
+      },
+      "processed_at": "2026-04-13T14:57:43.779308+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABXB2kvAAA=": {
+      "customer_name": "Domingo Rodriguez",
+      "customer_email": "domingo.rodriguez@veteran.me",
+      "appointment_date": "2026-03-02T15:00:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2474"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470545569469",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320807251682"
+      },
+      "processed_at": "2026-04-13T14:57:46.105672+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABXB2kuAAA=": {
+      "customer_name": "Chris prokop",
+      "customer_email": "cwprokop@outlook.com",
+      "appointment_date": "2026-02-27T22:00:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "created",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2571"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470490906332",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320671873742"
+      },
+      "processed_at": "2026-04-13T14:57:49.782021+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABQObcRAAA=": {
+      "customer_name": "evelin m",
+      "customer_email": "evelin@gmail.com",
+      "appointment_date": "2026-02-26T14:00:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "created",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2572"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470550094525",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320805986009"
+      },
+      "processed_at": "2026-04-13T14:57:52.632323+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABQObcQAAA=": {
+      "customer_name": "test",
+      "customer_email": "test@mail.com",
+      "appointment_date": "2026-02-24T09:00:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "error",
+        "contact_url": ""
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470538919639",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320793810653"
+      },
+      "processed_at": "2026-04-13T14:57:55.245808+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABQObcPAAA=": {
+      "customer_name": "test",
+      "customer_email": "test@blackhilllandscaping.com",
+      "appointment_date": "2026-02-27T13:30:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "error",
+        "contact_url": ""
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470550094530",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320814448342"
+      },
+      "processed_at": "2026-04-13T14:57:57.834109+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABQObcOAAA=": {
+      "customer_name": "Test Umair",
+      "customer_email": "Test@gmail.com",
+      "appointment_date": "2026-02-26T15:00:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2570"
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470566704831",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:57:59.518344+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAABQObcNAAA=": {
+      "customer_name": "test",
+      "customer_email": "test@gmail.com",
+      "appointment_date": "2026-02-23T10:30:00.0000000Z",
+      "service": "15-min meeting",
+      "aspire": {
+        "action": "error",
+        "contact_url": ""
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470566704831",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:58:01.549213+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAAADP17PAAA=": {
+      "customer_name": "test",
+      "customer_email": "test@mail.com",
+      "appointment_date": "2025-10-31T10:30:00.0000000Z",
+      "service": "30-min meeting",
+      "aspire": {
+        "action": "error",
+        "contact_url": ""
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470538919639",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:58:03.084036+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAAADP17OAAA=": {
+      "customer_name": "afaq",
+      "customer_email": "test@mail.com",
+      "appointment_date": "2025-10-29T12:30:00.0000000Z",
+      "service": "30-min meeting",
+      "aspire": {
+        "action": "error",
+        "contact_url": ""
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470538919639",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:58:04.788861+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAAADP17NAAA=": {
+      "customer_name": "test",
+      "customer_email": "test@mail.com",
+      "appointment_date": "2025-10-28T13:30:00.0000000Z",
+      "service": "30-min meeting",
+      "aspire": {
+        "action": "error",
+        "contact_url": ""
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470538919639",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:58:07.687720+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAAADP17MAAA=": {
+      "customer_name": "afaq",
+      "customer_email": "afaqmgll@gmail.com",
+      "appointment_date": "2025-10-30T09:00:00.0000000Z",
+      "service": "30-min meeting",
+      "aspire": {
+        "action": "error",
+        "contact_url": ""
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470553153265",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320671873745"
+      },
+      "processed_at": "2026-04-13T14:58:10.233387+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAAADP17LAAA=": {
+      "customer_name": "test",
+      "customer_email": "test@gmail.com",
+      "appointment_date": "2025-10-24T15:00:00.0000000Z",
+      "service": "30-min meeting",
+      "aspire": {
+        "action": "error",
+        "contact_url": ""
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470566704831",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:58:12.675392+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAAAAAAdEAAA=": {
+      "customer_name": "Umair Sajid",
+      "customer_email": "umairsajid222@gmail.com",
+      "appointment_date": "2025-10-20T12:00:00.0000000Z",
+      "service": "30-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2570"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470562893515",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/320697092842"
+      },
+      "processed_at": "2026-04-13T14:58:15.640251+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAAAAAAdDAAA=": {
+      "customer_name": "Test",
+      "customer_email": "Test@gmail.com",
+      "appointment_date": "2025-10-21T12:00:00.0000000Z",
+      "service": "30-min meeting",
+      "aspire": {
+        "action": "exists",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2570"
+      },
+      "hubspot": {
+        "action": "exists",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/470566704831",
+        "deal_url": ""
+      },
+      "processed_at": "2026-04-13T14:58:16.905071+00:00"
+    }
+  },
+  "business_id": "MeanGreenCustomerMeet@meangreenlawncare.com",
   "stats": {
-    "created": 0,
-    "exists": 0,
-    "errors": 0,
-    "total_runs": 175
+    "created": 4,
+    "exists": 18,
+    "errors": 8,
+    "total_runs": 176
   }
 }
