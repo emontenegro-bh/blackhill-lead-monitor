@@ -321,7 +321,8 @@ def process_appointments(token, state):
     if not business_id:
         business_id = discover_booking_business(token)
         if not business_id:
-            return
+            log.error("Cannot discover booking business. Check API permissions (Bookings.Read.All as Application permission with admin consent).")
+            sys.exit(1)
         state["business_id"] = business_id
         save_state(state)
 
@@ -398,11 +399,13 @@ def run_monitor():
     """Main entry point."""
     config = load_config()
     if not config:
-        return
+        log.error("No config found. Exiting.")
+        sys.exit(1)
 
     token = get_token(config)
     if not token:
-        return
+        log.error("Authentication failed. Exiting.")
+        sys.exit(1)
 
     state = load_state()
     state["stats"]["total_runs"] = state["stats"].get("total_runs", 0) + 1
