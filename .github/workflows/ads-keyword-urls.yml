@@ -1,0 +1,53 @@
+name: Google Ads Keyword URL Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      keyword_urls:
+        description: 'JSON array of {keyword_text, campaign_name, ad_group_name, final_url}'
+        required: true
+        type: string
+      dry_run:
+        description: 'If true, print what would change without making changes'
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: ads-keyword-urls
+  cancel-in-progress: true
+
+jobs:
+  update-urls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-ads
+
+      - name: Set keyword final URLs
+        env:
+          GOOGLE_ADS_DEVELOPER_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
+          GOOGLE_ADS_CLIENT_ID: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_CLIENT_SECRET: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+          GOOGLE_ADS_LOGIN_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
+          GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
+          KEYWORD_URLS: ${{ inputs.keyword_urls }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: python scripts/ads-set-keyword-urls.py
+
+  notify-failure:
+    needs: [update-urls]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Google Ads Keyword URL Update"
+    secrets: inherit
