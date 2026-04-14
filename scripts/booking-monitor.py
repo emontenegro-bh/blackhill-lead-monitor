@@ -42,6 +42,10 @@ HUBSPOT_OWNER_EVELIN = "88710208"
 LOOKBACK_HOURS = 24 * 7  # 7 days back
 LOOKAHEAD_DAYS = 30  # 30 days forward
 
+# Test/spam email patterns to skip
+TEST_EMAILS = {"test@gmail.com", "test@mail.com", "test@blackhilllandscaping.com"}
+TEST_NAME_PREFIXES = ("test",)
+
 _log_handlers = [logging.StreamHandler(sys.stderr)]
 if LOG_PATH:
     os.makedirs(CONFIG_DIR, exist_ok=True)
@@ -207,12 +211,17 @@ def extract_customer(appt):
     # Newer v1.0 format uses customers[] array
     if "customers" in appt and appt["customers"]:
         c = appt["customers"][0]
+        addr = c.get("location", {}).get("address", {})
         return {
             "name": c.get("name", ""),
             "email": c.get("emailAddress", ""),
             "phone": c.get("phone", ""),
             "notes": c.get("notes", ""),
             "timezone": c.get("timeZone", ""),
+            "address": addr.get("street", ""),
+            "city": addr.get("city", ""),
+            "state": addr.get("state", ""),
+            "zip": addr.get("postalCode", ""),
         }
     # Older format uses flat fields
     return {
@@ -221,6 +230,10 @@ def extract_customer(appt):
         "phone": appt.get("customerPhone", ""),
         "notes": appt.get("customerNotes", ""),
         "timezone": appt.get("customerTimeZone", ""),
+        "address": "",
+        "city": "",
+        "state": "",
+        "zip": "",
     }
 
 
@@ -273,6 +286,10 @@ def create_aspire_contact(customer):
         "phone": customer.get("phone", ""),
         "message": customer.get("notes", ""),
         "source": "Microsoft Bookings",
+        "address": customer.get("address", ""),
+        "city": customer.get("city", ""),
+        "state": customer.get("state", ""),
+        "zip": customer.get("zip", ""),
     }
     try:
         result = subprocess.run(
@@ -331,6 +348,38 @@ def process_appointments(token, state):
         log.info("No appointments found in window.")
         return
 
+    # Guard against bulk reprocessing after state file reset.
+    # If state has no processed entries and we see many appointments,
+    # only process those from the last 48 hours to avoid re-creating old contacts.
+    if not state["processed"] and len(appointments) > 5:
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=48)).isoformat()
+        recent = [a for a in appointments
+                  if a.get("startDateTime", {}).get("dateTime", "") >= cutoff
+                  or a.get("startDateTime", {}).get("dateTime", "") == ""]
+        skipped = len(appointments) - len(recent)
+        if skipped > 0:
+            log.warning(
+                f"State file appears reset — {len(appointments)} appointments found but "
+                f"only processing {len(recent)} from last 48h. "
+                f"Skipping {skipped} older appointments to prevent duplicate contacts. "
+                f"Mark older appointments as processed manually if needed."
+            )
+            # Mark skipped appointments so they aren't retried
+            for appt in appointments:
+                appt_id = appt.get("id", "")
+                start_dt = appt.get("startDateTime", {}).get("dateTime", "")
+                if appt_id and start_dt < cutoff:
+                    customer = extract_customer(appt)
+                    state["processed"][appt_id] = {
+                        "customer_name": customer["name"],
+                        "customer_email": customer.get("email", ""),
+                        "appointment_date": start_dt,
+                        "service": appt.get("serviceName", ""),
+                        "skipped": "state_reset_guard",
+                        "processed_at": datetime.now(timezone.utc).isoformat(),
+                    }
+            appointments = recent
+
     new_count = 0
     for appt in appointments:
         appt_id = appt.get("id", "")
@@ -340,6 +389,21 @@ def process_appointments(token, state):
         customer = extract_customer(appt)
         if not customer["name"]:
             log.debug(f"Skipping appointment {appt_id}: no customer name")
+            continue
+
+        # Skip test/spam bookings
+        email_lower = customer.get("email", "").strip().lower()
+        name_lower = customer["name"].strip().lower()
+        if email_lower in TEST_EMAILS or name_lower in TEST_NAME_PREFIXES:
+            log.info(f"Skipping test booking: {customer['name']} ({email_lower})")
+            state["processed"][appt_id] = {
+                "customer_name": customer["name"],
+                "customer_email": customer.get("email", ""),
+                "appointment_date": appt.get("startDateTime", {}).get("dateTime", ""),
+                "service": appt.get("serviceName", ""),
+                "skipped": "test_booking",
+                "processed_at": datetime.now(timezone.utc).isoformat(),
+            }
             continue
 
         start_dt = appt.get("startDateTime", {}).get("dateTime", "")
