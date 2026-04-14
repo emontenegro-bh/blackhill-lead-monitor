@@ -182,15 +182,16 @@
     "230063233",
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADhM5PdAAA=",
     "230076040",
-    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADjLrxZAAA="
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADjLrxZAAA=",
+    "230322357"
   ],
   "stats": {
-    "total_leads": 105,
+    "total_leads": 106,
     "total_spam": 47,
-    "last_lead": "2026-04-14T23:26:41.823381",
+    "last_lead": "2026-04-14T23:30:12.346565",
     "total_calls": 2
   },
-  "last_run": "2026-04-14T23:26:41.823392+00:00",
+  "last_run": "2026-04-14T23:30:12.347416+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -491,6 +492,13 @@
       "date": "2026-04-13",
       "match_score": 1.0,
       "match_method": "phone_MobilePhone"
+    },
+    "230322357": {
+      "aspire_contact_id": "2577",
+      "traffic_source": "google / cpc",
+      "service": "Sprinkler Services",
+      "lead_type": "web_form",
+      "date": "2026-04-14"
     }
   },
   "dismissed_matches": [
