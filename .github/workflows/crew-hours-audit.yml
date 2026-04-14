@@ -1,0 +1,49 @@
+name: Crew Hours Audit
+
+on:
+  schedule:
+    # Noon CT (CDT = UTC-5, CST = UTC-6). Use 17:00 UTC to cover CDT.
+    - cron: '0 17 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      audit_date:
+        description: 'Override audit date (YYYY-MM-DD)'
+        required: false
+        type: string
+
+concurrency:
+  group: crew-hours-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Audit crew hours
+        env:
+          ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
+          ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          if [ -n "${{ inputs.audit_date }}" ]; then
+            python scripts/crew-hours-audit.py --date "${{ inputs.audit_date }}"
+          else
+            python scripts/crew-hours-audit.py
+          fi
+
+  notify-failure:
+    needs: [audit]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Crew Hours Audit"
+    secrets: inherit
