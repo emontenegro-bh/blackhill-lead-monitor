@@ -102,7 +102,13 @@ def load_config_from_env():
             "blocked_domains": [],
             "allowed_senders": [],
         },
-        "mailchimp": {"enabled": False},
+        "mailchimp": {
+            "enabled": bool(os.environ.get("MAILCHIMP_API_KEY")),
+            "api_key": os.environ.get("MAILCHIMP_API_KEY", ""),
+            "server_prefix": os.environ.get("MAILCHIMP_SERVER", "us20"),
+            "list_id": os.environ.get("MAILCHIMP_LIST_ID", ""),
+            "tag": "web-lead",
+        },
         "hubspot": {
             "enabled": bool(os.environ.get("HUBSPOT_ACCESS_TOKEN")),
             "access_token": os.environ.get("HUBSPOT_ACCESS_TOKEN", ""),

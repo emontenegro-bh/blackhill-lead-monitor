@@ -16,7 +16,7 @@ Usage:
   python3 whatconverts-lead-monitor.py --test       # Test WhatConverts API connection
 """
 
-import json, os, sys, re, signal, smtplib, urllib.request, urllib.error, urllib.parse, base64
+import hashlib, json, os, sys, re, signal, smtplib, urllib.request, urllib.error, urllib.parse, base64
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -84,6 +84,13 @@ def load_config_from_file():
             "enabled": bool(hs_token),
             "access_token": hs_token,
         },
+        "mailchimp": {
+            "enabled": False,
+            "api_key": "",
+            "server_prefix": "us20",
+            "list_id": "",
+            "tag": "web-lead",
+        },
         "aspire": {
             "enabled": True,
         },
@@ -113,6 +120,13 @@ def load_config_from_env():
         "hubspot": {
             "enabled": bool(os.environ.get("HUBSPOT_ACCESS_TOKEN")),
             "access_token": os.environ.get("HUBSPOT_ACCESS_TOKEN", ""),
+        },
+        "mailchimp": {
+            "enabled": bool(os.environ.get("MAILCHIMP_API_KEY")),
+            "api_key": os.environ.get("MAILCHIMP_API_KEY", ""),
+            "server_prefix": os.environ.get("MAILCHIMP_SERVER", "us20"),
+            "list_id": os.environ.get("MAILCHIMP_LIST_ID", ""),
+            "tag": "web-lead",
         },
         "aspire": {
             "enabled": bool(os.environ.get("ASPIRE_CLIENT_ID")),
@@ -855,6 +869,78 @@ def create_hubspot_contact(config, lead):
         return None, None
 
 
+# --- Mailchimp ---
+
+def add_to_mailchimp(config, lead):
+    """Add lead to Mailchimp audience with service-specific tag."""
+    mc_cfg = config.get("mailchimp", {})
+    if not mc_cfg.get("enabled"):
+        log("  Mailchimp disabled. Skipping.")
+        return None
+    if DRY_RUN:
+        log(f"  DRY RUN: Would add {lead.get('email', '(no email)')} to Mailchimp")
+        return "dry-run"
+
+    email = lead.get("email", "")
+    if not email or "@" not in email:
+        log("  Skipping Mailchimp: no valid email")
+        return None
+
+    api_key = mc_cfg.get("api_key", "")
+    server = mc_cfg.get("server_prefix", "")
+    list_id = mc_cfg.get("list_id", "")
+    tag = mc_cfg.get("tag", "web-lead")
+
+    if not api_key or not server or not list_id:
+        log("  Mailchimp not fully configured (need api_key, server_prefix, list_id). Skipping.")
+        return None
+
+    email_hash = hashlib.md5(email.lower().encode()).hexdigest()
+    url = f"https://{server}.api.mailchimp.com/3.0/lists/{list_id}/members/{email_hash}"
+
+    tags = [tag]
+    # Add source-specific tag for phone call leads
+    if lead.get("source") == "phone_call":
+        tags = ["phone-lead"]
+
+    # Add service tag if detected
+    service = lead.get("service_interest", "")
+    if service and service != "General Inquiry":
+        service_tag = re.sub(r"[^a-zA-Z0-9\s]", "", service).lower().replace(" ", "-")
+        tags.append(service_tag)
+
+    payload = {
+        "email_address": email,
+        "status_if_new": "subscribed",
+        "merge_fields": {
+            "FNAME": lead.get("first_name", ""),
+            "LNAME": lead.get("last_name", ""),
+            "PHONE": lead.get("phone", ""),
+        },
+        "tags": tags,
+    }
+
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, method="PUT", headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    })
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = json.loads(resp.read())
+            status = result.get("status", "unknown")
+            log(f"  Mailchimp: {email} -> {status} (tags: {tags})")
+            return status
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8", errors="replace")[:300]
+        log(f"  ERROR: Mailchimp API {e.code}: {error_body}")
+        return None
+    except Exception as e:
+        log(f"  ERROR: Mailchimp request failed: {e}")
+        return None
+
+
 # --- Aspire CRM ---
 
 def create_aspire_contact(config, lead):
@@ -1008,6 +1094,9 @@ def process_leads(config, state):
 
         # HubSpot CRM (returns owner_id for notification routing)
         hubspot_status, owner_id = create_hubspot_contact(config, lead)
+
+        # Mailchimp (add to audience with service tag for drip campaigns)
+        add_to_mailchimp(config, lead)
 
         # Check if this is a repeat submission (contact already existed)
         is_repeat = hubspot_status == "exists" or aspire_url == "exists"
