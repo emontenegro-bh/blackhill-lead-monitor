@@ -596,3 +596,9 @@
 [2026-04-14 19:42:16] GBP Review Monitor starting...
 [2026-04-14 19:42:17] Fetched 41 reviews.
 [2026-04-14 19:42:17] No new reviews.
+[2026-04-14 20:36:36] GBP Review Monitor starting...
+[2026-04-14 20:36:37] Fetched 42 reviews.
+[2026-04-14 20:36:37] Found 1 new review(s).
+[2026-04-14 20:36:37] New 5-star review from Kyle Kaiser. Draft saved: /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/pending-responses/-hiiefmeB2awIYA2xEgbh6FjOgYnygvMKFrJcYAA.json
+[2026-04-14 20:36:38] Email failed: Connection unexpectedly closed
+[2026-04-14 20:36:38] Done. 1 new review(s) processed.
