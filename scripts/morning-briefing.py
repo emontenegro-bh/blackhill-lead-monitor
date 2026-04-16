@@ -15,7 +15,7 @@ Usage:
   python3 scripts/morning-briefing.py --test      # Build & print, don't send
 """
 
-import json, os, sys, base64, smtplib, time, urllib.request, urllib.parse
+import json, os, sys, base64, smtplib, time, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 
@@ -379,43 +379,73 @@ def get_checkin_reminder():
     return None
 
 
-# --- Send SMS via email-to-SMS gateway (SendGrid SMTP) ---
+# --- Send SMS via Twilio (with email-to-SMS gateway fallback) ---
 
-def send_sms(phone, carrier, message):
-    """Send an SMS via carrier email-to-SMS gateway. Tries SendGrid SMTP, falls back to Gmail SMTP."""
-    gateway = CARRIER_GATEWAYS.get(carrier)
-    if not gateway:
-        print(f"Unknown carrier '{carrier}' for {phone}", file=sys.stderr)
+def _send_via_twilio(phone, message):
+    """Send SMS via Twilio API. Returns True on success."""
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID", "")
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN", "")
+    from_number = os.environ.get("TWILIO_FROM_NUMBER", "")
+
+    if not (account_sid and auth_token and from_number):
         return False
 
-    # Build email-to-SMS address
+    # Normalize to E.164 format (+1XXXXXXXXXX)
+    clean = phone.replace("-", "").replace("(", "").replace(")", "").replace(" ", "").replace("+", "")
+    if clean.startswith("1") and len(clean) == 11:
+        to_number = f"+{clean}"
+    elif len(clean) == 10:
+        to_number = f"+1{clean}"
+    else:
+        to_number = f"+{clean}"
+
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+    data = urllib.parse.urlencode({
+        "From": from_number,
+        "To": to_number,
+        "Body": message,
+    }).encode()
+    auth_header = "Basic " + base64.b64encode(f"{account_sid}:{auth_token}".encode()).decode()
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "Authorization": auth_header,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            body = json.loads(resp.read().decode())
+            print(f"SMS sent to {phone} via Twilio (sid: {body.get('sid', '')})")
+            return True
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")[:300]
+        print(f"Twilio error ({phone}) HTTP {e.code}: {body}", file=sys.stderr)
+        return False
+    except Exception as e:
+        print(f"Twilio error ({phone}): {e}", file=sys.stderr)
+        return False
+
+
+def send_sms(phone, carrier, message):
+    """Send SMS. Twilio first, then email-to-SMS gateway via Gmail SMTP as fallback."""
+    if _send_via_twilio(phone, message):
+        return True
+
+    gateway = CARRIER_GATEWAYS.get(carrier)
+    if not gateway:
+        print(f"Twilio failed and no gateway for carrier '{carrier}' on {phone}", file=sys.stderr)
+        return False
+
     clean = phone.replace("-", "").replace("(", "").replace(")", "").replace(" ", "").replace("+1", "").replace("+", "")
     to_email = f"{clean}@{gateway}"
 
-    # Try SendGrid SMTP first
-    api_key = CFG.get("sendgrid_api_key", "")
-    sendgrid_from = CFG.get("sms_from_email", "briefing@blackhilltx.com")
-
-    if api_key:
-        msg = MIMEText(message)
-        msg["From"] = sendgrid_from
-        msg["To"] = to_email
-        msg["Subject"] = "Briefing"
-        try:
-            with smtplib.SMTP("smtp.sendgrid.net", 587, timeout=15) as server:
-                server.starttls()
-                server.login("apikey", api_key)
-                server.sendmail(sendgrid_from, [to_email], msg.as_string())
-            print(f"SMS sent to {phone} via SendGrid -> {gateway}")
-            return True
-        except Exception as e:
-            print(f"SendGrid SMS error ({phone}): {e}, trying Gmail SMTP fallback...", file=sys.stderr)
-
-    # Fall back to Gmail SMTP (works because email-to-SMS gateways accept any sender)
     gmail_email = os.environ.get("GMAIL_EMAIL", "")
     gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
     if not gmail_email or not gmail_password:
-        print(f"No Gmail SMTP credentials for SMS fallback ({phone})", file=sys.stderr)
+        print(f"All SMS methods failed for {phone}: no Gmail credentials for gateway fallback", file=sys.stderr)
         return False
 
     msg = MIMEText(message)
@@ -427,10 +457,10 @@ def send_sms(phone, carrier, message):
             server.starttls()
             server.login(gmail_email, gmail_password)
             server.sendmail(gmail_email, [to_email], msg.as_string())
-        print(f"SMS sent to {phone} via Gmail SMTP -> {gateway}")
+        print(f"SMS sent to {phone} via Gmail SMTP -> {gateway} (carrier may filter)")
         return True
     except Exception as e:
-        print(f"Gmail SMS fallback error ({phone}): {e}", file=sys.stderr)
+        print(f"All SMS methods failed for {phone}: {e}", file=sys.stderr)
         return False
 
 
