@@ -382,36 +382,55 @@ def get_checkin_reminder():
 # --- Send SMS via email-to-SMS gateway (SendGrid SMTP) ---
 
 def send_sms(phone, carrier, message):
-    """Send an SMS via carrier email-to-SMS gateway using SendGrid SMTP."""
+    """Send an SMS via carrier email-to-SMS gateway. Tries SendGrid SMTP, falls back to Gmail SMTP."""
     gateway = CARRIER_GATEWAYS.get(carrier)
     if not gateway:
         print(f"Unknown carrier '{carrier}' for {phone}", file=sys.stderr)
-        return False
-
-    api_key = CFG.get("sendgrid_api_key", "")
-    from_email = CFG.get("sms_from_email", "briefing@blackhilltx.com")
-    if not api_key:
-        print("SendGrid API key not configured", file=sys.stderr)
         return False
 
     # Build email-to-SMS address
     clean = phone.replace("-", "").replace("(", "").replace(")", "").replace(" ", "").replace("+1", "").replace("+", "")
     to_email = f"{clean}@{gateway}"
 
+    # Try SendGrid SMTP first
+    api_key = CFG.get("sendgrid_api_key", "")
+    sendgrid_from = CFG.get("sms_from_email", "briefing@blackhilltx.com")
+
+    if api_key:
+        msg = MIMEText(message)
+        msg["From"] = sendgrid_from
+        msg["To"] = to_email
+        msg["Subject"] = "Briefing"
+        try:
+            with smtplib.SMTP("smtp.sendgrid.net", 587, timeout=15) as server:
+                server.starttls()
+                server.login("apikey", api_key)
+                server.sendmail(sendgrid_from, [to_email], msg.as_string())
+            print(f"SMS sent to {phone} via SendGrid -> {gateway}")
+            return True
+        except Exception as e:
+            print(f"SendGrid SMS error ({phone}): {e}, trying Gmail SMTP fallback...", file=sys.stderr)
+
+    # Fall back to Gmail SMTP (works because email-to-SMS gateways accept any sender)
+    gmail_email = os.environ.get("GMAIL_EMAIL", "")
+    gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
+    if not gmail_email or not gmail_password:
+        print(f"No Gmail SMTP credentials for SMS fallback ({phone})", file=sys.stderr)
+        return False
+
     msg = MIMEText(message)
-    msg["From"] = from_email
+    msg["From"] = gmail_email
     msg["To"] = to_email
     msg["Subject"] = "Briefing"
-
     try:
-        with smtplib.SMTP("smtp.sendgrid.net", 587, timeout=15) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
             server.starttls()
-            server.login("apikey", api_key)
-            server.sendmail(from_email, [to_email], msg.as_string())
-        print(f"SMS sent to {phone} via {gateway}")
+            server.login(gmail_email, gmail_password)
+            server.sendmail(gmail_email, [to_email], msg.as_string())
+        print(f"SMS sent to {phone} via Gmail SMTP -> {gateway}")
         return True
     except Exception as e:
-        print(f"SMS error ({phone}): {e}", file=sys.stderr)
+        print(f"Gmail SMS fallback error ({phone}): {e}", file=sys.stderr)
         return False
 
 
