@@ -159,10 +159,18 @@
       "sales_value": 0,
       "traffic_source": "google / organic",
       "synced_at": "2026-04-09T17:46:57.311331+00:00"
+    },
+    "230529892": {
+      "last_status": "Delivered",
+      "opp_number": 3265,
+      "quote_value": 1935,
+      "sales_value": 0,
+      "traffic_source": "blackhilllandscaping.com / referral",
+      "synced_at": "2026-04-16T15:06:27.396811+00:00"
     }
   },
   "stats": {
-    "total_synced": 20,
-    "last_run": "2026-04-16T12:49:40.614599+00:00"
+    "total_synced": 21,
+    "last_run": "2026-04-16T15:06:27.396839+00:00"
   }
 }
