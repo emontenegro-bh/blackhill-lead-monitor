@@ -527,6 +527,46 @@ if qs_keywords:
         h(f'<span style="color:#27ae60;">&#9632;</span> {good} keywords QS 7-10 (strong)')
     h('</div>')
 
+    # --- Headline changes to watch (auto-expires after 3 weeks) ---
+    headline_watch = [
+        {
+            "date": "2026-04-14",
+            "keywords": ["sod companies", "sod installation", "sod installers near me", "landscaping in fort worth"],
+            "ad_group": "Landscape & Sod Installation",
+            "changes": "Replaced jargon headlines with keyword-match: Free Sod Estimate Same Week, Sod Delivered Prepped & Laid, Clay Soil Prep Included, Full Soil Prep Before Install",
+        },
+        {
+            "date": "2026-04-14",
+            "keywords": ["french drain fort worth"],
+            "ad_group": "Drainage Solutions",
+            "changes": "Added exact-match 'French Drains Fort Worth' headline + foundation risk angle + diagnostic-first",
+        },
+        {
+            "date": "2026-04-14",
+            "keywords": ["lawn fertilization fort worth", "lawn treatment fort worth"],
+            "ad_group": "Fertilization & Weed Control",
+            "changes": "Added seasonal urgency (Book Your Spring App Now), social proof (4.8 Stars 500+ Lawns), differentiator (Custom Program Not a Box)",
+        },
+        {
+            "date": "2026-04-14",
+            "keywords": ["sprinkler head replacement"],
+            "ad_group": "Irrigation Repair",
+            "changes": "Added specific repair types (Heads Valves & Lines Fixed), diagnostic value prop (Diagnosis Credited to Repair), thoroughness (Every Zone Walked & Tested)",
+        },
+    ]
+    from datetime import datetime as _dt
+    active_watches = [w for w in headline_watch if (_dt.now() - _dt.strptime(w["date"], "%Y-%m-%d")).days <= 21]
+    if active_watches:
+        h('<div style="margin-top:16px;padding:12px;background:#1a2332;border-left:3px solid #3498db;border-radius:4px;">')
+        h('<div style="font-weight:600;color:#3498db;margin-bottom:8px;">Headline Changes to Watch</div>')
+        for w in active_watches:
+            days_ago = (_dt.now() - _dt.strptime(w["date"], "%Y-%m-%d")).days
+            h(f'<div style="font-size:11px;color:#aaa;margin-bottom:6px;">')
+            h(f'<strong>{w["ad_group"]}</strong> (changed {days_ago}d ago) &mdash; watching: {", ".join(w["keywords"])}')
+            h(f'<br/><span style="color:#888;">{w["changes"]}</span>')
+            h(f'</div>')
+        h('</div>')
+
     h('</div>')
 
 # --- Footer ---
