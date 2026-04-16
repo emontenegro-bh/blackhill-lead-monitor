@@ -11,6 +11,7 @@ Usage:
 """
 
 import json, os, sys, random, smtplib, hashlib, uuid, time
+import urllib.request, urllib.parse, urllib.error
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -140,6 +141,60 @@ def _send_via_sendgrid(msg, api_key):
     return False
 
 
+def _send_via_ms_graph(subject, body, to_addr, reply_to=None):
+    """Primary: send via Microsoft Graph API (M365 mailbox - reliable delivery to blackhilltx.com)."""
+    client_id = os.environ.get("MS_CLIENT_ID", "")
+    client_secret = os.environ.get("MS_CLIENT_SECRET", "")
+    tenant_id = os.environ.get("MS_TENANT_ID", "")
+    mailbox = os.environ.get("MS_USER_EMAIL", "")
+
+    if not (client_id and client_secret and tenant_id and mailbox):
+        log("MS Graph credentials not configured.")
+        return False
+
+    try:
+        # Get token via client credentials flow
+        token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+        token_data = urllib.parse.urlencode({
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "grant_type": "client_credentials",
+            "scope": "https://graph.microsoft.com/.default",
+        }).encode()
+        req = urllib.request.Request(token_url, data=token_data)
+        resp = urllib.request.urlopen(req, timeout=10)
+        access_token = json.loads(resp.read())["access_token"]
+
+        # Send via Graph
+        payload = {
+            "message": {
+                "subject": subject,
+                "body": {"contentType": "Text", "content": body},
+                "toRecipients": [{"emailAddress": {"address": to_addr}}],
+            },
+            "saveToSentItems": True,
+        }
+        if reply_to:
+            payload["message"]["replyTo"] = [{"emailAddress": {"address": reply_to}}]
+
+        url = f"https://graph.microsoft.com/v1.0/users/{mailbox}/sendMail"
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(
+            url, data=data,
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=10)
+        log(f"Email sent via MS Graph (from {mailbox}).")
+        return True
+    except urllib.error.HTTPError as e:
+        log(f"MS Graph send failed: {e.code} {e.read().decode()[:200]}")
+        return False
+    except Exception as e:
+        log(f"MS Graph send failed: {e}")
+        return False
+
+
 def _send_via_gmail_smtp(subject, body, to_addr, reply_to=None):
     """Fallback: send via Gmail SMTP using app password."""
     gmail_user = os.environ.get("GMAIL_EMAIL", "")
@@ -170,24 +225,29 @@ def _send_via_gmail_smtp(subject, body, to_addr, reply_to=None):
 
 
 def send_email(subject, body, reply_to=None):
-    """Send notification email via SendGrid SMTP with Gmail API fallback."""
+    """Send notification email. Primary: MS Graph (M365). Fallbacks: SendGrid, Gmail SMTP."""
     if DRY_RUN:
         log(f"DRY RUN - Would email: {subject}")
         return
 
-    # Try SendGrid first (sends from EMAIL_ADDRESS)
+    rt = reply_to or REPLY_TO_ADDRESS
+
+    # Primary: Microsoft Graph (M365 -> M365 has best deliverability)
+    if _send_via_ms_graph(subject, body, EMAIL_ADDRESS, rt):
+        return
+
+    # Fallback 1: SendGrid SMTP
     api_key = os.environ.get("SENDGRID_API_KEY", "")
     if not api_key and os.path.exists(SENDGRID_KEY_FILE):
         with open(SENDGRID_KEY_FILE) as f:
             api_key = f.read().strip()
-
     if api_key:
-        sg_msg = _build_mime(subject, body, EMAIL_ADDRESS, EMAIL_ADDRESS, reply_to)
+        sg_msg = _build_mime(subject, body, EMAIL_ADDRESS, EMAIL_ADDRESS, rt)
         if _send_via_sendgrid(sg_msg, api_key):
             return
 
-    # Fallback to Gmail SMTP (sends from blackhillassistant@gmail.com)
-    if _send_via_gmail_smtp(subject, body, EMAIL_ADDRESS, reply_to or REPLY_TO_ADDRESS):
+    # Fallback 2: Gmail SMTP (often spam-filtered by M365, last resort)
+    if _send_via_gmail_smtp(subject, body, EMAIL_ADDRESS, rt):
         return
 
     log("ERROR: All email delivery methods failed.")
