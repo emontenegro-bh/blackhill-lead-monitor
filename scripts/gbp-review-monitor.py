@@ -10,7 +10,7 @@ Usage:
   python3 scripts/gbp-review-monitor.py --dry-run  # Preview without email
 """
 
-import json, os, sys, random, smtplib, hashlib, uuid
+import json, os, sys, random, smtplib, hashlib, uuid, time
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -33,6 +33,9 @@ SENDGRID_SMTP = "smtp.sendgrid.net"
 SENDGRID_PORT = 587
 SENDGRID_KEY_FILE = os.path.expanduser("~/.config/sendgrid-api-key")
 LOG_FILE = os.path.join(CONFIG_DIR, "monitor.log")
+GMAIL_SENDER_CONFIG = os.path.expanduser("~/.config/gmail-sender/config.json")
+GMAIL_SMTP = "smtp.gmail.com"
+GMAIL_PORT = 587
 
 DRY_RUN = "--dry-run" in sys.argv
 
@@ -108,36 +111,86 @@ def draft_response(review, templates):
     }
 
 
+def _build_mime(subject, body, from_addr, to_addr, reply_to=None):
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = from_addr
+    msg["To"] = to_addr
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    msg.attach(MIMEText(body, "plain"))
+    return msg
+
+
+def _send_via_sendgrid(msg, api_key):
+    """Try SendGrid SMTP with 3 retries and exponential backoff."""
+    for attempt in range(3):
+        try:
+            with smtplib.SMTP(SENDGRID_SMTP, SENDGRID_PORT, timeout=10) as server:
+                server.starttls()
+                server.login("apikey", api_key)
+                server.sendmail(msg["From"], msg["To"], msg.as_string())
+            log("Email sent via SendGrid.")
+            return True
+        except Exception as e:
+            wait = 2 ** (attempt + 1)
+            log(f"SendGrid attempt {attempt + 1}/3 failed: {e}")
+            if attempt < 2:
+                time.sleep(wait)
+    return False
+
+
+def _send_via_gmail_smtp(subject, body, to_addr, reply_to=None):
+    """Fallback: send via Gmail SMTP using app password."""
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+    if not (gmail_user and gmail_pass) and os.path.exists(GMAIL_SENDER_CONFIG):
+        with open(GMAIL_SENDER_CONFIG) as f:
+            creds = json.load(f)
+        gmail_user = creds.get("email", "")
+        gmail_pass = creds.get("app_password", "")
+
+    if not (gmail_user and gmail_pass):
+        log("No Gmail SMTP credentials available for fallback.")
+        return False
+
+    msg = _build_mime(subject, body, gmail_user, to_addr, reply_to)
+
+    try:
+        with smtplib.SMTP(GMAIL_SMTP, GMAIL_PORT, timeout=10) as server:
+            server.starttls()
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, to_addr, msg.as_string())
+        log(f"Email sent via Gmail SMTP fallback ({gmail_user}).")
+        return True
+    except Exception as e:
+        log(f"Gmail SMTP fallback failed: {e}")
+        return False
+
+
 def send_email(subject, body, reply_to=None):
-    """Send notification email via SendGrid SMTP."""
+    """Send notification email via SendGrid SMTP with Gmail API fallback."""
     if DRY_RUN:
         log(f"DRY RUN - Would email: {subject}")
         return
 
+    # Try SendGrid first (sends from EMAIL_ADDRESS)
     api_key = os.environ.get("SENDGRID_API_KEY", "")
-    if not api_key:
-        if not os.path.exists(SENDGRID_KEY_FILE):
-            log(f"No SendGrid API key at {SENDGRID_KEY_FILE}. Email skipped.")
-            return
+    if not api_key and os.path.exists(SENDGRID_KEY_FILE):
         with open(SENDGRID_KEY_FILE) as f:
             api_key = f.read().strip()
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_ADDRESS
-    msg["To"] = EMAIL_ADDRESS
-    if reply_to:
-        msg["Reply-To"] = reply_to
-    msg.attach(MIMEText(body, "plain"))
+    if api_key:
+        sg_msg = _build_mime(subject, body, EMAIL_ADDRESS, EMAIL_ADDRESS, reply_to)
+        if _send_via_sendgrid(sg_msg, api_key):
+            return
 
-    try:
-        with smtplib.SMTP(SENDGRID_SMTP, SENDGRID_PORT) as server:
-            server.starttls()
-            server.login("apikey", api_key)
-            server.sendmail(EMAIL_ADDRESS, EMAIL_ADDRESS, msg.as_string())
-        log("Email sent.")
-    except Exception as e:
-        log(f"Email failed: {e}")
+    # Fallback to Gmail SMTP (sends from blackhillassistant@gmail.com)
+    if _send_via_gmail_smtp(subject, body, EMAIL_ADDRESS, reply_to or REPLY_TO_ADDRESS):
+        return
+
+    log("ERROR: All email delivery methods failed.")
 
 
 def main():
