@@ -1144,6 +1144,15 @@ def process_leads(config, state):
         # Aspire CRM
         aspire_url, aspire_contact_id = create_aspire_contact(config, lead)
 
+        # Pass Aspire result into the lead so HubSpot's note reflects accurate status
+        if aspire_url == "exists":
+            lead["_aspire_status"] = "exists"
+        elif aspire_url and aspire_url.startswith("http"):
+            lead["_aspire_status"] = aspire_url
+            lead["_aspire_url"] = aspire_url
+        else:
+            lead["_aspire_status"] = "not_created"
+
         # HubSpot CRM (returns owner_id for notification routing)
         hubspot_status, owner_id = create_hubspot_contact(config, lead)
 

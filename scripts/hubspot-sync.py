@@ -276,10 +276,10 @@ def create_deal_note(lead, deal_id, contact_id, token):
             aspire_line = "Aspire: Dry run (not created)"
         else:
             aspire_line = f"Aspire: Contact created ({aspire_status})"
-    elif aspire_status == "not_created":
-        aspire_line = "Aspire: Pending (syncs when Mac is on)"
     else:
-        aspire_line = "Aspire: Pending (syncs when Mac is on)"
+        # Aspire wasn't created in this call - either not_created or status missing.
+        # Lead-monitor runs every 5 min in GitHub Actions so the next pass will sync it.
+        aspire_line = "Aspire: Pending (will sync on next monitor run)"
 
     note_lines = [f"Service: {service}"]
     if message:
