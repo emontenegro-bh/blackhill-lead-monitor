@@ -360,6 +360,14 @@ def _send_via_gmail_smtp(to_emails, subject, html_body, from_name=None):
     gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
 
     if not (gmail_user and gmail_pass):
+        gmail_config = os.path.expanduser("~/.config/gmail-sender/config.json")
+        if os.path.exists(gmail_config):
+            with open(gmail_config) as f:
+                creds = json.load(f)
+            gmail_user = gmail_user or creds.get("email", "")
+            gmail_pass = gmail_pass or creds.get("app_password", "")
+
+    if not (gmail_user and gmail_pass):
         return False, "No Gmail SMTP credentials"
 
     if isinstance(to_emails, str):
