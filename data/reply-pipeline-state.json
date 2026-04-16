@@ -1,6 +1,8 @@
 {
-  "processed_uids": [],
-  "search_since": "2026-04-16T10:47:22.933646+00:00",
+  "processed_uids": [
+    "22"
+  ],
+  "search_since": "2026-04-16T11:43:55.249850+00:00",
   "stats": {
     "total_replies": 0,
     "approved": 0,
@@ -8,5 +10,5 @@
     "revisions": 0,
     "declined": 0
   },
-  "last_run": "2026-04-16T10:47:22.933772+00:00"
+  "last_run": "2026-04-16T11:43:55.249949+00:00"
 }
