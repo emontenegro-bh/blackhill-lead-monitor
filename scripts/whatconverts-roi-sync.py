@@ -18,7 +18,7 @@ Usage:
   python3 whatconverts-roi-sync.py --backfill # Scan ALL Aspire contacts to find matches
 """
 
-import json, os, sys, urllib.request, urllib.error, urllib.parse, base64
+import json, os, sys, time, urllib.request, urllib.error, urllib.parse, base64
 from datetime import datetime, timezone
 
 DRY_RUN = "--dry-run" in sys.argv
@@ -77,21 +77,45 @@ def load_aspire_config():
 
 # --- Aspire API ---
 
-def aspire_authenticate(config):
-    """Get JWT token from Aspire."""
+def aspire_authenticate(config, max_retries=3, retry_delay=5):
+    """Get JWT token from Aspire. Retries on transient failures (403, 5xx, network errors)."""
     data = json.dumps({
         "ClientId": config["client_id"],
         "Secret": config["secret"],
     }).encode()
-    req = urllib.request.Request(
-        f"{config['api_base_url']}/Authorization",
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req) as resp:
-        body = json.loads(resp.read().decode())
-        return body.get("Token", "")
+
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            req = urllib.request.Request(
+                f"{config['api_base_url']}/Authorization",
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req) as resp:
+                body = json.loads(resp.read().decode())
+                return body.get("Token", "")
+        except urllib.error.HTTPError as e:
+            last_error = e
+            # 401/400 are credential issues, no point retrying
+            if e.code in (400, 401):
+                raise
+            # 403, 429, 5xx may be transient - retry
+            if attempt < max_retries:
+                log(f"Aspire auth attempt {attempt}/{max_retries} failed (HTTP {e.code}), retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                continue
+            raise
+        except (urllib.error.URLError, TimeoutError) as e:
+            last_error = e
+            if attempt < max_retries:
+                log(f"Aspire auth attempt {attempt}/{max_retries} failed ({type(e).__name__}), retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                continue
+            raise
+
+    raise last_error
 
 
 def aspire_query(config, token, endpoint, params=""):
