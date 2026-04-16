@@ -15,8 +15,10 @@ Usage:
     python3 booking-monitor.py --list    # List recent bookings
 """
 
-import json, logging, os, signal, subprocess, sys, urllib.request, urllib.error, urllib.parse
+import json, logging, os, signal, smtplib, subprocess, sys, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timezone, timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Hard timeout to prevent zombie processes under launchd
 signal.alarm(120) if hasattr(signal, "alarm") else None
@@ -329,6 +331,165 @@ def create_hubspot_contact(customer, appointment_date):
         return {"success": False, "message": str(e)[:200]}
 
 
+# --- Email Notifications: SendGrid HTTP API + Gmail SMTP fallback ---
+
+def _send_via_sendgrid(payload, api_key):
+    """Send via SendGrid HTTP API. Returns (success, error_message)."""
+    req = urllib.request.Request(
+        "https://api.sendgrid.com/v3/mail/send",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15):
+            return True, None
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")[:200]
+        return False, f"HTTP {e.code}: {body}"
+    except Exception as e:
+        return False, str(e)
+
+
+def _send_via_gmail_smtp(to_emails, subject, html_body, from_name=None):
+    """Fallback: send HTML email via Gmail SMTP. Returns (success, error_message)."""
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+    if not (gmail_user and gmail_pass):
+        return False, "No Gmail SMTP credentials"
+
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{from_name} <{gmail_user}>" if from_name else gmail_user
+    msg["To"] = ", ".join(to_emails)
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.starttls()
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, to_emails, msg.as_string())
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+
+def send_html_email(to_emails, subject, html_body, from_email=None, from_name="Black Hill Landscaping"):
+    """Send HTML email via SendGrid then fall back to Gmail SMTP."""
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+
+    api_key = os.environ.get("SENDGRID_API_KEY", "")
+    if not api_key:
+        sg_path = os.path.expanduser("~/.config/sendgrid-api-key")
+        if os.path.exists(sg_path):
+            with open(sg_path) as f:
+                api_key = f.read().strip()
+
+    from_email = from_email or os.environ.get("NOTIFY_FROM_EMAIL", "evelin@blackhilltx.com")
+
+    if api_key:
+        payload = json.dumps({
+            "personalizations": [{"to": [{"email": e} for e in to_emails]}],
+            "from": {"email": from_email, "name": from_name},
+            "subject": subject,
+            "content": [{"type": "text/html", "value": html_body}],
+        }).encode()
+        ok, err = _send_via_sendgrid(payload, api_key)
+        if ok:
+            log.info(f"  Booking notification sent via SendGrid to {to_emails}")
+            return True
+        log.warning(f"  SendGrid failed ({err}), trying Gmail SMTP fallback...")
+
+    ok, err = _send_via_gmail_smtp(to_emails, subject, html_body, from_name)
+    if ok:
+        log.info(f"  Booking notification sent via Gmail SMTP to {to_emails}")
+        return True
+
+    log.error(f"  All email delivery methods failed for booking notification: {err}")
+    return False
+
+
+def notify_new_booking(customer, service_name, appointment_date, aspire_result, hubspot_result):
+    """Notify Evelin and Denisse of a new booking consultation."""
+    recipients_str = os.environ.get("LEAD_RECIPIENTS", "evelin@blackhilltx.com,denisse@blackhilltx.com")
+    recipients = [r.strip() for r in recipients_str.split(",") if r.strip()]
+    if not recipients:
+        return
+
+    name = customer.get("name", "Unknown")
+    email = customer.get("email", "Not provided")
+    phone = customer.get("phone", "Not provided")
+    address_parts = [
+        customer.get("address", ""),
+        customer.get("city", ""),
+        customer.get("state", ""),
+        customer.get("zip", ""),
+    ]
+    address = " ".join(p for p in address_parts if p).strip() or "Not provided"
+    notes = (customer.get("notes", "") or "(no notes)")[:500]
+
+    # Format appointment date
+    try:
+        appt_dt = datetime.fromisoformat(appointment_date.replace("Z", "+00:00"))
+        appt_str = appt_dt.strftime("%A, %B %-d, %Y at %-I:%M %p")
+    except Exception:
+        appt_str = appointment_date or "Unknown"
+
+    # Aspire status line
+    aspire_action = aspire_result.get("action", "error")
+    aspire_url = aspire_result.get("contact_url", "")
+    if aspire_action == "created" and aspire_url.startswith("http"):
+        aspire_line = f'Created in Aspire - <a href="{aspire_url}">View Contact</a>'
+    elif aspire_action == "exists":
+        aspire_line = "Already in Aspire"
+    elif aspire_result.get("success"):
+        aspire_line = "Created in Aspire"
+    else:
+        aspire_line = f"Aspire ERROR: {aspire_result.get('message', 'unknown')[:120]}"
+
+    # HubSpot status line
+    hubspot_action = hubspot_result.get("action", "error")
+    hubspot_url = hubspot_result.get("contact_url", "")
+    if hubspot_action == "created" and hubspot_url.startswith("http"):
+        hubspot_line = f'Created in HubSpot - <a href="{hubspot_url}">View Contact</a>'
+    elif hubspot_action == "exists":
+        hubspot_line = "Already in HubSpot"
+    elif hubspot_result.get("success"):
+        hubspot_line = "Created in HubSpot"
+    else:
+        hubspot_line = f"HubSpot ERROR: {hubspot_result.get('message', 'unknown')[:120]}"
+
+    html = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
+<h2 style="color: #115E00; margin-bottom: 4px;">New Booking Consultation</h2>
+<p style="color: #666; margin-top: 0;">Black Hill Landscaping</p>
+<hr style="border: 1px solid #C8A951;">
+<table style="width: 100%; border-collapse: collapse;">
+<tr><td style="padding: 8px; font-weight: bold; width: 140px;">Assigned To</td><td style="padding: 8px; font-weight: bold; color: #115E00;">Evelin</td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Service</td><td style="padding: 8px;">{service_name}</td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Appointment</td><td style="padding: 8px;">{appt_str}</td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Name</td><td style="padding: 8px;">{name}</td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Phone</td><td style="padding: 8px;"><a href="tel:{phone}">{phone}</a></td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Email</td><td style="padding: 8px;"><a href="mailto:{email}">{email}</a></td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Address</td><td style="padding: 8px;">{address}</td></tr>
+</table>
+<div style="background: #f5f5f5; padding: 12px; margin: 16px 0; border-left: 4px solid #C8A951;">
+<strong>Customer Notes:</strong><br>{notes}
+</div>
+<p style="font-size: 13px; color: #888;">{aspire_line}<br>{hubspot_line}<br>Source: Microsoft Bookings</p>
+</div>"""
+
+    subject = f"New Booking: {name} - {service_name}"
+    send_html_email(recipients, subject, html)
+
+
 # --- Main ---
 
 def process_appointments(token, state):
@@ -450,6 +611,13 @@ def process_appointments(token, state):
             state["stats"]["created" if aspire_action == "created" else "exists"] += 1
         else:
             state["stats"]["errors"] += 1
+
+        # Notify Evelin and Denisse (only for genuinely new contacts, not pre-existing)
+        if aspire_action == "created" or hubspot_action == "created":
+            try:
+                notify_new_booking(customer, service_name, start_dt, aspire_result, hubspot_result)
+            except Exception as e:
+                log.warning(f"  Notification failed (non-fatal): {e}")
 
         new_count += 1
 

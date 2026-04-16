@@ -546,6 +546,105 @@ def _parse_call_lead(lead_data):
     }
 
 
+# --- Email Delivery: SendGrid HTTP API + Gmail SMTP fallback ---
+
+def _send_via_sendgrid(payload, api_key):
+    """Send via SendGrid HTTP API. Returns (success, error_message)."""
+    req = urllib.request.Request(
+        "https://api.sendgrid.com/v3/mail/send",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return True, None
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")[:200]
+        return False, f"HTTP {e.code}: {body}"
+    except Exception as e:
+        return False, str(e)
+
+
+def _send_via_gmail_smtp(to_emails, subject, html_body, from_email=None, from_name=None, reply_to=None):
+    """Fallback: send HTML email via Gmail SMTP. Returns (success, error_message)."""
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+    if not (gmail_user and gmail_pass):
+        gmail_config = os.path.expanduser("~/.config/gmail-sender/config.json")
+        if os.path.exists(gmail_config):
+            with open(gmail_config) as f:
+                creds = json.load(f)
+            gmail_user = gmail_user or creds.get("email", "")
+            gmail_pass = gmail_pass or creds.get("app_password", "")
+
+    if not (gmail_user and gmail_pass):
+        return False, "No Gmail SMTP credentials"
+
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{from_name} <{gmail_user}>" if from_name else gmail_user
+    msg["To"] = ", ".join(to_emails)
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.starttls()
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, to_emails, msg.as_string())
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+
+def send_html_email(api_key, to_emails, from_email, from_name, subject, html_body, reply_to=None):
+    """Send HTML email via SendGrid, fall back to Gmail SMTP on failure.
+
+    Returns True if delivered through any path, False if all failed.
+    """
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+
+    # Try SendGrid first if API key provided
+    if api_key:
+        personalizations = [{"to": [{"email": e} for e in to_emails]}]
+        payload_dict = {
+            "personalizations": personalizations,
+            "from": {"email": from_email, "name": from_name},
+            "subject": subject,
+            "content": [{"type": "text/html", "value": html_body}],
+        }
+        if reply_to:
+            payload_dict["reply_to"] = {"email": reply_to}
+        payload = json.dumps(payload_dict).encode()
+
+        ok, err = _send_via_sendgrid(payload, api_key)
+        if ok:
+            return True
+        log(f"  SendGrid failed ({err}), trying Gmail SMTP fallback...")
+
+    # Fallback to Gmail SMTP
+    ok, err = _send_via_gmail_smtp(to_emails, subject, html_body, from_email, from_name, reply_to)
+    if ok:
+        log(f"  Email sent via Gmail SMTP fallback to {to_emails}")
+        return True
+
+    log(f"  ERROR: All email delivery methods failed ({err})")
+    return False
+
+
 # --- Auto-Reply via SendGrid ---
 
 def send_auto_reply(config, lead):
@@ -614,34 +713,18 @@ def send_auto_reply(config, lead):
 </body>
 </html>"""
 
-    payload = json.dumps({
-        "personalizations": [{"to": [{"email": email, "name": f"{first_name} {lead.get('last_name', '')}".strip()}]}],
-        "from": {"email": from_email, "name": from_name},
-        "reply_to": {"email": "inquiry@blackhilltx.com", "name": "Black Hill Landscaping"},
-        "subject": subject,
-        "content": [{"type": "text/html", "value": html_body}],
-    }).encode()
-
-    req = urllib.request.Request(
-        "https://api.sendgrid.com/v3/mail/send",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            log(f"  Auto-reply sent to {email} ({resp.status})")
-            return True
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")[:200]
-        log(f"  ERROR: Auto-reply failed {e.code}: {body}")
-        return False
-    except Exception as e:
-        log(f"  ERROR: Auto-reply failed: {e}")
-        return False
+    if send_html_email(
+        api_key=api_key,
+        to_emails=email,
+        from_email=from_email,
+        from_name=from_name,
+        subject=subject,
+        html_body=html_body,
+        reply_to="inquiry@blackhilltx.com",
+    ):
+        log(f"  Auto-reply sent to {email}")
+        return True
+    return False
 
 
 # --- Owner Notification via SendGrid ---
@@ -697,27 +780,15 @@ def send_owner_notification(config, lead, owner_name, owner_email, aspire_url=No
 <p style="font-size: 13px; color: #888;">Aspire: {aspire_line}<br>HubSpot: {hubspot_line}<br>Auto-reply sent to lead.</p>
 </div>"""
 
-    payload = json.dumps({
-        "personalizations": [{"to": [{"email": owner_email, "name": owner_name}]}],
-        "from": {"email": from_email, "name": from_name},
-        "subject": f"New Lead Assigned: {name} - {service}",
-        "content": [{"type": "text/html", "value": html}],
-    }).encode()
-
-    req = urllib.request.Request(
-        "https://api.sendgrid.com/v3/mail/send",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            log(f"  Owner notification sent to {owner_email} ({resp.status})")
-    except Exception as e:
-        log(f"  ERROR: Owner notification failed: {e}")
+    if send_html_email(
+        api_key=api_key,
+        to_emails=owner_email,
+        from_email=from_email,
+        from_name=from_name,
+        subject=f"New Lead Assigned: {name} - {service}",
+        html_body=html,
+    ):
+        log(f"  Owner notification sent to {owner_email}")
 
 
 def send_spam_notification(config, lead_data, reason):
@@ -735,24 +806,15 @@ def send_spam_notification(config, lead_data, reason):
     email = lead_data.get("contact_email_address", "unknown")
     message = fields.get("Anything else you would like to share?", "")[:300]
 
-    payload = json.dumps({
-        "personalizations": [{"to": [{"email": r} for r in recipients]}],
-        "from": {"email": config["notifications"]["from_email"], "name": config["notifications"]["from_name"]},
-        "subject": f"SPAM Lead Filtered: {name}",
-        "content": [{"type": "text/plain", "value": f"Filtered spam lead from WhatConverts\n{'='*45}\n\nName: {name}\nEmail: {email}\nReason: {reason}\n\nMessage:\n{message}\n\n{'='*45}\nThis lead was NOT processed. If legitimate, add manually."}],
-    }).encode()
-
-    req = urllib.request.Request(
-        "https://api.sendgrid.com/v3/mail/send",
-        data=payload,
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        method="POST",
+    spam_body = f"<pre>Filtered spam lead from WhatConverts\n{'='*45}\n\nName: {name}\nEmail: {email}\nReason: {reason}\n\nMessage:\n{message}\n\n{'='*45}\nThis lead was NOT processed. If legitimate, add manually.</pre>"
+    send_html_email(
+        api_key=api_key,
+        to_emails=recipients,
+        from_email=config["notifications"]["from_email"],
+        from_name=config["notifications"]["from_name"],
+        subject=f"SPAM Lead Filtered: {name}",
+        html_body=spam_body,
     )
-    try:
-        with urllib.request.urlopen(req, timeout=15):
-            pass
-    except Exception:
-        pass
 
 
 # --- Repeat Submission Notification ---
@@ -787,25 +849,15 @@ def send_repeat_notification(config, lead, original_owner_name):
 
     # Send to both Evelin and Denisse
     recipients = config["notifications"].get("lead_recipients", [])
-    for recipient in recipients:
-        payload = json.dumps({
-            "personalizations": [{"to": [{"email": recipient}]}],
-            "from": {"email": config["notifications"]["from_email"], "name": config["notifications"]["from_name"]},
-            "subject": f"Repeat Submission: {name} - {service} (assigned to {original_owner_name})",
-            "content": [{"type": "text/html", "value": html}],
-        }).encode()
-
-        req = urllib.request.Request(
-            "https://api.sendgrid.com/v3/mail/send",
-            data=payload,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                log(f"  Repeat notification sent to {recipient} ({resp.status})")
-        except Exception as e:
-            log(f"  ERROR: Repeat notification to {recipient} failed: {e}")
+    if recipients and send_html_email(
+        api_key=api_key,
+        to_emails=recipients,
+        from_email=config["notifications"]["from_email"],
+        from_name=config["notifications"]["from_name"],
+        subject=f"Repeat Submission: {name} - {service} (assigned to {original_owner_name})",
+        html_body=html,
+    ):
+        log(f"  Repeat notification sent to {recipients}")
 
 
 # --- HubSpot CRM ---

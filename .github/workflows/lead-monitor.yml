@@ -30,6 +30,8 @@ jobs:
           WC_API_SECRET: ${{ secrets.WC_API_SECRET }}
           WC_PROFILE_ID: ${{ secrets.WC_PROFILE_ID }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           LEAD_RECIPIENTS: ${{ secrets.LEAD_RECIPIENTS }}
           SPAM_RECIPIENTS: ${{ secrets.SPAM_RECIPIENTS }}
           NOTIFY_FROM_EMAIL: ${{ secrets.NOTIFY_FROM_EMAIL }}
