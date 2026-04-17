@@ -737,3 +737,9 @@
 [2026-04-17 11:38:57] GBP Review Monitor starting...
 [2026-04-17 11:38:59] Fetched 42 reviews.
 [2026-04-17 11:38:59] No new reviews.
+[2026-04-17 12:44:48] GBP Review Monitor starting...
+[2026-04-17 12:44:50] Fetched 43 reviews.
+[2026-04-17 12:44:50] Found 1 new review(s).
+[2026-04-17 12:44:50] New 4-star review from Wyatt. Draft saved: /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/pending-responses/ioJSZh4n6iDBuEWoGR9wTn-yxZQ18sLa1rIF0rQf.json
+[2026-04-17 12:44:51] Email sent via MS Graph (from evelin@blackhilltx.com).
+[2026-04-17 12:44:51] Done. 1 new review(s) processed.
