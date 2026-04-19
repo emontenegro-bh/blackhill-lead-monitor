@@ -80,11 +80,33 @@ def detect_service(review_text):
         "design": ["design", "plan", "blueprint", "consultation"],
         "install": ["install", "plant", "sod", "mulch", "flower bed"],
         "commercial": ["commercial", "office", "business", "parking lot"],
+        "drainage": ["drain", "drainage", "french drain", "downspout", "erosion"],
+        "sod": ["sod", "resod"],
+        "mulch": ["mulch", "bed work", "flower bed"],
+        "fertilization": ["fertiliz", "weed control", "pre-emergent"],
     }
     for service, words in keywords.items():
         if any(w in text for w in words):
             return service
     return "default"
+
+
+DFW_CITIES = [
+    "Fort Worth", "Arlington", "Weatherford", "White Settlement", "Haltom City",
+    "North Richland Hills", "Keller", "Southlake", "Colleyville", "Grapevine",
+    "Bedford", "Euless", "Hurst", "Watauga", "Saginaw", "Lake Worth",
+    "River Oaks", "Benbrook", "Crowley", "Mansfield", "Burleson", "Azle",
+    "Haslet", "Roanoke", "Trophy Club", "Westlake", "Aledo", "Hudson Oaks",
+    "Granbury", "Cleburne", "Dallas", "DFW",
+]
+
+
+def detect_city(review_text):
+    """Extract city name from review text, defaulting to Fort Worth."""
+    for city in DFW_CITIES:
+        if city.lower() in review_text.lower():
+            return city
+    return "Fort Worth"
 
 
 def draft_response(review, templates):
@@ -101,14 +123,19 @@ def draft_response(review, templates):
 
     comment = review.get("comment", "")
     service = detect_service(comment)
+    city = detect_city(comment)
     service_ref = templates["service_references"].get(service, templates["service_references"]["default"])
 
-    response = template["template"].replace("{name}", first_name).replace("{service_reference}", service_ref)
+    response = (template["template"]
+                .replace("{name}", first_name)
+                .replace("{service_reference}", service_ref)
+                .replace("{city}", city))
 
     return {
         "template_id": template["id"],
         "response_text": response,
         "service_detected": service,
+        "city_detected": city,
     }
 
 
