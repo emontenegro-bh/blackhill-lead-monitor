@@ -544,3 +544,15 @@
 [2026-04-19 11:48:09] No new reply emails found.
 [2026-04-19 12:31:15] GBP Reply Poller starting...
 [2026-04-19 12:31:17] No new reply emails found.
+[2026-04-19 13:44:15] GBP Reply Poller starting...
+[2026-04-19 13:44:16] Found 1 unread reply email(s).
+[2026-04-19 13:44:16] Processing reply for REV-6D782733 from Evelin Montenegro <Evelin@blackhilltx.com>
+[2026-04-19 13:44:16] Custom response received for REV-6D782733: Approved
+
+
+[cid:62915d94-de76-4007-9af4-93774f50e88c]
+Evelin Montenegro
+Founder ...
+[2026-04-19 13:44:17] Archived to /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/responded/q4aN7p94i9gJyZexwpfreNXbr9Hy20wAXZRx58Pg.json
+[2026-04-19 13:44:17] Confirmation email failed: Connection unexpectedly closed
+[2026-04-19 13:44:17] Done. Processed 1/1 reply email(s).

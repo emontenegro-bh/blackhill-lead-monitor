@@ -8,6 +8,9 @@
   "template_id": "5a",
   "service_detected": "irrigation",
   "drafted_at": "2026-04-19T13:13:08.097245",
-  "status": "pending",
-  "short_id": "6D782733"
+  "status": "responded",
+  "short_id": "6D782733",
+  "responded_at": "2026-04-19T13:44:17.272708",
+  "final_response": "Approved\n\n\n[cid:62915d94-de76-4007-9af4-93774f50e88c]\nEvelin Montenegro\nFounder & CEO\n(817) 994-6663<tel:+18179946663>\nEvelin@blackhilltx.com<mailto:Evelin@blackhilltx.com>\nBlackHillLandscaping.com<https://blackhilllandscaping.com>\nWhere Excellence Takes Root",
+  "response_method": "email_custom"
 }
