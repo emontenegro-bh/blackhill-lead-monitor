@@ -127,10 +127,13 @@ def strip_quoted_text(body):
         if sig_marker in result:
             result = result[:result.index(sig_marker)].strip()
 
-    # Also handle "Get Outlook" at the start of a line (mobile replies)
+    # Strip Outlook/Exchange image-based signatures and trailing junk
     lines_final = []
     for line in result.split("\n"):
         if line.strip().startswith("Get Outlook for "):
+            break
+        # Stop at Outlook inline image signatures [cid:...]
+        if re.match(r"^\[cid:[a-f0-9-]+\]$", line.strip(), re.IGNORECASE):
             break
         lines_final.append(line)
     result = "\n".join(lines_final).strip()
@@ -270,7 +273,12 @@ def process_reply(gbp_auth, message):
 
     # Determine action — normalize: lowercase, strip whitespace and punctuation
     normalized = re.sub(r"[^\w\s]", "", reply_text.lower().strip())
-    is_approval = normalized in ("approved", "approve", "yes", "ok", "post it", "looks good", "lgtm")
+    APPROVAL_WORDS = ("approved", "approve", "yes", "ok", "post it", "looks good", "lgtm")
+    is_approval = normalized in APPROVAL_WORDS
+    # Fallback: check first line only (handles residual signature content)
+    if not is_approval:
+        first_line = re.sub(r"[^\w\s]", "", reply_text.strip().split("\n")[0].lower().strip())
+        is_approval = first_line in APPROVAL_WORDS
     was_custom = not is_approval
 
     if is_approval:
