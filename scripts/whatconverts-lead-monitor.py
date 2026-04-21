@@ -236,6 +236,14 @@ SOLICITATION_KEYWORDS = [
     "i'm reaching out because we", "reaching out because we",
     "we can guarantee", "we specialize in",
     "playbook", "turned into solid calls", "booked jobs",
+    # Sales pitch patterns (added 2026-04-21)
+    "runs your entire business", "handle the execution",
+    "you focus on scaling", "opt out", "reply stop",
+    "15-minute call", "15 minute call", "quick call this week",
+    "open to a quick", "happy to connect and trade notes",
+    "working in the business to", "shift from working in",
+    "we built", "we handle", "you don't need to manage",
+    "trained human", "no pressure at all",
 ]
 
 SPAM_EMAIL_DOMAINS = [
@@ -455,6 +463,21 @@ def _is_spam_form(lead_data):
     if "123 main st" in address:
         return True, "Fake address: 123 Main St"
 
+    # City field contains person's name instead of a city (common bot pattern)
+    city_field = (fields.get("City", "") or "").strip()
+    name_field = (fields.get("Name", "") or "").strip()
+    if city_field and name_field and city_field.lower() == name_field.lower():
+        return True, f"City field contains name instead of city: '{city_field}'"
+
+    # Out-of-state geolocation (WhatConverts IP-based state != Texas)
+    geo_state = (lead_data.get("state", "") or "").strip()
+    if geo_state and geo_state not in ("Texas", "TX", ""):
+        lead_source = (lead_data.get("lead_source", "") or "").lower()
+        lead_medium = (lead_data.get("lead_medium", "") or "").lower()
+        # Out-of-state + direct/unknown source = very likely spam
+        if lead_source in ("(direct)", "") or lead_medium in ("(none)", ""):
+            return True, f"Out-of-state geolocation ({geo_state}) with direct/unknown source"
+
     # Non-Texas area code with no local signals
     phone = fields.get("Contact No", "") or ""
     if phone:
@@ -465,7 +488,7 @@ def _is_spam_form(lead_data):
                              "430", "432", "469", "512", "682", "713", "726", "737",
                              "806", "817", "830", "832", "903", "915", "936", "940",
                              "945", "956", "972", "979"}
-            if area_code not in tx_area_codes and "(direct)" in (lead_data.get("source", "") or "").lower():
+            if area_code not in tx_area_codes and "(direct)" in (lead_data.get("lead_source", "") or "").lower():
                 return True, f"Non-TX area code ({area_code}) with direct/unknown source"
 
     # No email and no phone = likely spam
