@@ -40,9 +40,13 @@ API_KEY_FILE = os.path.expanduser("~/.config/sendgrid-api-key")
 TARGET_CPA = 80.0
 TARGET_IMPR_SHARE = 50.0
 
+# Repo root (works both locally and on GitHub Actions)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(SCRIPT_DIR)
+
 # QS history file (tracks Quality Scores week over week)
-QS_HISTORY_FILE = os.path.expanduser(
-    "~/projects/.claude/reports/marketing/google-ads/weekly/qs-history.json"
+QS_HISTORY_FILE = os.path.join(
+    REPO_ROOT, ".claude", "reports", "marketing", "google-ads", "weekly", "qs-history.json"
 )
 
 # --- Load credentials ---
@@ -1050,7 +1054,7 @@ report_text = "\n".join(md)
 # SAVE & SEND
 # ============================================================
 
-report_dir = os.path.expanduser("~/projects/.claude/reports/marketing/google-ads/weekly")
+report_dir = os.path.join(REPO_ROOT, ".claude", "reports", "marketing", "google-ads", "weekly")
 os.makedirs(report_dir, exist_ok=True)
 report_file = os.path.join(report_dir, f"{now.strftime('%Y-%m-%d')}.md")
 with open(report_file, "w") as f:
