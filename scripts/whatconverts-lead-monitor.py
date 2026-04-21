@@ -357,6 +357,76 @@ def _is_spam_call(lead_data):
     return False, ""
 
 
+def _classify_message_with_llm(name, email, address, service, message):
+    """Use Claude API to classify whether a lead message is spam/solicitation.
+    Returns (is_spam: bool, reason: str). Falls back to False on any error."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        for path in ["~/.config/anthropic/config.json", "~/.config/anthropic/api-key"]:
+            fp = os.path.expanduser(path)
+            if os.path.exists(fp):
+                try:
+                    with open(fp) as f:
+                        content = f.read().strip()
+                    if content.startswith("{"):
+                        api_key = json.loads(content).get("api_key", "")
+                    else:
+                        api_key = content
+                    if api_key:
+                        break
+                except Exception:
+                    pass
+    if not api_key:
+        return False, ""
+
+    prompt = f"""You are a spam classifier for a landscaping company (Black Hill Landscaping) in Fort Worth, TX.
+Classify this web form submission as SPAM or LEGIT.
+
+SPAM = someone selling a product/service TO the company, soliciting business, or fake/bot submission.
+LEGIT = a real potential customer asking about landscaping, irrigation, lawn care, drainage, sod, or related services.
+
+Submission:
+Name: {name}
+Email: {email}
+Address: {address}
+Service requested: {service}
+Message: {message}
+
+Respond with exactly one line:
+SPAM: <reason>
+or
+LEGIT"""
+
+    payload = json.dumps({
+        "model": "claude-haiku-4-5-20251001",
+        "max_tokens": 50,
+        "messages": [{"role": "user", "content": prompt}],
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=payload,
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+        reply = data.get("content", [{}])[0].get("text", "").strip()
+        if reply.upper().startswith("SPAM"):
+            reason = reply.split(":", 1)[1].strip() if ":" in reply else "LLM classified as spam"
+            log(f"  LLM spam check: {reply}")
+            return True, f"LLM: {reason}"
+        return False, ""
+    except Exception as e:
+        log(f"  LLM spam check failed (non-fatal): {e}")
+        return False, ""
+
+
 def _is_spam_form(lead_data):
     """Check if a web form lead is spam."""
     fields = lead_data.get("additional_fields", {})
@@ -401,6 +471,14 @@ def _is_spam_form(lead_data):
     # No email and no phone = likely spam
     if not email and not phone:
         return True, "No email and no phone"
+
+    # LLM message classification (catches sales pitches that keywords miss)
+    if message and len(message) > 20:
+        name = (fields.get("Name", "") or lead_data.get("contact_name", "")).strip()
+        service = fields.get("What Type Of Service Do You Need?", "")
+        is_spam, reason = _classify_message_with_llm(name, email, address, service, message)
+        if is_spam:
+            return True, reason
 
     return False, ""
 
