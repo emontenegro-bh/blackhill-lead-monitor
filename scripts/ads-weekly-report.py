@@ -12,12 +12,13 @@ Manual run: python3 ~/projects/scripts/ads-weekly-report.py
 """
 
 import json, warnings, smtplib, os, sys, signal
+import urllib.request, urllib.error, urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta, date
 
 # --- Global timeout: kill the process if it runs longer than 5 minutes ---
-SCRIPT_TIMEOUT = 300  # seconds
+SCRIPT_TIMEOUT = 420  # seconds
 
 def _timeout_handler(signum, frame):
     print(f"ERROR: Script timed out after {SCRIPT_TIMEOUT}s", file=sys.stderr)
@@ -265,6 +266,157 @@ os.makedirs(os.path.dirname(QS_HISTORY_FILE), exist_ok=True)
 with open(QS_HISTORY_FILE, "w") as f:
     json.dump(qs_history, f, indent=2)
 
+# --- 6. Converting search terms (winners) ---
+converting_terms = []
+rows = safe_query(f"""
+    SELECT search_term_view.search_term, campaign.name,
+           metrics.cost_micros, metrics.clicks, metrics.conversions, metrics.ctr
+    FROM search_term_view
+    WHERE segments.date BETWEEN '{this_week_start}' AND '{this_week_end}'
+      AND metrics.conversions >= 1
+    ORDER BY metrics.conversions DESC
+    LIMIT 10
+""")
+for row in rows:
+    converting_terms.append({
+        "term": row.search_term_view.search_term,
+        "campaign": row.campaign.name,
+        "spend": row.metrics.cost_micros / 1_000_000,
+        "clicks": row.metrics.clicks,
+        "conversions": row.metrics.conversions,
+        "ctr": row.metrics.ctr * 100,
+    })
+
+# --- 7. RSA ad copy (headline/description) performance ---
+asset_agg = {}
+rows = safe_query(f"""
+    SELECT asset.text_asset.text, ad_group_ad_asset_view.field_type,
+           metrics.impressions, metrics.clicks, metrics.ctr, metrics.conversions
+    FROM ad_group_ad_asset_view
+    WHERE segments.date BETWEEN '{this_week_start}' AND '{this_week_end}'
+      AND ad_group_ad_asset_view.field_type IN ('HEADLINE', 'DESCRIPTION')
+      AND metrics.impressions > 0
+    ORDER BY metrics.impressions DESC
+""")
+for row in rows:
+    text = row.asset.text_asset.text
+    ftype = row.ad_group_ad_asset_view.field_type.name
+    key = (text, ftype)
+    if key not in asset_agg:
+        asset_agg[key] = {"text": text, "type": ftype, "impressions": 0, "clicks": 0, "conversions": 0}
+    asset_agg[key]["impressions"] += row.metrics.impressions
+    asset_agg[key]["clicks"] += row.metrics.clicks
+    asset_agg[key]["conversions"] += row.metrics.conversions
+
+for v in asset_agg.values():
+    v["ctr"] = (v["clicks"] / v["impressions"] * 100) if v["impressions"] > 0 else 0.0
+
+headlines = sorted([v for v in asset_agg.values() if v["type"] == "HEADLINE"], key=lambda x: -x["impressions"])
+descriptions = sorted([v for v in asset_agg.values() if v["type"] == "DESCRIPTION"], key=lambda x: -x["impressions"])
+
+# --- 8. Device breakdown ---
+device_data = {}
+rows = safe_query(f"""
+    SELECT segments.device,
+           metrics.cost_micros, metrics.clicks, metrics.conversions, metrics.impressions
+    FROM campaign
+    WHERE segments.date BETWEEN '{this_week_start}' AND '{this_week_end}'
+      AND campaign.status = 'ENABLED'
+""")
+for row in rows:
+    dev = row.segments.device.name
+    if dev not in device_data:
+        device_data[dev] = {"spend": 0, "clicks": 0, "conversions": 0, "impressions": 0}
+    device_data[dev]["spend"] += row.metrics.cost_micros / 1_000_000
+    device_data[dev]["clicks"] += row.metrics.clicks
+    device_data[dev]["conversions"] += row.metrics.conversions
+    device_data[dev]["impressions"] += row.metrics.impressions
+
+# --- 9. Hour-of-day breakdown ---
+hour_data = {}
+rows = safe_query(f"""
+    SELECT segments.hour,
+           metrics.cost_micros, metrics.clicks, metrics.conversions
+    FROM campaign
+    WHERE segments.date BETWEEN '{this_week_start}' AND '{this_week_end}'
+      AND campaign.status = 'ENABLED'
+""")
+for row in rows:
+    hr = row.segments.hour
+    if hr not in hour_data:
+        hour_data[hr] = {"spend": 0, "clicks": 0, "conversions": 0}
+    hour_data[hr]["spend"] += row.metrics.cost_micros / 1_000_000
+    hour_data[hr]["clicks"] += row.metrics.clicks
+    hour_data[hr]["conversions"] += row.metrics.conversions
+
+CST_OFFSET = -5  # CDT (April = daylight saving)
+def bucket_hours(hdata):
+    blocks = [
+        ("12a-4a", range(0, 4)),
+        ("4a-8a", range(4, 8)),
+        ("8a-12p", range(8, 12)),
+        ("12p-4p", range(12, 16)),
+        ("4p-8p", range(16, 20)),
+        ("8p-12a", range(20, 24)),
+    ]
+    result = []
+    for label, hrs in blocks:
+        b = {"label": label, "spend": 0, "clicks": 0, "conversions": 0}
+        for utc_hr in range(24):
+            cst_hr = (utc_hr + CST_OFFSET) % 24
+            if cst_hr in hrs and utc_hr in hdata:
+                b["spend"] += hdata[utc_hr]["spend"]
+                b["clicks"] += hdata[utc_hr]["clicks"]
+                b["conversions"] += hdata[utc_hr]["conversions"]
+        result.append(b)
+    return result
+
+hour_blocks = bucket_hours(hour_data)
+
+# --- 10. Aspire won revenue (correlation context) ---
+def get_aspire_revenue(start_date, end_date):
+    try:
+        client_id = (os.environ.get("ASPIRE_REPORTING_CLIENT_ID")
+                     or os.environ.get("ASPIRE_CLIENT_ID"))
+        secret = (os.environ.get("ASPIRE_REPORTING_SECRET")
+                  or os.environ.get("ASPIRE_SECRET"))
+        if not client_id or not secret:
+            cfg_path = os.path.expanduser("~/.config/aspire/config.json")
+            if not os.path.exists(cfg_path):
+                return None
+            with open(cfg_path) as f:
+                cfg = json.load(f)
+            client_id = cfg.get("reporting_client_id", cfg.get("client_id"))
+            secret = cfg.get("reporting_secret", cfg.get("secret"))
+        base_url = os.environ.get("ASPIRE_API_URL", "https://cloud-api.youraspire.com")
+        auth_data = json.dumps({"ClientId": client_id, "Secret": secret}).encode()
+        auth_req = urllib.request.Request(
+            f"{base_url}/Authorization",
+            data=auth_data, headers={"Content-Type": "application/json"}, method="POST",
+        )
+        with urllib.request.urlopen(auth_req, timeout=15) as resp:
+            token = json.loads(resp.read().decode()).get("Token", "")
+        if not token:
+            return None
+        odata_filter = (f"OpportunityStatusName eq 'Won' "
+                        f"and WonDate ge {start_date}T00:00:00Z "
+                        f"and WonDate le {end_date}T23:59:59Z")
+        params = f"$filter={odata_filter}&$select=WonDollars,OpportunityName"
+        url = f"{base_url}/Opportunities?{urllib.parse.quote(params, safe='=&$,()/%:@')}"
+        req = urllib.request.Request(url, headers={
+            "Authorization": f"Bearer {token}", "Accept": "application/json",
+        })
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode())
+            opps = data if isinstance(data, list) else [data]
+        total_won = sum(float(o.get("WonDollars", 0) or 0) for o in opps)
+        return {"total_won": total_won, "count": len(opps)}
+    except Exception as e:
+        print(f"Aspire revenue query skipped: {e}", file=sys.stderr)
+        return None
+
+aspire_revenue = get_aspire_revenue(this_week_start, this_week_end)
+
 
 # ============================================================
 # IMPRESSION SHARE (weighted average)
@@ -283,6 +435,42 @@ if total_impr_prev > 0:
         c.get("prev", {}).get("impr_share", 0) * c.get("prev", {}).get("impressions", 0)
         for c in camp_data.values()
     ) / total_impr_prev
+
+
+# ============================================================
+# RECOMMENDATIONS ENGINE
+# ============================================================
+
+def generate_recommendations():
+    recs = []
+    brand_patterns = ["black hill", "blackhill", "bh landscaping", "bh landscape"]
+    for w in waste_terms:
+        if w["spend"] >= 15:
+            recs.append({"priority": "high", "action": "Add as negative keyword",
+                         "detail": f'"{w["term"]}" spent ${w["spend"]:.0f} with 0 conversions'})
+    for w in waste_terms:
+        if any(bp in w["term"].lower() for bp in brand_patterns):
+            recs.append({"priority": "medium", "action": "Brand term in waste",
+                         "detail": f'"{w["term"]}" (${w["spend"]:.2f}) - add as negative or create brand campaign'})
+    for name, cd in camp_data.items():
+        t = cd.get("this", {})
+        if t.get("lost_budget", 0) > 30:
+            recs.append({"priority": "high", "action": "Consider budget increase",
+                         "detail": f'{name}: losing {t["lost_budget"]:.0f}% impression share to budget'})
+    for name, cd in camp_data.items():
+        t = cd.get("this", {})
+        if t.get("lost_rank", 0) > 50:
+            recs.append({"priority": "medium", "action": "Improve QS or increase bids",
+                         "detail": f'{name}: losing {t["lost_rank"]:.0f}% impression share to ad rank'})
+    for kw in qs_keywords:
+        if kw["qs"] <= 3:
+            recs.append({"priority": "high", "action": "Priority QS fix needed",
+                         "detail": f'"{kw["keyword"]}" has QS {kw["qs"]} in {kw["campaign"]}'})
+    priority_order = {"high": 0, "medium": 1, "low": 2}
+    recs.sort(key=lambda r: priority_order.get(r["priority"], 9))
+    return recs[:10]
+
+recommendations = generate_recommendations()
 
 
 # ============================================================
@@ -391,7 +579,48 @@ if acct_this:
     h('</div>')
 
 # ============================================================
-# SECTION 2: WHERE'S THE MONEY GOING?
+# SECTION 2: REVENUE CONTEXT
+# ============================================================
+if aspire_revenue and acct_this:
+    h('<div class="section">')
+    h('<h2>Revenue Context</h2>')
+    h('<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>')
+    h(f'<td width="50%" style="padding:0 6px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
+    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Ad Spend This Week</div>')
+    h(f'<div style="font-size:28px;font-weight:700;color:#e74c3c;">${acct_this["spend"]:.0f}</div>')
+    h(f'</div></td>')
+    rev_color = "#27ae60" if aspire_revenue["total_won"] > 0 else "#888"
+    h(f'<td width="50%" style="padding:0 6px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
+    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Won Revenue This Week</div>')
+    h(f'<div style="font-size:28px;font-weight:700;color:{rev_color};">${aspire_revenue["total_won"]:,.0f}</div>')
+    h(f'<div style="font-size:11px;color:#666;margin-top:4px;">{aspire_revenue["count"]} opportunities</div>')
+    h(f'</div></td>')
+    h('</tr></table>')
+    h('<div style="text-align:center;margin-top:8px;font-size:11px;color:#555;">Correlation only &mdash; not direct attribution between ads and won deals</div>')
+    h('</div>')
+
+# ============================================================
+# SECTION 3: WHAT TO DO THIS WEEK
+# ============================================================
+if recommendations:
+    h('<div class="section">')
+    h('<h2>What to Do This Week</h2>')
+    h(f'<div style="font-size:12px;color:#888;margin-bottom:12px;">{len(recommendations)} action items from this week\'s data</div>')
+    for rec in recommendations:
+        border_color = "#e74c3c" if rec["priority"] == "high" else "#f39c12"
+        h(f'<div style="margin-bottom:8px;padding:10px 14px;background:#222;border-radius:6px;border-left:3px solid {border_color};">')
+        h(f'<div style="font-size:13px;color:#fff;font-weight:600;">{rec["action"]}</div>')
+        h(f'<div style="font-size:12px;color:#aaa;margin-top:4px;">{rec["detail"]}</div>')
+        h(f'</div>')
+    h('</div>')
+else:
+    h('<div class="section">')
+    h('<h2>What to Do This Week</h2>')
+    h('<div style="padding:16px;background:#1a2a1a;border-radius:8px;text-align:center;color:#27ae60;font-size:14px;">No urgent actions this week. Everything looks healthy.</div>')
+    h('</div>')
+
+# ============================================================
+# SECTION 4: WHERE'S THE MONEY GOING?
 # ============================================================
 
 # --- Campaign breakdown with impression share diagnosis ---
@@ -405,6 +634,7 @@ if camp_data:
         t = camp_data[name].get("this", {})
         if not t:
             continue
+        p = camp_data[name].get("prev", {})
         cpa_str = f"${t['cpa']:.0f}" if t['conversions'] > 0 else '<span style="color:#666;">—</span>'
         cpa_color = "#27ae60" if t['conversions'] > 0 and t['cpa'] <= TARGET_CPA else "#e74c3c" if t['conversions'] > 0 else "#666"
 
@@ -412,18 +642,40 @@ if camp_data:
         rank_color = "#e74c3c" if t['lost_rank'] > 40 else "#f39c12" if t['lost_rank'] > 20 else "#27ae60"
         budget_color = "#e74c3c" if t['lost_budget'] > 40 else "#f39c12" if t['lost_budget'] > 20 else "#27ae60"
 
+        spend_arrow = f' {change_arrow(t["spend"], p.get("spend", 0), inverse=True)}' if p else ""
+        conv_arrow = f' {change_arrow(t["conversions"], p.get("conversions", 0))}' if p else ""
+        is_arrow = f' {change_arrow(t["impr_share"], p.get("impr_share", 0))}' if p else ""
+
         h(f'<tr>')
         h(f'<td style="font-weight:500;color:#fff;">{name}</td>')
-        h(f'<td class="right">${t["spend"]:.0f}</td>')
-        h(f'<td class="right">{t["conversions"]:.0f}</td>')
+        h(f'<td class="right">${t["spend"]:.0f}{spend_arrow}</td>')
+        h(f'<td class="right">{t["conversions"]:.0f}{conv_arrow}</td>')
         h(f'<td class="right"><span style="color:{cpa_color};">{cpa_str}</span></td>')
-        h(f'<td class="right"><span style="color:{is_color};font-weight:600;">{t["impr_share"]:.0f}%</span></td>')
+        h(f'<td class="right"><span style="color:{is_color};font-weight:600;">{t["impr_share"]:.0f}%</span>{is_arrow}</td>')
         h(f'<td class="right"><span style="color:{rank_color};">{t["lost_rank"]:.0f}%</span></td>')
         h(f'<td class="right"><span style="color:{budget_color};">{t["lost_budget"]:.0f}%</span></td>')
         h(f'</tr>')
 
     h('</table>')
     h('<div style="font-size:11px;color:#555;margin-top:8px;">Lost to Rank = Quality Score / bid too low &bull; Lost to Budget = daily budget ran out</div>')
+    h('</div>')
+
+# --- Converting search terms (winners) ---
+if converting_terms:
+    h('<div class="section">')
+    h('<h2>Converting Search Terms</h2>')
+    h('<div style="font-size:12px;color:#888;margin-bottom:12px;">What people searched to find us &mdash; and converted.</div>')
+    h('<table><tr><th>Search Term</th><th class="right">Conv</th><th class="right">Spend</th><th class="right">Clicks</th><th class="right">CTR</th><th>Campaign</th></tr>')
+    for ct in converting_terms[:7]:
+        h(f'<tr>')
+        h(f'<td style="font-weight:500;color:#fff;">{ct["term"]}</td>')
+        h(f'<td class="right"><span style="color:#27ae60;font-weight:600;">{ct["conversions"]:.0f}</span></td>')
+        h(f'<td class="right">${ct["spend"]:.2f}</td>')
+        h(f'<td class="right">{ct["clicks"]}</td>')
+        h(f'<td class="right">{ct["ctr"]:.1f}%</td>')
+        h(f'<td style="font-size:12px;color:#888;">{ct["campaign"]}</td>')
+        h(f'</tr>')
+    h('</table>')
     h('</div>')
 
 # --- Top keywords by spend ---
@@ -464,8 +716,69 @@ if waste_terms:
     h('<div style="font-size:11px;color:#555;margin-top:8px;">Search terms with 2+ clicks and 0 conversions this week</div>')
     h('</div>')
 
+# --- Ad copy performance ---
+if headlines or descriptions:
+    h('<div class="section">')
+    h('<h2>Ad Copy Performance</h2>')
+    h('<div style="font-size:12px;color:#888;margin-bottom:12px;">RSA asset performance this week</div>')
+    if headlines:
+        h('<div style="font-size:13px;color:#c8963e;font-weight:600;margin-bottom:8px;">Top Headlines</div>')
+        h('<table><tr><th>Headline</th><th class="right">Impr</th><th class="right">Clicks</th><th class="right">CTR</th><th class="right">Conv</th></tr>')
+        for hl in headlines[:5]:
+            ctr_color = "#27ae60" if hl["ctr"] >= 5 else "#f39c12" if hl["ctr"] >= 3 else "#ccc"
+            h(f'<tr><td style="font-weight:500;color:#fff;max-width:250px;overflow:hidden;text-overflow:ellipsis;">{hl["text"]}</td>')
+            h(f'<td class="right">{hl["impressions"]:,}</td><td class="right">{hl["clicks"]}</td>')
+            h(f'<td class="right"><span style="color:{ctr_color};">{hl["ctr"]:.1f}%</span></td>')
+            h(f'<td class="right"><span style="color:#27ae60;font-weight:600;">{hl["conversions"]:.0f}</span></td></tr>')
+        h('</table>')
+    if descriptions:
+        h(f'<div style="font-size:13px;color:#c8963e;font-weight:600;margin:{"16px" if headlines else "0"} 0 8px;">Top Descriptions</div>')
+        h('<table><tr><th>Description</th><th class="right">Impr</th><th class="right">Clicks</th><th class="right">CTR</th><th class="right">Conv</th></tr>')
+        for desc in descriptions[:5]:
+            ctr_color = "#27ae60" if desc["ctr"] >= 5 else "#f39c12" if desc["ctr"] >= 3 else "#ccc"
+            h(f'<tr><td style="font-weight:500;color:#fff;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-size:12px;">{desc["text"]}</td>')
+            h(f'<td class="right">{desc["impressions"]:,}</td><td class="right">{desc["clicks"]}</td>')
+            h(f'<td class="right"><span style="color:{ctr_color};">{desc["ctr"]:.1f}%</span></td>')
+            h(f'<td class="right"><span style="color:#27ae60;font-weight:600;">{desc["conversions"]:.0f}</span></td></tr>')
+        h('</table>')
+    h('</div>')
+
+# --- Device & timing ---
+if device_data or hour_blocks:
+    DEVICE_NAMES = {"MOBILE": "Mobile", "DESKTOP": "Desktop", "TABLET": "Tablet", "CONNECTED_TV": "Connected TV", "OTHER": "Other"}
+    h('<div class="section">')
+    h('<h2>Device &amp; Timing</h2>')
+    if device_data:
+        h('<div style="font-size:13px;color:#c8963e;font-weight:600;margin-bottom:8px;">By Device</div>')
+        h('<table><tr><th>Device</th><th class="right">Spend</th><th class="right">Clicks</th><th class="right">Conv</th><th class="right">Conv Rate</th></tr>')
+        for dev in sorted(device_data.keys(), key=lambda d: -device_data[d]["spend"]):
+            dd = device_data[dev]
+            if dd["spend"] < 1:
+                continue
+            conv_rate = (dd["conversions"] / dd["clicks"] * 100) if dd["clicks"] > 0 else 0
+            cr_color = "#27ae60" if conv_rate >= 5 else "#f39c12" if conv_rate >= 2 else "#ccc"
+            h(f'<tr><td style="font-weight:500;color:#fff;">{DEVICE_NAMES.get(dev, dev)}</td>')
+            h(f'<td class="right">${dd["spend"]:.0f}</td><td class="right">{dd["clicks"]}</td>')
+            h(f'<td class="right">{dd["conversions"]:.0f}</td><td class="right"><span style="color:{cr_color};">{conv_rate:.1f}%</span></td></tr>')
+        h('</table>')
+    if hour_blocks:
+        best_block = max(hour_blocks, key=lambda b: b["conversions"])
+        quiet_block = min((b for b in hour_blocks if b["spend"] > 0), key=lambda b: b["conversions"], default=None)
+        h(f'<div style="font-size:13px;color:#c8963e;font-weight:600;margin:{"16px" if device_data else "0"} 0 8px;">By Time of Day (CST)</div>')
+        h('<table><tr><th>Time Block</th><th class="right">Spend</th><th class="right">Clicks</th><th class="right">Conv</th></tr>')
+        for blk in hour_blocks:
+            if blk["spend"] < 0.50:
+                continue
+            row_style = ' style="background:#1a2a1a;"' if blk["label"] == best_block["label"] else ""
+            h(f'<tr{row_style}><td style="font-weight:500;color:#fff;">{blk["label"]}</td>')
+            h(f'<td class="right">${blk["spend"]:.0f}</td><td class="right">{blk["clicks"]}</td><td class="right">{blk["conversions"]:.0f}</td></tr>')
+        h('</table>')
+        if best_block and quiet_block:
+            h(f'<div style="font-size:11px;color:#555;margin-top:8px;">Peak: {best_block["label"]} ({best_block["conversions"]:.0f} conv) &bull; Quiet: {quiet_block["label"]}</div>')
+    h('</div>')
+
 # ============================================================
-# SECTION 3: QUALITY SCORE TRACKER
+# QUALITY SCORE TRACKER
 # ============================================================
 if qs_keywords:
     # Sort: lowest QS first (problems at top)
@@ -603,6 +916,27 @@ if acct_this:
     md.append(f"| CTR | {t['ctr']:.1f}% | {p.get('ctr',0):.1f}% | — | — |")
     md.append("")
 
+if aspire_revenue and acct_this:
+    md.append("## Revenue Context")
+    md.append(f"| Metric | Amount |")
+    md.append(f"|--------|--------|")
+    md.append(f"| Ad Spend This Week | ${acct_this['spend']:.0f} |")
+    md.append(f"| Won Revenue This Week | ${aspire_revenue['total_won']:,.0f} ({aspire_revenue['count']} opportunities) |")
+    md.append("")
+    md.append("*Correlation only -- not direct attribution between ads and won deals*")
+    md.append("")
+
+if recommendations:
+    md.append("## What to Do This Week")
+    for i, rec in enumerate(recommendations, 1):
+        tag = rec["priority"].upper()
+        md.append(f"{i}. **[{tag}]** {rec['action']} -- {rec['detail']}")
+    md.append("")
+else:
+    md.append("## What to Do This Week")
+    md.append("No urgent actions this week. Everything looks healthy.")
+    md.append("")
+
 if camp_data:
     md.append("## Where's the Money Going?")
     md.append(f"| Campaign | Spend | Conv | CPA | Impr Share | Lost to Rank | Lost to Budget |")
@@ -611,8 +945,28 @@ if camp_data:
         t = camp_data[name].get("this", {})
         if not t:
             continue
-        cpa_str = f"${t['cpa']:.0f}" if t['conversions'] > 0 else "—"
-        md.append(f"| {name} | ${t['spend']:.0f} | {t['conversions']:.0f} | {cpa_str} | {t['impr_share']:.0f}% | {t['lost_rank']:.0f}% | {t['lost_budget']:.0f}% |")
+        p = camp_data[name].get("prev", {})
+        cpa_str = f"${t['cpa']:.0f}" if t['conversions'] > 0 else "---"
+        spend_delta, conv_delta, is_delta = "", "", ""
+        if p:
+            sd = delta_pct(t["spend"], p.get("spend", 0))
+            cd = delta_pct(t["conversions"], p.get("conversions", 0))
+            isd = delta_pct(t["impr_share"], p.get("impr_share", 0))
+            if sd is not None:
+                spend_delta = f" ({'+' if sd >= 0 else ''}{sd:.0f}%)"
+            if cd is not None:
+                conv_delta = f" ({'+' if cd >= 0 else ''}{cd:.0f}%)"
+            if isd is not None:
+                is_delta = f" ({'+' if isd >= 0 else ''}{isd:.0f}%)"
+        md.append(f"| {name} | ${t['spend']:.0f}{spend_delta} | {t['conversions']:.0f}{conv_delta} | {cpa_str} | {t['impr_share']:.0f}%{is_delta} | {t['lost_rank']:.0f}% | {t['lost_budget']:.0f}% |")
+    md.append("")
+
+if converting_terms:
+    md.append("## Converting Search Terms")
+    md.append(f"| Search Term | Conv | Spend | Clicks | CTR | Campaign |")
+    md.append(f"|-------------|------|-------|--------|-----|----------|")
+    for ct in converting_terms[:7]:
+        md.append(f"| {ct['term']} | {ct['conversions']:.0f} | ${ct['spend']:.2f} | {ct['clicks']} | {ct['ctr']:.1f}% | {ct['campaign']} |")
     md.append("")
 
 if top_keywords:
@@ -630,6 +984,47 @@ if waste_terms:
     md.append(f"|-------------|--------|-------|----------|")
     for w in waste_terms[:7]:
         md.append(f"| {w['term']} | {w['clicks']} | ${w['spend']:.2f} | {w['campaign']} |")
+    md.append("")
+
+if headlines or descriptions:
+    md.append("## Ad Copy Performance")
+    if headlines:
+        md.append("### Top Headlines")
+        md.append(f"| Headline | Impr | Clicks | CTR | Conv |")
+        md.append(f"|----------|------|--------|-----|------|")
+        for hl in headlines[:5]:
+            md.append(f"| {hl['text']} | {hl['impressions']:,} | {hl['clicks']} | {hl['ctr']:.1f}% | {hl['conversions']:.0f} |")
+    if descriptions:
+        md.append("### Top Descriptions")
+        md.append(f"| Description | Impr | Clicks | CTR | Conv |")
+        md.append(f"|-------------|------|--------|-----|------|")
+        for desc in descriptions[:5]:
+            md.append(f"| {desc['text']} | {desc['impressions']:,} | {desc['clicks']} | {desc['ctr']:.1f}% | {desc['conversions']:.0f} |")
+    md.append("")
+
+if device_data or hour_blocks:
+    md.append("## Device & Timing")
+    if device_data:
+        DEVICE_NAMES_MD = {"MOBILE": "Mobile", "DESKTOP": "Desktop", "TABLET": "Tablet", "CONNECTED_TV": "Connected TV", "OTHER": "Other"}
+        md.append("### By Device")
+        md.append(f"| Device | Spend | Clicks | Conv | Conv Rate |")
+        md.append(f"|--------|-------|--------|------|-----------|")
+        for dev in sorted(device_data.keys(), key=lambda d: -device_data[d]["spend"]):
+            dd = device_data[dev]
+            if dd["spend"] < 1:
+                continue
+            conv_rate = (dd["conversions"] / dd["clicks"] * 100) if dd["clicks"] > 0 else 0
+            md.append(f"| {DEVICE_NAMES_MD.get(dev, dev)} | ${dd['spend']:.0f} | {dd['clicks']} | {dd['conversions']:.0f} | {conv_rate:.1f}% |")
+    if hour_blocks:
+        md.append("### By Time of Day (CST)")
+        md.append(f"| Time Block | Spend | Clicks | Conv |")
+        md.append(f"|------------|-------|--------|------|")
+        for blk in hour_blocks:
+            if blk["spend"] < 0.50:
+                continue
+            md.append(f"| {blk['label']} | ${blk['spend']:.0f} | {blk['clicks']} | {blk['conversions']:.0f} |")
+        best_block_md = max(hour_blocks, key=lambda b: b["conversions"])
+        md.append(f"\n*Peak: {best_block_md['label']} ({best_block_md['conversions']:.0f} conversions)*")
     md.append("")
 
 if qs_keywords:
