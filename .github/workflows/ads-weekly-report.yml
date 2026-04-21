@@ -10,6 +10,9 @@ concurrency:
   group: ads-weekly-report
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   report:
     runs-on: ubuntu-latest
