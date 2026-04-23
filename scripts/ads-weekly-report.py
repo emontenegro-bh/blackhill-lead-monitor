@@ -847,28 +847,40 @@ if qs_keywords:
     # --- Headline changes to watch (auto-expires after 3 weeks) ---
     headline_watch = [
         {
-            "date": "2026-04-14",
-            "keywords": ["sod companies", "sod installation", "sod installers near me", "landscaping in fort worth"],
-            "ad_group": "Landscape & Sod Installation",
-            "changes": "Replaced jargon headlines with keyword-match: Free Sod Estimate Same Week, Sod Delivered Prepped & Laid, Clay Soil Prep Included, Full Soil Prep Before Install",
-        },
-        {
-            "date": "2026-04-14",
-            "keywords": ["french drain fort worth"],
-            "ad_group": "Drainage Solutions",
-            "changes": "Added exact-match 'French Drains Fort Worth' headline + foundation risk angle + diagnostic-first",
-        },
-        {
-            "date": "2026-04-14",
-            "keywords": ["lawn fertilization fort worth", "lawn treatment fort worth"],
-            "ad_group": "Fertilization & Weed Control",
-            "changes": "Added seasonal urgency (Book Your Spring App Now), social proof (4.8 Stars 500+ Lawns), differentiator (Custom Program Not a Box)",
-        },
-        {
-            "date": "2026-04-14",
-            "keywords": ["sprinkler head replacement"],
+            "date": "2026-04-23",
+            "keywords": ["all 11 Low CTR keywords"],
             "ad_group": "Irrigation Repair",
-            "changes": "Added specific repair types (Heads Valves & Lines Fixed), diagnostic value prop (Diagnosis Credited to Repair), thoroughness (Every Zone Walked & Tested)",
+            "changes": "Replaced 11 process/brand headlines with keyword-match + CTAs across 2 RSAs. Control (Ad 791498112705) unchanged.",
+        },
+        {
+            "date": "2026-04-23",
+            "keywords": ["french drain fort worth", "yard drainage solutions", "drainage near me"],
+            "ad_group": "Drainage Solutions",
+            "changes": "Replaced 11 headlines with keyword-match + dynamic insertion across 2 RSAs. Control (Ad 791538738859) unchanged.",
+        },
+        {
+            "date": "2026-04-23",
+            "keywords": ["sod installers near me", "landscaping in fort worth", "landscaping near me"],
+            "ad_group": "Landscape & Sod Installation",
+            "changes": "Replaced 10 headlines: added keyword insertion, 'near me' variants, direct CTAs. Control (Ad 797866469019) unchanged.",
+        },
+        {
+            "date": "2026-04-23",
+            "keywords": ["lawn fertilization fort worth", "lawn treatment fort worth", "weed control"],
+            "ad_group": "Fertilization & Weed Control",
+            "changes": "Replaced 11 headlines with keyword-match + CTAs across 2 RSAs. Control (Ad 797865249975) unchanged.",
+        },
+        {
+            "date": "2026-04-23",
+            "keywords": ["sprinkler system installation", "irrigation install near me"],
+            "ad_group": "Sprinkler Installations",
+            "changes": "Replaced 9 headlines with keyword-match + dynamic insertion across 2 RSAs. Control (Ad 791538623020) unchanged.",
+        },
+        {
+            "date": "2026-04-23",
+            "keywords": ["landscape maintenance near me", "commercial landscaping fort worth"],
+            "ad_group": "Property Mgr + Commercial",
+            "changes": "Replaced 10 headlines with keyword-match + dynamic insertion. 1 RSA per ad group updated.",
         },
     ]
     from datetime import datetime as _dt
@@ -882,6 +894,32 @@ if qs_keywords:
             h(f'<strong>{w["ad_group"]}</strong> (changed {days_ago}d ago) &mdash; watching: {", ".join(w["keywords"])}')
             h(f'<br/><span style="color:#888;">{w["changes"]}</span>')
             h(f'</div>')
+        h('</div>')
+
+    # --- Impression share strategy tracker (auto-expires) ---
+    impr_share_plan = {
+        "start_date": "2026-04-23",
+        "review_date": "2026-05-07",
+        "phase": "Phase 1: QS Improvement",
+        "strategy": "62 headlines replaced across 7 ad groups to improve Expected CTR and Ad Relevance. "
+                     "Landing page updates sent to web dev. Overnight hours (12a-6a) excluded. "
+                     "If impression share hasn't improved by May 7, consider adding target CPA to Maximize Conversions.",
+        "current_bidding": "Maximize Conversions (all 4 search campaigns)",
+        "target": "Impression share from 14% to 30%+ without bidding changes",
+    }
+    review_dt = _dt.strptime(impr_share_plan["review_date"], "%Y-%m-%d")
+    days_until_review = (review_dt - _dt.now()).days
+    if days_until_review >= -7:  # show for 1 week past review date
+        review_color = "#f39c12" if days_until_review <= 3 else "#3498db"
+        h(f'<div style="margin-top:16px;padding:12px;background:#1a2a1a;border-left:3px solid {review_color};border-radius:4px;">')
+        h(f'<div style="font-weight:600;color:{review_color};margin-bottom:8px;">Impression Share Strategy</div>')
+        h(f'<div style="font-size:12px;color:#aaa;margin-bottom:4px;"><strong>{impr_share_plan["phase"]}</strong></div>')
+        h(f'<div style="font-size:11px;color:#888;margin-bottom:4px;">{impr_share_plan["strategy"]}</div>')
+        h(f'<div style="font-size:11px;color:#888;">Bidding: {impr_share_plan["current_bidding"]}</div>')
+        if days_until_review > 0:
+            h(f'<div style="font-size:11px;color:{review_color};margin-top:6px;">Review in {days_until_review} days ({impr_share_plan["review_date"]})</div>')
+        else:
+            h(f'<div style="font-size:11px;color:#f39c12;margin-top:6px;font-weight:600;">REVIEW DUE: Check if impression share improved. If not, add target CPA.</div>')
         h('</div>')
 
     h('</div>')
@@ -1043,6 +1081,17 @@ if qs_keywords:
             if diff != 0:
                 trend = f" ({'+' if diff > 0 else ''}{diff})"
         md.append(f"| {kw['keyword']} | {kw['qs']}{trend} | {qs_component_short(kw['ctr'])} | {qs_component_short(kw['relevance'])} | {qs_component_short(kw['landing'])} |")
+    md.append("")
+
+if days_until_review >= -7:
+    md.append("## Impression Share Strategy")
+    md.append(f"**{impr_share_plan['phase']}** (review: {impr_share_plan['review_date']})")
+    md.append(f"- {impr_share_plan['strategy']}")
+    md.append(f"- Bidding: {impr_share_plan['current_bidding']}")
+    if days_until_review > 0:
+        md.append(f"- Review in {days_until_review} days")
+    else:
+        md.append(f"- **REVIEW DUE**: Check if impression share improved. If not, add target CPA.")
     md.append("")
 
 md.append(f"---\n*Targets: CPA <= ${TARGET_CPA:.0f} | Impr Share >= {TARGET_IMPR_SHARE:.0f}%*")
