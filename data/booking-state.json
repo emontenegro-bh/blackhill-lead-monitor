@@ -479,13 +479,29 @@
         "deal_url": ""
       },
       "processed_at": "2026-04-13T14:58:16.905071+00:00"
+    },
+    "AAMkAGVkZTYxYWMyLWJiOTYtNDgzNS1iMTdiLWFhYjhkMDcxOGY5MQBGAAAAAACxoLpqf8bZTJzHiH59FmO2BwDutyI4GBeATKtKsD78iqHPAAAAAAENAADutyI4GBeATKtKsD78iqHPAAB7wkx2AAA=": {
+      "customer_name": "Mitchell Bullock",
+      "customer_email": "mitchell.e.bullock@gmail.com",
+      "appointment_date": "2026-04-24T17:00:00.0000000Z",
+      "service": "15-min Online Meeting",
+      "aspire": {
+        "action": "created",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2595"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/475881851612",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/322134467274"
+      },
+      "processed_at": "2026-04-23T17:44:29.791389+00:00"
     }
   },
   "business_id": "MeanGreenCustomerMeet@meangreenlawncare.com",
   "stats": {
-    "created": 4,
+    "created": 5,
     "exists": 18,
     "errors": 8,
-    "total_runs": 369
+    "total_runs": 370
   }
 }
