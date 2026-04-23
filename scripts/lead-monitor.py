@@ -577,6 +577,22 @@ def _is_gibberish(text):
     return False
 
 
+def _is_web_form_email(message):
+    """Detect if an email is an Elementor web form submission.
+
+    These are also captured by the WhatConverts API monitor, which has
+    LLM-based spam filtering. Skip CRM contact creation here to avoid
+    duplicates and spam filter bypass (see: imane syano domain-sale spam
+    2026-04-22).
+    """
+    body = message.get("body", {}).get("content", "")
+    form = _parse_form_fields(body)
+    # Elementor forms include these specific field labels
+    form_indicators = ["name", "email", "contact no.", "what type of service do you need?", "city", "zip code"]
+    matches = sum(1 for label in form_indicators if label in form)
+    return matches >= 3
+
+
 def _parse_form_fields(body_text):
     """Parse Elementor form body into a dict of field:value pairs."""
     clean = re.sub(r"<[^>]+>", "\n", body_text)
@@ -1670,6 +1686,16 @@ def process_messages(token, config, state):
                 log(f"    {r}")
         lead = parse_lead(msg)
         log(f"  Parsed: {lead['first_name']} {lead['last_name']} | {lead['email']} | {lead['phone']} | {lead['service_interest']}")
+
+        # Web form submissions are handled by the WhatConverts API monitor
+        # (which has LLM spam filtering). Skip CRM creation here to avoid
+        # duplicates and spam filter bypass.
+        if _is_web_form_email(msg):
+            log("  SKIP CRM: Web form lead — handled by WhatConverts monitor")
+            save_lead_file(lead, "lead")
+            mark_as_read(token, config, msg_id)
+            state["processed_ids"].append(msg_id)
+            continue
 
         # Save lead file
         save_lead_file(lead, "lead")
