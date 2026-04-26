@@ -33,10 +33,6 @@ from google.ads.googleads.errors import GoogleAdsException
 
 # --- Config ---
 TO_EMAIL = "evelin@blackhilltx.com"
-FROM_EMAIL = "evelin@blackhilltx.com"
-SENDGRID_SMTP = "smtp.sendgrid.net"
-SENDGRID_PORT = 587
-API_KEY_FILE = os.path.expanduser("~/.config/sendgrid-api-key")
 TARGET_CPA = 80.0
 TARGET_IMPR_SHARE = 50.0
 
@@ -1110,51 +1106,28 @@ with open(report_file, "w") as f:
     f.write(report_text)
 print(f"Report saved: {report_file}")
 
-# Send email
-api_key = os.environ.get("SENDGRID_API_KEY", "")
-if not api_key:
-    if not os.path.exists(API_KEY_FILE):
-        print(f"\nNo SendGrid API key found at {API_KEY_FILE}")
-        print("Report saved to file but email not sent.")
-        sys.exit(0)
-    with open(API_KEY_FILE) as f:
-        api_key = f.read().strip()
+# Send email via Gmail
+gmail_email = os.environ.get("GMAIL_EMAIL", "")
+gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
+if not gmail_email or not gmail_password:
+    print("No GMAIL_EMAIL / GMAIL_APP_PASSWORD configured. Report saved but email not sent.")
+    sys.exit(0)
 
+from email.utils import formataddr
 msg = MIMEMultipart("alternative")
 msg["Subject"] = f"Weekly Google Ads Report - {today_fmt}"
-msg["From"] = FROM_EMAIL
+msg["From"] = formataddr(("Black Hill Assistant", gmail_email))
 msg["To"] = TO_EMAIL
 
 msg.attach(MIMEText(report_text, "plain"))
 msg.attach(MIMEText(html_report, "html"))
 
-sent = False
 try:
-    with smtplib.SMTP(SENDGRID_SMTP, SENDGRID_PORT) as server:
+    with smtplib.SMTP("smtp.gmail.com", 587, timeout=30) as server:
         server.starttls()
-        server.login("apikey", api_key)
-        server.sendmail(FROM_EMAIL, TO_EMAIL, msg.as_string())
-    print("Email sent successfully via SendGrid!")
-    sent = True
+        server.login(gmail_email, gmail_password)
+        server.sendmail(gmail_email, TO_EMAIL, msg.as_string())
+    print("Email sent successfully via Gmail!")
 except Exception as e:
-    print(f"SendGrid email failed: {e}")
-
-# Gmail fallback when SendGrid SMTP is down
-if not sent:
-    gmail_email = os.environ.get("GMAIL_EMAIL", "")
-    gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
-    if gmail_email and gmail_password:
-        try:
-            from email.utils import formataddr
-            msg.replace_header("From", formataddr(("Black Hill Assistant", gmail_email)))
-            with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-                server.starttls()
-                server.login(gmail_email, gmail_password)
-                server.sendmail(gmail_email, TO_EMAIL, msg.as_string())
-            print("Email sent via Gmail fallback!")
-            sent = True
-        except Exception as e2:
-            print(f"Gmail fallback also failed: {e2}")
-
-if not sent:
+    print(f"Email send failed: {e}")
     print("Report was saved to file but email delivery failed.")
