@@ -70,6 +70,12 @@ def post_to_gbp(post, dry_run=False):
             "url": post.get("url", "https://blackhilllandscaping.com"),
         }
 
+    if post.get("photo"):
+        post_body["media"] = [{
+            "mediaFormat": "PHOTO",
+            "sourceUrl": post["photo"],
+        }]
+
     try:
         result = gbp_auth.v4_post("localPosts", post_body)
         print(f"  Posted: {result.get('name', 'OK')}")
