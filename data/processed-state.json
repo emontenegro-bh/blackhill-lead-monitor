@@ -220,15 +220,16 @@
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADq-BFLAAA=",
     "232478252",
     "232519865",
-    "232538021"
+    "232538021",
+    "232594587"
   ],
   "stats": {
-    "total_leads": 114,
+    "total_leads": 115,
     "total_spam": 75,
-    "last_lead": "2026-04-22T18:14:39.062368",
+    "last_lead": "2026-04-27T22:20:16.880347",
     "total_calls": 2
   },
-  "last_run": "2026-04-27T22:15:15.511413+00:00",
+  "last_run": "2026-04-27T22:20:16.881438+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -564,6 +565,13 @@
       "service": "Sprinkler Services",
       "lead_type": "web_form",
       "date": "2026-04-20"
+    },
+    "232594587": {
+      "aspire_contact_id": "2603",
+      "traffic_source": "google / cpc",
+      "service": "Drainage Solutions",
+      "lead_type": "web_form",
+      "date": "2026-04-27"
     }
   },
   "dismissed_matches": [
