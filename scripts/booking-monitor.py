@@ -208,22 +208,105 @@ def get_appointments(token, business_id, lookback_hours=LOOKBACK_HOURS):
     return resp.get("value", [])
 
 
-def extract_customer(appt):
+def _parse_address_string(raw):
+    """Parse a free-text address string into components.
+
+    Handles formats like:
+      '123 Main St, Arlington, TX 76001'
+      '1909 Ridge Oak Street Fort Worth, TX 76112'
+      '3913 Lafayette Ave'  (street only)
+    """
+    result = {"address": "", "city": "", "state": "", "zip": ""}
+    if not raw:
+        return result
+
+    # Try comma-separated: "street, city, state zip"
+    parts = [p.strip() for p in raw.split(",")]
+    if len(parts) >= 3:
+        result["address"] = parts[0]
+        result["city"] = parts[1]
+        state_zip = parts[-1].strip().split()
+        if state_zip:
+            result["state"] = state_zip[0]
+        if len(state_zip) > 1:
+            result["zip"] = state_zip[-1]
+        return result
+
+    if len(parts) == 2:
+        result["address"] = parts[0]
+        state_zip = parts[1].strip().split()
+        if state_zip:
+            result["state"] = state_zip[0]
+        if len(state_zip) > 1:
+            result["zip"] = state_zip[-1]
+        return result
+
+    # Single string - try extracting zip, state from the end
+    import re
+    zip_match = re.search(r'\b(\d{5}(?:-\d{4})?)\s*$', raw)
+    if zip_match:
+        result["zip"] = zip_match.group(1)
+        raw = raw[:zip_match.start()].strip()
+
+    state_match = re.search(r'\b([A-Z]{2})\s*$', raw)
+    if state_match:
+        result["state"] = state_match.group(1)
+        raw = raw[:state_match.start()].strip()
+
+    result["address"] = raw
+    return result
+
+
+def _fetch_customer_address(customer_id, business_id, token):
+    """Fetch address from the bookingCustomer record.
+
+    The booking form's address field is stored on the customer object
+    (addresses[] array), not on the appointment.
+    """
+    if not customer_id or not business_id:
+        return {}
+    endpoint = f"/solutions/bookingBusinesses/{business_id}/customers/{customer_id}"
+    resp, status = graph_request(endpoint, token)
+    if status != 200:
+        return {}
+    addresses = resp.get("addresses", [])
+    if not addresses:
+        return {}
+    addr = addresses[0]
+    street = (addr.get("street") or "").strip()
+    city = (addr.get("city") or "").strip()
+    state = (addr.get("state") or addr.get("countryOrRegion") or "").strip()
+    zipcode = (addr.get("postalCode") or "").strip()
+    # Customers often put full address in the street field (e.g. "1909 Ridge Oak St Fort Worth, TX 76112")
+    if street and not city and not zipcode:
+        parsed = _parse_address_string(street)
+        if parsed.get("city") or parsed.get("zip"):
+            return parsed
+    return {"address": street, "city": city, "state": state, "zip": zipcode}
+
+
+def extract_customer(appt, business_id=None, token=None):
     """Extract customer info from appointment, handling both API formats."""
     # Newer v1.0 format uses customers[] array
     if "customers" in appt and appt["customers"]:
         c = appt["customers"][0]
-        addr = c.get("location", {}).get("address", {})
+
+        # Fetch address from the customer record (where the form stores it)
+        customer_id = c.get("customerId", "")
+        addr = {}
+        if business_id and token and customer_id:
+            addr = _fetch_customer_address(customer_id, business_id, token)
+
         return {
             "name": c.get("name", ""),
             "email": c.get("emailAddress", ""),
             "phone": c.get("phone", ""),
             "notes": c.get("notes", ""),
             "timezone": c.get("timeZone", ""),
-            "address": addr.get("street", ""),
+            "address": addr.get("address", ""),
             "city": addr.get("city", ""),
             "state": addr.get("state", ""),
-            "zip": addr.get("postalCode", ""),
+            "zip": addr.get("zip", ""),
         }
     # Older format uses flat fields
     return {
@@ -538,7 +621,7 @@ def process_appointments(token, state):
                 appt_id = appt.get("id", "")
                 start_dt = appt.get("startDateTime", {}).get("dateTime", "")
                 if appt_id and start_dt < cutoff:
-                    customer = extract_customer(appt)
+                    customer = extract_customer(appt, business_id, token)
                     state["processed"][appt_id] = {
                         "customer_name": customer["name"],
                         "customer_email": customer.get("email", ""),
@@ -555,7 +638,7 @@ def process_appointments(token, state):
         if not appt_id or appt_id in state["processed"]:
             continue
 
-        customer = extract_customer(appt)
+        customer = extract_customer(appt, business_id, token)
         if not customer["name"]:
             log.debug(f"Skipping appointment {appt_id}: no customer name")
             continue
@@ -734,11 +817,13 @@ def list_bookings():
     print("=" * 60)
 
     for appt in appointments:
-        customer = extract_customer(appt)
+        customer = extract_customer(appt, business_id, token)
         start = appt.get("startDateTime", {}).get("dateTime", "")[:16]
         service = appt.get("serviceName", "?")
         processed = "Y" if appt.get("id") in state.get("processed", {}) else " "
         print(f"  [{processed}] {customer['name']} ({customer['email']}) {customer['phone']}")
+        if customer.get("address"):
+            print(f"      Address: {customer['address']}, {customer.get('city', '')} {customer.get('state', '')} {customer.get('zip', '')}")
         print(f"      {service} - {start}")
 
 
