@@ -223,15 +223,16 @@
     "232538021",
     "232594587",
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADq-BFMAAA=",
-    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADq-BFNAAA="
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADq-BFNAAA=",
+    "232730921"
   ],
   "stats": {
-    "total_leads": 115,
+    "total_leads": 116,
     "total_spam": 77,
-    "last_lead": "2026-04-27T22:20:16.880347",
+    "last_lead": "2026-04-28T17:25:16.705985",
     "total_calls": 2
   },
-  "last_run": "2026-04-28T17:20:13.217484+00:00",
+  "last_run": "2026-04-28T17:25:16.706939+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
