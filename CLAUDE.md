@@ -540,13 +540,30 @@ Agents with state files should:
 - WhatConverts has zero revenue/value data — ROI must be calculated by cross-referencing with Aspire CRM won opportunities.
 
 ## General Workflow Rules
-- Always verify API writes by reading back the data after updates.
-- When debugging API issues, check URL format, endpoint permissions, and field names FIRST before retrying the same call.
 - For email-sending tasks, confirm send completion and log the result.
 - All new GitHub Actions workflows MUST include a failure notification job. Use the reusable workflow `.github/workflows/notify-failure.yml` in the `blackhill-lead-monitor` repo, or add an inline email notification step for workflows in other repos. No workflow should fail silently.
 
+## Plan Before External API Calls
+- Before making calls to external APIs (Aspire, WhatConverts, CompanyCam, Google Ads, HubSpot), briefly state: the endpoint/URL, the field names you'll use, and the expected response format.
+- If the API is documented in this file's "API Reference Notes" section, use the documented field names — do not guess alternatives.
+- For multi-step API workflows (e.g., authenticate → query → update), outline all steps before executing the first one.
+
+## Verification Rules
+- **API writes**: Always verify by reading back the data after updates. WhatConverts is especially prone to silent failures.
+- **API debugging**: Check URL format, endpoint permissions, and field names FIRST before retrying the same call.
+- **GitHub Actions deployments**: After deploying a new or modified workflow, trigger a test run and verify output before considering done. Check that enum/string formatting matches local behavior.
+- **Data before presenting**: Cross-check API results against the live interface when data will drive decisions. Re-read your own data before summarizing — do not contradict your own results.
+- **Pre-deployment checklist**: Before pushing any GitHub Actions workflow, validate YAML syntax (`python3 -c "import yaml; yaml.safe_load(open('file.yml'))"`) and confirm all secrets/env vars are configured in the repo.
+
+## Working with Documents & Images
+- **Confirm measurements**: When extracting measurements from images, PDFs, or plan documents, state the extracted values explicitly and ask the user to confirm before using them in calculations.
+- **Never assume units**: If unclear whether a value is tons vs yards, sq ft vs sq yards, linear ft vs sq ft, etc., ask. Do not default or guess.
+- **PDF limitations**: If a PDF contains encoded binary content or complex layouts that prevent text extraction, say so immediately rather than making multiple failing attempts. Suggest the user paste the relevant text or numbers.
+- **Image limitations**: If an image is too small, blurry, or complex to read confidently, say so and ask the user to describe the relevant details rather than guessing.
+- **Material calculations**: Always show the formula and intermediate steps so the user can spot errors. Cross-check quantities against common-sense ranges (e.g., a 500 sq ft bed should not need 50 yards of mulch).
+
 ---
 
-**Version**: 5.3 (2026-01-04)
-**Commands**: 55 | **Agents**: 131 | **Skills**: 71
+**Version**: 5.4 (2026-04-26)
+**Commands**: 55 | **Agents**: 131 | **Skills**: 72
 **Philosophy**: Router, not encyclopedia.

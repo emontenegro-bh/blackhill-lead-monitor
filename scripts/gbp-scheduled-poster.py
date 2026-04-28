@@ -65,10 +65,10 @@ def post_to_gbp(post, dry_run=False):
     }
 
     if post.get("cta"):
-        post_body["callToAction"] = {
-            "actionType": post["cta"].upper(),
-            "url": post.get("url", "https://blackhilllandscaping.com"),
-        }
+        cta = {"actionType": post["cta"].upper()}
+        if post["cta"].upper() != "CALL":
+            cta["url"] = post.get("url", "https://blackhilllandscaping.com")
+        post_body["callToAction"] = cta
 
     if post.get("photo"):
         post_body["media"] = [{

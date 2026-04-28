@@ -2,7 +2,7 @@
   {
     "id": "2026-04-28-storm-tree-damage",
     "target_date": "2026-04-28",
-    "day": "Monday",
+    "day": "Tuesday",
     "week": 1,
     "theme": "Storm Damage Tree Services",
     "type": "update",
@@ -10,12 +10,12 @@
     "url": "https://blackhilllandscaping.com/areas-we-serve/fort-worth/emergency-tree-care/",
     "text": "This weekend's tornado left downed trees, broken limbs, and debris across Fort Worth properties. If your yard took damage, do not wait to address it. Hanging branches and partially uprooted trees are a safety hazard, especially with more storms in the forecast. Our emergency tree care crew is actively working storm cleanup across Fort Worth and the surrounding areas this week. We handle full tree removal, limb clearing, stump grinding, and debris hauling. If you have storm damage on your property, call (817) 995-0324. We are prioritizing emergency calls and scheduling assessments as fast as we can get to them.",
     "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/storm-damage-tree-2026-04-25.jpg",
-    "status": "failed",
-    "posted_at": "2026-04-28T14:13:07.731761"
+    "status": "posted",
+    "posted_at": "2026-04-28T14:29:42.284402"
   },
   {
-    "id": "2026-04-30-irrigation-inspection",
-    "target_date": "2026-04-30",
+    "id": "2026-04-29-irrigation-inspection",
+    "target_date": "2026-04-29",
     "day": "Wednesday",
     "week": 1,
     "theme": "Irrigation Inspection",
@@ -23,12 +23,12 @@
     "cta": "BOOK",
     "url": "https://blackhilllandscaping.com/areas-we-serve/fort-worth/",
     "text": "Your irrigation system sat dormant all winter. Before you turn it on for the season, it needs a full inspection. Cracked heads, broken valves, and line leaks from freeze cycles are common across Fort Worth properties this time of year. Our crews run a zone-by-zone diagnostic, checking coverage, pressure, and controller programming. One missed leak can waste thousands of gallons and drown a section of turf before you notice. Schedule a sprinkler inspection now, before the summer watering schedule starts.",
-    "photo": "https://img.companycam.com/QSsOFbu0I1lty8Os8darngVvk3jN1nk3qwhT0sTKrW0/rs:fit:4032:4032/q:80/aHR0cHM6Ly9jb21w/YW55Y2FtLXBlbmRp/bmcuczMuYW1hem9u/YXdzLmNvbS8zZTQ1/YzdjOS1lOTc1LTRi/M2MtOGViYi1iODcx/ZDU5YzZmYWEuanBn.jpg",
+    "photo": "https://img.companycam.com/QSsOFbu0I1lty8Os8darngVvk3jN1nk3qwhT0sTKrW0/rs:fit:4032:4032/q:80/aSFIwY0hNNkx5OWpiMjF3L1lXNTVZMkZ0TFhCbGJtUnAvYm1jdWN6TXVZVzFoZW05dS9ZWGR6TG1OdmJTOHpaVFExL1l6ZGpPUzFsT1RjMUxUUmkvTTJNdE9HVmlZaTFpT0RjeC9aRFU1WXpabVlXRXVhbkJuLmpwZw.jpg",
     "status": "queued"
   },
   {
-    "id": "2026-05-02-drainage-solutions",
-    "target_date": "2026-05-02",
+    "id": "2026-05-01-drainage-solutions",
+    "target_date": "2026-05-01",
     "day": "Friday",
     "week": 1,
     "theme": "Drainage Solutions",
@@ -40,8 +40,8 @@
     "status": "queued"
   },
   {
-    "id": "2026-05-05-hardscape-spotlight",
-    "target_date": "2026-05-05",
+    "id": "2026-05-04-hardscape-spotlight",
+    "target_date": "2026-05-04",
     "day": "Monday",
     "week": 2,
     "theme": "Hardscaping Spotlight",
@@ -52,8 +52,8 @@
     "status": "queued"
   },
   {
-    "id": "2026-05-07-summer-lawn-prep",
-    "target_date": "2026-05-07",
+    "id": "2026-05-06-summer-lawn-prep",
+    "target_date": "2026-05-06",
     "day": "Wednesday",
     "week": 2,
     "theme": "Summer Lawn Prep",
@@ -64,8 +64,8 @@
     "status": "queued"
   },
   {
-    "id": "2026-05-09-sod-installation",
-    "target_date": "2026-05-09",
+    "id": "2026-05-08-sod-installation",
+    "target_date": "2026-05-08",
     "day": "Friday",
     "week": 2,
     "theme": "Sod Installation",
