@@ -421,12 +421,190 @@ md.append(f"| Pages with FAQPage Schema | {pages_with_faq}/{pages_live} |")
 md.append(f"| Pages with AggregateRating | {pages_with_rating}/{pages_live} |")
 md.append("")
 
-# Missing pages
+# ============================================================
+# BUILD ACTION PLAN (prioritized, specific instructions)
+# ============================================================
+actions = []  # (priority, category, action_text)
+
+# --- Missing city pages (highest impact for local SEO) ---
 missing_pages = [r for r in results.values() if not r["exists"]]
+# Priority cities by business value
+priority_cities = ["Arlington", "White Settlement", "Watauga"]
+for r in missing_pages:
+    if r["name"] in priority_cities:
+        actions.append((1, "Build Page",
+            f"**Build {r['name']} city page** at `{r['path']}` with 13 service subpages. "
+            f"{'You have a major city contract here.' if r['name'] == 'Arlington' else ''}"
+            f"{'This is your physical address city.' if r['name'] == 'White Settlement' else ''}"
+            f"{'You have active park contracts here.' if r['name'] == 'Watauga' else ''}"
+        ))
+    elif r["name"].startswith("FW "):
+        actions.append((2, "Build Page",
+            f"**Build {r['name']} service page** at `{r['path']}`. This is a Fort Worth service "
+            f"subpage that should exist for keyword targeting."
+        ))
+    else:
+        actions.append((3, "Build Page",
+            f"**Build {r['name']} city page** at `{r['path']}`. Listed on Areas We Serve "
+            f"hub page but no actual page exists."
+        ))
+
+# --- Schema markup gaps ---
+homepage_result = results.get("Homepage")
+if homepage_result and homepage_result["exists"] and not homepage_result["has_local_business"]:
+    actions.append((1, "Schema",
+        "**Add LocalBusiness schema to homepage.** The homepage is the most crawled page and is "
+        "missing the most important local SEO schema type. Paste JSON-LD into the `<head>` section "
+        "via Yoast or a header script plugin."
+    ))
+
+pages_needing_faq = [name for name, r in results.items()
+                     if r["exists"] and not r["has_faq_page"]
+                     and name not in ("Blog", "About Us", "Contact Us", "Areas We Serve")]
+if pages_needing_faq:
+    actions.append((2, "Schema",
+        f"**Add FAQPage schema** to {len(pages_needing_faq)} pages: "
+        f"{', '.join(pages_needing_faq[:5])}{'...' if len(pages_needing_faq) > 5 else ''}. "
+        f"These pages have FAQ sections but no structured data markup. Adding FAQPage schema "
+        f"enables rich FAQ results in Google search."
+    ))
+
+pages_without_rating = [name for name, r in results.items()
+                        if r["exists"] and not r["has_aggregate_rating"]
+                        and name in ("Homepage", "Commercial Services", "Residential Services")]
+if pages_without_rating:
+    actions.append((2, "Schema",
+        f"**Add AggregateRating schema** to: {', '.join(pages_without_rating)}. "
+        f"You claim 70+ five-star reviews but these key pages have no rating markup. "
+        f"Adding this can show star ratings in search results."
+    ))
+
+# --- Title tag issues ---
+for name, r in results.items():
+    if not r["exists"]:
+        continue
+    for issue in r["issues"]:
+        if "City name" in issue and "missing from title" in issue:
+            actions.append((1, "Title Tag",
+                f"**Add city name to {name} title tag.** Currently: \"{r['title']}\". "
+                f"Add \"{name}\" to the beginning of the title in Yoast. This directly impacts "
+                f"both organic ranking and Google Ads Quality Score for this landing page."
+            ))
+        elif "Title too long" in issue:
+            actions.append((3, "Title Tag",
+                f"**Shorten {name} title tag** ({r['title_length']} chars, max 60). "
+                f"Current: \"{r['title'][:65]}...\". Trim to under 60 characters so it doesn't "
+                f"get cut off in search results."
+            ))
+        elif "Missing title" in issue:
+            actions.append((1, "Title Tag",
+                f"**Add title tag to {name}.** This page has no title tag at all. "
+                f"Add a descriptive title with your primary keyword and city name in Yoast."
+            ))
+
+# --- H1 issues ---
+for name, r in results.items():
+    if not r["exists"]:
+        continue
+    for issue in r["issues"]:
+        if "Multiple H1" in issue:
+            actions.append((2, "Heading",
+                f"**Fix duplicate H1 on {name}.** Has {r['h1_count']} H1 tags "
+                f"({', '.join(repr(h) for h in r['h1s'][:3])}). Change extras to H2 in Elementor. "
+                f"Google prefers a single H1 per page."
+            ))
+        elif "Missing H1" in issue:
+            actions.append((1, "Heading",
+                f"**Add H1 tag to {name}.** This page has no H1 heading. Add one with your "
+                f"primary keyword for the page."
+            ))
+
+# --- Meta description issues ---
+for name, r in results.items():
+    if not r["exists"]:
+        continue
+    for issue in r["issues"]:
+        if "Missing meta description" in issue:
+            actions.append((2, "Meta",
+                f"**Add meta description to {name}.** Write a 120-155 character description "
+                f"with your target keyword, city name, and a call to action. Set in Yoast."
+            ))
+        elif "Meta description too long" in issue:
+            actions.append((3, "Meta",
+                f"**Shorten {name} meta description** ({r['meta_desc_length']} chars, max 160). "
+                f"Trim so it doesn't get cut off in search results."
+            ))
+
+# --- Image alt text ---
+worst_alt_pages = [(name, r) for name, r in results.items()
+                   if r["exists"] and (r["images_poor_alt"] + r["images_missing_alt"]) > 3]
+worst_alt_pages.sort(key=lambda x: -(x[1]["images_poor_alt"] + x[1]["images_missing_alt"]))
+# Only flag the worst offenders (top 5)
+for name, r in worst_alt_pages[:5]:
+    bad = r["images_poor_alt"] + r["images_missing_alt"]
+    actions.append((2, "Alt Text",
+        f"**Fix {bad} images on {name}** with poor/missing alt text. "
+        f"Use descriptive text that includes the service keyword and city name "
+        f"(e.g., \"commercial lawn maintenance crew on Fort Worth office park\"). "
+        f"Page: `{r['path']}`"
+    ))
+
+# --- OG image ---
+if homepage_result and any("thumbnail" in i.lower() or "150x150" in i for i in homepage_result.get("issues", [])):
+    actions.append((2, "OG Image",
+        "**Replace homepage OG image.** Currently set to a 150x150 blog thumbnail. "
+        "Upload a 1200x630 branded image in Yoast SEO > Social settings. This is what "
+        "shows when your site is shared on Facebook, LinkedIn, or iMessage."
+    ))
+for name, r in results.items():
+    if r["exists"] and any("Missing OG image" in i for i in r.get("issues", [])):
+        actions.append((3, "OG Image",
+            f"**Add OG image to {name}.** No Open Graph image set. Upload a relevant "
+            f"1200x630 image in Yoast for this page."
+        ))
+
+# Sort by priority
+actions.sort(key=lambda x: x[0])
+
+# Generate action plan section
+md.append("## What to Fix This Week")
+md.append("")
+if not actions:
+    md.append("No issues found. Site is in good shape.")
+else:
+    # Show top 10 actions
+    shown = 0
+    current_priority = None
+    priority_labels = {1: "HIGH IMPACT", 2: "MEDIUM IMPACT", 3: "LOW IMPACT"}
+    for priority, category, text in actions:
+        if shown >= 10:
+            break
+        if priority != current_priority:
+            current_priority = priority
+            md.append(f"\n**{priority_labels.get(priority, 'OTHER')}**\n")
+        shown += 1
+        md.append(f"{shown}. [{category}] {text}")
+
+    remaining = len(actions) - shown
+    if remaining > 0:
+        md.append(f"\n*Plus {remaining} more lower-priority items (see full report in repo)*")
+md.append("")
+
+# Full action list for the markdown file (not email)
+if len(actions) > 10:
+    md.append("<details>")
+    md.append("<summary>All action items ({} total)</summary>\n".format(len(actions)))
+    for i, (priority, category, text) in enumerate(actions, 1):
+        label = priority_labels.get(priority, "OTHER")
+        md.append(f"{i}. **[{label}]** [{category}] {text}")
+    md.append("\n</details>")
+    md.append("")
+
+# Missing pages section
 if missing_pages:
     md.append("## Missing Pages (404)")
     for r in missing_pages:
-        md.append(f"- **{r['name']}**: `{r['path']}` - not built yet")
+        md.append(f"- **{r['name']}**: `{r['path']}`")
     md.append("")
 
 # Issues by page
@@ -558,20 +736,35 @@ html_parts.append(f"""<html><body style="font-family: Arial, sans-serif; max-wid
 <tr><td style="padding: 8px; border: 1px solid #bdc3c7;">FAQPage Schema</td><td style="padding: 8px; border: 1px solid #bdc3c7;"><b>{pages_with_faq}</b> pages</td></tr>
 </table>""")
 
+# Action plan in email
+if actions:
+    html_parts.append("<h3 style='color: #2c3e50;'>What to Fix This Week</h3>")
+    current_priority = None
+    priority_labels_html = {1: "HIGH IMPACT", 2: "MEDIUM IMPACT", 3: "LOW IMPACT"}
+    priority_colors = {1: "#e74c3c", 2: "#e67e22", 3: "#95a5a6"}
+    shown_html = 0
+    for priority, category, text in actions:
+        if shown_html >= 10:
+            break
+        if priority != current_priority:
+            current_priority = priority
+            label = priority_labels_html.get(priority, "OTHER")
+            color = priority_colors.get(priority, "#95a5a6")
+            html_parts.append(f"<p style='color: {color}; font-weight: bold; margin-top: 15px; margin-bottom: 5px;'>{label}</p>")
+        shown_html += 1
+        # Convert markdown bold to HTML bold
+        text_html = text.replace("**", "<b>", 1).replace("**", "</b>", 1)
+        text_html = text_html.replace("`", "<code>").replace("`", "</code>")
+        html_parts.append(f"<p style='margin: 4px 0 4px 15px;'>{shown_html}. <span style='background: #ecf0f1; padding: 1px 6px; border-radius: 3px; font-size: 11px;'>{category}</span> {text_html}</p>")
+    remaining_html = len(actions) - shown_html
+    if remaining_html > 0:
+        html_parts.append(f"<p style='color: #95a5a6; font-style: italic;'>Plus {remaining_html} more lower-priority items in the full report.</p>")
+
 if missing_pages:
     html_parts.append("<h3 style='color: #e74c3c;'>Missing Pages (404)</h3><ul>")
     for r in missing_pages:
         html_parts.append(f"<li><b>{r['name']}</b>: <code>{r['path']}</code></li>")
     html_parts.append("</ul>")
-
-if pages_with_issues:
-    html_parts.append("<h3>Issues by Page</h3>")
-    for name, r in pages_with_issues:
-        html_parts.append(f"<p><b>{name}</b> (<code>{r['path']}</code>)</p><ul>")
-        for issue in r["issues"]:
-            color = "#e74c3c" if any(w in issue.upper() for w in ("MISSING", "404")) else "#e67e22"
-            html_parts.append(f"<li style='color: {color};'>{issue}</li>")
-        html_parts.append("</ul>")
 
 # Trend (if we have prior data)
 prior_keys = [k for k in sorted(history.keys()) if k < today_key]
