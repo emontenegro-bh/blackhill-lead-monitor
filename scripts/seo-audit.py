@@ -71,7 +71,7 @@ PAGES = {
     "FW Fert & Weed Control": "/areas-we-serve/fort-worth/fertilization-and-weed-control",
     "FW Sprinkler Install": "/areas-we-serve/fort-worth/sprinkler-installation",
     "FW Drainage": "/areas-we-serve/fort-worth/standing-water",
-    "FW Landscape Design": "/areas-we-serve/fort-worth/landscape-design-and-installation",
+    "FW Landscape Design": "/areas-we-serve/fort-worth/landscaping-services",
     "FW Commercial Maint": "/areas-we-serve/fort-worth/commercial-landscape-maintenance",
     "FW Hardscaping": "/areas-we-serve/fort-worth/hardscaping",
     "Blog": "/blog",
