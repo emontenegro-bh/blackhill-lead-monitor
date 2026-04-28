@@ -1,0 +1,19 @@
+{
+  "2026-04-28": {
+    "score": 27,
+    "pages_live": 21,
+    "pages_missing": 7,
+    "total_issues": 41,
+    "alt_text_pct": 78.3,
+    "images_total": 397,
+    "images_good": 311,
+    "images_poor": 86,
+    "images_missing": 0,
+    "schema_local_business": 11,
+    "schema_faq": 16,
+    "schema_aggregate_rating": 3,
+    "title_issues": 10,
+    "h1_issues": 0,
+    "meta_issues": 2
+  }
+}
