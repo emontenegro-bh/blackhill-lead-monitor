@@ -221,15 +221,16 @@
     "232478252",
     "232519865",
     "232538021",
-    "232594587"
+    "232594587",
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAADq-BFMAAA="
   ],
   "stats": {
     "total_leads": 115,
-    "total_spam": 75,
+    "total_spam": 76,
     "last_lead": "2026-04-27T22:20:16.880347",
     "total_calls": 2
   },
-  "last_run": "2026-04-28T07:25:11.018437+00:00",
+  "last_run": "2026-04-28T07:28:48.415114+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
