@@ -77,6 +77,12 @@ PAGES = {
     "Blog": "/blog",
 }
 
+# Slug aliases -- when a page slug changes, check both old and new
+# Format: { "old-slug": "new-slug" }
+SLUG_ALIASES = {
+    "landscape-design-and-installation": "landscaping-services",
+}
+
 # User agent
 UA = "Mozilla/5.0 (compatible; BlackHillSEOAudit/1.0)"
 
@@ -160,15 +166,35 @@ class SEOParser(HTMLParser):
 
 
 def fetch_page(url):
-    """Fetch a page and return (status_code, html) or (status_code, None)."""
+    """Fetch a page and return (status_code, html, final_url).
+    If the primary URL 404s, tries slug aliases before giving up."""
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.status, resp.read().decode("utf-8", errors="replace")
+            return resp.status, resp.read().decode("utf-8", errors="replace"), url
     except urllib.error.HTTPError as e:
-        return e.code, None
+        if e.code == 404:
+            # Try slug aliases
+            for old_slug, new_slug in SLUG_ALIASES.items():
+                if old_slug in url:
+                    alt_url = url.replace(old_slug, new_slug)
+                    try:
+                        req2 = urllib.request.Request(alt_url, headers={"User-Agent": UA})
+                        with urllib.request.urlopen(req2, timeout=15) as resp2:
+                            return resp2.status, resp2.read().decode("utf-8", errors="replace"), alt_url
+                    except Exception:
+                        pass
+                elif new_slug in url:
+                    alt_url = url.replace(new_slug, old_slug)
+                    try:
+                        req2 = urllib.request.Request(alt_url, headers={"User-Agent": UA})
+                        with urllib.request.urlopen(req2, timeout=15) as resp2:
+                            return resp2.status, resp2.read().decode("utf-8", errors="replace"), alt_url
+                    except Exception:
+                        pass
+        return e.code, None, url
     except Exception as e:
-        return 0, None
+        return 0, None, url
 
 
 def extract_schema_types(schemas):
@@ -211,7 +237,9 @@ def classify_alt_text(alt, src=""):
 def audit_page(name, path):
     """Audit a single page and return a results dict."""
     url = f"{SITE}{path}"
-    status, html = fetch_page(url)
+    status, html, final_url = fetch_page(url)
+    if final_url != url:
+        path = final_url.replace(SITE, "")
 
     result = {
         "name": name,
