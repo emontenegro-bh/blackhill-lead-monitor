@@ -99,6 +99,8 @@ def post_to_gbp(post, dry_run=False):
         return True
     except Exception as e:
         print(f"  ERROR: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"  DETAILS: {e.response.text[:500]}")
         return False
 
 

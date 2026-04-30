@@ -22,6 +22,8 @@ Commands        ← Workflow orchestration, load from /data/
 Agents          ← Roles with scope (131 agents in flat structure)
    ↓
 Skills          ← Deep how-to, procedures, templates (71 skills)
+   ↔
+Handoffs        ← Inter-skill context passing (18 docs, 9 bidirectional pairs)
    ↓
 Scripts         ← Deterministic execution (zero AI tokens)
    ↓
@@ -382,6 +384,7 @@ mcp__elevenlabs__get_voice(voice_id="...")
 | Commands (53) | `.claude/commands/` |
 | Agents (131) | `.claude/agents/CLAUDE.md` |
 | Skills (71) | `.claude/skills/CLAUDE.md` |
+| Handoffs (18) | `~/.claude/handoffs/` |
 | States | `.claude/states/` |
 | Rules | `.claude/rules/` (auto-loaded) |
 | Workflows | `.claude/docs/workflows/` |
@@ -484,6 +487,45 @@ Agents with state files should:
 | File | Agent | Purpose |
 |------|-------|---------|
 | `health.json` | health-week-planner | Weekly health programming (week, phase, focus, AI notes) |
+
+---
+
+## Skill Handoff System
+
+Inter-skill communication documents at `~/.claude/handoffs/` that pass context between skills and reduce redundant API calls.
+
+### How It Works
+
+- 18 documents across 9 bidirectional pairs connecting 10 skills
+- Each document has a **Current** section (overwritten each time) and **History** table (append-only)
+- **All non-blocking**: if a handoff is missing, the skill notifies the user and proceeds
+- **Staleness**: handoffs older than 14 days trigger a warning
+- Status flow: `awaiting-handoff` → `ready-for-{target}` → `consumed`
+
+### Connected Skills
+
+| Pair | Documents |
+|------|-----------|
+| Content Marketing ↔ Google Ads | `content-to-ads.md` / `ads-to-content.md` |
+| Local SEO ↔ Content Marketing | `seo-to-content.md` / `content-to-seo.md` |
+| Local SEO ↔ GBP Management | `seo-to-gbp.md` / `gbp-to-seo.md` |
+| Estimate ↔ Aspire Proposals | `estimate-to-proposals.md` / `proposals-to-estimate.md` |
+| Marketing Analysis ↔ Google Ads | `marketing-to-ads.md` / `ads-to-marketing.md` |
+| Azuga Fleet ↔ Route Scheduler | `fleet-to-routes.md` / `routes-to-fleet.md` |
+| Lead Match ↔ Google Ads | `leads-to-ads.md` / `ads-to-leads.md` |
+| GBP Management ↔ Content Marketing | `gbp-to-content.md` / `content-to-gbp.md` |
+| Google Ads ↔ Local SEO | `ads-to-seo.md` / `seo-to-ads.md` |
+
+### For Skills
+
+- **Before starting work**: check your handoff read documents (listed in your SKILL.md Handoffs section)
+- **After completing work**: update your handoff write documents
+- If a handoff is missing or stale, notify the user and proceed
+
+### Commands
+
+- `/handoff-status` -- dashboard showing all 18 handoffs with status, age, and alerts
+- Full documentation: `~/.claude/handoffs/README.md`
 
 ---
 
