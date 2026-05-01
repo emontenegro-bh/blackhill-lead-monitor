@@ -388,11 +388,16 @@ TEMPLATES = {
     "Landscape Install": {
         "focus": "planting design, bed preparation, mulch, edging, and soil amendments",
         "extras": """- Recommend plant quantities based on mature spread with grow-in spacing.
-- Include planting soil quantities (cubic yards or bags).
-- Mulch depth is 2 inches max. Black mulch. Bags (3 cuft) for small jobs, cubic yards for large.
-- Always specify edging as "steel black edging."
+- For planting jobs, always use Planters Mix soil at 2-3 inches depth max. Quote cubic yards rounded up to 0.5.
+- Default mulch is Hardwood Native Mulch (NOT black). Only use Colored/Black mulch when notes specify "black."
+- Mulch depth is 2 inches max. Never quote 3 inches.
+- Mulch bags are 3 cubic feet each. Never quote 2 cubic foot bags.
+- A pallet = 45 bags (3CF). If total bags needed > 45 (more than 1 pallet), quote cubic yards. If 45 or fewer, quote bags/pallets.
+- Always specify edging as "steel black edging" in the client proposal. No gauge or piece details.
+- Edging sections are 10 feet each. Formula: linear feet / 10 = pieces, round up. No cutting.
 - Consider sun exposure when selecting plants.
-- Plants must be suited to North Texas Zone 8a climate.""",
+- Plants must be suited to North Texas Zone 8a climate.
+- Use common plant names only. No botanical/scientific names.""",
     },
     "Irrigation": {
         "focus": "irrigation system installation, repair, or modification",
@@ -419,7 +424,8 @@ TEMPLATES = {
 - Note base preparation (compacted gravel, sand setting bed).
 - Include polymeric sand or mortar joints as applicable.
 - Specify any drainage considerations (slope, french drain).
-- Note border or edge restraint material.""",
+- Note border or edge restraint material.
+- For decomposed granite: quote total cubic yards. No single default vendor.""",
     },
     "Maintenance": {
         "focus": "recurring lawn care, seasonal cleanup, or property maintenance",
@@ -431,6 +437,77 @@ TEMPLATES = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# Material calculation rules (embedded in system prompt for Claude)
+# ---------------------------------------------------------------------------
+
+MATERIAL_RULES = """
+MATERIAL CALCULATION RULES:
+
+You MUST parse all LxW measurements from the field notes, calculate square footage for each area,
+sum by section (front yard, backyard, etc.), and compute material quantities. Show your math.
+
+MULCH:
+- Default: Hardwood Native Mulch. Only use Colored/Black if notes say "black."
+- Depth: 2 inches max. Never 3 inches.
+- Only 3CF bags. Never 2CF.
+- Pallet = 45 bags (3CF). If total bags > 45, quote cubic yards. If 45 or fewer, quote bags/pallets.
+- Formula: area(sqft) x (2/12) / 27 = cubic yards, or x (2/12) / 3 = bags.
+- Client proposal: state total pallets or cubic yards being installed.
+
+SOD:
+- St. Augustine, Celebration Bermuda, Zoysia: 450 sqft per pallet (vendor: King Ranch).
+- TifTuf Bermuda: 600 sqft per pallet (full) or 450 sqft (half) (vendor: Prime Sod).
+- Waste factor: 5% (fixed). Formula: area(sqft) x 1.05 / pallet_size = pallets, round up.
+- Always use Comanche Compost 1/4" for sod prep soil.
+- Client proposal: state total number of pallets and variety.
+
+EDGING:
+- Steel black edging. 10-foot sections. Formula: linear feet / 10 = pieces, round up.
+- Client proposal: say "steel black edging" only. No gauge, no pieces, no feet, no price.
+
+PLANTING SOIL:
+- For planting jobs: Planters Mix at 2-3 inches depth max.
+- For sod jobs: Comanche Compost 1/4" (depth per project needs).
+- Quote cubic yards, rounded up to nearest 0.5.
+- Formula: area(sqft) x (depth_inches / 12) / 27 = cubic yards.
+
+DECOMPOSED GRANITE:
+- Quote total cubic yards. Client sees yards installed.
+
+ROCK/STONE:
+- 1 ton covers ~80-100 sqft at 2-3 inch depth. Round up to 0.5 ton.
+
+PLANTS:
+- Calculate qty from mature spread of each species (grow-in spacing, not full coverage).
+- Format: qty - size CommonName, with sub-bullet describing why it fits the location.
+- Common names only. No botanical/scientific names.
+- SINGLE VENDOR PREFERENCE: Source all plants from one vendor when possible. Do not mix vendors
+  unless there is a very large, substantial cost difference. Default vendor: Southwest.
+
+OUTPUT MUST INCLUDE TWO SECTIONS:
+
+SECTION 1 — CLIENT-FACING PROPOSAL (Aspire-ready HTML):
+- Follows brand voice rules. No pricing. No bold. No em dashes.
+- Include material quantities the client can see: mulch pallets/yards, sod pallets, DG yards.
+- Edging: just say "steel black edging."
+- Wrapped in proper HTML (h3, p, ul, li only).
+
+SECTION 2 — INTERNAL NOTES (for project manager only):
+Start this section with the marker: <!-- INTERNAL NOTES -->
+Include for each material:
+- Vendor name
+- Unit pricing and total material cost
+- Mulch: semi vs dump truck (semi=75CY, dump=40CY), delivery cost
+  Delivery: >59CY=$185, >15CY=$235, other bulk=$285, pallets=$335
+- Sod: vendor, pallet count, variety
+- Edging: total pieces, $19.58/piece (Ewing), total cost
+- Soil: vendor (Mayer), product, $/CY
+- DG: vendor/source, $/CY or $/TN, delivery
+- Plants: vendor, size, unit price (use Southwest as default vendor reference)
+- Any flags or verification notes
+"""
+
 
 def build_system_prompt(service_type):
     """Build service-type-specific system prompt for Claude."""
@@ -438,11 +515,12 @@ def build_system_prompt(service_type):
 
     return f"""You are an AI proposal writer for Black Hill Landscaping in Fort Worth, Texas.
 
-Generate a ProposalDescription1 (scope of work) for an Aspire CRM opportunity.
+Generate a proposal for an Aspire CRM opportunity.
 This is a {service_type} project focused on {template['focus']}.
 
-RULES:
-- Start with "Scope of Work" as the first h3 header. No opening paragraph.
+RULES FOR CLIENT-FACING PROPOSAL:
+- Start with "Scope of Work" as the first h3 header.
+- Open with 1-2 sentences of assessment findings (what the property needs and why).
 - Every bullet ends with a period.
 - Use common plant names only. No botanical/scientific names.
 - Format plants as: qty - size CommonName on first line, description as sub-bullet.
@@ -451,10 +529,24 @@ RULES:
 - No Description2. No terms, warranty, or exclusions.
 - Note access constraints (gate width, equipment) when visible in photos or notes.
 - Include drip irrigation if mentioned in notes.
+- Weave Fort Worth, Zone 8a, and clay soil context naturally into scope items. No separate context section.
+- Lead with what the property needs, not what Black Hill Landscaping does.
+- Use diagnostic language: "assessment revealed", "inspection identified."
+
+{MATERIAL_RULES}
 
 OUTPUT FORMAT:
-Return ONLY the HTML content (not the wrapper divs).
-Use only: <h3>, <p>, <ul>, <li> tags. No <strong>, <em>, or inline styles."""
+Return two sections separated by <!-- INTERNAL NOTES --> marker.
+
+Section 1 (before the marker): Client-facing HTML proposal ONLY.
+Start DIRECTLY with the <h3>Scope of Work</h3> tag. No preamble, no calculations, no markdown.
+Use only: <h3>, <p>, <ul>, <li> tags. No <strong>, <em>, <b>, inline styles, or markdown formatting.
+Do NOT include wrapper divs or any text before the first <h3> tag.
+
+Section 2 (after the marker): Internal notes with vendor, pricing, delivery, and material breakdown.
+Put all calculations and math here, not in Section 1.
+Use plain text or simple HTML tables. This section is for the project manager only.
+Use these vendor defaults: Mulch=Organic Recycler, Soil=Mayer, Edging=Ewing ($19.58/pc), Rock/Stone=Clear Fork Materials (CFM), DG=SiteOne, Plants=Southwest."""
 
 
 def build_user_content(project_data, sun_exposure, photo_paths):
@@ -474,7 +566,7 @@ def build_user_content(project_data, sun_exposure, photo_paths):
     ]
 
     if project_data.get("notepad"):
-        text_parts.append(f"Field Notes: {project_data['notepad']}")
+        text_parts.append(f"Field Notes:\n{project_data['notepad']}")
 
     for c in project_data.get("comments", []):
         content = c.get("content", "")
@@ -485,11 +577,31 @@ def build_user_content(project_data, sun_exposure, photo_paths):
         label_names = [l.get("name", "") for l in project_data["labels"]]
         text_parts.append(f"Labels: {', '.join(label_names)}")
 
+    # Collect photo descriptions from API metadata
+    photo_descriptions = []
+    for i, photo in enumerate(project_data.get("photos", [])[:MAX_PHOTOS]):
+        desc = photo.get("description", "")
+        if desc and desc.strip():
+            photo_descriptions.append(f"Photo {i+1} description: {desc.strip()}")
+    if photo_descriptions:
+        text_parts.append("Photo Descriptions:\n" + "\n".join(photo_descriptions))
+
     photo_count = len(project_data.get("photos", []))
     text_parts.append(f"Photos: {photo_count} site visit photos attached below.")
-    text_parts.append("Generate the ProposalDescription1 HTML based on the notes and photos.")
+    text_parts.append(
+        "IMPORTANT: Each photo may contain text annotations, handwritten notes, arrows, "
+        "labels, dimensions, or material callouts written directly on the image. "
+        "Read every photo carefully for these visual annotations. "
+        "The photo descriptions above also contain notes from the project manager. "
+        "Do not rely solely on the notepad — the photos and their descriptions are primary data sources."
+    )
+    text_parts.append(
+        "Parse ALL measurements from the notes and photos. Calculate sqft for each area. "
+        "Compute material quantities using the rules in your system prompt. "
+        "Generate the client-facing proposal HTML followed by <!-- INTERNAL NOTES --> and internal notes."
+    )
 
-    content = [{"type": "text", "text": "\n".join(text_parts)}]
+    content = [{"type": "text", "text": "\n\n".join(text_parts)}]
     content.extend(encode_photos_to_content(photo_paths))
     return content
 
@@ -627,8 +739,17 @@ def draft_proposal(project_data, claude_client):
 # STAGE 3: SEND — Email delivery and logging
 # ===================================================================
 
+def split_proposal_sections(proposal_html):
+    """Split Claude's output into client-facing and internal sections."""
+    marker = "<!-- INTERNAL NOTES -->"
+    if marker in proposal_html:
+        parts = proposal_html.split(marker, 1)
+        return parts[0].strip(), parts[1].strip()
+    return proposal_html.strip(), ""
+
+
 def build_email_html(result):
-    """Build the full email HTML wrapper around the proposal."""
+    """Build the full email HTML with client proposal and internal notes."""
     project = result["project_data"]["project"]
     addr = project.get("address", {})
     address_str = (
@@ -643,11 +764,26 @@ def build_email_html(result):
     stype = result["service_type"]
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
+    # Split into client and internal sections
+    client_html, internal_notes = split_proposal_sections(result["proposal_html"])
+
+    # Build internal notes section HTML (only if present)
+    internal_section = ""
+    if internal_notes:
+        internal_section = f"""
+<hr style="border: 2px solid #D32F2F; margin: 24px 0;">
+
+<h3 style="color: #D32F2F;">Internal Notes (DO NOT share with client)</h3>
+<div style="background: #FFF3E0; border: 2px solid #FF9800; padding: 16px; border-radius: 4px; font-size: 10pt;">
+{internal_notes}
+</div>
+"""
+
     return f"""\
 <html>
 <body style="font-family: Arial, sans-serif; font-size: 11pt; color: #333;">
 
-<h2 style="color: #B08A3C;">New Proposal Ready: {name}</h2>
+<h2 style="color: #B08A3C;">Proposal Ready: {name}</h2>
 
 <table style="font-size: 10pt; margin-bottom: 16px;">
 <tr><td style="padding-right: 12px;"><strong>Property:</strong></td><td>{name}</td></tr>
@@ -666,11 +802,11 @@ def build_email_html(result):
 <div style="background: #f9f8f5; border: 1px solid #ddd; padding: 16px; border-radius: 4px;">
 <div style="font-size: 10pt;" id="fontFamilySizeSetting">
 <div style="font-family: Arial,sans-serif;" id="fontFamilySetting">
-{result['proposal_html']}
+{client_html}
 </div>
 </div>
 </div>
-
+{internal_section}
 <hr style="border: 1px solid #C9A24D; margin: 16px 0;">
 <p style="font-size: 9pt; color: #888;">
   Generated by Black Hill Proposal Pipeline at {ts}.<br>
@@ -788,13 +924,21 @@ def process_single_project(project_id, config, cc_client, claude_client, state):
         return False
 
     if VALIDATE_MODE:
-        # Print proposal to stdout for review
+        # Print proposal to stdout for review, split into sections
+        client_html, internal_notes = split_proposal_sections(result["proposal_html"])
         print(f"\n{'='*60}")
         print(f"PROJECT: {result['project_data']['project'].get('name', '?')}")
         print(f"SERVICE: {result['service_type']}")
         print(f"SUN:     {result['sun_exposure']}")
         print(f"{'='*60}")
-        print(result["proposal_html"])
+        print("CLIENT-FACING PROPOSAL:")
+        print(f"{'='*60}")
+        print(client_html)
+        if internal_notes:
+            print(f"\n{'='*60}")
+            print("INTERNAL NOTES:")
+            print(f"{'='*60}")
+            print(internal_notes)
         print(f"{'='*60}\n")
         return True
 
