@@ -500,9 +500,10 @@ SECTION 1 — CLIENT-FACING PROPOSAL:
 - No pricing, no dollar amounts, no hourly rates in this section.
 - No em dashes. No <strong>, <em>, <b>, or bold. No inline styles.
 - Use <p> and <ul>/<li> tags only. No <h3>, no wrapper divs.
-- MATH ACCURACY: Calculate all quantities in the internal notes FIRST, then use those exact numbers
-  in the client section. Never estimate or round differently between sections. If internal notes
-  say 6 pallets, the client section must say 6 pallets. Double-check every number.
+- MATH ACCURACY: You MUST write Section 2 (internal notes with all calculations) FIRST,
+  then write Section 1 (client proposal) using ONLY the numbers from Section 2.
+  Output them in the correct order (Section 1 first, then Section 2), but do the math before writing
+  the client section. Never guess or estimate numbers in the client section.
 
 SECTION 2 — INTERNAL NOTES (for project manager only):
 Start this section with the marker: <!-- INTERNAL NOTES -->
@@ -529,6 +530,9 @@ This is a {service_type} project focused on {template['focus']}.
 
 WRITING STYLE — match this voice exactly:
 - Write in first person, direct and conversational. Like talking to the client.
+- Do NOT write a fluffy intro paragraph summarizing what the proposal covers. Get straight to the work.
+- Start with either a one-sentence context ("This proposal includes..." or "This proposal is based on
+  a site visit to address...") then immediately go into the scope items. Or just start with "Scope of Work".
 - "I calculated 7 pallets to be sufficient." NOT "Assessment revealed the need for 7 pallets."
 - "If you'd like X instead, just let me know and I'll update the quote." NOT "Options are available."
 - State quantities plainly: "Supply and install 7 pallets of Cobalt St. Augustine sod."
@@ -538,7 +542,6 @@ WRITING STYLE — match this voice exactly:
 - Do NOT add sub-bullet descriptions explaining why a plant fits a location. Just list the plant.
 - Plants format: "3 - 3 gallon Cast Iron plants" or "15 - 1 gallon Autumn Ferns" (simple, no explanation).
 - Say "edging" or "black steel edging" naturally. Not "steel black edging."
-- Open with 1-2 sentences explaining what the proposal covers and why (based on the site visit).
 - Organize by work area or phase, not by material type.
 - Include practical notes about site conditions, access, or limitations.
 - Include an exclusions or notes section when relevant.
