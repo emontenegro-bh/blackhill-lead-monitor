@@ -54,8 +54,9 @@ OWN_PHONES = {"8179946663", "8179950324", "5625475384"}
 
 # Email
 EMAIL_TO = "evelin@blackhilltx.com"
-SENDGRID_SMTP = "smtp.sendgrid.net"
-SENDGRID_PORT = 587
+GMAIL_SMTP = "smtp.gmail.com"
+GMAIL_PORT = 587
+GMAIL_SENDER_CONFIG = os.path.expanduser("~/.config/gmail-sender/config.json")
 
 
 # --- Config ---
@@ -502,29 +503,32 @@ def run():
         print("\n[DRY RUN - email not sent]")
         return
 
-    # Send email
-    api_key = os.environ.get("SENDGRID_API_KEY", "")
-    if not api_key:
-        key_file = os.path.expanduser("~/.config/sendgrid-api-key")
-        if os.path.exists(key_file):
-            with open(key_file) as f:
-                api_key = f.read().strip()
-    if not api_key:
-        print("No SendGrid API key. Report printed but not emailed.")
+    # Send email via Gmail SMTP
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+    if not (gmail_user and gmail_pass) and os.path.exists(GMAIL_SENDER_CONFIG):
+        with open(GMAIL_SENDER_CONFIG) as f:
+            creds = json.load(f)
+        gmail_user = creds.get("email", "")
+        gmail_pass = creds.get("app_password", "")
+
+    if not (gmail_user and gmail_pass):
+        print("No Gmail SMTP credentials. Report printed but not emailed.")
         return
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"Lead Fuzzy Match: {len(results['high'])} auto, {len(results['review'])} review"
-    msg["From"] = formataddr(("Black Hill Assistant", EMAIL_TO))
+    msg["From"] = formataddr(("Black Hill Assistant", gmail_user))
     msg["To"] = EMAIL_TO
     msg.attach(MIMEText(report, "plain"))
 
     try:
-        with smtplib.SMTP(SENDGRID_SMTP, SENDGRID_PORT) as s:
+        with smtplib.SMTP(GMAIL_SMTP, GMAIL_PORT, timeout=10) as s:
             s.starttls()
-            s.login("apikey", api_key)
-            s.sendmail(EMAIL_TO, EMAIL_TO, msg.as_string())
-        print("Report emailed.")
+            s.login(gmail_user, gmail_pass)
+            s.sendmail(gmail_user, EMAIL_TO, msg.as_string())
+        print("Report emailed via Gmail SMTP.")
     except Exception as e:
         print(f"Email failed: {e}")
 

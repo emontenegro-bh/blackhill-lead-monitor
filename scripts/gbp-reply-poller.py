@@ -39,9 +39,9 @@ PENDING_DIR = os.path.join(CONFIG_DIR, "pending-responses")
 RESPONDED_DIR = os.path.join(CONFIG_DIR, "responded")
 LOG_FILE = os.path.join(CONFIG_DIR, "reply-poller.log")
 EMAIL_ADDRESS = "evelin@blackhilltx.com"
-SENDGRID_KEY_FILE = os.path.expanduser("~/.config/sendgrid-api-key")
-SENDGRID_SMTP = "smtp.sendgrid.net"
-SENDGRID_PORT = 587
+GMAIL_SMTP = "smtp.gmail.com"
+GMAIL_PORT = 587
+GMAIL_SENDER_CONFIG = os.path.expanduser("~/.config/gmail-sender/config.json")
 
 DRY_RUN = "--dry-run" in sys.argv
 
@@ -204,18 +204,23 @@ def post_review_response(gbp_auth, review_name, response_text):
 
 
 def send_confirmation(reviewer, stars, response_text, was_custom):
-    """Send confirmation email to Evelin."""
+    """Send confirmation email to Evelin via Gmail SMTP."""
     if DRY_RUN:
         log("DRY RUN - Would send confirmation email")
         return
 
-    api_key = os.environ.get("SENDGRID_API_KEY", "")
-    if not api_key:
-        if not os.path.exists(SENDGRID_KEY_FILE):
-            log("No SendGrid API key. Confirmation email skipped.")
-            return
-        with open(SENDGRID_KEY_FILE) as f:
-            api_key = f.read().strip()
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+    if not (gmail_user and gmail_pass) and os.path.exists(GMAIL_SENDER_CONFIG):
+        with open(GMAIL_SENDER_CONFIG) as f:
+            creds = json.load(f)
+        gmail_user = creds.get("email", "")
+        gmail_pass = creds.get("app_password", "")
+
+    if not (gmail_user and gmail_pass):
+        log("No Gmail SMTP credentials available. Confirmation email skipped.")
+        return
 
     action = "custom response" if was_custom else "draft response"
     subject = f"GBP Review Response Posted ({reviewer})"
@@ -231,16 +236,16 @@ Response posted:
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = EMAIL_ADDRESS
+    msg["From"] = gmail_user
     msg["To"] = EMAIL_ADDRESS
     msg.attach(MIMEText(body, "plain"))
 
     try:
-        with smtplib.SMTP(SENDGRID_SMTP, SENDGRID_PORT) as server:
+        with smtplib.SMTP(GMAIL_SMTP, GMAIL_PORT, timeout=10) as server:
             server.starttls()
-            server.login("apikey", api_key)
-            server.sendmail(EMAIL_ADDRESS, EMAIL_ADDRESS, msg.as_string())
-        log("Confirmation email sent.")
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, EMAIL_ADDRESS, msg.as_string())
+        log("Confirmation email sent via Gmail SMTP.")
     except Exception as e:
         log(f"Confirmation email failed: {e}")
 

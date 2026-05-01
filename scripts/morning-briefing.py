@@ -2,7 +2,7 @@
 """Morning briefing for Black Hill Landscaping.
 
 Pulls calendar events, Google Ads data, calculates drive times,
-and delivers via SMS using email-to-SMS gateways (SendGrid).
+and delivers via SMS (Twilio) or email-to-SMS gateways (Gmail SMTP).
 
 Runs via GitHub Actions Sun-Fri at 6am CST, or locally with --test.
 
@@ -22,7 +22,7 @@ from email.mime.text import MIMEText
 CENTRAL_TIME = timezone(timedelta(hours=-6))
 
 # --- Mode Detection ---
-CLOUD_MODE = bool(os.environ.get("SENDGRID_API_KEY"))
+CLOUD_MODE = bool(os.environ.get("GMAIL_EMAIL"))
 TEST_MODE = "--test" in sys.argv
 
 # --- Email-to-SMS carrier gateways ---
@@ -64,7 +64,6 @@ def load_config_from_env():
             "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
             "customer_id": os.environ.get("GOOGLE_ADS_CUSTOMER_ID", ""),
         },
-        "sendgrid_api_key": os.environ.get("SENDGRID_API_KEY", ""),
         "sms_from_email": os.environ.get("SMS_FROM_EMAIL", "briefing@blackhilltx.com"),
         "sms_recipients": [
             {"phone": os.environ.get("PHONE_PERSONAL", ""), "carrier": "tmobile"},

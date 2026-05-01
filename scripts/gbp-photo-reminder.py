@@ -15,9 +15,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 EMAIL_ADDRESS = "evelin@blackhilltx.com"
-SENDGRID_SMTP = "smtp.sendgrid.net"
-SENDGRID_PORT = 587
-SENDGRID_KEY_FILE = os.path.expanduser("~/.config/sendgrid-api-key")
+GMAIL_SMTP = "smtp.gmail.com"
+GMAIL_PORT = 587
+GMAIL_SENDER_CONFIG = os.path.expanduser("~/.config/gmail-sender/config.json")
 DRY_RUN = "--dry-run" in sys.argv
 
 # Photo types to capture (rotates weekly)
@@ -67,26 +67,32 @@ if DRY_RUN:
     print(f"DRY RUN - Would send:\nSubject: {subject}\n\n{body}")
     sys.exit(0)
 
-# Send email
-api_key = os.environ.get("SENDGRID_API_KEY", "")
-if not api_key:
-    if not os.path.exists(SENDGRID_KEY_FILE):
-        print(f"No SendGrid API key at {SENDGRID_KEY_FILE}. Notification shown but email skipped.")
-        sys.exit(0)
-    with open(SENDGRID_KEY_FILE) as f:
-        api_key = f.read().strip()
+# Send email via Gmail SMTP
+import json as _json
+gmail_user = os.environ.get("GMAIL_EMAIL", "")
+gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+if not (gmail_user and gmail_pass) and os.path.exists(GMAIL_SENDER_CONFIG):
+    with open(GMAIL_SENDER_CONFIG) as f:
+        creds = _json.load(f)
+    gmail_user = creds.get("email", "")
+    gmail_pass = creds.get("app_password", "")
+
+if not (gmail_user and gmail_pass):
+    print("No Gmail SMTP credentials. Notification shown but email skipped.")
+    sys.exit(0)
 
 msg = MIMEMultipart("alternative")
 msg["Subject"] = subject
-msg["From"] = EMAIL_ADDRESS
+msg["From"] = gmail_user
 msg["To"] = EMAIL_ADDRESS
 msg.attach(MIMEText(body, "plain"))
 
 try:
-    with smtplib.SMTP(SENDGRID_SMTP, SENDGRID_PORT) as server:
+    with smtplib.SMTP(GMAIL_SMTP, GMAIL_PORT, timeout=10) as server:
         server.starttls()
-        server.login("apikey", api_key)
-        server.sendmail(EMAIL_ADDRESS, EMAIL_ADDRESS, msg.as_string())
-    print("Photo reminder email sent.")
+        server.login(gmail_user, gmail_pass)
+        server.sendmail(gmail_user, EMAIL_ADDRESS, msg.as_string())
+    print("Photo reminder email sent via Gmail SMTP.")
 except Exception as e:
     print(f"Email failed: {e}")

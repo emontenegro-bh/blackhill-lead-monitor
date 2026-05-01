@@ -30,9 +30,6 @@ PENDING_DIR = os.path.join(CONFIG_DIR, "pending-responses")
 TEMPLATE_FILE = os.path.join(os.path.dirname(__file__), "gbp-review-templates.json")
 EMAIL_ADDRESS = "evelin@blackhilltx.com"
 REPLY_TO_ADDRESS = "monte24negro+gbp@gmail.com"
-SENDGRID_SMTP = "smtp.sendgrid.net"
-SENDGRID_PORT = 587
-SENDGRID_KEY_FILE = os.path.expanduser("~/.config/sendgrid-api-key")
 LOG_FILE = os.path.join(CONFIG_DIR, "monitor.log")
 GMAIL_SENDER_CONFIG = os.path.expanduser("~/.config/gmail-sender/config.json")
 GMAIL_SMTP = "smtp.gmail.com"
@@ -150,24 +147,6 @@ def _build_mime(subject, body, from_addr, to_addr, reply_to=None):
     return msg
 
 
-def _send_via_sendgrid(msg, api_key):
-    """Try SendGrid SMTP with 3 retries and exponential backoff."""
-    for attempt in range(3):
-        try:
-            with smtplib.SMTP(SENDGRID_SMTP, SENDGRID_PORT, timeout=10) as server:
-                server.starttls()
-                server.login("apikey", api_key)
-                server.sendmail(msg["From"], msg["To"], msg.as_string())
-            log("Email sent via SendGrid.")
-            return True
-        except Exception as e:
-            wait = 2 ** (attempt + 1)
-            log(f"SendGrid attempt {attempt + 1}/3 failed: {e}")
-            if attempt < 2:
-                time.sleep(wait)
-    return False
-
-
 def _send_via_ms_graph(subject, body, to_addr, reply_to=None):
     """Primary: send via Microsoft Graph API (M365 mailbox - reliable delivery to blackhilltx.com)."""
     client_id = os.environ.get("MS_CLIENT_ID", "")
@@ -252,7 +231,7 @@ def _send_via_gmail_smtp(subject, body, to_addr, reply_to=None):
 
 
 def send_email(subject, body, reply_to=None):
-    """Send notification email. Primary: MS Graph (M365). Fallbacks: SendGrid, Gmail SMTP."""
+    """Send notification email. Primary: MS Graph (M365). Fallback: Gmail SMTP."""
     if DRY_RUN:
         log(f"DRY RUN - Would email: {subject}")
         return
@@ -263,17 +242,7 @@ def send_email(subject, body, reply_to=None):
     if _send_via_ms_graph(subject, body, EMAIL_ADDRESS, rt):
         return
 
-    # Fallback 1: SendGrid SMTP
-    api_key = os.environ.get("SENDGRID_API_KEY", "")
-    if not api_key and os.path.exists(SENDGRID_KEY_FILE):
-        with open(SENDGRID_KEY_FILE) as f:
-            api_key = f.read().strip()
-    if api_key:
-        sg_msg = _build_mime(subject, body, EMAIL_ADDRESS, EMAIL_ADDRESS, rt)
-        if _send_via_sendgrid(sg_msg, api_key):
-            return
-
-    # Fallback 2: Gmail SMTP (often spam-filtered by M365, last resort)
+    # Fallback: Gmail SMTP
     if _send_via_gmail_smtp(subject, body, EMAIL_ADDRESS, rt):
         return
 

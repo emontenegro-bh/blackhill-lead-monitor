@@ -1,13 +1,14 @@
 """
 Quality Score recheck — compares current irrigation campaign QS
-against the March 29 baseline and emails results via SendGrid.
+against the March 29 baseline and emails results via Gmail SMTP.
 """
 
 import os
 import json
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from google.ads.googleads.client import GoogleAdsClient
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 
 CUSTOMER_ID = "9637062915"
 CAMPAIGN_ID = 22815919817
@@ -191,15 +192,23 @@ def build_email(current_rows, changes):
 
 
 def send_email(html_body):
-    sg = SendGridAPIClient(os.environ["SENDGRID_API_KEY"])
-    message = Mail(
-        from_email=os.environ.get("NOTIFY_FROM_EMAIL", "noreply@blackhilltx.com"),
-        to_emails="evelin@blackhilltx.com",
-        subject="Irrigation Campaign QS Recheck — April 1",
-        html_content=html_body,
-    )
-    response = sg.send(message)
-    print(f"Email sent: {response.status_code}")
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+    if not (gmail_user and gmail_pass):
+        print("ERROR: GMAIL_EMAIL and GMAIL_APP_PASSWORD required to send email.")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Irrigation Campaign QS Recheck — April 1"
+    msg["From"] = gmail_user
+    msg["To"] = "evelin@blackhilltx.com"
+    msg.attach(MIMEText(html_body, "html"))
+
+    with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+        server.starttls()
+        server.login(gmail_user, gmail_pass)
+        server.sendmail(gmail_user, "evelin@blackhilltx.com", msg.as_string())
+    print("Email sent via Gmail SMTP.")
 
 
 def main():
