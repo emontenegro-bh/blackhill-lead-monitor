@@ -448,9 +448,12 @@ You MUST parse all LxW measurements from the field notes, calculate square foota
 sum by section (front yard, backyard, etc.), and compute material quantities. Show your math.
 
 CRITICAL: Only include materials that are EXPLICITLY mentioned in the field notes, photo annotations,
-or photo descriptions. Do NOT assume or add materials that are not called for. If the notes say "rock"
-but do not mention "mulch", do NOT include mulch. If the notes say "sod" but do not mention "edging",
-do NOT include edging. Follow the notes exactly. Do not invent scope.
+or photo descriptions. Read the section headings carefully — they often specify the material
+(e.g., "Front yard - Sod St. Augustine" means sod, "Rock bed with edging" means rock and edging).
+- Do NOT add materials that are not mentioned. If notes say sod, include sod. If notes say rock, include rock.
+- Do NOT add mulch, plants, or other materials unless the notes explicitly call for them.
+- If an area has dimensions but truly no material specified anywhere in its heading or bullets,
+  flag it in internal notes under "AREAS REQUIRING CLARIFICATION."
 
 MULCH:
 - Default: Hardwood Native Mulch. Only use Colored/Black if notes say "black."
@@ -603,6 +606,7 @@ def build_user_content(project_data, sun_exposure, photo_paths):
     text_parts.append(
         "Parse ALL measurements from the notes and photos. Calculate sqft for each area. "
         "Compute material quantities using the rules in your system prompt. "
+        "Only include materials explicitly mentioned in the notes. Do not add materials the notes do not call for. "
         "Generate the client-facing proposal HTML followed by <!-- INTERNAL NOTES --> and internal notes."
     )
 
