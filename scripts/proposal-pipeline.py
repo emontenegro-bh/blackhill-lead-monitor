@@ -530,9 +530,9 @@ This is a {service_type} project focused on {template['focus']}.
 
 WRITING STYLE — match this voice exactly:
 - Write in first person, direct and conversational. Like talking to the client.
-- Do NOT write a fluffy intro paragraph summarizing what the proposal covers. Get straight to the work.
-- Start with either a one-sentence context ("This proposal includes..." or "This proposal is based on
-  a site visit to address...") then immediately go into the scope items. Or just start with "Scope of Work".
+- Do NOT write an intro paragraph. Start EXACTLY with this line every time:
+  "Scope of Work - PLEASE SEE ATTACHED REPORT ALONG WITH THIS PROPOSAL"
+  Then go straight into the work items. No other opening text.
 - "I calculated 7 pallets to be sufficient." NOT "Assessment revealed the need for 7 pallets."
 - "If you'd like X instead, just let me know and I'll update the quote." NOT "Options are available."
 - State quantities plainly: "Supply and install 7 pallets of Cobalt St. Augustine sod."
