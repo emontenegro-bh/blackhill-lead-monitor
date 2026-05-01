@@ -447,6 +447,11 @@ MATERIAL CALCULATION RULES:
 You MUST parse all LxW measurements from the field notes, calculate square footage for each area,
 sum by section (front yard, backyard, etc.), and compute material quantities. Show your math.
 
+CRITICAL: Only include materials that are EXPLICITLY mentioned in the field notes, photo annotations,
+or photo descriptions. Do NOT assume or add materials that are not called for. If the notes say "rock"
+but do not mention "mulch", do NOT include mulch. If the notes say "sod" but do not mention "edging",
+do NOT include edging. Follow the notes exactly. Do not invent scope.
+
 MULCH:
 - Default: Hardwood Native Mulch. Only use Colored/Black if notes say "black."
 - Depth: 2 inches max. Never 3 inches.
