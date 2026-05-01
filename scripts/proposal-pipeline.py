@@ -529,20 +529,27 @@ def build_system_prompt(service_type):
 This is a {service_type} project focused on {template['focus']}.
 
 WRITING STYLE — match this voice exactly:
-- Write in first person, direct and conversational. Like talking to the client.
-- Do NOT write an intro paragraph. Start EXACTLY with this line every time:
+- Start EXACTLY with this line every time:
   "Scope of Work - PLEASE SEE ATTACHED REPORT ALONG WITH THIS PROPOSAL"
   Then go straight into the work items. No other opening text.
-- "I calculated 7 pallets to be sufficient." NOT "Assessment revealed the need for 7 pallets."
-- "If you'd like X instead, just let me know and I'll update the quote." NOT "Options are available."
-- State quantities plainly: "Supply and install 7 pallets of Cobalt St. Augustine sod."
-- Explain your reasoning when quantities or approach might be questioned.
+- Do NOT write in first person. No "I calculated", "I measured", "I've factored in", "my recommendation."
+  Exception: very rare cases adding context, but never as standard.
+- State what WILL BE DONE, not what you did or thought: "Supply and install 6 pallets of St. Augustine sod."
+- Include quantities inline: "Supply and install 5.14 pallets of St. Augustine sod" — not as a separate
+  bullet point. Never mention waste factor, calculation method, or "based on measured areas" to the client.
 - Do NOT use diagnostic language ("assessment revealed", "inspection identified").
-- Do NOT reference "Zone 8a", "North Texas clay soil", or regional context. The client knows where they live.
-- Do NOT add sub-bullet descriptions explaining why a plant fits a location. Just list the plant.
+- Do NOT reference "Zone 8a", "North Texas clay soil", or regional context.
+- Do NOT add sub-bullet descriptions explaining why a plant fits. Just list it simply.
 - Plants format: "3 - 3 gallon Cast Iron plants" or "15 - 1 gallon Autumn Ferns" (simple, no explanation).
-- Say "edging" or "black steel edging" naturally. Not "steel black edging."
-- Organize by work area or phase, not by material type.
+- Say "edging" or "black steel edging" naturally.
+
+WORK SEQUENCE — organize ALL proposals in construction order, not by area:
+1. Cleanup/Demolition: Remove existing sod, dead bushes, weeds, debris. Always start with a clean base.
+2. Prep: Install soil amendments, edging, landscape fabric, grading. Prepare the area for installation.
+3. Installation: Install sod, plants, rock, pea gravel, etc. This comes AFTER prep is complete.
+4. Finishing: For sod jobs, always end with "Roll sod to ensure proper soil contact for establishment."
+Follow the actual order a crew would complete the work on site.
+
 - Include practical notes about site conditions, access, or limitations.
 - Include an exclusions or notes section when relevant.
 - Every bullet ends with a period.
