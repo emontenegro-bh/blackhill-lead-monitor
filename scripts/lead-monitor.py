@@ -1329,6 +1329,80 @@ def create_aspire_contact(config, lead):
 
 # --- Notifications ---
 
+def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=None):
+    """Send lead alert to Microsoft Teams via Power Automate webhook."""
+    webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
+    if not webhook_url or DRY_RUN:
+        if DRY_RUN:
+            log("  DRY RUN: Would send Teams notification")
+        return
+
+    name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip() or "Unknown"
+    phone = lead.get("phone", "Not provided")
+    email = lead.get("email", "Not provided")
+    service = lead.get("service_interest", "General Inquiry")
+    message = (lead.get("message", "") or "")[:300]
+
+    aspire_text = f"Contact ID: {aspire_id}" if aspire_id else "Not added"
+    hubspot_text = f"Deal: {hubspot_id}" if hubspot_id else "Not added"
+
+    card = {
+        "type": "message",
+        "attachments": [{
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "type": "AdaptiveCard",
+                "version": "1.4",
+                "body": [
+                    {
+                        "type": "Container",
+                        "style": "emphasis",
+                        "items": [{
+                            "type": "TextBlock",
+                            "text": f"New Lead: {name}",
+                            "weight": "Bolder",
+                            "size": "Medium",
+                            "color": "Good"
+                        }]
+                    },
+                    {
+                        "type": "FactSet",
+                        "facts": [
+                            {"title": "Phone", "value": phone},
+                            {"title": "Email", "value": email},
+                            {"title": "Service", "value": service},
+                            {"title": "Source", "value": "Email Inquiry"},
+                        ]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"**Message:** {message}" if message else "*(no message)*",
+                        "wrap": True,
+                        "spacing": "Medium"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"Aspire: {aspire_text} | HubSpot: {hubspot_text}",
+                        "size": "Small",
+                        "isSubtle": True,
+                        "spacing": "Small"
+                    }
+                ]
+            }
+        }]
+    }
+
+    try:
+        data = json.dumps(card).encode("utf-8")
+        req = urllib.request.Request(webhook_url, data=data,
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            log(f"  Teams notification sent ({resp.status})")
+    except Exception as e:
+        log(f"  WARNING: Teams notification failed (non-fatal): {e}")
+
+
 def send_notification(config, subject, body, recipients):
     """Send email notification via SendGrid SMTP."""
     if DRY_RUN:
@@ -1718,6 +1792,9 @@ def process_messages(token, config, state):
 
         # Notify owners
         notify_new_lead(config, lead, aspire_id=aspire_id, hubspot_id=hubspot_id, mailchimp_status=mc_status)
+
+        # Teams push notification for instant mobile alert
+        send_teams_notification(lead, aspire_id=aspire_id, hubspot_id=hubspot_id)
 
         # Mark as read
         mark_as_read(token, config, msg_id)

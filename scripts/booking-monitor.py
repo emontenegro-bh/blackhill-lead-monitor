@@ -472,6 +472,86 @@ def _send_via_gmail_smtp(to_emails, subject, html_body, from_name=None):
         return False, str(e)
 
 
+def send_teams_booking_notification(customer, service_name, appointment_date, aspire_result, hubspot_result):
+    """Send booking alert to Microsoft Teams via Power Automate webhook."""
+    webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
+    if not webhook_url:
+        return
+
+    name = customer.get("name", "Unknown")
+    phone = customer.get("phone", "Not provided")
+    email = customer.get("email", "Not provided")
+    notes = (customer.get("notes", "") or "")[:300]
+
+    try:
+        appt_dt = datetime.fromisoformat(appointment_date.replace("Z", "+00:00"))
+        appt_str = appt_dt.strftime("%A, %B %-d at %-I:%M %p")
+    except Exception:
+        appt_str = appointment_date or "Unknown"
+
+    aspire_url = aspire_result.get("contact_url", "")
+    aspire_text = f"[View in Aspire]({aspire_url})" if aspire_url and aspire_url.startswith("http") else aspire_result.get("action", "N/A")
+    hubspot_url = hubspot_result.get("contact_url", "")
+    hubspot_text = f"[View in HubSpot]({hubspot_url})" if hubspot_url and hubspot_url.startswith("http") else hubspot_result.get("action", "N/A")
+
+    card = {
+        "type": "message",
+        "attachments": [{
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "type": "AdaptiveCard",
+                "version": "1.4",
+                "body": [
+                    {
+                        "type": "Container",
+                        "style": "emphasis",
+                        "items": [{
+                            "type": "TextBlock",
+                            "text": f"New Booking: {name}",
+                            "weight": "Bolder",
+                            "size": "Medium",
+                            "color": "Good"
+                        }]
+                    },
+                    {
+                        "type": "FactSet",
+                        "facts": [
+                            {"title": "Phone", "value": phone},
+                            {"title": "Email", "value": email},
+                            {"title": "Service", "value": service_name},
+                            {"title": "Appointment", "value": appt_str},
+                            {"title": "Source", "value": "Microsoft Bookings"},
+                        ]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"**Notes:** {notes}" if notes else "*(no notes)*",
+                        "wrap": True,
+                        "spacing": "Medium"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"Aspire: {aspire_text} | HubSpot: {hubspot_text}",
+                        "size": "Small",
+                        "isSubtle": True,
+                        "spacing": "Small"
+                    }
+                ]
+            }
+        }]
+    }
+
+    try:
+        data = json.dumps(card).encode("utf-8")
+        req = urllib.request.Request(webhook_url, data=data,
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            log.info(f"  Teams notification sent ({resp.status})")
+    except Exception as e:
+        log.warning(f"  Teams notification failed (non-fatal): {e}")
+
+
 def send_html_email(to_emails, subject, html_body, from_email=None, from_name="Black Hill Landscaping"):
     """Send HTML email via SendGrid then fall back to Gmail SMTP."""
     if isinstance(to_emails, str):
@@ -709,6 +789,10 @@ def process_appointments(token, state):
                 notify_new_booking(customer, service_name, start_dt, aspire_result, hubspot_result)
             except Exception as e:
                 log.warning(f"  Notification failed (non-fatal): {e}")
+            try:
+                send_teams_booking_notification(customer, service_name, start_dt, aspire_result, hubspot_result)
+            except Exception as e:
+                log.warning(f"  Teams notification failed (non-fatal): {e}")
 
         new_count += 1
 

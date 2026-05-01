@@ -45,6 +45,7 @@ jobs:
           ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
           ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
           SPAM_AUTO_FILTER: "true"
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
         run: python scripts/lead-monitor.py
 
       - name: Persist state

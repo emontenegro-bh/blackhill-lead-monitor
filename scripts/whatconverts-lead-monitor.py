@@ -710,6 +710,91 @@ def _send_via_gmail_smtp(to_emails, subject, html_body, from_email=None, from_na
         return False, str(e)
 
 
+def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hubspot_status=None):
+    """Send lead alert to Microsoft Teams via Power Automate webhook."""
+    webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
+    if not webhook_url or DRY_RUN:
+        if DRY_RUN:
+            log("  DRY RUN: Would send Teams notification")
+        return
+
+    name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip() or "Unknown"
+    phone = lead.get("phone", "Not provided")
+    email = lead.get("email", "Not provided")
+    service = lead.get("service_interest", "General Inquiry")
+    source = lead.get("traffic_source", "Web Form")
+    message = (lead.get("message", "") or "")[:300]
+
+    # Build Aspire/HubSpot status lines
+    aspire_text = "Not added"
+    if aspire_url and aspire_url.startswith("http"):
+        aspire_text = f"[View in Aspire]({aspire_url})"
+    elif aspire_url == "exists":
+        aspire_text = "Already in Aspire"
+
+    hubspot_text = "Not added"
+    if hubspot_status and hubspot_status.startswith("http"):
+        hubspot_text = f"[View in HubSpot]({hubspot_status})"
+    elif hubspot_status in ("created", "exists"):
+        hubspot_text = hubspot_status.capitalize()
+
+    card = {
+        "type": "message",
+        "attachments": [{
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "type": "AdaptiveCard",
+                "version": "1.4",
+                "body": [
+                    {
+                        "type": "Container",
+                        "style": "emphasis",
+                        "items": [{
+                            "type": "TextBlock",
+                            "text": f"New Lead: {name}",
+                            "weight": "Bolder",
+                            "size": "Medium",
+                            "color": "Good"
+                        }]
+                    },
+                    {
+                        "type": "FactSet",
+                        "facts": [
+                            {"title": "Phone", "value": phone},
+                            {"title": "Email", "value": email},
+                            {"title": "Service", "value": service},
+                            {"title": "Source", "value": source},
+                        ]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"**Message:** {message}" if message else "*(no message)*",
+                        "wrap": True,
+                        "spacing": "Medium"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"Aspire: {aspire_text} | HubSpot: {hubspot_text}",
+                        "size": "Small",
+                        "isSubtle": True,
+                        "spacing": "Small"
+                    }
+                ]
+            }
+        }]
+    }
+
+    try:
+        data = json.dumps(card).encode("utf-8")
+        req = urllib.request.Request(webhook_url, data=data,
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            log(f"  Teams notification sent ({resp.status})")
+    except Exception as e:
+        log(f"  WARNING: Teams notification failed (non-fatal): {e}")
+
+
 def send_html_email(api_key, to_emails, from_email, from_name, subject, html_body, reply_to=None):
     """Send HTML email via SendGrid, fall back to Gmail SMTP on failure.
 
@@ -1278,6 +1363,9 @@ def process_leads(config, state):
             for recipient in config["notifications"].get("lead_recipients", []):
                 send_owner_notification(config, lead, "Team", recipient,
                                         aspire_url=aspire_url, hubspot_status=hubspot_status)
+
+        # Teams push notification for instant mobile alert
+        send_teams_notification(config, lead, aspire_url=aspire_url, hubspot_status=hubspot_status)
 
         # Update state
         processed_ids.append(lead_id)
