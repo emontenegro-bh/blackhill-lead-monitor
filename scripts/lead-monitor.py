@@ -1346,6 +1346,11 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
     aspire_text = f"Contact ID: {aspire_id}" if aspire_id else "Not added"
     hubspot_text = f"Deal: {hubspot_id}" if hubspot_id else "Not added"
 
+    # Email leads are always assigned to Evelin
+    assignee_name = "Evelin"
+    assignee_email = "evelin@blackhilltx.com"
+    mention_text = f"<at>{assignee_name}</at>"
+
     card = {
         "type": "message",
         "attachments": [{
@@ -1365,6 +1370,12 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
                             "size": "Medium",
                             "color": "Good"
                         }]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"Assigned to: {mention_text}",
+                        "weight": "Bolder",
+                        "spacing": "Small"
                     },
                     {
                         "type": "FactSet",
@@ -1388,7 +1399,17 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
                         "isSubtle": True,
                         "spacing": "Small"
                     }
-                ]
+                ],
+                "msteams": {
+                    "entities": [{
+                        "type": "mention",
+                        "text": mention_text,
+                        "mentioned": {
+                            "id": assignee_email,
+                            "name": assignee_name
+                        }
+                    }]
+                }
             }
         }]
     }

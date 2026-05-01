@@ -494,6 +494,9 @@ def send_teams_booking_notification(customer, service_name, appointment_date, as
     hubspot_url = hubspot_result.get("contact_url", "")
     hubspot_text = f"[View in HubSpot]({hubspot_url})" if hubspot_url and hubspot_url.startswith("http") else hubspot_result.get("action", "N/A")
 
+    # Bookings always assigned to Evelin
+    mention_text = "<at>Evelin</at>"
+
     card = {
         "type": "message",
         "attachments": [{
@@ -513,6 +516,12 @@ def send_teams_booking_notification(customer, service_name, appointment_date, as
                             "size": "Medium",
                             "color": "Good"
                         }]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"Assigned to: {mention_text}",
+                        "weight": "Bolder",
+                        "spacing": "Small"
                     },
                     {
                         "type": "FactSet",
@@ -537,7 +546,17 @@ def send_teams_booking_notification(customer, service_name, appointment_date, as
                         "isSubtle": True,
                         "spacing": "Small"
                     }
-                ]
+                ],
+                "msteams": {
+                    "entities": [{
+                        "type": "mention",
+                        "text": mention_text,
+                        "mentioned": {
+                            "id": "evelin@blackhilltx.com",
+                            "name": "Evelin Montenegro"
+                        }
+                    }]
+                }
             }
         }]
     }

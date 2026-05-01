@@ -458,6 +458,19 @@ def _is_spam_form(lead_data):
         if email == addr:
             return True, f"Own address: {addr}"
 
+    # "test" in name (internal test submissions)
+    name = (fields.get("Name", "") or lead_data.get("contact_name", "")).strip().lower()
+    if re.search(r'\btest\b', name):
+        return True, f"Test submission detected in name: '{name}'"
+
+    # Fake/reserved phone numbers (555 area code is reserved by FCC)
+    phone = fields.get("Contact No", "") or lead_data.get("contact_phone_number", "") or ""
+    phone_digits = re.sub(r"\D", "", phone)
+    if phone_digits:
+        ac = phone_digits[:3] if not phone_digits.startswith("1") else phone_digits[1:4]
+        if ac == "555":
+            return True, f"Fake phone number (555 area code): {phone}"
+
     # Fake address detection (bots use "123 Main St" pattern)
     address = (fields.get("Address", "") or lead_data.get("address", "") or "").lower()
     if "123 main st" in address:
@@ -710,7 +723,8 @@ def _send_via_gmail_smtp(to_emails, subject, html_body, from_email=None, from_na
         return False, str(e)
 
 
-def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hubspot_status=None):
+def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hubspot_status=None,
+                            owner_name=None, owner_email=None):
     """Send lead alert to Microsoft Teams via Power Automate webhook."""
     webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
     if not webhook_url or DRY_RUN:
@@ -738,6 +752,11 @@ def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hub
     elif hubspot_status in ("created", "exists"):
         hubspot_text = hubspot_status.capitalize()
 
+    # Build assignee line with @mention
+    assignee_name = owner_name or "Team"
+    assignee_email = owner_email or ""
+    mention_text = f"<at>{assignee_name}</at>" if assignee_email else assignee_name
+
     card = {
         "type": "message",
         "attachments": [{
@@ -757,6 +776,12 @@ def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hub
                             "size": "Medium",
                             "color": "Good"
                         }]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"Assigned to: {mention_text}",
+                        "weight": "Bolder",
+                        "spacing": "Small"
                     },
                     {
                         "type": "FactSet",
@@ -780,7 +805,17 @@ def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hub
                         "isSubtle": True,
                         "spacing": "Small"
                     }
-                ]
+                ],
+                "msteams": {
+                    "entities": [{
+                        "type": "mention",
+                        "text": mention_text,
+                        "mentioned": {
+                            "id": assignee_email,
+                            "name": assignee_name
+                        }
+                    }] if assignee_email else []
+                }
             }
         }]
     }
@@ -1365,7 +1400,9 @@ def process_leads(config, state):
                                         aspire_url=aspire_url, hubspot_status=hubspot_status)
 
         # Teams push notification for instant mobile alert
-        send_teams_notification(config, lead, aspire_url=aspire_url, hubspot_status=hubspot_status)
+        teams_owner_name, teams_owner_email = get_owner_info(owner_id) if owner_id else ("Team", "")
+        send_teams_notification(config, lead, aspire_url=aspire_url, hubspot_status=hubspot_status,
+                                owner_name=teams_owner_name, owner_email=teams_owner_email)
 
         # Update state
         processed_ids.append(lead_id)
