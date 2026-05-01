@@ -6,7 +6,7 @@ Polls the WhatConverts API for new web form leads, then:
   - Creates Aspire contacts
   - Creates HubSpot contacts + deals with owner assignment
   - Sends notification email to the assigned owner
-  - Sends branded auto-reply to the lead via SendGrid
+  - Sends branded auto-reply to the lead via Gmail SMTP
 
 Runs every 5 minutes via GitHub Actions.
 
@@ -57,11 +57,6 @@ def load_config_from_file():
     wc_path = os.path.expanduser("~/.config/whatconverts/config.json")
     with open(wc_path) as f:
         wc = json.load(f)
-    sg_path = os.path.expanduser("~/.config/sendgrid-api-key")
-    sg_key = ""
-    if os.path.exists(sg_path):
-        with open(sg_path) as f:
-            sg_key = f.read().strip()
     hs_path = os.path.expanduser("~/.config/hubspot/config.json")
     hs_token = ""
     if os.path.exists(hs_path):
@@ -78,7 +73,6 @@ def load_config_from_file():
             "spam_recipients": ["evelin@blackhilltx.com"],
             "from_email": "evelin@blackhilltx.com",
             "from_name": "Black Hill Lead Monitor",
-            "sendgrid_api_key": sg_key,
         },
         "hubspot": {
             "enabled": bool(hs_token),
@@ -115,7 +109,6 @@ def load_config_from_env():
             "spam_recipients": os.environ.get("SPAM_RECIPIENTS", "evelin@blackhilltx.com").split(","),
             "from_email": os.environ.get("NOTIFY_FROM_EMAIL", "evelin@blackhilltx.com"),
             "from_name": "Black Hill Lead Monitor",
-            "sendgrid_api_key": os.environ.get("SENDGRID_API_KEY", ""),
         },
         "hubspot": {
             "enabled": bool(os.environ.get("HUBSPOT_ACCESS_TOKEN")),
@@ -660,31 +653,10 @@ def _parse_call_lead(lead_data):
     }
 
 
-# --- Email Delivery: SendGrid HTTP API + Gmail SMTP fallback ---
-
-def _send_via_sendgrid(payload, api_key):
-    """Send via SendGrid HTTP API. Returns (success, error_message)."""
-    req = urllib.request.Request(
-        "https://api.sendgrid.com/v3/mail/send",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return True, None
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")[:200]
-        return False, f"HTTP {e.code}: {body}"
-    except Exception as e:
-        return False, str(e)
-
+# --- Email Delivery: Gmail SMTP ---
 
 def _send_via_gmail_smtp(to_emails, subject, html_body, from_email=None, from_name=None, reply_to=None):
-    """Fallback: send HTML email via Gmail SMTP. Returns (success, error_message)."""
+    """Send HTML email via Gmail SMTP. Returns (success, error_message)."""
     gmail_user = os.environ.get("GMAIL_EMAIL", "")
     gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
 
@@ -831,45 +803,27 @@ def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hub
 
 
 def send_html_email(api_key, to_emails, from_email, from_name, subject, html_body, reply_to=None):
-    """Send HTML email via SendGrid, fall back to Gmail SMTP on failure.
+    """Send HTML email via Gmail SMTP.
 
-    Returns True if delivered through any path, False if all failed.
+    Returns True if delivered, False if failed.
+    The api_key parameter is retained for call-site compatibility but is ignored.
     """
     if isinstance(to_emails, str):
         to_emails = [to_emails]
 
-    # Try SendGrid first if API key provided
-    if api_key:
-        personalizations = [{"to": [{"email": e} for e in to_emails]}]
-        payload_dict = {
-            "personalizations": personalizations,
-            "from": {"email": from_email, "name": from_name},
-            "subject": subject,
-            "content": [{"type": "text/html", "value": html_body}],
-        }
-        if reply_to:
-            payload_dict["reply_to"] = {"email": reply_to}
-        payload = json.dumps(payload_dict).encode()
-
-        ok, err = _send_via_sendgrid(payload, api_key)
-        if ok:
-            return True
-        log(f"  SendGrid failed ({err}), trying Gmail SMTP fallback...")
-
-    # Fallback to Gmail SMTP
     ok, err = _send_via_gmail_smtp(to_emails, subject, html_body, from_email, from_name, reply_to)
     if ok:
-        log(f"  Email sent via Gmail SMTP fallback to {to_emails}")
+        log(f"  Email sent via Gmail SMTP to {to_emails}")
         return True
 
-    log(f"  ERROR: All email delivery methods failed ({err})")
+    log(f"  ERROR: Gmail SMTP email delivery failed ({err})")
     return False
 
 
-# --- Auto-Reply via SendGrid ---
+# --- Auto-Reply via Gmail SMTP ---
 
 def send_auto_reply(config, lead):
-    """Send branded auto-reply to the lead via SendGrid API."""
+    """Send branded auto-reply to the lead via Gmail SMTP."""
     if DRY_RUN:
         log(f"  DRY RUN: Would send auto-reply to {lead['email']}")
         return True
@@ -880,11 +834,6 @@ def send_auto_reply(config, lead):
     email = lead.get("email", "").strip()
     if not email or "@" not in email:
         log("  No valid email for auto-reply.")
-        return False
-
-    api_key = config["notifications"].get("sendgrid_api_key", "")
-    if not api_key:
-        log("  No SendGrid API key. Auto-reply skipped.")
         return False
 
     from_name = config["auto_reply"]["from_name"]
@@ -935,7 +884,7 @@ def send_auto_reply(config, lead):
 </html>"""
 
     if send_html_email(
-        api_key=api_key,
+        api_key="",
         to_emails=email,
         from_email=from_email,
         from_name=from_name,
@@ -948,17 +897,12 @@ def send_auto_reply(config, lead):
     return False
 
 
-# --- Owner Notification via SendGrid ---
+# --- Owner Notification via Gmail SMTP ---
 
 def send_owner_notification(config, lead, owner_name, owner_email, aspire_url=None, hubspot_status=None):
-    """Send lead assignment notification to the assigned owner via SendGrid API."""
+    """Send lead assignment notification to the assigned owner via Gmail SMTP."""
     if DRY_RUN:
         log(f"  DRY RUN: Would notify {owner_email}")
-        return
-
-    api_key = config["notifications"].get("sendgrid_api_key", "")
-    if not api_key:
-        log("  No SendGrid API key. Owner notification skipped.")
         return
 
     from_email = config["notifications"]["from_email"]
@@ -1002,7 +946,7 @@ def send_owner_notification(config, lead, owner_name, owner_email, aspire_url=No
 </div>"""
 
     if send_html_email(
-        api_key=api_key,
+        api_key="",
         to_emails=owner_email,
         from_email=from_email,
         from_name=from_name,
@@ -1018,10 +962,6 @@ def send_spam_notification(config, lead_data, reason):
     if not recipients:
         return
 
-    api_key = config["notifications"].get("sendgrid_api_key", "")
-    if not api_key:
-        return
-
     fields = lead_data.get("additional_fields", {})
     name = fields.get("Name", "Unknown")
     email = lead_data.get("contact_email_address", "unknown")
@@ -1029,7 +969,7 @@ def send_spam_notification(config, lead_data, reason):
 
     spam_body = f"<pre>Filtered spam lead from WhatConverts\n{'='*45}\n\nName: {name}\nEmail: {email}\nReason: {reason}\n\nMessage:\n{message}\n\n{'='*45}\nThis lead was NOT processed. If legitimate, add manually.</pre>"
     send_html_email(
-        api_key=api_key,
+        api_key="",
         to_emails=recipients,
         from_email=config["notifications"]["from_email"],
         from_name=config["notifications"]["from_name"],
@@ -1042,8 +982,7 @@ def send_spam_notification(config, lead_data, reason):
 
 def send_repeat_notification(config, lead, original_owner_name):
     """Notify BOTH owners that a lead submitted the form again."""
-    api_key = config["notifications"].get("sendgrid_api_key", "")
-    if not api_key or DRY_RUN:
+    if DRY_RUN:
         return
 
     name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip() or "Unknown"
@@ -1071,7 +1010,7 @@ def send_repeat_notification(config, lead, original_owner_name):
     # Send to both Evelin and Denisse
     recipients = config["notifications"].get("lead_recipients", [])
     if recipients and send_html_email(
-        api_key=api_key,
+        api_key="",
         to_emails=recipients,
         from_email=config["notifications"]["from_email"],
         from_name=config["notifications"]["from_name"],

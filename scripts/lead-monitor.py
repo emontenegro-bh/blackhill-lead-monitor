@@ -78,7 +78,6 @@ def load_config():
 
 def load_config_from_env():
     """Build config from environment variables (GitHub Actions / cloud)."""
-    sendgrid_key = os.environ.get("SENDGRID_API_KEY", "")
     return {
         "microsoft": {
             "client_id": os.environ["MS_CLIENT_ID"],
@@ -95,7 +94,6 @@ def load_config_from_env():
             "spam_recipients": os.environ.get("SPAM_RECIPIENTS", "evelin@blackhilltx.com").split(","),
             "from_email": os.environ.get("NOTIFY_FROM_EMAIL", "evelin@blackhilltx.com"),
             "from_name": "Black Hill Lead Monitor",
-            "sendgrid_api_key": sendgrid_key,
         },
         "spam": {
             "auto_filter": os.environ.get("SPAM_AUTO_FILTER", "false").lower() == "true",
@@ -1425,38 +1423,42 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
 
 
 def send_notification(config, subject, body, recipients):
-    """Send email notification via SendGrid SMTP."""
+    """Send email notification via Gmail SMTP."""
     if DRY_RUN:
         log(f"  DRY RUN: Would notify {recipients}: {subject}")
         return
 
-    # Cloud mode: API key from config (env var). Local mode: from file.
-    api_key = config["notifications"].get("sendgrid_api_key", "")
-    if not api_key:
-        key_file = os.path.expanduser(config["notifications"].get("sendgrid_key_file", ""))
-        if not os.path.exists(key_file):
-            log("  No SendGrid API key. Notification skipped.")
-            return
-        with open(key_file) as f:
-            api_key = f.read().strip()
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
 
-    from_email = config["notifications"].get("from_email", "leads@blackhilltx.com")
+    if not (gmail_user and gmail_pass):
+        gmail_config = os.path.expanduser("~/.config/gmail-sender/config.json")
+        if os.path.exists(gmail_config):
+            with open(gmail_config) as f:
+                creds = json.load(f)
+            gmail_user = gmail_user or creds.get("email", "")
+            gmail_pass = gmail_pass or creds.get("app_password", "")
+
+    if not (gmail_user and gmail_pass):
+        log("  No Gmail SMTP credentials. Notification skipped.")
+        return
+
     from_name = config["notifications"].get("from_name", "Black Hill Lead Monitor")
 
     msg = MIMEMultipart()
-    msg["From"] = f"{from_name} <{from_email}>"
+    msg["From"] = f"{from_name} <{gmail_user}>"
     msg["To"] = ", ".join(recipients)
     msg["Subject"] = subject
     msg.attach(MIMEText(body, "plain"))
 
     try:
-        with smtplib.SMTP("smtp.sendgrid.net", 587) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
             server.starttls()
-            server.login("apikey", api_key)
-            server.sendmail(from_email, recipients, msg.as_string())
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, recipients, msg.as_string())
         log(f"  Notification sent to {recipients}")
     except Exception as e:
-        log(f"  ERROR: SendGrid notification failed: {e}")
+        log(f"  ERROR: Gmail SMTP notification failed: {e}")
 
 
 def notify_new_lead(config, lead, aspire_id=None, hubspot_id=None, mailchimp_status=None):
@@ -1608,7 +1610,7 @@ def is_own_email(message, config):
     """Check if this message was sent by the monitor itself (auto-reply loop).
 
     Returns True if the message should be skipped entirely.
-    Uses multiple detection layers because SendGrid relay addresses may differ
+    Uses multiple detection layers because relay addresses may differ
     from the configured from_email in the Graph API envelope.
     """
     sender = (message.get("from", {}).get("emailAddress", {}).get("address") or "").lower()
@@ -1646,10 +1648,6 @@ def is_own_email(message, config):
     for fingerprint in auto_reply_fingerprints:
         if fingerprint in body:
             return True
-
-    # Skip emails from SendGrid relay on our behalf
-    if "sendgrid" in sender or "sendgrid" in sender_name:
-        return True
 
     return False
 
@@ -1873,12 +1871,17 @@ def verify_health(config):
         messages = fetch_unread_messages(token, config)
         log(f"[OK] Shared mailbox accessible ({len(messages)} unread)")
 
-    # SendGrid
-    key_file = os.path.expanduser(config["notifications"].get("sendgrid_key_file", ""))
-    if os.path.exists(key_file):
-        log("[OK] SendGrid API key file exists")
+    # Gmail SMTP
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+    if not (gmail_user and gmail_pass):
+        gmail_config = os.path.expanduser("~/.config/gmail-sender/config.json")
+        if os.path.exists(gmail_config):
+            log("[OK] Gmail SMTP credentials file exists")
+        else:
+            log("[WARN] No Gmail SMTP credentials — notifications won't send")
     else:
-        log("[WARN] SendGrid API key file missing — notifications won't send")
+        log("[OK] Gmail SMTP credentials set via environment")
 
     # Mailchimp
     mc = config.get("mailchimp", {})

@@ -414,31 +414,10 @@ def create_hubspot_contact(customer, appointment_date):
         return {"success": False, "message": str(e)[:200]}
 
 
-# --- Email Notifications: SendGrid HTTP API + Gmail SMTP fallback ---
-
-def _send_via_sendgrid(payload, api_key):
-    """Send via SendGrid HTTP API. Returns (success, error_message)."""
-    req = urllib.request.Request(
-        "https://api.sendgrid.com/v3/mail/send",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15):
-            return True, None
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")[:200]
-        return False, f"HTTP {e.code}: {body}"
-    except Exception as e:
-        return False, str(e)
-
+# --- Email Notifications: Gmail SMTP ---
 
 def _send_via_gmail_smtp(to_emails, subject, html_body, from_name=None):
-    """Fallback: send HTML email via Gmail SMTP. Returns (success, error_message)."""
+    """Send HTML email via Gmail SMTP. Returns (success, error_message)."""
     gmail_user = os.environ.get("GMAIL_EMAIL", "")
     gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
 
@@ -572,38 +551,16 @@ def send_teams_booking_notification(customer, service_name, appointment_date, as
 
 
 def send_html_email(to_emails, subject, html_body, from_email=None, from_name="Black Hill Landscaping"):
-    """Send HTML email via SendGrid then fall back to Gmail SMTP."""
+    """Send HTML email via Gmail SMTP."""
     if isinstance(to_emails, str):
         to_emails = [to_emails]
-
-    api_key = os.environ.get("SENDGRID_API_KEY", "")
-    if not api_key:
-        sg_path = os.path.expanduser("~/.config/sendgrid-api-key")
-        if os.path.exists(sg_path):
-            with open(sg_path) as f:
-                api_key = f.read().strip()
-
-    from_email = from_email or os.environ.get("NOTIFY_FROM_EMAIL", "evelin@blackhilltx.com")
-
-    if api_key:
-        payload = json.dumps({
-            "personalizations": [{"to": [{"email": e} for e in to_emails]}],
-            "from": {"email": from_email, "name": from_name},
-            "subject": subject,
-            "content": [{"type": "text/html", "value": html_body}],
-        }).encode()
-        ok, err = _send_via_sendgrid(payload, api_key)
-        if ok:
-            log.info(f"  Booking notification sent via SendGrid to {to_emails}")
-            return True
-        log.warning(f"  SendGrid failed ({err}), trying Gmail SMTP fallback...")
 
     ok, err = _send_via_gmail_smtp(to_emails, subject, html_body, from_name)
     if ok:
         log.info(f"  Booking notification sent via Gmail SMTP to {to_emails}")
         return True
 
-    log.error(f"  All email delivery methods failed for booking notification: {err}")
+    log.error(f"  Gmail SMTP email delivery failed for booking notification: {err}")
     return False
 
 
