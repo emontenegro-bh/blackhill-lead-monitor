@@ -597,6 +597,15 @@
       "service": "Drainage Solutions",
       "lead_type": "web_form",
       "date": "2026-05-01"
+    },
+    "232730921": {
+      "aspire_contact_id": "2607",
+      "traffic_source": "google / organic",
+      "service": "fuzzy-matched",
+      "lead_type": "web_form",
+      "date": "2026-04-28",
+      "match_score": 1.0,
+      "match_method": "exact_email"
     }
   },
   "dismissed_matches": [
