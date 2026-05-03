@@ -490,24 +490,33 @@ def build_html(markdown_text):
     """Convert the markdown report to simple HTML for email."""
     html = ['<html><body style="font-family: -apple-system, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; color: #333;">']
 
+    in_table = False
+
     for line in markdown_text.split("\n"):
+        # Skip markdown table separator lines
+        if line.startswith("|") and set(line.replace("|", "").replace("-", "").strip()) == set():
+            continue
+
         if line.startswith("# "):
+            if in_table:
+                html.append("</table>")
+                in_table = False
             html.append(f'<h1 style="color: #1a5c2e; border-bottom: 2px solid #1a5c2e; padding-bottom: 8px;">{line[2:]}</h1>')
         elif line.startswith("## "):
+            if in_table:
+                html.append("</table>")
+                in_table = False
             html.append(f'<h2 style="color: #2d7a45; margin-top: 24px;">{line[3:]}</h2>')
-        elif line.startswith("| ") and "---" not in line:
-            if not hasattr(build_html, '_in_table'):
-                build_html._in_table = False
+        elif line.startswith("| "):
             cells = [c.strip() for c in line.split("|")[1:-1]]
-            if not build_html._in_table:
+            if not in_table:
                 html.append('<table style="border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px;">')
                 html.append("<tr>" + "".join(
                     f'<th style="border: 1px solid #ddd; padding: 6px 8px; background: #f5f5f5; text-align: left;">{c}</th>'
                     for c in cells
                 ) + "</tr>")
-                build_html._in_table = True
+                in_table = True
             else:
-                # Color code position changes
                 row_html = "<tr>"
                 for c in cells:
                     style = "border: 1px solid #ddd; padding: 6px 8px;"
@@ -519,14 +528,13 @@ def build_html(markdown_text):
                 row_html += "</tr>"
                 html.append(row_html)
         else:
-            if hasattr(build_html, '_in_table') and build_html._in_table:
+            if in_table:
                 html.append("</table>")
-                build_html._in_table = False
+                in_table = False
 
             if line.startswith("**") and line.endswith("**"):
                 html.append(f'<p style="font-weight: bold; margin: 12px 0 4px;">{line.strip("*")}</p>')
             elif line.startswith("**"):
-                # Bold start with inline content
                 html.append(f'<p style="margin: 8px 0;">{line.replace("**", "<strong>", 1).replace("**", "</strong>", 1)}</p>')
             elif line.startswith("  - "):
                 content = line[4:]
@@ -539,9 +547,8 @@ def build_html(markdown_text):
             elif line.strip():
                 html.append(f"<p>{line}</p>")
 
-    if hasattr(build_html, '_in_table') and build_html._in_table:
+    if in_table:
         html.append("</table>")
-        build_html._in_table = False
 
     html.append("</body></html>")
     return "\n".join(html)
