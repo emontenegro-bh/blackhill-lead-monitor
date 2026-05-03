@@ -282,17 +282,17 @@ def test_aspire_read_contacts(config, token):
                       f"HTTP {status}", {"body": body})
 
 
-def test_aspire_opportunities_403(config, api_token):
-    """Verify api client gets 403 on Opportunities (known restriction)."""
+def test_aspire_opportunities_api(config, api_token):
+    """Verify api client can read Opportunities."""
     url = f"{config['api_base_url']}/Opportunities?$top=1"
-    _, status = http_request("GET", url, headers={
+    body, status = http_request("GET", url, headers={
         "Authorization": f"Bearer {api_token}", "Accept": "application/json"})
-    if status == 403:
-        return TestResult("aspire", "opportunities 403 (api client)", True,
-                          "403 as expected — use reporting client")
-    return TestResult("aspire", "opportunities 403 (api client)", False,
-                      f"Expected 403 but got {status} — permission model may have changed",
-                      {"actual_status": status})
+    if status == 200:
+        items = body if isinstance(body, list) else [body]
+        return TestResult("aspire", "read /Opportunities (api)", True,
+                          f"{len(items)} item(s)")
+    return TestResult("aspire", "read /Opportunities (api)", False,
+                      f"HTTP {status}", {"body": body})
 
 
 def test_aspire_opportunities_reporting(config, reporting_token):
@@ -351,7 +351,7 @@ def run_aspire_tests(config):
 
     if not api_token:
         for name in ["read /ContactTypes", "read /Contacts",
-                      "opportunities 403 (api client)", "field names"]:
+                      "read /Opportunities (api)", "field names"]:
             results.append(TestResult("aspire", name, False,
                                       "Skipped — api auth failed"))
     else:
@@ -360,7 +360,7 @@ def run_aspire_tests(config):
             config["api_base_url"], config["api_client_id"], config["api_secret"])
         results.append(test_aspire_read_contact_types(config, api_tok))
         results.append(test_aspire_read_contacts(config, api_tok))
-        results.append(test_aspire_opportunities_403(config, api_tok))
+        results.append(test_aspire_opportunities_api(config, api_tok))
         results.append(test_aspire_field_names(config, api_tok))
 
     if not r2.passed:

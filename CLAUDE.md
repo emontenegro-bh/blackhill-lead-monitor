@@ -565,7 +565,7 @@ Inter-skill communication documents at `~/.claude/handoffs/` that pass context b
 ---
 
 ## API Reference Notes
-- Aspire OData API: Phone fields are `MobilePhone`, `HomePhone`, `OfficePhone` (NOT `Phone` or `PhoneCell`). Opportunities endpoint returns 403 — use Property-level queries instead. API URLs do NOT include `/api/` prefix.
+- Aspire OData API: Phone fields are `MobilePhone`, `HomePhone`, `OfficePhone` (NOT `Phone` or `PhoneCell`). Both api and reporting clients can read Opportunities. API URLs do NOT include `/api/` prefix.
 - CompanyCam API: `created_after` filter behaves like `updated_after` — use client-side filtering for accurate date ranges.
 - WhatConverts API: Updates may return success but not persist — always verify writes with a follow-up read.
 
