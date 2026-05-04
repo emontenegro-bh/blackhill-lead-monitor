@@ -51,8 +51,9 @@
     "cta": "BOOK",
     "url": "https://blackhilllandscaping.com/areas-we-serve/fort-worth/",
     "text": "A patio, walkway, or retaining wall changes how you use your outdoor space. Our hardscaping crews work with flagstone, pavers, natural stone, and concrete to build structures that hold up to the Fort Worth heat and clay soil movement. Every hardscape project starts with a grade and drainage check, because a patio that pools water is worse than no patio at all. We handle the full scope: excavation, base prep, material selection, and installation. Currently scheduling hardscape projects in Fort Worth, Aledo, and Southlake for May and June.",
-    "status": "queued",
-    "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/hardscape-spotlight-2026.jpg"
+    "status": "posted",
+    "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/hardscape-spotlight-2026.jpg",
+    "posted_at": "2026-05-04T16:03:25.747101"
   },
   {
     "id": "2026-05-06-summer-lawn-prep",
