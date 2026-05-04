@@ -304,5 +304,83 @@
       "website_clicks": 7,
       "direction_requests": 14
     }
+  },
+  {
+    "date": "2026-05-04",
+    "date_range": "2026-04-25 to 2026-05-01",
+    "gsc": {
+      "impressions": 3249,
+      "clicks": 35,
+      "ctr": 1.08,
+      "avg_position": 23.42
+    },
+    "priority_keywords": [
+      {
+        "query": "black hill landscaping",
+        "position": 1.4,
+        "impressions": 40,
+        "clicks": 11
+      },
+      {
+        "query": "sod installation near me",
+        "position": 6.2,
+        "impressions": 37,
+        "clicks": 1
+      },
+      {
+        "query": "24/7 emergency tree removal fort worth tx",
+        "position": 3.8,
+        "impressions": 11,
+        "clicks": 0
+      },
+      {
+        "query": "best landscaping fort worth tx",
+        "position": 55.4,
+        "impressions": 11,
+        "clicks": 0
+      },
+      {
+        "query": "24 hour tree service fort worth",
+        "position": 4.2,
+        "impressions": 10,
+        "clicks": 0
+      },
+      {
+        "query": "black hills lawn care",
+        "position": 11.2,
+        "impressions": 9,
+        "clicks": 0
+      },
+      {
+        "query": "black hills landscaping",
+        "position": 1.4,
+        "impressions": 7,
+        "clicks": 4
+      },
+      {
+        "query": "blackhill landscaping",
+        "position": 1,
+        "impressions": 6,
+        "clicks": 4
+      },
+      {
+        "query": "benbrook sprinkler repair",
+        "position": 21.7,
+        "impressions": 6,
+        "clicks": 0
+      },
+      {
+        "query": "blackhorse commercial landscaping",
+        "position": 53.2,
+        "impressions": 6,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 118,
+      "calls": 1,
+      "website_clicks": 8,
+      "direction_requests": 14
+    }
   }
 ]
