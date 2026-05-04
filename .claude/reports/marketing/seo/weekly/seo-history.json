@@ -15,5 +15,22 @@
     "title_issues": 10,
     "h1_issues": 0,
     "meta_issues": 2
+  },
+  "2026-05-04": {
+    "score": 32,
+    "pages_live": 22,
+    "pages_missing": 6,
+    "total_issues": 41,
+    "alt_text_pct": 77.8,
+    "images_total": 406,
+    "images_good": 316,
+    "images_poor": 90,
+    "images_missing": 0,
+    "schema_local_business": 12,
+    "schema_faq": 17,
+    "schema_aggregate_rating": 3,
+    "title_issues": 10,
+    "h1_issues": 0,
+    "meta_issues": 2
   }
 }
