@@ -169,12 +169,12 @@
       "synced_at": "2026-04-16T15:06:27.396811+00:00"
     },
     "232730921": {
-      "last_status": "Delivered",
-      "opp_number": 3298,
-      "quote_value": 14069,
-      "sales_value": 0,
+      "last_status": "Won",
+      "opp_number": 3299,
+      "quote_value": 100,
+      "sales_value": 100,
       "traffic_source": "google / organic",
-      "synced_at": "2026-05-02T15:05:32.616363+00:00"
+      "synced_at": "2026-05-05T14:29:31.916764+00:00"
     },
     "233585790": {
       "last_status": "Delivered",
@@ -195,6 +195,6 @@
   },
   "stats": {
     "total_synced": 24,
-    "last_run": "2026-05-05T12:13:04.186886+00:00"
+    "last_run": "2026-05-05T14:29:32.825864+00:00"
   }
 }
