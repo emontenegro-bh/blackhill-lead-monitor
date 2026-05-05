@@ -610,7 +610,7 @@ def build_user_content(project_data, sun_exposure, photo_paths):
     photo_descriptions = []
     for i, photo in enumerate(project_data.get("photos", [])[:MAX_PHOTOS]):
         desc = photo.get("description", "")
-        if desc and desc.strip():
+        if isinstance(desc, str) and desc.strip():
             photo_descriptions.append(f"Photo {i+1} description: {desc.strip()}")
     if photo_descriptions:
         text_parts.append("Photo Descriptions:\n" + "\n".join(photo_descriptions))
