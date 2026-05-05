@@ -499,7 +499,10 @@ SECTION 1 — CLIENT-FACING PROPOSAL:
 - State material quantities plainly: "Supply and install 6 pallets of St. Augustine sod."
 - No pricing, no dollar amounts, no hourly rates in this section.
 - No em dashes. No <strong>, <em>, <b>, or bold. No inline styles.
-- Use <p> and <ul>/<li> tags only. No <h3>, no wrapper divs.
+- Use <ul>/<li> tags for ALL work items. Every work item is a bullet point.
+- Use a single <p> tag only for the opening "Scope of Work" line. Everything else is <ul>/<li> bullets.
+- Group related bullets under a short label using a <p> tag (e.g., "Cleanup:", "Prep:", "Installation:").
+- No <h3>, no wrapper divs.
 - MATH ACCURACY: You MUST write Section 2 (internal notes with all calculations) FIRST,
   then write Section 1 (client proposal) using ONLY the numbers from Section 2.
   Output them in the correct order (Section 1 first, then Section 2), but do the math before writing
@@ -507,7 +510,8 @@ SECTION 1 — CLIENT-FACING PROPOSAL:
 
 SECTION 2 — INTERNAL NOTES (for project manager only):
 Start this section with the marker: <!-- INTERNAL NOTES -->
-Include for each material:
+Format ALL internal notes as bullet points using <ul>/<li> tags. No long paragraphs.
+Each material gets its own bullet with sub-bullets for details:
 - Vendor name
 - Unit pricing and total material cost
 - Mulch: semi vs dump truck (semi=75CY, dump=40CY), delivery cost
@@ -567,14 +571,16 @@ OUTPUT FORMAT:
 Return two sections separated by <!-- INTERNAL NOTES --> marker.
 
 Section 1 (before the marker): Client-facing proposal.
-Use <p> tags for paragraphs and <ul>/<li> for bullet lists. Use <br> for line breaks within sections.
+Use <ul>/<li> for ALL work items as bullet points. Only use <p> for the opening scope line and section labels.
+Do NOT write long paragraphs. Every work item must be its own <li> bullet.
 Do NOT use <h3> tags, <strong>, <em>, inline styles, or the 10pt Arial wrapper divs.
-Do NOT include any text before the first <p> tag. Start directly with the opening paragraph.
+Start directly with the opening "Scope of Work" line in a <p> tag, then bullets.
 Keep it clean and simple — Aspire handles the formatting.
 
 Section 2 (after the marker): Internal notes with vendor, pricing, delivery, and material breakdown.
 Put all calculations and math here, not in Section 1.
-Use plain text or simple HTML tables. This section is for the project manager only.
+Format as <ul>/<li> bullet points, NOT paragraphs. Each material is a bullet with sub-bullets for details.
+This section is for the project manager only.
 Use these vendor defaults: Mulch=Organic Recycler, Soil=Mayer, Edging=Ewing ($19.58/pc), Rock/Stone=Clear Fork Materials (CFM), DG=SiteOne, Plants=Southwest."""
 
 
