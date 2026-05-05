@@ -177,12 +177,12 @@
       "synced_at": "2026-05-05T14:29:31.916764+00:00"
     },
     "233585790": {
-      "last_status": "Delivered",
+      "last_status": "Won",
       "opp_number": 3311,
       "quote_value": 100,
-      "sales_value": 0,
+      "sales_value": 100,
       "traffic_source": "google / cpc",
-      "synced_at": "2026-05-04T14:33:20.809474+00:00"
+      "synced_at": "2026-05-05T19:52:24.986118+00:00"
     },
     "232594587": {
       "last_status": "Delivered",
@@ -203,6 +203,6 @@
   },
   "stats": {
     "total_synced": 25,
-    "last_run": "2026-05-05T17:54:13.865793+00:00"
+    "last_run": "2026-05-05T19:52:25.170017+00:00"
   }
 }
