@@ -7,7 +7,7 @@ on:
 
 concurrency:
   group: booking-monitor
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
