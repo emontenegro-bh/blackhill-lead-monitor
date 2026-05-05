@@ -17,7 +17,7 @@ on:
 
 concurrency:
   group: api-health
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write

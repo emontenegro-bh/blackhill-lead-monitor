@@ -17,7 +17,7 @@ on:
 
 concurrency:
   group: ads-add-keywords
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   add-keywords:

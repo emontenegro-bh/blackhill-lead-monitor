@@ -18,7 +18,7 @@ on:
 
 concurrency:
   group: managed-agent-hello
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write

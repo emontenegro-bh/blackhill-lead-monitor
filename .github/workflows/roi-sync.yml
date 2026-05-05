@@ -7,7 +7,7 @@ on:
 
 concurrency:
   group: roi-sync
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write

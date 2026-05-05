@@ -16,7 +16,7 @@ on:
 
 concurrency:
   group: reply-pipeline
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write

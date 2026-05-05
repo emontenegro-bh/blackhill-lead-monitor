@@ -15,7 +15,7 @@ on:
 
 concurrency:
   group: ads-keyword-urls
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   update-urls:
