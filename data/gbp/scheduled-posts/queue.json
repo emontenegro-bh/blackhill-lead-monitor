@@ -80,5 +80,44 @@
     "text": "New sod transforms a yard in a single day, but the prep work underneath is what makes it last. Our crews start every sod installation with soil testing, grade correction, and irrigation verification. We install Bermuda, St. Augustine, and Zoysia varieties matched to your property's sun exposure and foot traffic. Fort Worth's Blackland Prairie clay soil requires specific prep to avoid drainage issues under new turf. If you are dealing with bare spots, dead grass from winter, or a yard that needs a full reset, call (817) 995-0324 for a property assessment.",
     "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/sod-installation-2026.jpg",
     "status": "queued"
+  },
+  {
+    "id": "2026-05-12-landscape-lighting",
+    "target_date": "2026-05-12",
+    "day": "Monday",
+    "week": 3,
+    "theme": "Landscape Lighting",
+    "type": "update",
+    "cta": "CALL",
+    "url": "https://blackhilllandscaping.com/areas-we-serve/fort-worth/",
+    "text": "Landscape lighting does two things: it extends the usable hours of your outdoor space and it adds a layer of security to your property. Our lighting installations cover pathways, bed accents, uplighting on trees and architectural features, and perimeter security lighting. Every fixture is low-voltage LED, wired to a programmable transformer with dusk-to-dawn automation. We run all wiring underground and through conduit where it crosses hardscape, so nothing is exposed to mowers or foot traffic. Placement matters more than quantity. A few well-positioned fixtures create depth and visibility without washing out the yard. We map light zones during a site visit, accounting for existing trees, structures, and how the property is used at night. If your front entry is dark, your walkways disappear after sunset, or you want to highlight landscaping you already invested in, call (817) 995-0324 for a lighting assessment.",
+    "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/landscape-lighting-2026.jpg",
+    "status": "queued"
+  },
+  {
+    "id": "2026-05-14-irrigation-repair",
+    "target_date": "2026-05-14",
+    "day": "Wednesday",
+    "week": 3,
+    "theme": "Irrigation Repair & Diagnostics",
+    "type": "update",
+    "cta": "CALL",
+    "url": "https://blackhilllandscaping.com/areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
+    "text": "A sprinkler system that ran fine last year can have three or four issues hiding by spring. Cracked PVC from freeze cycles, heads knocked out of alignment by foot traffic, and valve diaphragms that stick open or closed are the most common problems we find across Fort Worth properties. Our irrigation technician runs a full zone-by-zone diagnostic before recommending any repairs. That means pressurizing each zone, checking head spray patterns, measuring flow rates, and inspecting the controller programming. We replace heads, rebuild valves, repair main and lateral line breaks, and reprogram controllers to match current city watering schedules. Fort Worth's clay soil shifts constantly, which puts stress on buried PVC lines and fittings that rigid systems were not designed to handle. If you are seeing dry spots, soggy areas, or a water bill that jumped without explanation, those are signs of a system that needs attention. Call (817) 995-0324 to schedule an irrigation diagnostic.",
+    "photo": "https://img.companycam.com/08m-zbvWV7KPSXKyBCxIMTJGIwvr7YzCWak-SvoyMgM/rs:fit:4032:4032/q:80/aHR0cHM6Ly9jb21w/YW55Y2FtLXBlbmRp/bmcuczMuYW1hem9u/YXdzLmNvbS84NDFj/ZDZhMS0wNGU1LTQy/YWYtODk2MC1kMTQ0/NDU2NjJiN2YuanBn.jpg",
+    "status": "queued"
+  },
+  {
+    "id": "2026-05-16-commercial-maintenance",
+    "target_date": "2026-05-16",
+    "day": "Friday",
+    "week": 3,
+    "theme": "Commercial Property Maintenance",
+    "type": "update",
+    "cta": "CALL",
+    "url": "https://blackhilllandscaping.com/commercial-landscape-services",
+    "text": "Commercial property maintenance is about consistency. Tenants, visitors, and property managers notice when a landscape crew misses details or skips a week. Our commercial teams run defined checklists on every visit: mow, edge, blow, spot-treat weeds, and document with photos. We service retail centers, apartment communities, office parks, and municipal properties across Fort Worth. Every property gets a dedicated crew on a fixed schedule so the same people are on your site every time. That means they know the property, they know the problem areas, and they catch issues before they become complaints. We are currently servicing over 500 properties with a 98% client retention rate. If your current provider is inconsistent or you are managing multiple vendor relationships, call (817) 995-0324 to discuss a single-source maintenance contract.",
+    "photo": "https://img.companycam.com/Gtn2pdignO74rEvrOK5WnAdK4H37STbJ8Pfph6fqZkI/rs:fit:4032:4032/q:80/aHR0cHM6Ly9jb21w/YW55Y2FtLXBlbmRp/bmcuczMuYW1hem9u/YXdzLmNvbS82NTZk/MjJhNS02ODEzLTQw/MDAtOTZmNi1lMzE2/NTA4NTc4ZDguanBn.jpg",
+    "status": "queued"
   }
 ]
