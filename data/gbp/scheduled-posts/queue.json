@@ -65,8 +65,9 @@
     "cta": "BOOK",
     "url": "https://blackhilllandscaping.com/areas-we-serve/fort-worth/",
     "text": "May is when your lawn either gets set up for summer or falls behind. Bermuda and zoysia are coming out of dormancy, and the next 4 weeks determine how they perform through July and August. Our crews are running spring aeration, applying slow-release fertilizer, and adjusting mowing heights across Fort Worth, Keller, and Colleyville properties. If your turf still looks thin or patchy from winter, now is the time to address it. Once temperatures hit 100, your options shrink. Schedule a lawn assessment while there is still time to correct course.",
-    "status": "queued",
-    "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/summer-lawn-prep-2026.jpg"
+    "status": "posted",
+    "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/summer-lawn-prep-2026.jpg",
+    "posted_at": "2026-05-06T16:02:39.433957"
   },
   {
     "id": "2026-05-08-sod-installation",
