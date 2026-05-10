@@ -187,7 +187,7 @@ def fetch_recent_leads(config, lookback_minutes=130):
     profile_id = config["whatconverts"]["profile_id"]
 
     all_leads = []
-    for lead_type in ("web_form",):
+    for lead_type in ("web_form", "phone_call"):
         page = 1
         while True:
             result = wc_api_request(config, "/leads", {
@@ -897,6 +897,24 @@ def send_auto_reply(config, lead):
     return False
 
 
+# --- Aspire Lead Source Mapping ---
+
+def _aspire_lead_source(lead):
+    """Map WhatConverts traffic source to Aspire LeadSource dropdown value."""
+    source = (lead.get("traffic_source") or "").lower()
+    if "cpc" in source:
+        return "Advertising"
+    if "organic" in source:
+        return "Website"
+    if lead.get("source") == "phone_call" and ("direct" in source or not source or source == "unknown"):
+        return "Call In"
+    if "referral" in source:
+        return "Website"
+    if "email" in source or "mailchimp" in source:
+        return "Website"
+    return "Website"
+
+
 # --- Owner Notification via Gmail SMTP ---
 
 def send_owner_notification(config, lead, owner_name, owner_email, aspire_url=None, hubspot_status=None):
@@ -938,6 +956,7 @@ def send_owner_notification(config, lead, owner_name, owner_email, aspire_url=No
 <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Address</td><td style="padding: 8px;">{lead.get('address', '')} {lead.get('city', '')} {lead.get('state', '')} {lead.get('zip', '')}</td></tr>
 <tr><td style="padding: 8px; font-weight: bold;">Service</td><td style="padding: 8px;">{service}</td></tr>
 <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Source</td><td style="padding: 8px;">{lead.get('traffic_source', 'unknown')}</td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Aspire Lead Source</td><td style="padding: 8px; font-weight: bold; color: #115E00;">{_aspire_lead_source(lead)}</td></tr>
 </table>
 <div style="background: #f5f5f5; padding: 12px; margin: 16px 0; border-left: 4px solid #C8A951;">
 <strong>Message:</strong><br>{lead.get('message', '(no message)')[:400]}

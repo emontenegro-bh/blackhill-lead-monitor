@@ -373,7 +373,22 @@ def bucket_hours(hdata):
 
 hour_blocks = bucket_hours(hour_data)
 
-# --- 10. Aspire won revenue (correlation context) ---
+# --- 10. Aspire won revenue from WhatConverts leads only ---
+def _load_wc_contact_map():
+    """Load WhatConverts lead mappings → {aspire_contact_id: traffic_source}."""
+    state_path = os.path.join(REPO_ROOT, "data", "processed-state.json")
+    if not os.path.exists(state_path):
+        return {}
+    with open(state_path) as f:
+        state = json.load(f)
+    contact_map = {}
+    for _wc_id, info in state.get("lead_mappings", {}).items():
+        cid = info.get("aspire_contact_id")
+        if cid:
+            contact_map[int(cid)] = info.get("traffic_source", "unknown")
+    return contact_map
+
+
 def get_aspire_revenue(start_date, end_date):
     try:
         client_id = (os.environ.get("ASPIRE_REPORTING_CLIENT_ID")
@@ -401,7 +416,7 @@ def get_aspire_revenue(start_date, end_date):
         odata_filter = (f"OpportunityStatusName eq 'Won' "
                         f"and WonDate ge {start_date}T00:00:00Z "
                         f"and WonDate le {end_date}T23:59:59Z")
-        params = f"$filter={odata_filter}&$select=WonDollars,OpportunityName"
+        params = f"$filter={odata_filter}&$select=WonDollars,OpportunityName,BillingContactID"
         url = f"{base_url}/Opportunities?{urllib.parse.quote(params, safe='=&$,()/%:@')}"
         req = urllib.request.Request(url, headers={
             "Authorization": f"Bearer {token}", "Accept": "application/json",
@@ -409,8 +424,43 @@ def get_aspire_revenue(start_date, end_date):
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode())
             opps = data if isinstance(data, list) else [data]
-        total_won = sum(float(o.get("WonDollars", 0) or 0) for o in opps)
-        return {"total_won": total_won, "count": len(opps)}
+
+        # Cross-reference with WhatConverts lead mappings
+        wc_map = _load_wc_contact_map()
+        cpc_won = 0.0
+        cpc_count = 0
+        organic_won = 0.0
+        organic_count = 0
+        other_won = 0.0
+        other_count = 0
+        for o in opps:
+            dollars = float(o.get("WonDollars", 0) or 0)
+            cid = o.get("BillingContactID")
+            if not cid or int(cid) not in wc_map:
+                continue
+            source = wc_map[int(cid)].lower()
+            if "cpc" in source:
+                cpc_won += dollars
+                cpc_count += 1
+            elif "organic" in source:
+                organic_won += dollars
+                organic_count += 1
+            else:
+                other_won += dollars
+                other_count += 1
+
+        total_wc = cpc_won + organic_won + other_won
+        total_count = cpc_count + organic_count + other_count
+        return {
+            "total_won": total_wc,
+            "count": total_count,
+            "cpc_won": cpc_won,
+            "cpc_count": cpc_count,
+            "organic_won": organic_won,
+            "organic_count": organic_count,
+            "other_won": other_won,
+            "other_count": other_count,
+        }
     except Exception as e:
         print(f"Aspire revenue query skipped: {e}", file=sys.stderr)
         return None
@@ -579,24 +629,32 @@ if acct_this:
     h('</div>')
 
 # ============================================================
-# SECTION 2: REVENUE CONTEXT
+# SECTION 2: REVENUE CONTEXT (WhatConverts leads only)
 # ============================================================
 if aspire_revenue and acct_this:
     h('<div class="section">')
-    h('<h2>Revenue Context</h2>')
+    h('<h2>Revenue from Website Leads</h2>')
     h('<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>')
-    h(f'<td width="50%" style="padding:0 6px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
-    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Ad Spend This Week</div>')
-    h(f'<div style="font-size:28px;font-weight:700;color:#e74c3c;">${acct_this["spend"]:.0f}</div>')
+    h(f'<td width="33%" style="padding:0 4px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
+    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Ad Spend</div>')
+    h(f'<div style="font-size:26px;font-weight:700;color:#e74c3c;">${acct_this["spend"]:.0f}</div>')
     h(f'</div></td>')
-    rev_color = "#27ae60" if aspire_revenue["total_won"] > 0 else "#888"
-    h(f'<td width="50%" style="padding:0 6px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
-    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Won Revenue This Week</div>')
-    h(f'<div style="font-size:28px;font-weight:700;color:{rev_color};">${aspire_revenue["total_won"]:,.0f}</div>')
-    h(f'<div style="font-size:11px;color:#666;margin-top:4px;">{aspire_revenue["count"]} opportunities</div>')
+    cpc_color = "#27ae60" if aspire_revenue["cpc_won"] > 0 else "#888"
+    h(f'<td width="33%" style="padding:0 4px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
+    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Won from Ads</div>')
+    h(f'<div style="font-size:26px;font-weight:700;color:{cpc_color};">${aspire_revenue["cpc_won"]:,.0f}</div>')
+    h(f'<div style="font-size:11px;color:#666;margin-top:4px;">{aspire_revenue["cpc_count"]} opp{"s" if aspire_revenue["cpc_count"] != 1 else ""}</div>')
+    h(f'</div></td>')
+    org_color = "#3498db" if aspire_revenue["organic_won"] > 0 else "#888"
+    h(f'<td width="33%" style="padding:0 4px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
+    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Won from Organic</div>')
+    h(f'<div style="font-size:26px;font-weight:700;color:{org_color};">${aspire_revenue["organic_won"]:,.0f}</div>')
+    h(f'<div style="font-size:11px;color:#666;margin-top:4px;">{aspire_revenue["organic_count"]} opp{"s" if aspire_revenue["organic_count"] != 1 else ""}</div>')
     h(f'</div></td>')
     h('</tr></table>')
-    h('<div style="text-align:center;margin-top:8px;font-size:11px;color:#555;">Correlation only &mdash; not direct attribution between ads and won deals</div>')
+    if aspire_revenue["other_won"] > 0:
+        h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#666;">+ ${aspire_revenue["other_won"]:,.0f} from other sources ({aspire_revenue["other_count"]} opps)</div>')
+    h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">Only counting revenue from leads tracked in WhatConverts</div>')
     h('</div>')
 
 # ============================================================
