@@ -524,6 +524,94 @@ recommendations = generate_recommendations()
 
 
 # ============================================================
+# GOOGLE OPTIMIZATION RECOMMENDATIONS
+# ============================================================
+
+# Recommendation types we know how to evaluate
+RECOMMENDATION_VERDICTS = {
+    "KEYWORD": "review",         # Some keywords are good, some are junk
+    "SEARCH_PARTNERS_OPT_IN": "skip",
+    "DISPLAY_EXPANSION_OPT_IN": "skip",
+    "RESPONSIVE_SEARCH_AD": "review",
+    "RESPONSIVE_SEARCH_AD_IMPROVE_AD_STRENGTH": "review",
+    "LEAD_FORM_ASSET": "skip",
+    "USE_BROAD_MATCH_KEYWORD": "skip",
+    "FORECASTING_CAMPAIGN_BUDGET": "review",
+    "RAISE_TARGET_CPA_BID_TOO_LOW": "review",
+    "TARGET_CPA_OPT_IN": "review",
+    "ENHANCED_CPC_OPT_IN": "skip",
+    "MAXIMIZE_CONVERSIONS_OPT_IN": "review",
+    "SITELINK_ASSET": "review",
+    "CALLOUT_ASSET": "review",
+    "CALL_ASSET": "review",
+    "UPGRADE_SMART_SHOPPING_CAMPAIGN_TO_PERFORMANCE_MAX": "skip",
+    "PERFORMANCE_MAX_OPT_IN": "skip",
+}
+
+RECOMMENDATION_REASONS = {
+    "SEARCH_PARTNERS_OPT_IN": "Low-quality partner traffic dilutes conversion data",
+    "DISPLAY_EXPANSION_OPT_IN": "Display ads are awareness, not lead gen -- muddies conversion data",
+    "LEAD_FORM_ASSET": "Bypasses website and WhatConverts tracking pipeline",
+    "USE_BROAD_MATCH_KEYWORD": "Loosens targeting and increases waste spend",
+    "ENHANCED_CPC_OPT_IN": "Conflicts with Maximize Conversions bidding strategy",
+    "PERFORMANCE_MAX_OPT_IN": "Removes control over targeting and placements",
+    "UPGRADE_SMART_SHOPPING_CAMPAIGN_TO_PERFORMANCE_MAX": "Not applicable to service business",
+}
+
+def fetch_google_recommendations():
+    """Fetch optimization recommendations from Google Ads API."""
+    try:
+        # Build campaign ID -> name lookup
+        camp_id_to_name = {}
+        for row in safe_query("SELECT campaign.id, campaign.name FROM campaign WHERE campaign.status = 'ENABLED'"):
+            camp_id_to_name[str(row.campaign.id)] = row.campaign.name
+
+        query = """
+            SELECT
+                recommendation.type,
+                recommendation.campaign
+            FROM recommendation
+            WHERE recommendation.dismissed = FALSE
+            ORDER BY recommendation.type
+        """
+        recs_by_type = {}
+        for row in safe_query(query):
+            rec_type = row.recommendation.type_.name
+            campaign = row.recommendation.campaign or ""
+            camp_id = campaign.split("/")[-1] if "/" in campaign else ""
+            camp_name = camp_id_to_name.get(camp_id, "")
+            if rec_type not in recs_by_type:
+                recs_by_type[rec_type] = {"count": 0, "campaigns": set()}
+            recs_by_type[rec_type]["count"] += 1
+            if camp_name:
+                recs_by_type[rec_type]["campaigns"].add(camp_name)
+
+        results = []
+        for rec_type, data in sorted(recs_by_type.items(), key=lambda x: -x[1]["count"]):
+            verdict = RECOMMENDATION_VERDICTS.get(rec_type, "review")
+            reason = RECOMMENDATION_REASONS.get(rec_type, "")
+            results.append({
+                "type": rec_type,
+                "count": data["count"],
+                "campaigns": sorted(data["campaigns"]),
+                "verdict": verdict,
+                "reason": reason,
+            })
+        return results
+    except Exception as e:
+        print(f"Google recommendations fetch skipped: {e}", file=sys.stderr)
+        return []
+
+google_recs = fetch_google_recommendations()
+optimization_score_query = safe_query("""
+    SELECT customer.optimization_score FROM customer LIMIT 1
+""")
+opt_score = None
+for row in optimization_score_query:
+    opt_score = row.customer.optimization_score
+
+
+# ============================================================
 # NEEDLE-MOVER VERDICT
 # ============================================================
 
@@ -1108,6 +1196,40 @@ if qs_keywords:
         else:
             h(f'<div style="font-size:11px;color:#f39c12;margin-top:6px;font-weight:600;">REVIEW DUE: Check if impression share improved. If not, add target CPA.</div>')
         h('</div>')
+
+    h('</div>')
+
+# ============================================================
+# SECTION: GOOGLE OPTIMIZATION RECOMMENDATIONS
+# ============================================================
+if google_recs:
+    h('<div class="section">')
+    h('<h2>Google Optimization Recommendations</h2>')
+    if opt_score is not None:
+        score_color = "#27ae60" if opt_score >= 90 else "#f39c12" if opt_score >= 70 else "#e74c3c"
+        h(f'<div style="font-size:12px;color:#888;margin-bottom:12px;">Optimization Score: <span style="color:{score_color};font-weight:600;">{opt_score:.0f}%</span></div>')
+
+    skip_recs = [r for r in google_recs if r["verdict"] == "skip"]
+    review_recs = [r for r in google_recs if r["verdict"] == "review"]
+
+    if review_recs:
+        h('<div style="font-size:12px;color:#c8963e;font-weight:600;margin-bottom:8px;">Worth Reviewing</div>')
+        for rec in review_recs:
+            type_label = rec["type"].replace("_", " ").title()
+            camps = ", ".join(rec["campaigns"]) if rec["campaigns"] else "Account-level"
+            h(f'<div style="margin-bottom:6px;padding:8px 12px;background:#222;border-radius:6px;border-left:3px solid #c8963e;">')
+            h(f'<div style="font-size:13px;color:#fff;">{type_label} <span style="color:#888;">({rec["count"]})</span></div>')
+            h(f'<div style="font-size:11px;color:#aaa;margin-top:2px;">{camps}</div>')
+            h(f'</div>')
+
+    if skip_recs:
+        h(f'<div style="font-size:12px;color:#888;font-weight:600;margin-top:12px;margin-bottom:8px;">Skip These ({sum(r["count"] for r in skip_recs)} total)</div>')
+        for rec in skip_recs:
+            type_label = rec["type"].replace("_", " ").title()
+            reason = rec["reason"] or "Not aligned with current strategy"
+            h(f'<div style="margin-bottom:4px;padding:6px 12px;background:#1a1a1a;border-radius:4px;font-size:12px;">')
+            h(f'<span style="color:#666;">&#10005;</span> <span style="color:#888;">{type_label} ({rec["count"]})</span> <span style="color:#555;">-- {reason}</span>')
+            h(f'</div>')
 
     h('</div>')
 
