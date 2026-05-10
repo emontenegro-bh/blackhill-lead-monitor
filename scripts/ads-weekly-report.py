@@ -524,6 +524,108 @@ recommendations = generate_recommendations()
 
 
 # ============================================================
+# NEEDLE-MOVER VERDICT
+# ============================================================
+
+def generate_verdict():
+    """Generate a plain-English verdict: did we move the needle, and why?"""
+    if not acct_this:
+        return None
+
+    t = acct_this
+    p = acct_prev or {}
+    spend = t["spend"]
+    conv_this = t["conversions"]
+    conv_prev = p.get("conversions", 0)
+    cpa_this = t["cpa"]
+    cpa_prev = p.get("cpa", 0)
+    is_this = avg_is_this
+    is_prev = avg_is_prev
+
+    # Revenue context
+    cpc_rev = aspire_revenue["cpc_won"] if aspire_revenue else 0
+    org_rev = aspire_revenue["organic_won"] if aspire_revenue else 0
+    other_rev = aspire_revenue["other_won"] if aspire_revenue else 0
+    total_wc_rev = aspire_revenue["total_won"] if aspire_revenue else 0
+    cpc_count = aspire_revenue["cpc_count"] if aspire_revenue else 0
+
+    lines = []
+
+    # -- Verdict --
+    if conv_this == 0:
+        verdict = "no"
+        verdict_color = "#e74c3c"
+        lines.append(f"We spent ${spend:.0f} on ads this week and got zero conversions.")
+    elif conv_this > conv_prev and conv_prev > 0:
+        pct_up = ((conv_this - conv_prev) / conv_prev) * 100 if conv_prev else 0
+        if cpa_this <= TARGET_CPA:
+            verdict = "yes"
+            verdict_color = "#27ae60"
+            lines.append(f"Conversions up {pct_up:.0f}% ({conv_prev:.0f} to {conv_this:.0f}) and CPA is ${cpa_this:.0f}, under our ${TARGET_CPA:.0f} target.")
+        else:
+            verdict = "mixed"
+            verdict_color = "#f39c12"
+            lines.append(f"Conversions up {pct_up:.0f}% ({conv_prev:.0f} to {conv_this:.0f}), but CPA is ${cpa_this:.0f} -- above our ${TARGET_CPA:.0f} target.")
+    elif conv_this == conv_prev and conv_this > 0:
+        verdict = "flat"
+        verdict_color = "#f39c12"
+        lines.append(f"Conversions held flat at {conv_this:.0f} on ${spend:.0f} in ad spend.")
+    elif conv_this < conv_prev and conv_prev > 0:
+        pct_down = ((conv_prev - conv_this) / conv_prev) * 100
+        verdict = "no"
+        verdict_color = "#e74c3c"
+        lines.append(f"Conversions dropped {pct_down:.0f}% ({conv_prev:.0f} to {conv_this:.0f}) on ${spend:.0f} in spend.")
+    elif conv_prev == 0 and conv_this > 0:
+        verdict = "yes"
+        verdict_color = "#27ae60"
+        lines.append(f"Got {conv_this:.0f} conversion{'s' if conv_this != 1 else ''} this week vs zero last week.")
+    else:
+        verdict = "flat"
+        verdict_color = "#f39c12"
+        lines.append(f"Spent ${spend:.0f} with {conv_this:.0f} conversions this week.")
+
+    # -- Why: impression share driver --
+    is_delta = is_this - is_prev
+    if abs(is_delta) > 3:
+        direction = "up" if is_delta > 0 else "down"
+        lines.append(f"Impression share moved {direction} ({is_prev:.0f}% to {is_this:.0f}%).")
+        # Diagnose the biggest driver
+        biggest_rank_loss = max((cd.get("this", {}).get("lost_rank", 0) for cd in camp_data.values()), default=0)
+        biggest_budget_loss = max((cd.get("this", {}).get("lost_budget", 0) for cd in camp_data.values()), default=0)
+        if biggest_rank_loss > 40:
+            lines.append(f"Ad rank is the main blocker -- losing up to {biggest_rank_loss:.0f}% to low QS or bids.")
+        if biggest_budget_loss > 30:
+            lines.append(f"Budget is capping visibility -- losing up to {biggest_budget_loss:.0f}% to daily budget limits.")
+
+    # -- Revenue tie-in --
+    if cpc_rev > 0:
+        roi = ((cpc_rev - spend) / spend * 100) if spend > 0 else 0
+        lines.append(f"Ad-sourced leads closed ${cpc_rev:,.0f} in revenue ({cpc_count} opp{'s' if cpc_count != 1 else ''}). ROI: {roi:+.0f}%.")
+    elif spend > 0:
+        lines.append(f"No ad-sourced revenue closed this week. ${spend:.0f} spent with no return yet.")
+
+    if org_rev > 0:
+        lines.append(f"Meanwhile, organic leads closed ${org_rev:,.0f} at zero ad cost.")
+
+    # -- Verdict label --
+    verdict_labels = {
+        "yes": "Yes -- we moved the needle.",
+        "no": "No -- we did not move the needle.",
+        "mixed": "Mixed -- progress but not where we need to be.",
+        "flat": "Flat -- no meaningful change this week.",
+    }
+
+    return {
+        "verdict": verdict,
+        "verdict_label": verdict_labels.get(verdict, ""),
+        "verdict_color": verdict_color,
+        "explanation": " ".join(lines),
+    }
+
+verdict_data = generate_verdict()
+
+
+# ============================================================
 # HTML EMAIL
 # ============================================================
 
@@ -587,6 +689,13 @@ if acct_this:
 
     h('<div class="section">')
     h('<h2>Did We Move the Needle?</h2>')
+
+    # Verdict narrative
+    if verdict_data:
+        h(f'<div style="background:#222;border-radius:8px;padding:16px 20px;margin-bottom:16px;border-left:4px solid {verdict_data["verdict_color"]};">')
+        h(f'<div style="font-size:16px;font-weight:700;color:{verdict_data["verdict_color"]};margin-bottom:8px;">{verdict_data["verdict_label"]}</div>')
+        h(f'<div style="font-size:13px;color:#ccc;line-height:1.6;">{verdict_data["explanation"]}</div>')
+        h(f'</div>')
 
     # Three KPI cards in a table for email compatibility
     h('<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>')
@@ -844,7 +953,31 @@ if qs_keywords:
 
     h('<div class="section">')
     h('<h2>Quality Score Tracker</h2>')
-    h('<div style="font-size:12px;color:#888;margin-bottom:12px;">QS drives Ad Rank which drives impressions. Higher QS = more impressions at lower cost.</div>')
+
+    # WoW summary: how many keywords below QS 5
+    below5_now = sum(1 for kw in qs_keywords if kw["qs"] < 5)
+    below5_prev = sum(1 for qs in prior_qs.values() if qs < 5) if prior_qs else None
+    total_kw = len(qs_keywords)
+    avg_qs = sum(kw["qs"] for kw in qs_keywords) / total_kw if total_kw else 0
+
+    if below5_prev is not None:
+        diff = below5_now - below5_prev
+        if diff < 0:
+            trend_text = f'<span style="color:#27ae60;font-weight:600;">Improved -- {abs(diff)} fewer keyword{"s" if abs(diff) != 1 else ""} below QS 5 vs last week</span>'
+        elif diff > 0:
+            trend_text = f'<span style="color:#e74c3c;font-weight:600;">Worse -- {diff} more keyword{"s" if diff != 1 else ""} dropped below QS 5 vs last week</span>'
+        else:
+            trend_text = f'<span style="color:#f39c12;font-weight:600;">No change vs last week</span>'
+        h(f'<div style="background:#222;border-radius:8px;padding:14px 18px;margin-bottom:14px;border:1px solid #333;">')
+        h(f'<div style="font-size:14px;color:#fff;font-weight:600;margin-bottom:6px;">{below5_now} of {total_kw} keywords below QS 5 <span style="color:#666;font-weight:400;">(was {below5_prev} last week)</span></div>')
+        h(f'<div style="font-size:13px;">{trend_text}</div>')
+        h(f'<div style="font-size:11px;color:#666;margin-top:4px;">Average QS: {avg_qs:.1f}</div>')
+        h(f'</div>')
+    else:
+        h(f'<div style="background:#222;border-radius:8px;padding:14px 18px;margin-bottom:14px;border:1px solid #333;">')
+        h(f'<div style="font-size:14px;color:#fff;font-weight:600;">{below5_now} of {total_kw} keywords below QS 5</div>')
+        h(f'<div style="font-size:11px;color:#666;margin-top:4px;">Average QS: {avg_qs:.1f} (no prior week for comparison)</div>')
+        h(f'</div>')
 
     h('<table><tr><th>Keyword</th><th class="right">QS</th><th class="right">Trend</th><th class="right">Exp CTR</th><th class="right">Ad Rel</th><th class="right">Land Page</th></tr>')
 
