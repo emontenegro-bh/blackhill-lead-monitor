@@ -25,7 +25,7 @@ from datetime import datetime, date
 from html.parser import HTMLParser
 
 # --- Global timeout ---
-SCRIPT_TIMEOUT = 300
+SCRIPT_TIMEOUT = 600
 def _timeout_handler(signum, frame):
     print(f"ERROR: Script timed out after {SCRIPT_TIMEOUT}s", file=sys.stderr)
     sys.exit(1)
@@ -82,6 +82,78 @@ PAGES = {
 SLUG_ALIASES = {
     "landscape-design-and-installation": "landscaping-services",
 }
+
+
+def discover_pages_from_sitemap():
+    """Discover all pages from the sitemap and merge with hardcoded PAGES."""
+    discovered = {}
+    try:
+        sitemap_urls = [
+            f"{SITE}/sitemap.xml",
+            f"{SITE}/sitemap_index.xml",
+            f"{SITE}/wp-sitemap.xml",
+        ]
+        all_locs = []
+        for sitemap_url in sitemap_urls:
+            req = urllib.request.Request(sitemap_url, headers={"User-Agent": UA})
+            try:
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    content = resp.read().decode()
+                # Extract all <loc> URLs
+                locs = re.findall(r"<loc>(.*?)</loc>", content)
+                # If this is a sitemap index, fetch each child sitemap
+                if "<sitemapindex" in content:
+                    for child_url in locs:
+                        try:
+                            req2 = urllib.request.Request(child_url, headers={"User-Agent": UA})
+                            with urllib.request.urlopen(req2, timeout=15) as resp2:
+                                child_content = resp2.read().decode()
+                            child_locs = re.findall(r"<loc>(.*?)</loc>", child_content)
+                            all_locs.extend(child_locs)
+                        except Exception:
+                            pass
+                else:
+                    all_locs.extend(locs)
+                if all_locs:
+                    break
+            except Exception:
+                continue
+
+        for url in all_locs:
+            if SITE not in url and "blackhilllandscaping.com" not in url:
+                continue
+            path = url.replace(SITE, "").replace("https://blackhilllandscaping.com", "").rstrip("/")
+            if not path:
+                path = "/"
+            # Skip non-page URLs (images, feeds, etc.)
+            if any(ext in path for ext in [".xml", ".jpg", ".png", ".pdf", ".css", ".js"]):
+                continue
+            # Generate a readable name from the path
+            if path == "/":
+                continue  # Already in PAGES as "Homepage"
+            parts = [p for p in path.strip("/").split("/") if p]
+            if len(parts) >= 3:
+                # e.g., areas-we-serve/keller/landscaping-services -> "Keller Landscaping Services"
+                city = parts[-2].replace("-", " ").title()
+                service = parts[-1].replace("-", " ").title()
+                name = f"{city} {service}"
+            elif len(parts) == 2:
+                name = f"{parts[-1].replace('-', ' ').title()}"
+            else:
+                name = parts[-1].replace("-", " ").title()
+            if path not in PAGES.values():
+                discovered[name] = path
+
+        print(f"Sitemap discovery: {len(discovered)} additional pages found", file=sys.stderr)
+    except Exception as e:
+        print(f"Sitemap discovery failed: {e}", file=sys.stderr)
+    return discovered
+
+
+# Merge sitemap pages with hardcoded pages
+_sitemap_pages = discover_pages_from_sitemap()
+PAGES.update(_sitemap_pages)
+
 
 # User agent
 UA = "Mozilla/5.0 (compatible; BlackHillSEOAudit/1.0)"
@@ -221,15 +293,21 @@ def classify_alt_text(alt, src=""):
     if not alt or not alt.strip():
         return "missing"
     alt_lower = alt.strip().lower()
-    # Raw filename patterns
+    src_lower = src.lower() if src else ""
+    # Skip logos and icons -- these are fine with short/branded alt text
+    if "logo" in alt_lower or "logo" in src_lower:
+        return "good"
+    if "icon" in src_lower:
+        return "good"
+    # Raw filename patterns (but not logos, already handled above)
     if alt_lower.endswith((".webp", ".jpg", ".jpeg", ".png", ".gif", ".svg")):
         return "poor"
-    if "cropped" in alt_lower and "logo" not in alt_lower:
+    if "cropped" in alt_lower:
         return "poor"
-    if alt_lower in ("submenu image", "image", "photo", "img", "icon", "logo"):
+    if alt_lower in ("submenu image", "image", "photo", "img", "icon"):
         return "poor"
-    # Single generic word
-    if len(alt_lower.split()) <= 1 and len(alt_lower) < 15:
+    # Single generic word (skip brand names and short proper nouns)
+    if len(alt_lower.split()) <= 1 and len(alt_lower) < 5:
         return "poor"
     return "good"
 
