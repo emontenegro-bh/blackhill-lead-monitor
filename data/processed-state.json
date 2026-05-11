@@ -286,15 +286,16 @@
     "234870229",
     "234906252",
     "234914252",
-    "234931880"
+    "234931880",
+    "234990158"
   ],
   "stats": {
-    "total_leads": 122,
+    "total_leads": 123,
     "total_spam": 119,
-    "last_lead": "2026-05-11T14:30:26.486150",
-    "total_calls": 2
+    "last_lead": "2026-05-11T20:10:27.110597",
+    "total_calls": 3
   },
-  "last_run": "2026-05-11T20:05:10.295913+00:00",
+  "last_run": "2026-05-11T20:10:27.111804+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -687,6 +688,13 @@
       "traffic_source": "bing / organic",
       "service": "Landscaping",
       "lead_type": "web_form",
+      "date": "2026-05-11"
+    },
+    "234990158": {
+      "aspire_contact_id": "2622",
+      "traffic_source": "gmb / organic",
+      "service": "Landscape Design & Install",
+      "lead_type": "phone_call",
       "date": "2026-05-11"
     }
   },
