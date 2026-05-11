@@ -285,15 +285,16 @@
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD0F7nQAAA=",
     "234870229",
     "234906252",
-    "234914252"
+    "234914252",
+    "234931880"
   ],
   "stats": {
     "total_leads": 122,
-    "total_spam": 118,
+    "total_spam": 119,
     "last_lead": "2026-05-11T14:30:26.486150",
     "total_calls": 2
   },
-  "last_run": "2026-05-11T17:11:37.787549+00:00",
+  "last_run": "2026-05-11T17:15:14.706810+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
