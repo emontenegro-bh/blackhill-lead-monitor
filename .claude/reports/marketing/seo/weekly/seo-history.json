@@ -32,5 +32,22 @@
     "title_issues": 10,
     "h1_issues": 0,
     "meta_issues": 2
+  },
+  "2026-05-11": {
+    "score": 32,
+    "pages_live": 22,
+    "pages_missing": 6,
+    "total_issues": 41,
+    "alt_text_pct": 78.3,
+    "images_total": 406,
+    "images_good": 318,
+    "images_poor": 88,
+    "images_missing": 0,
+    "schema_local_business": 12,
+    "schema_faq": 18,
+    "schema_aggregate_rating": 8,
+    "title_issues": 10,
+    "h1_issues": 0,
+    "meta_issues": 2
   }
 }
