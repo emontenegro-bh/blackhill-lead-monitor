@@ -77,6 +77,9 @@ PAGES = {
     "Blog": "/blog",
 }
 
+# User agent (defined early for sitemap discovery)
+UA = "Mozilla/5.0 (compatible; BlackHillSEOAudit/1.0)"
+
 # Slug aliases -- when a page slug changes, check both old and new
 # Format: { "old-slug": "new-slug" }
 SLUG_ALIASES = {
@@ -128,6 +131,14 @@ def discover_pages_from_sitemap():
             # Skip non-page URLs (images, feeds, etc.)
             if any(ext in path for ext in [".xml", ".jpg", ".png", ".pdf", ".css", ".js"]):
                 continue
+            # Skip WordPress taxonomy/template pages (no SEO value, can't control H1)
+            skip_patterns = [
+                "/blog/tag/", "/blog/category/", "/blog/author/",
+                "elementskit_template", "elementor-preview",
+                "/wp-content/", "/wp-admin/", "/feed",
+            ]
+            if any(pat in path.lower() for pat in skip_patterns):
+                continue
             # Generate a readable name from the path
             if path == "/":
                 continue  # Already in PAGES as "Homepage"
@@ -153,10 +164,6 @@ def discover_pages_from_sitemap():
 # Merge sitemap pages with hardcoded pages
 _sitemap_pages = discover_pages_from_sitemap()
 PAGES.update(_sitemap_pages)
-
-
-# User agent
-UA = "Mozilla/5.0 (compatible; BlackHillSEOAudit/1.0)"
 
 # --- HTML Parser ---
 class SEOParser(HTMLParser):
@@ -489,16 +496,24 @@ meta_issues = sum(1 for r in results.values() if r["exists"] and any("meta" in i
 
 total_issues = sum(len(r["issues"]) for r in results.values())
 
-# Overall score (simple weighted)
-score = 100
-score -= pages_missing * 5          # -5 per missing page
-score -= title_issues * 3           # -3 per title issue
-score -= h1_issues * 2              # -2 per H1 issue
-score -= meta_issues * 2            # -2 per meta issue
-score -= max(0, (100 - alt_score)) * 0.2  # up to -20 for bad alt text
-if not any(r["has_local_business"] for name, r in results.items() if name == "Homepage"):
-    score -= 10                     # -10 if homepage missing LocalBusiness
-score -= max(0, 7 - pages_with_faq) * 1   # -1 per page missing FAQ schema (up to 7)
+# Overall score (percentage-based, scales with page count)
+# Each component is 0-100%, then weighted
+pct_live = (pages_live / total_pages * 100) if total_pages > 0 else 0         # % pages returning 200
+pct_title_ok = ((pages_live - title_issues) / pages_live * 100) if pages_live > 0 else 0
+pct_h1_ok = ((pages_live - h1_issues) / pages_live * 100) if pages_live > 0 else 0
+pct_meta_ok = ((pages_live - meta_issues) / pages_live * 100) if pages_live > 0 else 0
+pct_schema = (pages_with_local_biz / pages_live * 100) if pages_live > 0 else 0
+pct_faq = (pages_with_faq / pages_live * 100) if pages_live > 0 else 0
+
+score = (
+    pct_live * 0.15 +           # 15% weight: pages exist
+    pct_title_ok * 0.20 +       # 20% weight: title tags
+    pct_h1_ok * 0.15 +          # 15% weight: H1 tags
+    pct_meta_ok * 0.15 +        # 15% weight: meta descriptions
+    alt_score * 0.15 +           # 15% weight: alt text quality
+    pct_schema * 0.10 +          # 10% weight: LocalBusiness schema
+    pct_faq * 0.10               # 10% weight: FAQ schema
+)
 score = max(0, min(100, round(score)))
 
 # ============================================================
