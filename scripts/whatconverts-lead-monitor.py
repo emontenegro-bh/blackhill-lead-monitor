@@ -237,6 +237,44 @@ SOLICITATION_KEYWORDS = [
     "working in the business to", "shift from working in",
     "we built", "we handle", "you don't need to manage",
     "trained human", "no pressure at all",
+    # Expanded patterns replacing LLM classifier (added 2026-05-12)
+    "i represent", "i work for", "i work with",
+    "on behalf of", "my company", "my firm", "my team",
+    "our company", "our platform", "our software", "our solution",
+    "our service", "our clients", "our customers",
+    "would love to chat", "would love to connect",
+    "would love to discuss", "would love to show",
+    "let me know if you", "let me know when",
+    "interested in partnering", "partnership opportunity",
+    "collaboration opportunity", "business opportunity",
+    "revenue opportunity", "growth opportunity",
+    "i noticed your website", "i noticed your company",
+    "i came across your", "i found your",
+    "i saw your google", "i saw your website",
+    "checked out your site", "checked out your website",
+    "looking at your online", "reviewed your website",
+    "your competitors", "your competition",
+    "roi", "return on investment",
+    "case study", "case studies", "success stories",
+    "proven results", "proven track record",
+    "ai-powered", "ai powered", "automation tool",
+    "crm software", "crm solution", "crm platform",
+    "marketing agency", "digital marketing", "social media marketing",
+    "web design service", "website redesign",
+    "pay per click", "ppc management", "google ads management",
+    "email marketing", "email campaign",
+    "content marketing", "content strategy",
+    "reputation management", "online reputation",
+    "pest control leads", "roofing leads", "hvac leads",
+    "exclusive leads", "qualified leads", "warm leads",
+    "cold outreach", "outreach campaign",
+    "software demo", "product demo", "platform demo",
+    "saas", "subscription", "monthly plan",
+    "white label", "reseller",
+    "outsource", "offshore", "nearshore",
+    "pricing page", "see our pricing",
+    "calendly", "hubspot meeting", "meeting link",
+    "unsubscribe", "opt-out", "stop receiving",
 ]
 
 SPAM_EMAIL_DOMAINS = [
@@ -428,6 +466,61 @@ LEGIT"""
         return False, ""
 
 
+def _structural_spam_check(message, email, fields):
+    """Detect spam using structural patterns that don't need an LLM.
+    Catches sales pitches, B2B solicitations, and bot submissions
+    that slip past keyword matching by checking message structure."""
+    msg = message.lower()
+
+    # URLs in message body — real customers almost never include links
+    if re.search(r'https?://\S+', msg) or re.search(r'www\.\S+', msg):
+        return True, "Structural: URL in message body"
+
+    # Self-introduction pattern: "I'm [Name] from/at/with [Company]"
+    if re.search(r"\bi[''']?m \w+ (?:from|at|with) ", msg):
+        return True, "Structural: Self-introduction (selling pattern)"
+
+    # "My name is X and I" + not mentioning landscaping services
+    if re.search(r"my name is \w+.{0,30}(?:and i|i wanted|i would)", msg):
+        service_signals = ["yard", "lawn", "landscap", "tree", "sod", "irrigat",
+                           "sprinkler", "mulch", "fence", "patio", "drain",
+                           "mow", "weed", "shrub", "garden", "plant", "grass"]
+        if not any(s in msg for s in service_signals):
+            return True, "Structural: Self-introduction with no service keywords"
+
+    # B2B pitch indicators — words real residential/commercial customers never use
+    b2b_terms = ["pipeline", "onboarding", "kpi", "scaling", "funnel",
+                 "conversion rate", "click-through", "ctr", "roas",
+                 "retainer", "deliverables", "stakeholder",
+                 "b2b", "b2c", "saas", "api integration"]
+    b2b_count = sum(1 for t in b2b_terms if t in msg)
+    if b2b_count >= 2:
+        return True, f"Structural: Multiple B2B terms ({b2b_count} matches)"
+
+    # Message mentions "your website" or "your business" + no service request
+    if ("your website" in msg or "your business" in msg or "your company" in msg):
+        service_signals = ["yard", "lawn", "landscap", "tree", "sod", "irrigat",
+                           "sprinkler", "mulch", "fence", "patio", "drain",
+                           "mow", "weed", "shrub", "estimate", "quote", "bid"]
+        if not any(s in msg for s in service_signals):
+            return True, "Structural: Talks about 'your website/business' without service request"
+
+    # Excessively long messages with no address — real leads are usually short
+    address = (fields.get("Address", "") or "").strip()
+    if len(msg) > 500 and not address:
+        return True, "Structural: Long message (>500 chars) with no address provided"
+
+    # Message contains a different email address (spammers embed contact info)
+    email_in_body = re.findall(r'[\w.+-]+@[\w-]+\.[\w.]+', msg)
+    if email_in_body:
+        # Filter out the form's own email
+        other_emails = [e for e in email_in_body if e != email]
+        if other_emails:
+            return True, f"Structural: Embedded email in message body ({other_emails[0]})"
+
+    return False, ""
+
+
 def _is_spam_form(lead_data):
     """Check if a web form lead is spam."""
     fields = lead_data.get("additional_fields", {})
@@ -501,7 +594,13 @@ def _is_spam_form(lead_data):
     if not email and not phone:
         return True, "No email and no phone"
 
-    # LLM message classification (catches sales pitches that keywords miss)
+    # Structural spam detection (replaces LLM classifier)
+    if message and len(message) > 20:
+        spam_hit, spam_reason = _structural_spam_check(message, email, fields)
+        if spam_hit:
+            return True, spam_reason
+
+    # LLM message classification (disabled when API credits unavailable, falls back gracefully)
     if message and len(message) > 20:
         name = (fields.get("Name", "") or lead_data.get("contact_name", "")).strip()
         service = fields.get("What Type Of Service Do You Need?", "")
