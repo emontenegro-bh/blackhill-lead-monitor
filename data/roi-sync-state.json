@@ -9,12 +9,12 @@
       "synced_at": "2026-04-02T21:32:06.440096+00:00"
     },
     "226455958": {
-      "last_status": "Delivered",
-      "opp_number": 3204,
-      "quote_value": 12024,
+      "last_status": "Lost",
+      "opp_number": 3244,
+      "quote_value": 35961,
       "sales_value": 0,
       "traffic_source": "bing / organic",
-      "synced_at": "2026-04-02T21:32:09.291959+00:00"
+      "synced_at": "2026-05-12T15:32:57.760088+00:00"
     },
     "226006475": {
       "last_status": "Won",
@@ -219,6 +219,6 @@
   },
   "stats": {
     "total_synced": 27,
-    "last_run": "2026-05-12T12:29:38.230637+00:00"
+    "last_run": "2026-05-12T15:33:05.337537+00:00"
   }
 }
