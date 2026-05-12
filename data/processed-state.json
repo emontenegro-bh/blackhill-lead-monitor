@@ -288,15 +288,16 @@
     "234914252",
     "234931880",
     "234990158",
-    "235113201"
+    "235113201",
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD0pZuRAAA="
   ],
   "stats": {
     "total_leads": 123,
-    "total_spam": 120,
+    "total_spam": 121,
     "last_lead": "2026-05-11T20:10:27.110597",
     "total_calls": 3
   },
-  "last_run": "2026-05-12T15:25:18.483470+00:00",
+  "last_run": "2026-05-12T15:26:26.301818+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
