@@ -293,15 +293,16 @@
     "235135529",
     "235141331",
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD0pZuSAAA=",
-    "235245620"
+    "235245620",
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD0pZuTAAA="
   ],
   "stats": {
     "total_leads": 124,
-    "total_spam": 124,
+    "total_spam": 125,
     "last_lead": "2026-05-12T22:40:24.670662",
     "total_calls": 3
   },
-  "last_run": "2026-05-13T01:25:10.858409+00:00",
+  "last_run": "2026-05-13T01:26:30.136047+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
