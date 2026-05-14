@@ -309,7 +309,7 @@
     "last_lead": "2026-05-14T13:45:15.019383",
     "total_calls": 7
   },
-  "last_run": "2026-05-14T14:35:12.657862+00:00",
+  "last_run": "2026-05-14T14:40:14.971452+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -743,7 +743,7 @@
       "value": "Google Ads",
       "note": "WC #235528049 | Google Ads",
       "first_seen": "2026-05-14T13:45:15.019354+00:00",
-      "attempts": 11,
+      "attempts": 12,
       "caller_name": "Lambeth Joseph",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
