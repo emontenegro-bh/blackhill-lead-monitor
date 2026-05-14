@@ -25,6 +25,9 @@ DRY_RUN = "--dry-run" in sys.argv
 CONTACT_TYPE_PROSPECT = 8
 OWNER_EVELIN_CONTACT_ID = 6
 
+# ContactCustomFieldDefinitionID for the "Lead Source" picklist (looked up 2026-05-13)
+LEAD_SOURCE_DEFINITION_ID = 34
+
 ASPIRE_PORTAL = "https://cloud.youraspire.com"
 
 
@@ -250,54 +253,58 @@ def create_contact(lead, config, token):
 
 # --- Main ---
 
+def _stamp_attribution(contact_id, lead, config, token):
+    """Stamp the Lead Source custom field + append attribution note. Best-effort, swallows errors into result."""
+    out = {}
+    value = lead.get("lead_source_aspire")
+    if value:
+        ok, msg = set_lead_source(contact_id, value, config, token)
+        out["lead_source"] = msg if ok else f"FAILED: {msg}"
+    note = lead.get("attribution_note")
+    if note:
+        ok, msg = append_contact_note(contact_id, note, config, token)
+        out["note"] = msg if ok else f"FAILED: {msg}"
+    return out
+
+
 def process_lead(lead, config, token):
-    """Process a lead: dedup, create contact. Returns result dict."""
+    """Process a lead: dedup, create contact, stamp lead source + attribution. Returns result dict."""
     email = lead.get("email", "").strip()
     first_name = lead.get("first_name", "").strip()
     last_name = lead.get("last_name", "").strip()
     phone = lead.get("phone", "").strip()
 
+    def _exists_response(existing):
+        cid = existing.get("ContactID", "")
+        contact_url = f"{ASPIRE_PORTAL}/app/contacts/{cid}" if cid else ""
+        result = {
+            "success": True,
+            "action": "exists",
+            "contact_id": str(cid),
+            "contact_url": contact_url,
+            "message": f"Contact already exists: {existing.get('FirstName', '')} {existing.get('LastName', '')}",
+        }
+        if cid:
+            result["attribution"] = _stamp_attribution(cid, lead, config, token)
+        return result
+
     # Dedup by email first
     if email:
         existing = search_contact_by_email(email, config, token)
         if existing:
-            cid = existing.get("ContactID", "")
-            contact_url = f"{ASPIRE_PORTAL}/app/contacts/{cid}" if cid else ""
-            return {
-                "success": True,
-                "action": "exists",
-                "contact_id": str(cid),
-                "contact_url": contact_url,
-                "message": f"Contact already exists: {existing.get('FirstName', '')} {existing.get('LastName', '')}",
-            }
+            return _exists_response(existing)
 
     # Dedup by phone (important for call leads which have no email)
     if phone:
         existing = search_contact_by_phone(phone, config, token)
         if existing:
-            cid = existing.get("ContactID", "")
-            contact_url = f"{ASPIRE_PORTAL}/app/contacts/{cid}" if cid else ""
-            return {
-                "success": True,
-                "action": "exists",
-                "contact_id": str(cid),
-                "contact_url": contact_url,
-                "message": f"Contact already exists: {existing.get('FirstName', '')} {existing.get('LastName', '')}",
-            }
+            return _exists_response(existing)
 
     # Dedup by name
     if first_name and last_name:
         existing = search_contact_by_name(first_name, last_name, config, token)
         if existing:
-            cid = existing.get("ContactID", "")
-            contact_url = f"{ASPIRE_PORTAL}/app/contacts/{cid}" if cid else ""
-            return {
-                "success": True,
-                "action": "exists",
-                "contact_id": str(cid),
-                "contact_url": contact_url,
-                "message": f"Contact already exists: {existing.get('FirstName', '')} {existing.get('LastName', '')}",
-            }
+            return _exists_response(existing)
 
     # Create contact
     resp, status = create_contact(lead, config, token)
@@ -310,12 +317,15 @@ def process_lead(lead, config, token):
             contact_id = str(resp)
 
         contact_url = f"{ASPIRE_PORTAL}/app/contacts/{contact_id}" if contact_id else ""
-        return {
+        result = {
             "success": True,
             "action": "created",
             "contact_id": contact_id,
             "contact_url": contact_url,
         }
+        if contact_id:
+            result["attribution"] = _stamp_attribution(contact_id, lead, config, token)
+        return result
 
     # Error
     error_msg = ""
@@ -325,6 +335,95 @@ def process_lead(lead, config, token):
         error_msg = str(resp)
     return {"success": False, "message": f"Contact creation failed ({status}): {error_msg}"}
 
+
+# --- Lead Source Custom Field ---
+
+def get_lead_source_row(contact_id, config, token):
+    """Return existing /ContactCustomFields row for this contact + Lead Source definition, or None."""
+    endpoint = (
+        f"/ContactCustomFields?$filter=ContactID eq {int(contact_id)} and "
+        f"ContactCustomFieldDefinitionID eq {LEAD_SOURCE_DEFINITION_ID}&$top=1"
+    )
+    resp, status = api_request("GET", endpoint, config, token)
+    if status == 200 and isinstance(resp, list) and resp:
+        return resp[0]
+    return None
+
+
+def set_lead_source(contact_id, value, config, token):
+    """Upsert the Lead Source custom field on a contact. Returns (success, message)."""
+    existing = get_lead_source_row(contact_id, config, token)
+    body = {
+        "ContactID": int(contact_id),
+        "ContactCustomFieldDefinitionID": LEAD_SOURCE_DEFINITION_ID,
+        "ColumnValue": value,
+    }
+    if existing:
+        body["ContactCustomFieldValueID"] = existing["ContactCustomFieldValueID"]
+        resp, status = api_request("PUT", "/ContactCustomFields", config, token, body)
+    else:
+        resp, status = api_request("POST", "/ContactCustomFields", config, token, body)
+    if status in (200, 201):
+        return True, f"Lead Source set to '{value}'"
+    return False, f"Lead Source write failed ({status}): {resp}"
+
+
+def append_contact_note(contact_id, note_line, config, token):
+    """Append a single line to the contact's Notes field. Idempotent: skips if line already present.
+
+    Aspire's PUT /Contacts rejects partial updates — it requires First/Last name in the body — so
+    we fetch the contact via $filter and round-trip the required fields.
+    """
+    resp_list, status = api_request(
+        "GET", f"/Contacts?$filter=ContactID eq {int(contact_id)}&$top=1", config, token
+    )
+    if status != 200 or not isinstance(resp_list, list) or not resp_list:
+        return False, f"Could not fetch contact ({status})"
+    contact = resp_list[0]
+    existing_notes = (contact.get("Notes") or "").rstrip()
+    needle = note_line.strip()
+    if needle and needle in existing_notes:
+        return True, "Note already present"
+    new_notes = f"{existing_notes}\n{note_line}" if existing_notes else note_line
+    body = {"Contact": {
+        "ContactID": int(contact_id),
+        "FirstName": contact.get("FirstName") or "",
+        "LastName": contact.get("LastName") or "",
+        "Email": contact.get("Email") or "",
+        "MobilePhone": contact.get("MobilePhone") or "",
+        "ContactTypeID": contact.get("ContactTypeID"),
+        "Active": contact.get("Active", True),
+        "Notes": new_notes,
+    }}
+    _, st = api_request("PUT", "/Contacts", config, token, body)
+    if st in (200, 201, 204):
+        return True, "Note appended"
+    return False, f"Note append failed ({st})"
+
+
+def update_lead_source_by_phone(phone, value, note_line, config, token):
+    """Find contact by phone, stamp Lead Source, optionally append note. Returns result dict."""
+    contact = search_contact_by_phone(phone, config, token)
+    if not contact:
+        return {"success": False, "action": "not_found", "message": f"No Aspire contact found for {phone}"}
+    cid = contact.get("ContactID")
+    if not cid:
+        return {"success": False, "action": "not_found", "message": "Contact found but missing ContactID"}
+    ls_ok, ls_msg = set_lead_source(cid, value, config, token)
+    note_ok, note_msg = (True, "skipped")
+    if note_line:
+        note_ok, note_msg = append_contact_note(cid, note_line, config, token)
+    return {
+        "success": ls_ok and note_ok,
+        "action": "updated",
+        "contact_id": str(cid),
+        "contact_url": f"{ASPIRE_PORTAL}/app/contacts/{cid}",
+        "lead_source": ls_msg,
+        "note": note_msg,
+    }
+
+
+# --- Test ---
 
 def test_connection(config):
     """Test Aspire API connectivity."""
@@ -356,6 +455,31 @@ if __name__ == "__main__":
     if "--test" in sys.argv:
         ok = test_connection(config)
         sys.exit(0 if ok else 1)
+
+    # --update-lead-source mode: stamp the Lead Source custom field on an existing contact
+    # (used by the WC monitor for phone calls, which the branch admin enters into Aspire manually).
+    if "--update-lead-source" in sys.argv:
+        def _arg(name):
+            for i, a in enumerate(sys.argv):
+                if a == name and i + 1 < len(sys.argv):
+                    return sys.argv[i + 1]
+            return None
+        phone = _arg("--phone")
+        value = _arg("--value")
+        note = _arg("--note") or ""
+        if not phone or not value:
+            print(json.dumps({"success": False, "message": "--phone and --value are required"}))
+            sys.exit(1)
+        if DRY_RUN:
+            print(json.dumps({"success": True, "action": "dry_run", "message": f"Would stamp {value} for {phone}"}))
+            sys.exit(0)
+        token = authenticate(config)
+        if not token:
+            print(json.dumps({"success": False, "message": "Authentication failed"}))
+            sys.exit(1)
+        result = update_lead_source_by_phone(phone, value, note, config, token)
+        print(json.dumps(result))
+        sys.exit(0 if result.get("success") else 1)
 
     # Parse lead from CLI arg
     lead_json = None

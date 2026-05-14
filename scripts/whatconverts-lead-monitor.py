@@ -675,6 +675,11 @@ def _parse_form_lead(lead_data):
         "message": message_text[:500],
         "source": "web_form",
         "traffic_source": traffic_source,
+        "lead_source_raw": source,
+        "lead_medium_raw": medium,
+        "lead_keyword": (lead_data.get("lead_keyword") or "").strip(),
+        "lead_campaign": (lead_data.get("lead_campaign") or "").strip(),
+        "landing_url": (lead_data.get("landing_url") or "").strip(),
         "received_at": lead_data.get("date_created", ""),
         "wc_lead_id": str(lead_data.get("lead_id", "")),
         "wc_lead_status": lead_data.get("lead_status", ""),
@@ -743,6 +748,12 @@ def _parse_call_lead(lead_data):
         "message": message_text[:500],
         "source": "phone_call",
         "traffic_source": traffic_source,
+        "lead_source_raw": source,
+        "lead_medium_raw": medium,
+        "lead_keyword": (lead_data.get("lead_keyword") or "").strip(),
+        "lead_campaign": (lead_data.get("lead_campaign") or "").strip(),
+        "landing_url": (lead_data.get("landing_url") or "").strip(),
+        "tracking_number": (lead_data.get("tracking_number") or "").strip(),
         "received_at": lead_data.get("date_created", ""),
         "wc_lead_id": str(lead_data.get("lead_id", "")),
         "wc_lead_status": lead_data.get("lead_status", ""),
@@ -999,19 +1010,52 @@ def send_auto_reply(config, lead):
 # --- Aspire Lead Source Mapping ---
 
 def _aspire_lead_source(lead):
-    """Map WhatConverts traffic source to Aspire LeadSource dropdown value."""
-    source = (lead.get("traffic_source") or "").lower()
-    if "cpc" in source:
-        return "Advertising"
-    if "organic" in source:
-        return "Website"
-    if lead.get("source") == "phone_call" and ("direct" in source or not source or source == "unknown"):
-        return "Call In"
-    if "referral" in source:
-        return "Website"
-    if "email" in source or "mailchimp" in source:
-        return "Website"
+    """Map WC (lead_source, lead_medium) to the exact Aspire LeadSource picklist value.
+
+    Picklist values (verbatim, including the trailing space on 'Phone Call '):
+    'Phone Call ', 'Website', 'Referral', 'Bing Organic', 'Bing Ads',
+    'Google Organic', 'Google Ads', 'Google Business Profile'.
+    """
+    is_call = lead.get("source") == "phone_call"
+    src = (lead.get("lead_source_raw") or "").lower().strip()
+    med = (lead.get("lead_medium_raw") or "").lower().strip()
+
+    # GBP — WC tags map-pack calls/clicks with lead_source='gmb'
+    if src == "gmb":
+        return "Google Business Profile"
+    if src == "google" and med == "cpc":
+        return "Google Ads"
+    if src == "google" and med == "organic":
+        return "Google Organic"
+    if src == "bing" and med == "cpc":
+        return "Bing Ads"
+    if src == "bing" and med == "organic":
+        return "Bing Organic"
+    if med == "referral":
+        return "Referral"
+    # Direct/unknown: phone calls bucket into the catch-all 'Phone Call '
+    if is_call:
+        return "Phone Call "  # NOTE: trailing space matches Aspire picklist exactly
     return "Website"
+
+
+def _attribution_note(lead):
+    """Build a one-line attribution note appended to the Aspire contact's Notes."""
+    parts = [f"WC #{lead.get('wc_lead_id', '?')}", _aspire_lead_source(lead).strip()]
+    kw = (lead.get("lead_keyword") or "").strip()
+    if kw:
+        parts.append(f"Keyword: {kw}")
+    landing = (lead.get("landing_url") or "").strip()
+    if landing:
+        # Strip protocol/domain/query — keep just the path
+        try:
+            from urllib.parse import urlparse
+            path = urlparse(landing).path.rstrip("/")
+            if path and path != "/":
+                parts.append(f"Landing: {path}")
+        except Exception:
+            pass
+    return " | ".join(parts)
 
 
 # --- Owner Notification via Gmail SMTP ---
@@ -1273,6 +1317,58 @@ def add_to_mailchimp(config, lead):
 
 # --- Aspire CRM ---
 
+def stamp_aspire_lead_source(config, phone, value, note):
+    """Look up an existing Aspire contact by phone and stamp the Lead Source custom field + note.
+
+    Returns one of:
+      ("updated", contact_url)  — found and stamped
+      ("not_found", None)       — admin hasn't created the contact yet; caller should defer
+      (None, None)              — call failed / Aspire disabled
+    """
+    aspire_cfg = config.get("aspire", {})
+    if not aspire_cfg.get("enabled"):
+        return None, None
+    if DRY_RUN:
+        log(f"  DRY RUN: Would stamp Aspire Lead Source '{value}' for {phone}")
+        return "updated", "dry-run"
+
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "aspire-api-sync.py")
+    if not os.path.exists(script_path):
+        log(f"  ERROR: Aspire API script not found at {script_path}")
+        return None, None
+
+    env = os.environ.copy()
+    if aspire_cfg.get("api_client_id"):
+        env["ASPIRE_CLIENT_ID"] = aspire_cfg["api_client_id"]
+    if aspire_cfg.get("api_secret"):
+        env["ASPIRE_SECRET"] = aspire_cfg["api_secret"]
+
+    try:
+        import subprocess
+        args = ["python3", script_path, "--update-lead-source", "--phone", phone, "--value", value]
+        if note:
+            args.extend(["--note", note])
+        result = subprocess.run(args, capture_output=True, text=True, timeout=30, env=env)
+        if result.stdout.strip():
+            response = json.loads(result.stdout.strip())
+            action = response.get("action")
+            if action == "updated":
+                url = response.get("contact_url", "updated")
+                log(f"  Aspire: Lead Source '{value}' stamped on {url}")
+                return "updated", url
+            if action == "not_found":
+                log(f"  Aspire: No contact yet for {phone} (admin hasn't entered it)")
+                return "not_found", None
+            log(f"  Aspire: {response.get('message') or response}")
+            return None, None
+        stderr_tail = (result.stderr or "")[-300:]
+        log(f"  ERROR: Aspire returned no output. stderr: {stderr_tail}")
+        return None, None
+    except Exception as e:
+        log(f"  ERROR: Aspire stamp failed: {e}")
+        return None, None
+
+
 def create_aspire_contact(config, lead):
     """Create a contact in Aspire via the aspire-api-sync.py script.
     Returns (url_or_status, contact_id) tuple."""
@@ -1342,8 +1438,85 @@ def get_owner_info(owner_id):
 
 # --- Main Processing ---
 
+PENDING_ATTRIBUTION_NOTIFY_HOURS = 24
+
+
+def send_unattributed_call_notification(config, entry):
+    """Email Evelin when a phone call's Aspire contact was never created by the branch admin."""
+    wc_id = entry.get("wc_lead_id", "?")
+    caller = entry.get("caller_name") or "Unknown caller"
+    phone = entry.get("phone", "?")
+    src = entry.get("lead_source_raw", "?")
+    med = entry.get("lead_medium_raw", "?")
+    duration = entry.get("call_duration", "?")
+    received = entry.get("received_at", "?")
+    transcription = (entry.get("transcription") or "")[:400]
+    wc_link = f"https://app.whatconverts.com/leads/details/{wc_id}"
+
+    html = f"""<html><body style="font-family: Arial, sans-serif; font-size: 11pt; color: #333;">
+<h2 style="color: #C9700B;">Unattributed Phone Call — No Aspire Contact After {PENDING_ATTRIBUTION_NOTIFY_HOURS}h</h2>
+<p>A WhatConverts phone call has been waiting {PENDING_ATTRIBUTION_NOTIFY_HOURS} hours for the branch admin to create the Aspire contact. Lead source attribution could not be recorded.</p>
+<table style="font-size: 10pt; margin-bottom: 12px;">
+<tr><td style="padding: 4px 12px 4px 0;"><strong>WC Lead</strong></td><td><a href="{wc_link}">#{wc_id}</a></td></tr>
+<tr><td style="padding: 4px 12px 4px 0;"><strong>Caller</strong></td><td>{caller}</td></tr>
+<tr><td style="padding: 4px 12px 4px 0;"><strong>Number</strong></td><td>{phone}</td></tr>
+<tr><td style="padding: 4px 12px 4px 0;"><strong>Source</strong></td><td>{src} / {med}</td></tr>
+<tr><td style="padding: 4px 12px 4px 0;"><strong>Duration</strong></td><td>{duration}</td></tr>
+<tr><td style="padding: 4px 12px 4px 0;"><strong>Received</strong></td><td>{received}</td></tr>
+</table>
+<p style="font-size: 10pt;"><strong>Transcription:</strong><br><span style="color: #555;">{transcription}</span></p>
+<p style="font-size: 9pt; color: #888;">If this was a real lead, create the contact in Aspire and the next monitor run will stamp the Lead Source automatically. If it was spam/wrong-number, no action needed.</p>
+</body></html>"""
+
+    recipients = config.get("notifications", {}).get("lead_recipients") or ["evelin@blackhilltx.com"]
+    ok, err = _send_via_gmail_smtp(
+        to_emails=recipients,
+        subject=f"Unattributed call: {caller} ({phone}) - WC #{wc_id}",
+        html_body=html,
+        from_name="Black Hill Assistant",
+    )
+    if ok:
+        log(f"  Pending: notified Evelin about WC #{wc_id} (admin never entered)")
+    else:
+        log(f"  Pending: FAILED to notify about WC #{wc_id}: {err}")
+    return ok
+
+
+def retry_pending_call_attributions(config, state):
+    """Re-attempt stamping Lead Source for phone calls the admin hadn't entered yet on previous runs.
+
+    After PENDING_ATTRIBUTION_NOTIFY_HOURS, email Evelin once (`notified=true`) and remove from queue.
+    """
+    pending = state.get("pending_call_attributions") or {}
+    if not pending:
+        return
+    now = datetime.now(timezone.utc)
+    keep = {}
+    for wc_id, entry in pending.items():
+        try:
+            first_seen = datetime.fromisoformat(entry["first_seen"])
+        except Exception:
+            first_seen = now
+        age_h = (now - first_seen).total_seconds() / 3600.0
+        action, _ = stamp_aspire_lead_source(config, entry["phone"], entry["value"], entry.get("note", ""))
+        if action == "updated":
+            log(f"  Pending: WC #{wc_id} stamped on retry (age {age_h:.1f}h)")
+            continue
+        if age_h >= PENDING_ATTRIBUTION_NOTIFY_HOURS and not entry.get("notified"):
+            send_unattributed_call_notification(config, entry)
+            entry["notified"] = True
+            # Notification sent — stop retrying and drop from queue.
+            continue
+        entry["attempts"] = entry.get("attempts", 0) + 1
+        keep[wc_id] = entry
+    state["pending_call_attributions"] = keep
+
+
 def process_leads(config, state):
     """Main processing loop: fetch WhatConverts leads and process new ones."""
+    # Retry any phone calls we couldn't attribute yet (admin entered them since last run).
+    retry_pending_call_attributions(config, state)
+
     leads = fetch_recent_leads(config, lookback_minutes=130)
     if not leads:
         log("No recent leads found.")
@@ -1409,13 +1582,53 @@ def process_leads(config, state):
 
         # Parse into standard lead dict
         lead = parse_wc_lead(lead_data)
+        lead["lead_source_aspire"] = _aspire_lead_source(lead)
+        lead["attribution_note"] = _attribution_note(lead)
         log(f"  Parsed: {lead['first_name']} {lead['last_name']} | {lead['email'] or '(no email)'} | {lead['phone']} | {lead['service_interest']}")
+        log(f"  Attribution: {lead['attribution_note']}")
 
-        # Send auto-reply (forms only — callers already contacted us)
-        if not is_call and lead.get("email") and "@" in lead.get("email", ""):
+        # ---- Phone calls: branch admin owns these. Only record attribution. ----
+        if is_call:
+            action, contact_url = stamp_aspire_lead_source(
+                config,
+                phone=lead.get("phone", ""),
+                value=lead["lead_source_aspire"],
+                note=lead["attribution_note"],
+            )
+            if action == "not_found":
+                # Admin hasn't entered the contact in Aspire yet — queue for retry next run.
+                pending = state.setdefault("pending_call_attributions", {})
+                existing = pending.get(lead_id, {})
+                pending[lead_id] = {
+                    "wc_lead_id": lead_id,
+                    "phone": lead.get("phone", ""),
+                    "value": lead["lead_source_aspire"],
+                    "note": lead["attribution_note"],
+                    "first_seen": existing.get("first_seen") or datetime.now(timezone.utc).isoformat(),
+                    "attempts": existing.get("attempts", 0) + 1,
+                    # Context for the 48h notification email:
+                    "caller_name": (lead_data.get("caller_name") or "").strip(),
+                    "lead_source_raw": lead.get("lead_source_raw", ""),
+                    "lead_medium_raw": lead.get("lead_medium_raw", ""),
+                    "call_duration": lead_data.get("call_duration", ""),
+                    "received_at": lead_data.get("date_created", ""),
+                    "transcription": (lead_data.get("call_transcription") or "").strip(),
+                }
+                log(f"  Queued for retry (will notify Evelin if not entered within {PENDING_ATTRIBUTION_NOTIFY_HOURS}h)")
+            # Mark processed in WC ledger regardless — retries are driven from pending state.
+            processed_ids.append(lead_id)
+            state["stats"]["total_leads"] = state["stats"].get("total_leads", 0) + 1
+            state["stats"]["total_calls"] = state["stats"].get("total_calls", 0) + 1
+            state["stats"]["last_lead"] = datetime.now().isoformat()
+            state["processed_ids"] = processed_ids
+            if not DRY_RUN:
+                save_state(state)
+            continue
+
+        # ---- Web forms: full CRM intake + assignment + notifications ----
+        # Send auto-reply
+        if lead.get("email") and "@" in lead.get("email", ""):
             send_auto_reply(config, lead)
-        elif is_call:
-            log("  Skipping auto-reply: phone call lead")
         else:
             log("  Skipping auto-reply: no valid email")
 
