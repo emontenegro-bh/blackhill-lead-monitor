@@ -111,10 +111,10 @@
     "status": "queued"
   },
   {
-    "id": "2026-05-15-commercial-maintenance",
-    "target_date": "2026-05-15",
-    "day": "Friday",
-    "week": 3,
+    "id": "2026-05-20-commercial-maintenance",
+    "target_date": "2026-05-20",
+    "day": "Wednesday",
+    "week": 4,
     "theme": "Commercial Property Maintenance",
     "type": "update",
     "cta": "CALL",
@@ -124,10 +124,10 @@
     "status": "queued"
   },
   {
-    "id": "2026-05-20-sprinkler-heat-prep",
-    "target_date": "2026-05-20",
-    "day": "Wednesday",
-    "week": 4,
+    "id": "2026-05-15-sprinkler-heat-prep",
+    "target_date": "2026-05-15",
+    "day": "Friday",
+    "week": 3,
     "theme": "Seasonal Tip - Sprinkler Heat Prep",
     "type": "update",
     "cta": "CALL",
