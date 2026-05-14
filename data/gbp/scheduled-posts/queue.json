@@ -111,9 +111,9 @@
     "status": "queued"
   },
   {
-    "id": "2026-05-18-commercial-maintenance",
-    "target_date": "2026-05-18",
-    "day": "Monday",
+    "id": "2026-05-22-commercial-maintenance",
+    "target_date": "2026-05-22",
+    "day": "Friday",
     "week": 4,
     "theme": "Commercial Property Maintenance",
     "type": "update",
@@ -134,6 +134,17 @@
     "url": "https://blackhilllandscaping.com/areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
     "text": "DFW temps are climbing into the 90s, and most sprinkler systems are about to get pushed hard for the first time this season. Before the heat sets in, a few checks make a real difference. Walk every zone with the system running and confirm each head pops up fully and sprays where it should, not onto the driveway or the fence. Look for soft spots in the lawn that signal a buried line leak. Bump your controller from spring settings to summer with longer cycles, fewer days, and run times before sunrise to cut evaporation loss. Heads typically need replacement every 5 to 7 years, and Fort Worth's clay soil shifts crack PVC faster than people expect. If you are not sure where your system stands heading into June, a zone-by-zone diagnostic now costs less than a heat-stressed lawn in July. Call (817) 995-0324 to schedule a sprinkler inspection.",
     "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/product-sprinkler.jpg",
+    "status": "queued"
+  },
+  {
+    "id": "2026-05-18-memorial-day",
+    "target_date": "2026-05-18",
+    "day": "Monday",
+    "week": 4,
+    "theme": "Community - Memorial Day Weekend",
+    "type": "update",
+    "text": "Memorial Day weekend is one week away, and Fort Worth yards are about to be the backdrop for cookouts, family gatherings, and the first real weekend of summer. We want to take a moment to recognize the veterans and service members across our community who carry the weight that the rest of us get to enjoy this weekend. If you are getting your property ready for guests, a clean cut, fresh edging, and blown-out beds make a bigger difference than people realize. Our crews are running full schedules to make sure every property is presentation-ready before the weekend. We are proud to serve Fort Worth, Aledo, Keller, Colleyville, and the surrounding communities. From all of us at Black Hill Landscaping, have a safe and meaningful Memorial Day weekend.",
+    "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/memorial-day-2026.jpg",
     "status": "queued"
   }
 ]
