@@ -84,9 +84,9 @@
     "posted_at": "2026-05-08T15:25:31.733602"
   },
   {
-    "id": "2026-05-11-landscape-lighting",
-    "target_date": "2026-05-11",
-    "day": "Monday",
+    "id": "2026-05-14-landscape-lighting",
+    "target_date": "2026-05-14",
+    "day": "Thursday",
     "week": 3,
     "theme": "Landscape Lighting",
     "type": "update",
@@ -97,10 +97,10 @@
     "status": "queued"
   },
   {
-    "id": "2026-05-13-irrigation-repair",
-    "target_date": "2026-05-13",
-    "day": "Wednesday",
-    "week": 3,
+    "id": "2026-05-18-irrigation-repair",
+    "target_date": "2026-05-18",
+    "day": "Monday",
+    "week": 4,
     "theme": "Irrigation Repair & Diagnostics",
     "type": "update",
     "cta": "CALL",
