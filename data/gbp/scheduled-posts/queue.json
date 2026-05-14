@@ -98,9 +98,9 @@
     "posted_at": "2026-05-14T12:53:54.214058"
   },
   {
-    "id": "2026-05-18-irrigation-repair",
-    "target_date": "2026-05-18",
-    "day": "Monday",
+    "id": "2026-05-20-irrigation-repair",
+    "target_date": "2026-05-20",
+    "day": "Wednesday",
     "week": 4,
     "theme": "Irrigation Repair & Diagnostics",
     "type": "update",
@@ -111,9 +111,9 @@
     "status": "queued"
   },
   {
-    "id": "2026-05-20-commercial-maintenance",
-    "target_date": "2026-05-20",
-    "day": "Wednesday",
+    "id": "2026-05-18-commercial-maintenance",
+    "target_date": "2026-05-18",
+    "day": "Monday",
     "week": 4,
     "theme": "Commercial Property Maintenance",
     "type": "update",
