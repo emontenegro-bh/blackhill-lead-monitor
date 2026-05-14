@@ -301,15 +301,16 @@
     "235368951",
     "235415870",
     "235427161",
-    "235528049"
+    "235528049",
+    "235599624"
   ],
   "stats": {
-    "total_leads": 128,
+    "total_leads": 129,
     "total_spam": 128,
-    "last_lead": "2026-05-14T13:45:15.019383",
+    "last_lead": "2026-05-14T17:50:30.505805",
     "total_calls": 7
   },
-  "last_run": "2026-05-14T17:45:14.519218+00:00",
+  "last_run": "2026-05-14T17:50:30.506741+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -731,6 +732,13 @@
       "service": "General Inquiry",
       "lead_type": "phone_call",
       "date": "2026-05-13"
+    },
+    "235599624": {
+      "aspire_contact_id": "2627",
+      "traffic_source": "google / organic",
+      "service": "Landscaping",
+      "lead_type": "web_form",
+      "date": "2026-05-14"
     }
   },
   "dismissed_matches": [
@@ -743,7 +751,7 @@
       "value": "Google Ads",
       "note": "WC #235528049 | Google Ads",
       "first_seen": "2026-05-14T13:45:15.019354+00:00",
-      "attempts": 51,
+      "attempts": 52,
       "caller_name": "Lambeth Joseph",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
