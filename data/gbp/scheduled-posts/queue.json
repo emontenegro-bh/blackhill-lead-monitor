@@ -122,5 +122,18 @@
     "text": "Commercial property maintenance is about consistency. Tenants, visitors, and property managers notice when a landscape crew misses details or skips a week. Our commercial teams run defined checklists on every visit: mow, edge, blow, spot-treat weeds, and document with photos. We service retail centers, apartment communities, office parks, and municipal properties across Fort Worth. Every property gets a dedicated crew on a fixed schedule so the same people are on your site every time. That means they know the property, they know the problem areas, and they catch issues before they become complaints. We are currently servicing over 500 properties with a 98% client retention rate. If your current provider is inconsistent or you are managing multiple vendor relationships, call (817) 995-0324 to discuss a single-source maintenance contract.",
     "photo": "https://img.companycam.com/Gtn2pdignO74rEvrOK5WnAdK4H37STbJ8Pfph6fqZkI/rs:fit:4032:4032/q:80/aHR0cHM6Ly9jb21w/YW55Y2FtLXBlbmRp/bmcuczMuYW1hem9u/YXdzLmNvbS82NTZk/MjJhNS02ODEzLTQw/MDAtOTZmNi1lMzE2/NTA4NTc4ZDguanBn.jpg",
     "status": "queued"
+  },
+  {
+    "id": "2026-05-20-sprinkler-heat-prep",
+    "target_date": "2026-05-20",
+    "day": "Wednesday",
+    "week": 4,
+    "theme": "Seasonal Tip - Sprinkler Heat Prep",
+    "type": "update",
+    "cta": "CALL",
+    "url": "https://blackhilllandscaping.com/areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
+    "text": "DFW temps are climbing into the 90s, and most sprinkler systems are about to get pushed hard for the first time this season. Before the heat sets in, a few checks make a real difference. Walk every zone with the system running and confirm each head pops up fully and sprays where it should, not onto the driveway or the fence. Look for soft spots in the lawn that signal a buried line leak. Bump your controller from spring settings to summer with longer cycles, fewer days, and run times before sunrise to cut evaporation loss. Heads typically need replacement every 5 to 7 years, and Fort Worth's clay soil shifts crack PVC faster than people expect. If you are not sure where your system stands heading into June, a zone-by-zone diagnostic now costs less than a heat-stressed lawn in July. Call (817) 995-0324 to schedule a sprinkler inspection.",
+    "photo": "https://raw.githubusercontent.com/emontenegro-bh/blackhill-lead-monitor/main/data/gbp/scheduled-posts/photos/product-sprinkler.jpg",
+    "status": "queued"
   }
 ]
