@@ -315,7 +315,7 @@
     "last_lead": "2026-05-14T18:00:16.506808",
     "total_calls": 8
   },
-  "last_run": "2026-05-15T17:58:43.836322+00:00",
+  "last_run": "2026-05-15T18:00:22.628420+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -749,20 +749,5 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "235601349": {
-      "wc_lead_id": "235601349",
-      "phone": "+14802043805",
-      "value": "Google Business Profile",
-      "note": "WC #235601349 | Google Business Profile",
-      "first_seen": "2026-05-14T18:00:16.506777+00:00",
-      "attempts": 297,
-      "caller_name": "Villagrana Luis",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "4 minutes and 12 seconds",
-      "received_at": "2026-05-14T17:55:36Z",
-      "transcription": "Recipient\nGood afternoon. Thank you for calling Black Hill Landscaping. Mrs. Carlos. How may I help you?\n\nCaller\nHey, good morning. This is luis with jms contracting. How are you doing today?\n\nRecipient\nThis is carlos with black hill landscaping. How may I help you?\n\nCaller\nYeah, I was calling to see if you guys do commercial installs.\n\nRecipient\nWere you looking for a. Is this a residential property or commercial?\n\nCaller\nIt'll be commercial.\n\nRecipient\nOkay, give me one second. Can I get the address?\n\nCaller\nYes. Gonna be 13305 i35 west in haslett te.\n\nRecipient\nGive me one second. So it's 13 3i35 west in Aslet, Texas.\n\nCaller\nYes.\n\nRecipient\nOkay, and what type of service is it that you're looking for?\n\nCaller\nWell, I'm looking to get a quote. We're doing a. We're electrical contractor from Arizona. So we got. We're putting a bid to do a new charging station for electrical vehicles here. And then there's going to be a bunch of landscaping and irrigation that needs to be installed there. So we're looking at getting a quote on that.\n\nRecipient\nOkay, give me one. And can I get your name and a good callback number?\n\nCaller\nIt's gonna be luis.\n\nRecipient\nLuis. Okay.\n\nCaller\nAnd phone number has been. Go ahead.\n\nRecipient\nLast name? Sorry.\n\nCaller\nViagrana v as in victor. I l l a g r a n a.\n\nRecipient\nVienna. That's v, I, l, l, a, n a.\n\nCaller\nA g r a n a.\n\nRecipient\nG, r.\n\nCaller\nN a.\n\nRecipient\nA, N, A. So it's going to be V Viagrana.\n\nCaller\nYes.\n\nRecipient\nOkay, perfect. And then what's a good number for you?\n\nCaller\nIt's going to be 480-204-3805.\n\nRecipient\nPerfect. And a good email for you.\n\nCaller\nIt's going to be Luis. Luisms-contracting.com.\n\nRecipient\nOkay, so it's Luisms Contracting.\n\nCaller\nDash contracting.\n\nRecipient\nJms contracting.\n\nCaller\nDot com.\n\nRecipient\nDot com. Okay, it's going to be Luis, new first name@jms-contracting.com.\n\nCaller\nAll right.\n\nRecipient\nPerfect already. Let me put you on a brief hold and see if one of our sales team can take the call. Okay?\n\nCaller\nAll right, thank you.\n\nRecipient\nYou're welcome. Thank you, Sam. Okay, Luis, I'm going to transfer you with Denise Montenegro. She's going to take the call. Okay.\n\nCaller\nAll right, thank you.\n\nRecipient\nYou're welcome. Your call cannot be completed at this time. Please hang up and try your call again later."
-    }
-  }
+  "pending_call_attributions": {}
 }
