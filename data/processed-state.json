@@ -308,15 +308,16 @@
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD2m3ooAAA=",
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD3TFoCAAA=",
     "235797310",
-    "235859826"
+    "235859826",
+    "235912540"
   ],
   "stats": {
     "total_leads": 131,
-    "total_spam": 132,
+    "total_spam": 133,
     "last_lead": "2026-05-15T22:20:12.316124",
     "total_calls": 9
   },
-  "last_run": "2026-05-16T15:05:09.623940+00:00",
+  "last_run": "2026-05-16T15:10:13.914930+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -757,7 +758,7 @@
       "value": "Google Ads",
       "note": "WC #235859826 | Google Ads",
       "first_seen": "2026-05-15T22:20:12.316092+00:00",
-      "attempts": 212,
+      "attempts": 213,
       "caller_name": "Kibula Claude",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
