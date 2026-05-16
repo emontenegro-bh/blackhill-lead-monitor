@@ -316,7 +316,7 @@
     "last_lead": "2026-05-15T22:20:12.316124",
     "total_calls": 9
   },
-  "last_run": "2026-05-16T05:05:11.225877+00:00",
+  "last_run": "2026-05-16T05:10:11.606244+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -757,7 +757,7 @@
       "value": "Google Ads",
       "note": "WC #235859826 | Google Ads",
       "first_seen": "2026-05-15T22:20:12.316092+00:00",
-      "attempts": 86,
+      "attempts": 87,
       "caller_name": "Kibula Claude",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
