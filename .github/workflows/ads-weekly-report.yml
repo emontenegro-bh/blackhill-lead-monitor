@@ -2,8 +2,8 @@ name: Weekly Google Ads Report
 
 on:
   schedule:
-    # Sunday 9:00 AM CST = 15:00 UTC
-    - cron: '0 15 * * 0'
+    # Sunday 9:07 AM CST = 15:07 UTC (off-:00 to avoid GH Actions cron drops)
+    - cron: '7 15 * * 0'
   workflow_dispatch: {}
 
 concurrency:
