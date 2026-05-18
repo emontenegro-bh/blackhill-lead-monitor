@@ -460,5 +460,83 @@
       "website_clicks": 12,
       "direction_requests": 11
     }
+  },
+  {
+    "date": "2026-05-18",
+    "date_range": "2026-05-09 to 2026-05-15",
+    "gsc": {
+      "impressions": 5694,
+      "clicks": 32,
+      "ctr": 0.56,
+      "avg_position": 26.02
+    },
+    "priority_keywords": [
+      {
+        "query": "black hill landscaping",
+        "position": 1.1,
+        "impressions": 32,
+        "clicks": 9
+      },
+      {
+        "query": "an affordable tree service in aledo",
+        "position": 20.3,
+        "impressions": 23,
+        "clicks": 0
+      },
+      {
+        "query": "24 hour tree service fort worth",
+        "position": 6.4,
+        "impressions": 13,
+        "clicks": 0
+      },
+      {
+        "query": "24/7 emergency tree removal fort worth tx",
+        "position": 3.6,
+        "impressions": 12,
+        "clicks": 0
+      },
+      {
+        "query": "azle sprinkler repair",
+        "position": 61.9,
+        "impressions": 9,
+        "clicks": 0
+      },
+      {
+        "query": "blackhill landscaping",
+        "position": 1,
+        "impressions": 7,
+        "clicks": 5
+      },
+      {
+        "query": "aledo sprinkler system repair",
+        "position": 11.3,
+        "impressions": 7,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 35.3,
+        "impressions": 6,
+        "clicks": 0
+      },
+      {
+        "query": "backyard remodeler benbrook",
+        "position": 36.2,
+        "impressions": 6,
+        "clicks": 0
+      },
+      {
+        "query": "\"black hill landscaping\" \"817-995-0324\"",
+        "position": 22,
+        "impressions": 5,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 130,
+      "calls": 8,
+      "website_clicks": 7,
+      "direction_requests": 6
+    }
   }
 ]
