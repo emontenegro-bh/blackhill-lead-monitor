@@ -336,7 +336,7 @@
     "last_lead": "2026-05-19T16:00:29.377769",
     "total_calls": 13
   },
-  "last_run": "2026-05-19T16:17:18.915012+00:00",
+  "last_run": "2026-05-19T16:20:15.942702+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -791,7 +791,7 @@
       "value": "Google Business Profile",
       "note": "WC #236192116 | Google Business Profile",
       "first_seen": "2026-05-18T18:05:26.733823+00:00",
-      "attempts": 275,
+      "attempts": 276,
       "caller_name": "Brown Jill",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -805,7 +805,7 @@
       "value": "Google Business Profile",
       "note": "WC #236191766 | Google Business Profile",
       "first_seen": "2026-05-18T18:05:27.717740+00:00",
-      "attempts": 275,
+      "attempts": 276,
       "caller_name": "Brown Jill",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
