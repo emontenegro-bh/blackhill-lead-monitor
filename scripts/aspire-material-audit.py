@@ -52,9 +52,8 @@ signal.alarm(120)
 CONFIG_FILE = os.path.expanduser("~/.config/aspire/config.json")
 RECIPIENTS = [
     "evelin@blackhilltx.com",
-    # TEST MODE: Denisse + Ops will be added after Evelin reviews the format
-    # "denisse@blackhilltx.com",
-    # "Ops@blackhilltx.com",
+    "denisse@blackhilltx.com",
+    "Ops@blackhilltx.com",
 ]
 ASPIRE_PORTAL = "https://cloud.youraspire.com"
 YTD_START = "2026-01-01"   # Report covers Won opps from this date forward
