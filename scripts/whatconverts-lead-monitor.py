@@ -275,6 +275,24 @@ SOLICITATION_KEYWORDS = [
     "pricing page", "see our pricing",
     "calendly", "hubspot meeting", "meeting link",
     "unsubscribe", "opt-out", "stop receiving",
+    # SEO/Maps pitch patterns (added 2026-05-19 after An / anfluencemarketing.com slip-through)
+    "top 3 google", "google maps results", "google maps result",
+    "top 3 in fort worth", "top 3 in dallas", "top 3 for",
+    "i help local businesses", "i help local", "help local businesses get",
+    "minute video showing", "2-minute video", "two-minute video",
+    "send a video", "send a quick video", "show exactly how",
+    "90 days - guaranteed", "90 days guaranteed", "days - guaranteed",
+    "showing up in the top", "not showing up in the top",
+    "rank in the top", "rank you in the top",
+    "based on your local competition", "your local competition",
+]
+
+# Agency / outreach domain tokens — when an email's domain contains one of these
+# AND the message has no real service signal, treat as spam. Catches
+# anfluencemarketing.com, growthpartners.io, seo-pro.com, etc.
+AGENCY_DOMAIN_TOKENS = [
+    "marketing", "agency", "seo", "leads", "growth", "media",
+    "digital", "outreach", "influence", "rank", "convert",
 ]
 
 SPAM_EMAIL_DOMAINS = [
@@ -561,6 +579,50 @@ def _is_spam_form(lead_data):
     address = (fields.get("Address", "") or lead_data.get("address", "") or "").lower()
     if "123 main st" in address:
         return True, "Fake address: 123 Main St"
+
+    # Foreign postal code in address (Japan NNN-NNNN, UK, Canada A1A 1A1)
+    if address:
+        if re.search(r"\b\d{3}-\d{4}\b", address):
+            return True, f"Foreign postal code (Japan-style) in address: {address}"
+        if re.search(r"\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b", address.upper()):
+            return True, f"Foreign postal code (Canada-style) in address: {address}"
+        if re.search(r"\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b", address.upper()):
+            return True, f"Foreign postal code (UK-style) in address: {address}"
+        foreign_city_tokens = [
+            "tokyo", "osaka", "kyoto", "london", "manchester", "mumbai",
+            "delhi", "bangalore", "karachi", "lahore", "manila", "jakarta",
+            "beijing", "shanghai", "moscow", "kiev", "kyiv", "lagos",
+            "nairobi", "cairo", "istanbul", "dubai", "riyadh",
+        ]
+        for token in foreign_city_tokens:
+            if re.search(rf"\b{token}\b", address):
+                return True, f"Foreign city in address: {token}"
+
+    # Duplicated city token in address (e.g. "Fort Worth Fort Worth")
+    if address:
+        addr_no_punct = re.sub(r"[^\w\s]", " ", address)
+        words = addr_no_punct.split()
+        for i in range(len(words) - 3):
+            if words[i] == words[i + 2] and words[i + 1] == words[i + 3]:
+                return True, f"Duplicated city tokens in address: '{words[i]} {words[i+1]}' repeated"
+            if i < len(words) - 1 and words[i] == words[i + 1] and len(words[i]) > 3:
+                return True, f"Repeated word in address: '{words[i]}'"
+
+    # Agency / outreach email domain heuristic — block when domain contains
+    # marketing/agency/seo/etc. tokens AND the message has no landscaping service
+    # signal. Catches anfluencemarketing.com and most B2B outreach domains.
+    if email and "@" in email:
+        domain = email.split("@", 1)[1]
+        for token in AGENCY_DOMAIN_TOKENS:
+            if token in domain:
+                service_signals = ["yard", "lawn", "landscap", "tree", "sod",
+                                   "irrigat", "sprinkler", "mulch", "fence",
+                                   "patio", "drain", "mow", "weed", "shrub",
+                                   "garden", "plant", "grass", "estimate",
+                                   "quote", "bid", "maintenance", "property"]
+                if not any(s in message for s in service_signals):
+                    return True, f"Agency-style email domain ({domain}) with no service signal"
+                break
 
     # City field contains person's name instead of a city (common bot pattern)
     city_field = (fields.get("City", "") or "").strip()
