@@ -1,0 +1,56 @@
+name: Aspire Material Audit
+
+on:
+  schedule:
+    # 8am Central year-round: 13:00 UTC during CDT, 14:00 UTC during CST.
+    # Script's local-time guard skips the wrong one so only one email fires.
+    - cron: '0 13 * * 1'
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+    inputs:
+      force_send:
+        description: 'Bypass 8am Central time guard (for manual test)'
+        required: false
+        type: boolean
+        default: true
+      dry_run:
+        description: 'Run audit but print report instead of sending email'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: aspire-material-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Run material audit
+        env:
+          ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
+          ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.force_send }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python scripts/aspire-material-audit.py $ARGS
+
+  notify-failure:
+    needs: [audit]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Aspire Material Audit"
+    secrets: inherit
