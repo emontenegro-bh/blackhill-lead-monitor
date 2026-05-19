@@ -35,6 +35,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install dependencies
+        run: pip install openpyxl
+
       - name: Run material audit
         env:
           ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
