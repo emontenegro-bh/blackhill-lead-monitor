@@ -1492,10 +1492,48 @@ OWNER_MAP = {
     "162535167": ("Denisse", "denisse@blackhilltx.com"),
 }
 
+# HubSpot owner ID -> Aspire ContactID
+HUBSPOT_TO_ASPIRE_OWNER = {
+    "88710208": 6,   # Evelin Montenegro (Aspire ContactID)
+    "162535167": 5,  # Denisse Montenegro (Aspire ContactID)
+}
+
+OWNER_EVELIN_HUBSPOT_ID = "88710208"
+OWNER_DENISSE_HUBSPOT_ID = "162535167"
+
 
 def get_owner_info(owner_id):
     """Map HubSpot owner ID to name and email."""
     return OWNER_MAP.get(str(owner_id), ("Team", "evelin@blackhilltx.com"))
+
+
+def assign_lead_owner(lead, state):
+    """Assign lead owner using service-based rules + round-robin for the rest.
+
+    State persists in processed-state.json so round-robin actually rotates across
+    GitHub Actions runs (the prior `~/.config/hubspot/round-robin.json` reset every run).
+
+    Rules:
+      - Irrigation/sprinkler -> Denisse
+      - Commercial Maintenance -> Evelin
+      - Everything else -> round-robin Evelin/Denisse
+
+    Returns HubSpot owner ID (string). Caller is responsible for translating to
+    Aspire ContactID via HUBSPOT_TO_ASPIRE_OWNER.
+    """
+    service = (lead.get("service_interest", "") or "").lower()
+    message = (lead.get("message", "") or "").lower()
+
+    if "irrigation" in service or "sprinkler" in service or "irrigation" in message:
+        return OWNER_DENISSE_HUBSPOT_ID
+    if "commercial" in service and "maint" in service:
+        return OWNER_EVELIN_HUBSPOT_ID
+
+    rr = state.setdefault("round_robin_state", {"last_index": -1})
+    owners = [OWNER_EVELIN_HUBSPOT_ID, OWNER_DENISSE_HUBSPOT_ID]
+    next_index = (rr.get("last_index", -1) + 1) % len(owners)
+    rr["last_index"] = next_index
+    return owners[next_index]
 
 
 # --- Main Processing ---
@@ -1693,6 +1731,15 @@ def process_leads(config, state):
             send_auto_reply(config, lead)
         else:
             log("  Skipping auto-reply: no valid email")
+
+        # Assign owner up-front so Aspire + HubSpot agree on routing
+        assigned_hubspot_owner = assign_lead_owner(lead, state)
+        lead["_assigned_hubspot_owner_id"] = assigned_hubspot_owner
+        lead["_assigned_aspire_owner_id"] = HUBSPOT_TO_ASPIRE_OWNER.get(
+            assigned_hubspot_owner, 6
+        )
+        assigned_name = get_owner_info(assigned_hubspot_owner)[0]
+        log(f"  Assigned to: {assigned_name} (HubSpot {assigned_hubspot_owner} / Aspire {lead['_assigned_aspire_owner_id']})")
 
         # Aspire CRM
         aspire_url, aspire_contact_id = create_aspire_contact(config, lead)

@@ -24,6 +24,8 @@ DRY_RUN = "--dry-run" in sys.argv
 # Known IDs (looked up 2026-02-24)
 CONTACT_TYPE_PROSPECT = 8
 OWNER_EVELIN_CONTACT_ID = 6
+OWNER_DENISSE_CONTACT_ID = 5
+BRANCH_MAIN_ID = 2
 
 # ContactCustomFieldDefinitionID for the "Lead Source" picklist (looked up 2026-05-13)
 LEAD_SOURCE_DEFINITION_ID = 34
@@ -202,6 +204,10 @@ def format_phone(phone):
 
 def create_contact(lead, config, token):
     """Create a new contact in Aspire. Returns (response, status)."""
+    try:
+        owner_id = int(lead.get("_assigned_aspire_owner_id") or OWNER_EVELIN_CONTACT_ID)
+    except (TypeError, ValueError):
+        owner_id = OWNER_EVELIN_CONTACT_ID
     contact_data = {
         "Contact": {
             "FirstName": lead.get("first_name", ""),
@@ -209,7 +215,8 @@ def create_contact(lead, config, token):
             "Email": lead.get("email", ""),
             "MobilePhone": format_phone(lead.get("phone", "")),
             "ContactTypeID": CONTACT_TYPE_PROSPECT,
-            "OwnerContactID": OWNER_EVELIN_CONTACT_ID,
+            "OwnerContactID": owner_id,
+            "BranchID": BRANCH_MAIN_ID,
             "Active": True,
         },
     }
@@ -236,12 +243,12 @@ def create_contact(lead, config, token):
     if notes_parts:
         contact_data["Contact"]["Notes"] = "\n".join(notes_parts)
 
-    # Add address if available
+    # Add address if available — write to HomeAddress (residential prospects)
     address = lead.get("address", "").strip()
     city = lead.get("city", "").strip()
     zipcode = lead.get("zip", "").strip()
     if address or city or zipcode:
-        contact_data["OfficeAddress"] = {
+        contact_data["HomeAddress"] = {
             "AddressLine1": address,
             "City": city,
             "StateProvinceCode": "TX",
@@ -385,6 +392,8 @@ def append_contact_note(contact_id, note_line, config, token):
     if needle and needle in existing_notes:
         return True, "Note already present"
     new_notes = f"{existing_notes}\n{note_line}" if existing_notes else note_line
+    # Aspire's PUT /Contacts replaces the entire contact — round-trip OwnerContactID,
+    # BranchID, HomeAddress, and OfficeAddress so they aren't wiped by this note append.
     body = {"Contact": {
         "ContactID": int(contact_id),
         "FirstName": contact.get("FirstName") or "",
@@ -392,9 +401,15 @@ def append_contact_note(contact_id, note_line, config, token):
         "Email": contact.get("Email") or "",
         "MobilePhone": contact.get("MobilePhone") or "",
         "ContactTypeID": contact.get("ContactTypeID"),
+        "OwnerContactID": contact.get("OwnerContactID"),
+        "BranchID": contact.get("BranchID"),
         "Active": contact.get("Active", True),
         "Notes": new_notes,
     }}
+    if contact.get("HomeAddress"):
+        body["HomeAddress"] = contact["HomeAddress"]
+    if contact.get("OfficeAddress"):
+        body["OfficeAddress"] = contact["OfficeAddress"]
     _, st = api_request("PUT", "/Contacts", config, token, body)
     if st in (200, 201, 204):
         return True, "Note appended"

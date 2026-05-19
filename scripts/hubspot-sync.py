@@ -56,11 +56,18 @@ def get_round_robin_next():
 def assign_owner(lead):
     """Determine deal owner based on service interest.
 
+    If the lead monitor pre-assigned an owner (_assigned_hubspot_owner_id), honor
+    it so Aspire and HubSpot agree on routing. Otherwise fall back to local rules.
+
     Rules:
       - Irrigation -> Denisse
       - Commercial Maintenance -> Evelin
       - Everything else -> Round robin
     """
+    pre_assigned = str(lead.get("_assigned_hubspot_owner_id") or "").strip()
+    if pre_assigned:
+        return pre_assigned
+
     service = (lead.get("service_interest", "") or "").lower()
     message = (lead.get("message", "") or "").lower()
 
