@@ -243,12 +243,13 @@ def create_contact(lead, config, token):
     if notes_parts:
         contact_data["Contact"]["Notes"] = "\n".join(notes_parts)
 
-    # Add address if available — write to HomeAddress (residential prospects)
+    # Write to OfficeAddress — this is what Aspire UI labels "Primary Address",
+    # even for residential prospects. HomeAddress does not surface as Primary.
     address = lead.get("address", "").strip()
     city = lead.get("city", "").strip()
     zipcode = lead.get("zip", "").strip()
     if address or city or zipcode:
-        contact_data["HomeAddress"] = {
+        contact_data["OfficeAddress"] = {
             "AddressLine1": address,
             "City": city,
             "StateProvinceCode": "TX",
