@@ -349,7 +349,7 @@
     "last_lead": "2026-05-20T18:00:19.459025",
     "total_calls": 14
   },
-  "last_run": "2026-05-21T18:00:14.688664+00:00",
+  "last_run": "2026-05-21T18:05:13.922369+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -804,20 +804,5 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "236654265": {
-      "wc_lead_id": "236654265",
-      "phone": "+14693737625",
-      "value": "Google Business Profile",
-      "note": "WC #236654265 | Google Business Profile",
-      "first_seen": "2026-05-20T18:00:19.458993+00:00",
-      "attempts": 296,
-      "caller_name": "Ferris Tx",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "1 minute and 4 seconds",
-      "received_at": "2026-05-20T17:58:26Z",
-      "transcription": "Caller\nIt.\n\nRecipient\nHow can I help you?\n\nCaller\nSorry. Earlier this week I talked to Carlos and we were supposed to have me come in Wednesday at 8:30 just for. To speak with a technician for a job. I wasn't able to come. I was saying if I was. If it was possible to come. Friday.\n\nRecipient\nYeah, you can come from 8 to 12.\n\nCaller\nEight to 12? Friday. Okay. Thank you so much.\n\nRecipient\nYeah, you just have to come between 8 to 12.\n\nCaller\nOkay, thank you.\n\nRecipient\nOkay, bye."
-    }
-  }
+  "pending_call_attributions": {}
 }
