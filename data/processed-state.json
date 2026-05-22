@@ -344,15 +344,16 @@
     "236766028",
     "236903364",
     "236964977",
-    "237116289"
+    "237116289",
+    "237121379"
   ],
   "stats": {
-    "total_leads": 140,
+    "total_leads": 141,
     "total_spam": 157,
-    "last_lead": "2026-05-20T18:00:19.459025",
-    "total_calls": 14
+    "last_lead": "2026-05-22T21:00:12.688995",
+    "total_calls": 15
   },
-  "last_run": "2026-05-22T20:55:12.705173+00:00",
+  "last_run": "2026-05-22T21:00:12.690339+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -807,5 +808,20 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {}
+  "pending_call_attributions": {
+    "237121379": {
+      "wc_lead_id": "237121379",
+      "phone": "+19454026009",
+      "value": "Google Business Profile",
+      "note": "WC #237121379 | Google Business Profile",
+      "first_seen": "2026-05-22T21:00:12.688964+00:00",
+      "attempts": 1,
+      "caller_name": "Wireless Caller",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "1 minute and 6 seconds",
+      "received_at": "2026-05-22T20:56:59Z",
+      "transcription": "Recipient\nThank you for calling Black Hill. This is Denise. How can I direct your call?\n\nCaller\nYes. I'm just trying to get a closer. See how much it costs to cut my front yard on my backyard.\n\nRecipient\nIs this for maintenance?\n\nCaller\nNo, this is for long services. This is long. Is this long service.\n\nRecipient\nThis is Blackville Landscaping. Yes, so we do contracted maintenance on the residential and for commercial.\n\nCaller\nOh, okay. All right. Sorry.\n\nRecipient\nAre you just looking for a one time mow?\n\nCaller\nYes.\n\nRecipient\nYeah, we don't do one time O's. I'm sorry about that.\n\nCaller\nOkay. Thank you.\n\nRecipient\nHave a great day. Bye."
+    }
+  }
 }
