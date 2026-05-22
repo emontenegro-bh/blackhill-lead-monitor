@@ -2258,3 +2258,17 @@
 [2026-05-22 00:08:40] GBP Review Monitor starting...
 [2026-05-22 00:08:41] Fetched 45 reviews.
 [2026-05-22 00:08:41] No new reviews.
+[2026-05-22 04:36:50] GBP Review Monitor starting...
+[2026-05-22 04:36:52] Fetched 50 reviews.
+[2026-05-22 04:36:52] Found 5 new review(s).
+[2026-05-22 04:36:52] New 5-star review from Hazel Hope. Draft saved: /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/pending-responses/mbT0NEDnjW3I7u0NOWtmhiyN8b1P28C317fZQexg.json
+[2026-05-22 04:36:53] Email sent via MS Graph (from evelin@blackhilltx.com).
+[2026-05-22 04:36:53] New 5-star review from jamsad Atif. Draft saved: /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/pending-responses/o6ymkRp4YRyjt7qJ5egk0wJ8bcznNzNps00vFDDw.json
+[2026-05-22 04:36:53] Email sent via MS Graph (from evelin@blackhilltx.com).
+[2026-05-22 04:36:53] New 5-star review from Illakomi Lar. Draft saved: /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/pending-responses/J-bqQKox0aH5xkPL9Q-bbwtLR_JM7iwYsuek_HUQ.json
+[2026-05-22 04:36:54] Email sent via MS Graph (from evelin@blackhilltx.com).
+[2026-05-22 04:36:54] New 5-star review from Ahmad Bukhari. Draft saved: /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/pending-responses/z6FXbPI-8XvnX60gRXPNOSN83eD0JUV918gkqJ8Q.json
+[2026-05-22 04:36:55] Email sent via MS Graph (from evelin@blackhilltx.com).
+[2026-05-22 04:36:55] New 5-star review from Luke Cage. Draft saved: /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/pending-responses/_Hg-1XmVGcssTwr_r4glACayaxTKcvIbXByMzTgQ.json
+[2026-05-22 04:36:55] Email sent via MS Graph (from evelin@blackhilltx.com).
+[2026-05-22 04:36:55] Done. 5 new review(s) processed.
