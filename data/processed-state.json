@@ -355,7 +355,7 @@
     "last_lead": "2026-05-22T21:25:15.813565",
     "total_calls": 16
   },
-  "last_run": "2026-05-23T21:00:15.039352+00:00",
+  "last_run": "2026-05-23T21:05:12.970480+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -811,27 +811,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "237121379": {
-      "wc_lead_id": "237121379",
-      "phone": "+19454026009",
-      "value": "Google Business Profile",
-      "note": "WC #237121379 | Google Business Profile",
-      "first_seen": "2026-05-22T21:00:12.688964+00:00",
-      "attempts": 297,
-      "caller_name": "Wireless Caller",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "1 minute and 6 seconds",
-      "received_at": "2026-05-22T20:56:59Z",
-      "transcription": "Recipient\nThank you for calling Black Hill. This is Denise. How can I direct your call?\n\nCaller\nYes. I'm just trying to get a closer. See how much it costs to cut my front yard on my backyard.\n\nRecipient\nIs this for maintenance?\n\nCaller\nNo, this is for long services. This is long. Is this long service.\n\nRecipient\nThis is Blackville Landscaping. Yes, so we do contracted maintenance on the residential and for commercial.\n\nCaller\nOh, okay. All right. Sorry.\n\nRecipient\nAre you just looking for a one time mow?\n\nCaller\nYes.\n\nRecipient\nYeah, we don't do one time O's. I'm sorry about that.\n\nCaller\nOkay. Thank you.\n\nRecipient\nHave a great day. Bye."
-    },
     "237126342": {
       "wc_lead_id": "237126342",
       "phone": "+18177157042",
       "value": "Google Ads",
       "note": "WC #237126342 | Google Ads",
       "first_seen": "2026-05-22T21:25:15.813528+00:00",
-      "attempts": 292,
+      "attempts": 293,
       "caller_name": "Guerra Juan",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
