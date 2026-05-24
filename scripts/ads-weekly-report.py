@@ -189,22 +189,29 @@ for row in rows:
         "ctr": row.metrics.ctr * 100,
     })
 
-# --- 4. Budget waste: non-converting search terms ---
+# --- 4. Negative keyword recommendations: non-converting search terms (28-day window) ---
+# 28-day window so the section is meaningfully populated each week (a single week
+# rarely has enough qualifying terms to act on).
 waste_terms = []
 rows = safe_query(f"""
     SELECT search_term_view.search_term, campaign.name,
            metrics.cost_micros, metrics.clicks, metrics.conversions
     FROM search_term_view
-    WHERE segments.date BETWEEN '{this_week_start}' AND '{this_week_end}'
+    WHERE segments.date BETWEEN '{four_weeks_start}' AND '{this_week_end}'
       AND campaign.status = 'ENABLED'
       AND metrics.clicks >= 2
       AND metrics.conversions = 0
     ORDER BY metrics.cost_micros DESC
-    LIMIT 10
+    LIMIT 15
 """)
+# Exclude own/sister brand variants -- never recommend these as negatives.
+BRAND_SAFE = ("black hill", "blackhill", "mean green", "meangreen")
 for row in rows:
+    term = row.search_term_view.search_term
+    if any(b in term.lower() for b in BRAND_SAFE):
+        continue
     waste_terms.append({
-        "term": row.search_term_view.search_term,
+        "term": term,
         "campaign": row.campaign.name,
         "spend": row.metrics.cost_micros / 1_000_000,
         "clicks": row.metrics.clicks,
@@ -958,7 +965,7 @@ if top_keywords:
 if waste_terms:
     total_waste = sum(w["spend"] for w in waste_terms)
     h('<div class="section">')
-    h('<h2>Budget Waste</h2>')
+    h('<h2>Negative Keyword Recommendations</h2>')
     h(f'<div style="background:#2a1a1a;border:1px solid #e74c3c;border-radius:8px;padding:14px 16px;margin-bottom:16px;text-align:center;">')
     h(f'<span style="font-size:24px;font-weight:700;color:#e74c3c;">${total_waste:.0f}</span>')
     h(f'<span style="font-size:13px;color:#ccc;"> spent on {len(waste_terms)} non-converting search terms</span>')
@@ -968,7 +975,7 @@ if waste_terms:
     for w in waste_terms[:7]:
         h(f'<tr><td style="color:#e74c3c;">{w["term"]}</td><td class="right">{w["clicks"]}</td><td class="right">${w["spend"]:.2f}</td><td style="font-size:12px;color:#888;">{w["campaign"]}</td></tr>')
     h('</table>')
-    h('<div style="font-size:11px;color:#555;margin-top:8px;">Search terms with 2+ clicks and 0 conversions this week</div>')
+    h('<div style="font-size:11px;color:#555;margin-top:8px;">Search terms with 2+ clicks and 0 conversions in the last 28 days. Review and add as negatives.</div>')
     h('</div>')
 
 # --- Ad copy performance ---
@@ -1330,7 +1337,7 @@ if top_keywords:
 
 if waste_terms:
     total_waste = sum(w["spend"] for w in waste_terms)
-    md.append(f"## Budget Waste: ${total_waste:.0f} on {len(waste_terms)} non-converting terms")
+    md.append(f"## Negative Keyword Recommendations: ${total_waste:.0f} on {len(waste_terms)} non-converting terms")
     md.append(f"| Search Term | Clicks | Spend | Campaign |")
     md.append(f"|-------------|--------|-------|----------|")
     for w in waste_terms[:7]:
