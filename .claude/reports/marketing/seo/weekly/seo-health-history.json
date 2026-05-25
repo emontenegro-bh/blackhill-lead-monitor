@@ -538,5 +538,83 @@
       "website_clicks": 7,
       "direction_requests": 6
     }
+  },
+  {
+    "date": "2026-05-25",
+    "date_range": "2026-05-16 to 2026-05-22",
+    "gsc": {
+      "impressions": 5471,
+      "clicks": 29,
+      "ctr": 0.53,
+      "avg_position": 31.44
+    },
+    "priority_keywords": [
+      {
+        "query": "landscaping fort worth",
+        "position": 21.4,
+        "impressions": 72,
+        "clicks": 1
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1.9,
+        "impressions": 43,
+        "clicks": 12
+      },
+      {
+        "query": "arlington commercial landscaping",
+        "position": 17.1,
+        "impressions": 17,
+        "clicks": 0
+      },
+      {
+        "query": "24/7 emergency tree removal fort worth tx",
+        "position": 4.6,
+        "impressions": 12,
+        "clicks": 0
+      },
+      {
+        "query": "24 hour tree service fort worth",
+        "position": 13.5,
+        "impressions": 10,
+        "clicks": 0
+      },
+      {
+        "query": "aledo sprinkler system repair",
+        "position": 9.5,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 37.4,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "azle sprinkler repair",
+        "position": 55.1,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "arlington sprinkler repair",
+        "position": 50.3,
+        "impressions": 7,
+        "clicks": 0
+      },
+      {
+        "query": "backyard remodeler benbrook",
+        "position": 41.6,
+        "impressions": 5,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 118,
+      "calls": 3,
+      "website_clicks": 12,
+      "direction_requests": 13
+    }
   }
 ]
