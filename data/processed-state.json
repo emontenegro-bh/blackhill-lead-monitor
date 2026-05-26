@@ -359,7 +359,7 @@
     "last_lead": "2026-05-26T13:05:14.671580",
     "total_calls": 17
   },
-  "last_run": "2026-05-26T15:15:16.208725+00:00",
+  "last_run": "2026-05-26T15:20:15.800079+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -828,7 +828,7 @@
       "value": "Google Ads",
       "note": "WC #237461772 | Google Ads",
       "first_seen": "2026-05-26T13:05:14.671549+00:00",
-      "attempts": 27,
+      "attempts": 28,
       "caller_name": "Lopez Rosa",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
