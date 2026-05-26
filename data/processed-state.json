@@ -351,15 +351,16 @@
     "237335622",
     "237370664",
     "237420273",
-    "237461772"
+    "237461772",
+    "237531741"
   ],
   "stats": {
-    "total_leads": 144,
+    "total_leads": 145,
     "total_spam": 160,
-    "last_lead": "2026-05-26T13:05:14.671580",
-    "total_calls": 17
+    "last_lead": "2026-05-26T16:05:17.755457",
+    "total_calls": 18
   },
-  "last_run": "2026-05-26T16:00:15.880564+00:00",
+  "last_run": "2026-05-26T16:05:17.756353+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -828,13 +829,27 @@
       "value": "Google Ads",
       "note": "WC #237461772 | Google Ads",
       "first_seen": "2026-05-26T13:05:14.671549+00:00",
-      "attempts": 36,
+      "attempts": 37,
       "caller_name": "Lopez Rosa",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
       "call_duration": "1 minute and 15 seconds",
       "received_at": "2026-05-26T13:04:01Z",
       "transcription": ""
+    },
+    "237531741": {
+      "wc_lead_id": "237531741",
+      "phone": "+18178231307",
+      "value": "Google Ads",
+      "note": "WC #237531741 | Google Ads | Keyword: sprinkler installers | Landing: /areas-we-serve/fort-worth/sprinkler-installation",
+      "first_seen": "2026-05-26T16:05:17.755413+00:00",
+      "attempts": 1,
+      "caller_name": "Meinershagen",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "40 seconds",
+      "received_at": "2026-05-26T16:03:26Z",
+      "transcription": "Recipient\nForeign. Good morning. This is Carlos with Bachelor Landscaping.\n\nCaller\nI call a clinic? Grace Clinic.\n\nRecipient\nNo, this is black hill landscaping.\n\nCaller\nOh, sorry, sir. Thank you. Thank you so much. Sorry I ran on.\n\nRecipient\nNo problem."
     }
   }
 }
