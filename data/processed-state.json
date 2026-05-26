@@ -352,15 +352,16 @@
     "237370664",
     "237420273",
     "237461772",
-    "237531741"
+    "237531741",
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD_TiKGAAA="
   ],
   "stats": {
     "total_leads": 145,
-    "total_spam": 160,
+    "total_spam": 161,
     "last_lead": "2026-05-26T16:05:17.755457",
     "total_calls": 18
   },
-  "last_run": "2026-05-26T16:25:16.217464+00:00",
+  "last_run": "2026-05-26T16:27:54.685576+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
