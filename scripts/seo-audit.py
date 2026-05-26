@@ -77,8 +77,18 @@ PAGES = {
     "Blog": "/blog",
 }
 
-# User agent (defined early for sitemap discovery)
-UA = "Mozilla/5.0 (compatible; BlackHillSEOAudit/1.0)"
+# Browser-like headers — the site's WAF requires more than just a UA string.
+# Previously used "Mozilla/5.0 (compatible; BlackHillSEOAudit/1.0)" which started
+# returning 403 around 2026-05-12, silently zeroing out the weekly report.
+UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+HEADERS = {
+    "User-Agent": UA,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "identity",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+}
 
 # Slug aliases -- when a page slug changes, check both old and new
 # Format: { "old-slug": "new-slug" }
@@ -98,7 +108,7 @@ def discover_pages_from_sitemap():
         ]
         all_locs = []
         for sitemap_url in sitemap_urls:
-            req = urllib.request.Request(sitemap_url, headers={"User-Agent": UA})
+            req = urllib.request.Request(sitemap_url, headers=HEADERS)
             try:
                 with urllib.request.urlopen(req, timeout=15) as resp:
                     content = resp.read().decode()
@@ -108,7 +118,7 @@ def discover_pages_from_sitemap():
                 if "<sitemapindex" in content:
                     for child_url in locs:
                         try:
-                            req2 = urllib.request.Request(child_url, headers={"User-Agent": UA})
+                            req2 = urllib.request.Request(child_url, headers=HEADERS)
                             with urllib.request.urlopen(req2, timeout=15) as resp2:
                                 child_content = resp2.read().decode()
                             child_locs = re.findall(r"<loc>(.*?)</loc>", child_content)
@@ -247,7 +257,7 @@ class SEOParser(HTMLParser):
 def fetch_page(url):
     """Fetch a page and return (status_code, html, final_url).
     If the primary URL 404s, tries slug aliases before giving up."""
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    req = urllib.request.Request(url, headers=HEADERS)
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             return resp.status, resp.read().decode("utf-8", errors="replace"), url
@@ -258,7 +268,7 @@ def fetch_page(url):
                 if old_slug in url:
                     alt_url = url.replace(old_slug, new_slug)
                     try:
-                        req2 = urllib.request.Request(alt_url, headers={"User-Agent": UA})
+                        req2 = urllib.request.Request(alt_url, headers=HEADERS)
                         with urllib.request.urlopen(req2, timeout=15) as resp2:
                             return resp2.status, resp2.read().decode("utf-8", errors="replace"), alt_url
                     except Exception:
@@ -266,7 +276,7 @@ def fetch_page(url):
                 elif new_slug in url:
                     alt_url = url.replace(new_slug, old_slug)
                     try:
-                        req2 = urllib.request.Request(alt_url, headers={"User-Agent": UA})
+                        req2 = urllib.request.Request(alt_url, headers=HEADERS)
                         with urllib.request.urlopen(req2, timeout=15) as resp2:
                             return resp2.status, resp2.read().decode("utf-8", errors="replace"), alt_url
                     except Exception:
