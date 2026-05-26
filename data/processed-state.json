@@ -354,7 +354,8 @@
     "237461772",
     "237531741",
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD_TiKGAAA=",
-    "237565412"
+    "237565412",
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD_TiKHAAA="
   ],
   "stats": {
     "total_leads": 145,
@@ -362,7 +363,7 @@
     "last_lead": "2026-05-26T16:05:17.755457",
     "total_calls": 18
   },
-  "last_run": "2026-05-26T20:55:14.143860+00:00",
+  "last_run": "2026-05-26T20:59:05.682750+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
