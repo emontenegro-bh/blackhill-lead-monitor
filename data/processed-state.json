@@ -360,15 +360,16 @@
     "237861686",
     "237884421",
     "237910385",
-    "237998966"
+    "237998966",
+    "238001652"
   ],
   "stats": {
     "total_leads": 149,
-    "total_spam": 163,
+    "total_spam": 164,
     "last_lead": "2026-05-28T16:00:21.929569",
     "total_calls": 20
   },
-  "last_run": "2026-05-28T16:00:21.931084+00:00",
+  "last_run": "2026-05-28T16:05:20.176990+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -851,7 +852,7 @@
       "value": "Google Business Profile",
       "note": "WC #237884421 | Google Business Profile",
       "first_seen": "2026-05-27T22:15:12.809542+00:00",
-      "attempts": 219,
+      "attempts": 220,
       "caller_name": "Sulphur Ok",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -865,7 +866,7 @@
       "value": "Referral",
       "note": "WC #237998966 | Referral",
       "first_seen": "2026-05-28T16:00:21.929539+00:00",
-      "attempts": 1,
+      "attempts": 2,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
