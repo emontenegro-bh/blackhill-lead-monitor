@@ -370,7 +370,7 @@
     "last_lead": "2026-05-28T16:00:21.929569",
     "total_calls": 20
   },
-  "last_run": "2026-05-28T22:15:17.589812+00:00",
+  "last_run": "2026-05-28T22:20:12.849390+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -853,7 +853,7 @@
       "value": "Referral",
       "note": "WC #237998966 | Referral",
       "first_seen": "2026-05-28T16:00:21.929539+00:00",
-      "attempts": 78,
+      "attempts": 79,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
