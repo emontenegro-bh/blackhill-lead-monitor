@@ -366,7 +366,7 @@
     "last_lead": "2026-05-27T22:15:12.809577",
     "total_calls": 19
   },
-  "last_run": "2026-05-28T02:25:11.438297+00:00",
+  "last_run": "2026-05-28T02:30:14.807051+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -842,7 +842,7 @@
       "value": "Google Business Profile",
       "note": "WC #237884421 | Google Business Profile",
       "first_seen": "2026-05-27T22:15:12.809542+00:00",
-      "attempts": 53,
+      "attempts": 54,
       "caller_name": "Sulphur Ok",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
