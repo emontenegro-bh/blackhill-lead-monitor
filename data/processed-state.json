@@ -359,15 +359,16 @@
     "237683078",
     "237861686",
     "237884421",
-    "237910385"
+    "237910385",
+    "237998966"
   ],
   "stats": {
-    "total_leads": 148,
+    "total_leads": 149,
     "total_spam": 163,
-    "last_lead": "2026-05-28T03:05:20.549567",
-    "total_calls": 19
+    "last_lead": "2026-05-28T16:00:21.929569",
+    "total_calls": 20
   },
-  "last_run": "2026-05-28T15:55:13.474090+00:00",
+  "last_run": "2026-05-28T16:00:21.931084+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -850,13 +851,27 @@
       "value": "Google Business Profile",
       "note": "WC #237884421 | Google Business Profile",
       "first_seen": "2026-05-27T22:15:12.809542+00:00",
-      "attempts": 218,
+      "attempts": 219,
       "caller_name": "Sulphur Ok",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "18 seconds",
       "received_at": "2026-05-27T22:11:55Z",
       "transcription": "Recipient\nForeign. Thank you for calling Black Hill Landscaping. Please leave your name, number and a brief message and we will return your call as soon as possible."
+    },
+    "237998966": {
+      "wc_lead_id": "237998966",
+      "phone": "+12145422383",
+      "value": "Referral",
+      "note": "WC #237998966 | Referral",
+      "first_seen": "2026-05-28T16:00:21.929539+00:00",
+      "attempts": 1,
+      "caller_name": "Wireless Caller",
+      "lead_source_raw": "blackhilllandscaping.com",
+      "lead_medium_raw": "referral",
+      "call_duration": "1 minute and 50 seconds",
+      "received_at": "2026-05-28T15:56:12Z",
+      "transcription": "Recipient\nGood morning. Thank you for calling Black Hill Landscaping. This is Carlos Hamaya, director. Call.\n\nCaller\nHi. I'm just following up with a incident that I reported with one of your mowers hitting our car like an object.\n\nRecipient\nOkay.\n\nCaller\nYeah, I had emailed you guys.\n\nRecipient\nHello.\n\nCaller\nThe pictures and the location and all that.\n\nRecipient\nOkay. What email did you send it to?\n\nCaller\nIt was. Hello@blackhilltx.com.\n\nRecipient\nOkay, Can I get your name and a good callback number?\n\nCaller\nJesse campbell.\n\nRecipient\nJesse Campbell.\n\nCaller\nYes.\n\nRecipient\nWhat's your number?\n\nCaller\n214-542-2383.\n\nRecipient\nMm. Mm. Okay. And you send pictures, you said. Oh, I think I believe I spoke with you. Right. Pictures and video. Did you send the video or just pictures?\n\nCaller\nYeah, I was. It was pictures of the damage and then video.\n\nRecipient\nOkay.\n\nCaller\nOf driving by the crew.\n\nRecipient\nAll right. Okay. I'm going to go ahead and send a follow up request and somebody, they'll let me know whether I don't know if I'm going to be calling you back or if somebody is going to be calling you back. Okay.\n\nCaller\nOkay. All right.\n\nRecipient\nAll right. Thank you.\n\nCaller\nThank you."
     }
   },
   "round_robin_state": {
