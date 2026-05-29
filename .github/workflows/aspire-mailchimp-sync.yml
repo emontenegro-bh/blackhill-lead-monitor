@@ -1,0 +1,58 @@
+name: Aspire to Mailchimp Sync
+
+on:
+  schedule:
+    - cron: '0 12 * * *'  # 6 AM CST / 7 AM CDT daily
+  workflow_dispatch: {}
+
+concurrency:
+  group: aspire-mailchimp-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Sync new Aspire contacts to Mailchimp
+        env:
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+          MAILCHIMP_SERVER: ${{ secrets.MAILCHIMP_SERVER }}
+          MAILCHIMP_LIST_ID: ${{ secrets.MAILCHIMP_LIST_ID }}
+        run: python scripts/aspire-mailchimp-backfill.py
+
+      - name: Persist sync state
+        if: always()
+        run: |
+          if [ -f data/aspire-mailchimp-state.json ]; then
+            git config user.name "Aspire Mailchimp Sync Bot"
+            git config user.email "noreply@blackhilltx.com"
+            git add data/aspire-mailchimp-state.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Update Aspire->Mailchimp sync state"
+              for i in 1 2 3; do
+                git pull --rebase origin main || true
+                git push && break || sleep 2
+              done
+            fi
+          fi
+
+  notify-failure:
+    needs: [sync]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Aspire to Mailchimp Sync"
+    secrets: inherit
