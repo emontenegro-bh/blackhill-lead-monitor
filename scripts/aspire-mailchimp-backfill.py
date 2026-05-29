@@ -61,8 +61,8 @@ def log(msg):
 # --- Aspire ---
 
 def aspire_authenticate():
-    client_id = os.environ.get("ASPIRE_CLIENT_ID")
-    secret = os.environ.get("ASPIRE_SECRET")
+    client_id = (os.environ.get("ASPIRE_CLIENT_ID") or "").strip()
+    secret = (os.environ.get("ASPIRE_SECRET") or "").strip()
     if not client_id or not secret:
         raise RuntimeError("ASPIRE_CLIENT_ID / ASPIRE_SECRET not set")
 
@@ -112,9 +112,9 @@ def aspire_get_new_contacts(token, last_contact_id, page_size=200):
 # --- Mailchimp ---
 
 def mailchimp_upsert(email, first_name, last_name, phone, service_tag=None):
-    api_key = os.environ.get("MAILCHIMP_API_KEY", "")
-    server = os.environ.get("MAILCHIMP_SERVER", "")
-    list_id = os.environ.get("MAILCHIMP_LIST_ID", "")
+    api_key = os.environ.get("MAILCHIMP_API_KEY", "").strip()
+    server = os.environ.get("MAILCHIMP_SERVER", "").strip()
+    list_id = os.environ.get("MAILCHIMP_LIST_ID", "").strip()
     if not api_key or not server or not list_id:
         raise RuntimeError("Mailchimp env vars not fully set")
 
