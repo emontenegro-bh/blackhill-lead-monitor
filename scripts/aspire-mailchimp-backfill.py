@@ -20,11 +20,33 @@ Output: JSON summary to stdout.
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+
+
+SERVICE_LINE_RE = re.compile(r"^Service:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+
+
+def service_tag_from_notes(notes):
+    """Extract a slugified service tag from a contact's Notes field.
+
+    Returns None when no Service line is found or the value is a non-actionable
+    catch-all like "General Inquiry".
+    """
+    if not notes:
+        return None
+    m = SERVICE_LINE_RE.search(notes)
+    if not m:
+        return None
+    value = m.group(1).strip()
+    if not value or value.lower() in {"general inquiry", "general", "n/a", "unknown"}:
+        return None
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or None
 
 STATE_FILE = "data/aspire-mailchimp-state.json"
 ASPIRE_API_URL = os.environ.get("ASPIRE_API_URL", "https://cloud-api.youraspire.com")
@@ -65,7 +87,7 @@ def aspire_get_new_contacts(token, last_contact_id, page_size=200):
     skip = 0
     while True:
         filt = f"ContactTypeID eq {CONTACT_TYPE_PROSPECT} and ContactID gt {last_contact_id}"
-        select = "ContactID,FirstName,LastName,Email,MobilePhone"
+        select = "ContactID,FirstName,LastName,Email,MobilePhone,Notes"
         query = (
             f"$filter={filt}&$select={select}"
             f"&$orderby=ContactID asc&$top={page_size}&$skip={skip}"
@@ -89,7 +111,7 @@ def aspire_get_new_contacts(token, last_contact_id, page_size=200):
 
 # --- Mailchimp ---
 
-def mailchimp_upsert(email, first_name, last_name, phone):
+def mailchimp_upsert(email, first_name, last_name, phone, service_tag=None):
     api_key = os.environ.get("MAILCHIMP_API_KEY", "")
     server = os.environ.get("MAILCHIMP_SERVER", "")
     list_id = os.environ.get("MAILCHIMP_LIST_ID", "")
@@ -107,7 +129,7 @@ def mailchimp_upsert(email, first_name, last_name, phone):
             "LNAME": last_name or "",
             "PHONE": phone or "",
         },
-        "tags": ["web-lead", "aspire-sync"],
+        "tags": ["web-lead", "aspire-sync"] + ([service_tag] if service_tag else []),
     }
     data = json.dumps(payload).encode()
     req = urllib.request.Request(
@@ -168,15 +190,16 @@ def main():
         fname = c.get("FirstName") or ""
         lname = c.get("LastName") or ""
         phone = c.get("MobilePhone") or ""
+        service_tag = service_tag_from_notes(c.get("Notes") or "")
 
         if DRY_RUN:
-            log(f"  DRY RUN: would sync ContactID={cid} {email}")
+            log(f"  DRY RUN: would sync ContactID={cid} {email} service={service_tag}")
             synced += 1
             continue
 
         try:
-            status = mailchimp_upsert(email, fname, lname, phone)
-            log(f"  ContactID={cid} {email} -> {status}")
+            status = mailchimp_upsert(email, fname, lname, phone, service_tag)
+            log(f"  ContactID={cid} {email} -> {status} (service={service_tag})")
             synced += 1
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", errors="replace")[:300] if e.fp else ""
