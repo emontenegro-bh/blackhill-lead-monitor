@@ -70,7 +70,7 @@ def aspire_get_new_contacts(token, last_contact_id, page_size=200):
             f"$filter={filt}&$select={select}"
             f"&$orderby=ContactID asc&$top={page_size}&$skip={skip}"
         )
-        safe = urllib.parse.quote(query, safe="=&$,'()@ ")
+        safe = urllib.parse.quote(query, safe="=&$,'()@")
         req = urllib.request.Request(
             f"{ASPIRE_API_URL}/Contacts?{safe}",
             headers={"Authorization": f"Bearer {token}"},
