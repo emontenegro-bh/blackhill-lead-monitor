@@ -376,7 +376,7 @@
     "last_lead": "2026-05-29T16:10:19.554143",
     "total_calls": 22
   },
-  "last_run": "2026-05-29T16:25:22.375785+00:00",
+  "last_run": "2026-05-29T16:30:24.443465+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -859,7 +859,7 @@
       "value": "Google Ads",
       "note": "WC #238218302 | Google Ads",
       "first_seen": "2026-05-29T16:05:24.977496+00:00",
-      "attempts": 5,
+      "attempts": 6,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -873,7 +873,7 @@
       "value": "Google Ads",
       "note": "WC #238219294 | Google Ads",
       "first_seen": "2026-05-29T16:10:19.554113+00:00",
-      "attempts": 4,
+      "attempts": 5,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
