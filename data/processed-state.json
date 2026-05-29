@@ -369,15 +369,16 @@
     "238193461",
     "238218302",
     "238219294",
-    "238230812"
+    "238230812",
+    "238235771"
   ],
   "stats": {
-    "total_leads": 152,
+    "total_leads": 153,
     "total_spam": 169,
-    "last_lead": "2026-05-29T16:45:20.335184",
-    "total_calls": 23
+    "last_lead": "2026-05-29T17:00:21.638536",
+    "total_calls": 24
   },
-  "last_run": "2026-05-29T16:55:17.735077+00:00",
+  "last_run": "2026-05-29T17:00:21.639861+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -860,7 +861,7 @@
       "value": "Google Ads",
       "note": "WC #238218302 | Google Ads",
       "first_seen": "2026-05-29T16:05:24.977496+00:00",
-      "attempts": 11,
+      "attempts": 12,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -874,7 +875,7 @@
       "value": "Google Ads",
       "note": "WC #238219294 | Google Ads",
       "first_seen": "2026-05-29T16:10:19.554113+00:00",
-      "attempts": 10,
+      "attempts": 11,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -888,13 +889,27 @@
       "value": "Google Business Profile",
       "note": "WC #238230812 | Google Business Profile",
       "first_seen": "2026-05-29T16:45:20.335115+00:00",
-      "attempts": 3,
+      "attempts": 4,
       "caller_name": "Line Moms",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "2 minutes and 9 seconds",
       "received_at": "2026-05-29T16:41:22Z",
       "transcription": "Recipient\n\u00bflike the landscaping?\n\nCaller\n\u00bfest\u00e1n contratando trabajadores.\n\nRecipient\nPerd\u00f3n.\n\nCaller\nEst\u00e1n contratando trabajadores?\n\nRecipient\nPor el momento estamos estamos entrevistando para mantenimiento.\n\nCaller\nEn yarda.\n\nRecipient\n\u00bfsi tiene experiencia.\n\nCaller\nS\u00ed tengo experiencia.\n\nRecipient\nOk y cu\u00e1nto tiempo tiene de experiencia?\n\nCaller\nCinco a\u00f1os.\n\nRecipient\n\u00bfok, sabe usar las m\u00e1quinas, lo que es el Bobcat, el Vermeer, los Zero Turns, la g\u00fcira, la sopladora?\n\nCaller\nLo que es Purayard amigos, lo que es G\u00fcira 21 Blower.\n\nRecipient\nOk, est\u00e1 bien puede venir a hacer una aplicaci\u00f3n si gusta venir el lunes por la ma\u00f1ana los ponemos a prueba con el mec\u00e1nico dependiendo de c\u00f3mo hagan en la prueba entonces ya vemos si vamos a seguir al siguiente paso o no nos tenemos que asegurar que s\u00ed tengan experiencia porque tenemos son trabajos un poco grandes y por la temporada ahorita no hay mucho tiempo para entrenamiento.\n\nCaller\n\u00bfok perfecto, el lunes a qu\u00e9 hora?\n\nRecipient\n\u00bfsi gusta a las 8 de la ma\u00f1ana.\n\nCaller\nOk perfecto, ah\u00ed est\u00e1n entonces.\n\nRecipient\n\u00c1ndele sabe que? Si quiere venir como a las 11 perd\u00f3n, como a las 11, disculpa, a las 11 de la ma\u00f1ana.\n\nCaller\nHello, okay, that's it."
+    },
+    "238235771": {
+      "wc_lead_id": "238235771",
+      "phone": "+18065189839",
+      "value": "Google Ads",
+      "note": "WC #238235771 | Google Ads",
+      "first_seen": "2026-05-29T17:00:21.638492+00:00",
+      "attempts": 1,
+      "caller_name": "James Lebron",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "1 minute and 14 seconds",
+      "received_at": "2026-05-29T16:57:53Z",
+      "transcription": "Recipient\nGood morning. Thank you for calling. Blackout Landscaping. This is Carlos. I'm going to direct your call.\n\nCaller\nYes, I was calling to see if y' all hiring, by chance. I checked online. We're at general labor jobs.\n\nRecipient\nOkay. Do you. What? I'm sorry.\n\nCaller\nYeah, I'll just. Wait, wait, say that again. My bad. I'm inside Home Depot.\n\nRecipient\nNo, no. I was just asking you. You're calling in regards to. You said labor.\n\nCaller\nYeah, general labor. I'm trying to look for a job. So I'll see if y' all were hiring. Yeah.\n\nRecipient\nOh, okay. You can stop by this, fill out an application if you'd like. We are looking for a maintenance cre.\n\nCaller\nOkay. Okay. Yes, I'll see. I'll see if I can stop by today. My name is LeBron, so.\n\nRecipient\nOkay, we close that. We're here until five, so just as long as it's before five.\n\nCaller\nOkay. All right. Okay, thank you.\n\nRecipient\nYou're welcome."
     }
   },
   "round_robin_state": {
