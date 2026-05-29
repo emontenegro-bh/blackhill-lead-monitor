@@ -373,15 +373,16 @@
     "238235771",
     "238241936",
     "238251992",
-    "238253795"
+    "238253795",
+    "238311644"
   ],
   "stats": {
-    "total_leads": 154,
+    "total_leads": 155,
     "total_spam": 171,
-    "last_lead": "2026-05-29T17:20:21.266537",
-    "total_calls": 25
+    "last_lead": "2026-05-29T21:45:17.892985",
+    "total_calls": 26
   },
-  "last_run": "2026-05-29T21:40:16.256373+00:00",
+  "last_run": "2026-05-29T21:45:17.894760+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -864,7 +865,7 @@
       "value": "Google Ads",
       "note": "WC #238218302 | Google Ads",
       "first_seen": "2026-05-29T16:05:24.977496+00:00",
-      "attempts": 70,
+      "attempts": 71,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -878,7 +879,7 @@
       "value": "Google Ads",
       "note": "WC #238219294 | Google Ads",
       "first_seen": "2026-05-29T16:10:19.554113+00:00",
-      "attempts": 69,
+      "attempts": 70,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -892,7 +893,7 @@
       "value": "Google Business Profile",
       "note": "WC #238230812 | Google Business Profile",
       "first_seen": "2026-05-29T16:45:20.335115+00:00",
-      "attempts": 62,
+      "attempts": 63,
       "caller_name": "Line Moms",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -906,7 +907,7 @@
       "value": "Google Ads",
       "note": "WC #238235771 | Google Ads",
       "first_seen": "2026-05-29T17:00:21.638492+00:00",
-      "attempts": 59,
+      "attempts": 60,
       "caller_name": "James Lebron",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -920,13 +921,27 @@
       "value": "Google Ads",
       "note": "WC #238241936 | Google Ads",
       "first_seen": "2026-05-29T17:20:21.266511+00:00",
-      "attempts": 55,
+      "attempts": 56,
       "caller_name": "James Lebron",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
       "call_duration": "2 minutes and 10 seconds",
       "received_at": "2026-05-29T17:17:12Z",
       "transcription": "Recipient\nGood afternoon. Thank you for calling. Black to Landscaping. This is Carlos. I may direct your call.\n\nCaller\nYes, it's music. LeBron again. I was calling to see if y' all were. Y' all located in. Four, word three.\n\nRecipient\nWe are in white settlement. White Settlement, Texas. White Settlement. I mean, it is. I think it pops up as Fort Worth. And, like, the maps.\n\nCaller\nYou were close to. What are you close to Fort Worth?\n\nRecipient\nMm. Yeah. And we're over here by the base. There's, like, a military base where we're, like, literally right in front of us.\n\nCaller\nOh, damn. Third. Is that going down 35?\n\nRecipient\nYeah.\n\nCaller\nOkay, yeah. You all close to the military base.\n\nRecipient\nYes. We're, like, literally right next to it.\n\nCaller\nIn. Oh, oh, okay, okay. But what's that area called?\n\nRecipient\nWhite settlement.\n\nCaller\nBecause I'm not familiar with it. Huh?\n\nRecipient\nIt's white.\n\nCaller\nWhite Salmon.\n\nRecipient\nWhite settlement. Yes.\n\nCaller\nOh, oh, okay, okay. White Solomon to me. It's over there. By. By. By 30. 30.\n\nRecipient\nOkay. No, we're over here. If you put our address, it'll show you where we're at.\n\nCaller\nOkay. Do you have the address?\n\nRecipient\nLike, on the map.\n\nCaller\nYou have the address? It did pop up, but now I can't find anymore. Yeah, I think I should. Okay, sir. Thank you.\n\nRecipient\nYou're welcome.\n\nCaller\nOh, no."
+    },
+    "238311644": {
+      "wc_lead_id": "238311644",
+      "phone": "+14695440646",
+      "value": "Google Business Profile",
+      "note": "WC #238311644 | Google Business Profile",
+      "first_seen": "2026-05-29T21:45:17.892956+00:00",
+      "attempts": 1,
+      "caller_name": "Aguila Martinez",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "2 minutes and 19 seconds",
+      "received_at": "2026-05-29T21:40:29Z",
+      "transcription": "Caller\nS\u00ed. Bueno, Ricardo.\n\nRecipient\nD\u00edgame.\n\nCaller\n\u00bfqu\u00e9 pas\u00f3 con la patrona? Le marco y no me contesta.\n\nRecipient\nAnda ocupada Ricardo, pero d\u00e9jeme le mando un mensaje, yo creo que ser\u00eda, no s\u00e9 si se vaya a comunicar con usted en el transcurso del fin de semana o si no el lunes, pero d\u00e9jeme le aviso.\n\nCaller\nY es que posiblemente ma\u00f1ana tendr\u00edamos tiempo, no estoy seguro, pero ma\u00f1ana.\n\nRecipient\nAh, ok.\n\nCaller\nPosiblemente tendr\u00edamos tiempo y si no, por lo menos ver qu\u00e9 tanto va a ser para en la semana saber, \u00bfMe entiende?\n\nRecipient\nOk.\n\nCaller\nY ya como me dijo que quer\u00eda hablar conmigo sobre unos proyectos a futuro, pues ya necesito hablar bien bien con ella para as\u00ed prevenirme con herramienta o con gente o, o con ganas de trabajar, porque ganas no tengo muchas. Y entonces s\u00ed, para.\n\nRecipient\nDe que mire.\n\nCaller\nS\u00ed, para hablar con ella.\n\nRecipient\nOk, si, ya le avis\u00e9 para que se comunique con usted, ya le puse que igual para, a lo mejor para ma\u00f1ana est\u00e1 disponible y ya usted y ya para que ya se comunique con usted.\n\nCaller\nMa\u00f1ana, ma\u00f1ana yo me toca trabajar en Forni, pero mi hermano va a andar trabajando aqu\u00ed en Aledo, en caso de que ella necesite que mi hermano vaya a ver para que le explique. Mi hermano est\u00e1 como a 15 minutos de ah\u00ed del trabajo.\n\nRecipient\nOk, entonces hermanos, va a estar disponible ma\u00f1ana.\n\nCaller\nPuede ir ah\u00ed a ver el trabajo en caso de que, en caso de que necesite explicarnos algo o cualquier cosa.\n\nRecipient\nOk, est\u00e1 bien, d\u00e9jeme yo le aviso.\n\nCaller\n\u00c1ndele pues, bueno, andamos aqu\u00ed trabajando, pero yo ahorita es muy tarde, como puede haber el proyecto, qui\u00e9n sabe si ya es muy tarde.\n\nRecipient\n\u00c1ndele, gracias. S\u00ed, no, no creo la verdad, porque aparte ella andaba ocupada y anduvo en un trabajo, as\u00ed es que no creo que para hoy, para serles sincero, pero igual y yo como quiera le aviso para que se comunique con usted, ya sea as\u00ed en caso de que ma\u00f1ana tenga tiempo y si no, pues ya se ponen de.\n\nCaller\n\u00c1ndele pues, ah\u00ed espero la llamada.\n\nRecipient\n\u00c1ndale, gracias, buen fin de semana. OK."
     }
   },
   "round_robin_state": {
