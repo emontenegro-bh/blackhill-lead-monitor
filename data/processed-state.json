@@ -368,15 +368,16 @@
     "238177658",
     "238193461",
     "238218302",
-    "238219294"
+    "238219294",
+    "238230812"
   ],
   "stats": {
-    "total_leads": 151,
+    "total_leads": 152,
     "total_spam": 169,
-    "last_lead": "2026-05-29T16:10:19.554143",
-    "total_calls": 22
+    "last_lead": "2026-05-29T16:45:20.335184",
+    "total_calls": 23
   },
-  "last_run": "2026-05-29T16:40:16.846365+00:00",
+  "last_run": "2026-05-29T16:45:20.336492+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -859,7 +860,7 @@
       "value": "Google Ads",
       "note": "WC #238218302 | Google Ads",
       "first_seen": "2026-05-29T16:05:24.977496+00:00",
-      "attempts": 8,
+      "attempts": 9,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -873,13 +874,27 @@
       "value": "Google Ads",
       "note": "WC #238219294 | Google Ads",
       "first_seen": "2026-05-29T16:10:19.554113+00:00",
-      "attempts": 7,
+      "attempts": 8,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
       "call_duration": "57 seconds",
       "received_at": "2026-05-29T16:05:26Z",
       "transcription": "Recipient\nGood morning. Thank you for calling. Black and Landscaping. This is Carlos. I'm a director call.\n\nCaller\nHi, I was calling to see how much the peak travel was. I've got a five by seven. It's a 36 square foot area.\n\nRecipient\nI'm sorry, are you looking for.\n\nCaller\nI need.\n\nRecipient\nMaterial or. Because we don't sell material. We're not a supplier. We do landscaping and maintenance and irrigation.\n\nCaller\nOkay, well that's even better.\n\nRecipient\nOkay.\n\nCaller\nOkay, so I have a 5 by 71 1."
+    },
+    "238230812": {
+      "wc_lead_id": "238230812",
+      "phone": "+18179449812",
+      "value": "Google Business Profile",
+      "note": "WC #238230812 | Google Business Profile",
+      "first_seen": "2026-05-29T16:45:20.335115+00:00",
+      "attempts": 1,
+      "caller_name": "Line Moms",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "2 minutes and 9 seconds",
+      "received_at": "2026-05-29T16:41:22Z",
+      "transcription": "Recipient\n\u00bflike the landscaping?\n\nCaller\n\u00bfest\u00e1n contratando trabajadores.\n\nRecipient\nPerd\u00f3n.\n\nCaller\nEst\u00e1n contratando trabajadores?\n\nRecipient\nPor el momento estamos estamos entrevistando para mantenimiento.\n\nCaller\nEn yarda.\n\nRecipient\n\u00bfsi tiene experiencia.\n\nCaller\nS\u00ed tengo experiencia.\n\nRecipient\nOk y cu\u00e1nto tiempo tiene de experiencia?\n\nCaller\nCinco a\u00f1os.\n\nRecipient\n\u00bfok, sabe usar las m\u00e1quinas, lo que es el Bobcat, el Vermeer, los Zero Turns, la g\u00fcira, la sopladora?\n\nCaller\nLo que es Purayard amigos, lo que es G\u00fcira 21 Blower.\n\nRecipient\nOk, est\u00e1 bien puede venir a hacer una aplicaci\u00f3n si gusta venir el lunes por la ma\u00f1ana los ponemos a prueba con el mec\u00e1nico dependiendo de c\u00f3mo hagan en la prueba entonces ya vemos si vamos a seguir al siguiente paso o no nos tenemos que asegurar que s\u00ed tengan experiencia porque tenemos son trabajos un poco grandes y por la temporada ahorita no hay mucho tiempo para entrenamiento.\n\nCaller\n\u00bfok perfecto, el lunes a qu\u00e9 hora?\n\nRecipient\n\u00bfsi gusta a las 8 de la ma\u00f1ana.\n\nCaller\nOk perfecto, ah\u00ed est\u00e1n entonces.\n\nRecipient\n\u00c1ndele sabe que? Si quiere venir como a las 11 perd\u00f3n, como a las 11, disculpa, a las 11 de la ma\u00f1ana.\n\nCaller\nHello, okay, that's it."
     }
   },
   "round_robin_state": {
