@@ -370,15 +370,16 @@
     "238218302",
     "238219294",
     "238230812",
-    "238235771"
+    "238235771",
+    "238241936"
   ],
   "stats": {
-    "total_leads": 153,
+    "total_leads": 154,
     "total_spam": 169,
-    "last_lead": "2026-05-29T17:00:21.638536",
-    "total_calls": 24
+    "last_lead": "2026-05-29T17:20:21.266537",
+    "total_calls": 25
   },
-  "last_run": "2026-05-29T17:15:17.556773+00:00",
+  "last_run": "2026-05-29T17:20:21.268379+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -861,7 +862,7 @@
       "value": "Google Ads",
       "note": "WC #238218302 | Google Ads",
       "first_seen": "2026-05-29T16:05:24.977496+00:00",
-      "attempts": 15,
+      "attempts": 16,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -875,7 +876,7 @@
       "value": "Google Ads",
       "note": "WC #238219294 | Google Ads",
       "first_seen": "2026-05-29T16:10:19.554113+00:00",
-      "attempts": 14,
+      "attempts": 15,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -889,7 +890,7 @@
       "value": "Google Business Profile",
       "note": "WC #238230812 | Google Business Profile",
       "first_seen": "2026-05-29T16:45:20.335115+00:00",
-      "attempts": 7,
+      "attempts": 8,
       "caller_name": "Line Moms",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -903,13 +904,27 @@
       "value": "Google Ads",
       "note": "WC #238235771 | Google Ads",
       "first_seen": "2026-05-29T17:00:21.638492+00:00",
-      "attempts": 4,
+      "attempts": 5,
       "caller_name": "James Lebron",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
       "call_duration": "1 minute and 14 seconds",
       "received_at": "2026-05-29T16:57:53Z",
       "transcription": "Recipient\nGood morning. Thank you for calling. Blackout Landscaping. This is Carlos. I'm going to direct your call.\n\nCaller\nYes, I was calling to see if y' all hiring, by chance. I checked online. We're at general labor jobs.\n\nRecipient\nOkay. Do you. What? I'm sorry.\n\nCaller\nYeah, I'll just. Wait, wait, say that again. My bad. I'm inside Home Depot.\n\nRecipient\nNo, no. I was just asking you. You're calling in regards to. You said labor.\n\nCaller\nYeah, general labor. I'm trying to look for a job. So I'll see if y' all were hiring. Yeah.\n\nRecipient\nOh, okay. You can stop by this, fill out an application if you'd like. We are looking for a maintenance cre.\n\nCaller\nOkay. Okay. Yes, I'll see. I'll see if I can stop by today. My name is LeBron, so.\n\nRecipient\nOkay, we close that. We're here until five, so just as long as it's before five.\n\nCaller\nOkay. All right. Okay, thank you.\n\nRecipient\nYou're welcome."
+    },
+    "238241936": {
+      "wc_lead_id": "238241936",
+      "phone": "+18065189839",
+      "value": "Google Ads",
+      "note": "WC #238241936 | Google Ads",
+      "first_seen": "2026-05-29T17:20:21.266511+00:00",
+      "attempts": 1,
+      "caller_name": "James Lebron",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "2 minutes and 10 seconds",
+      "received_at": "2026-05-29T17:17:12Z",
+      "transcription": "Recipient\nGood afternoon. Thank you for calling. Black to Landscaping. This is Carlos. I may direct your call.\n\nCaller\nYes, it's music. LeBron again. I was calling to see if y' all were. Y' all located in. Four, word three.\n\nRecipient\nWe are in white settlement. White Settlement, Texas. White Settlement. I mean, it is. I think it pops up as Fort Worth. And, like, the maps.\n\nCaller\nYou were close to. What are you close to Fort Worth?\n\nRecipient\nMm. Yeah. And we're over here by the base. There's, like, a military base where we're, like, literally right in front of us.\n\nCaller\nOh, damn. Third. Is that going down 35?\n\nRecipient\nYeah.\n\nCaller\nOkay, yeah. You all close to the military base.\n\nRecipient\nYes. We're, like, literally right next to it.\n\nCaller\nIn. Oh, oh, okay, okay. But what's that area called?\n\nRecipient\nWhite settlement.\n\nCaller\nBecause I'm not familiar with it. Huh?\n\nRecipient\nIt's white.\n\nCaller\nWhite Salmon.\n\nRecipient\nWhite settlement. Yes.\n\nCaller\nOh, oh, okay, okay. White Solomon to me. It's over there. By. By. By 30. 30.\n\nRecipient\nOkay. No, we're over here. If you put our address, it'll show you where we're at.\n\nCaller\nOkay. Do you have the address?\n\nRecipient\nLike, on the map.\n\nCaller\nYou have the address? It did pop up, but now I can't find anymore. Yeah, I think I should. Okay, sir. Thank you.\n\nRecipient\nYou're welcome.\n\nCaller\nOh, no."
     }
   },
   "round_robin_state": {
