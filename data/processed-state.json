@@ -389,7 +389,7 @@
     "last_lead": "2026-05-30T14:45:45.564100",
     "total_calls": 27
   },
-  "last_run": "2026-05-30T17:35:12.622425+00:00",
+  "last_run": "2026-05-30T17:40:13.499862+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -893,7 +893,7 @@
       "value": "Google Business Profile",
       "note": "WC #238311644 | Google Business Profile",
       "first_seen": "2026-05-29T21:45:17.892956+00:00",
-      "attempts": 249,
+      "attempts": 250,
       "caller_name": "Aguila Martinez",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -907,7 +907,7 @@
       "value": "Google Ads",
       "note": "WC #238367827 | Google Ads | Keyword: yard drainage fort worth | Landing: /areas-we-serve/fort-worth/standing-water",
       "first_seen": "2026-05-30T14:45:45.564063+00:00",
-      "attempts": 37,
+      "attempts": 38,
       "caller_name": "Searway B.",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
