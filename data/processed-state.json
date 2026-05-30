@@ -390,7 +390,7 @@
     "last_lead": "2026-05-30T14:45:45.564100",
     "total_calls": 27
   },
-  "last_run": "2026-05-30T21:45:11.989165+00:00",
+  "last_run": "2026-05-30T21:50:13.849709+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -888,27 +888,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "238311644": {
-      "wc_lead_id": "238311644",
-      "phone": "+14695440646",
-      "value": "Google Business Profile",
-      "note": "WC #238311644 | Google Business Profile",
-      "first_seen": "2026-05-29T21:45:17.892956+00:00",
-      "attempts": 303,
-      "caller_name": "Aguila Martinez",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "2 minutes and 19 seconds",
-      "received_at": "2026-05-29T21:40:29Z",
-      "transcription": "Caller\nS\u00ed. Bueno, Ricardo.\n\nRecipient\nD\u00edgame.\n\nCaller\n\u00bfqu\u00e9 pas\u00f3 con la patrona? Le marco y no me contesta.\n\nRecipient\nAnda ocupada Ricardo, pero d\u00e9jeme le mando un mensaje, yo creo que ser\u00eda, no s\u00e9 si se vaya a comunicar con usted en el transcurso del fin de semana o si no el lunes, pero d\u00e9jeme le aviso.\n\nCaller\nY es que posiblemente ma\u00f1ana tendr\u00edamos tiempo, no estoy seguro, pero ma\u00f1ana.\n\nRecipient\nAh, ok.\n\nCaller\nPosiblemente tendr\u00edamos tiempo y si no, por lo menos ver qu\u00e9 tanto va a ser para en la semana saber, \u00bfMe entiende?\n\nRecipient\nOk.\n\nCaller\nY ya como me dijo que quer\u00eda hablar conmigo sobre unos proyectos a futuro, pues ya necesito hablar bien bien con ella para as\u00ed prevenirme con herramienta o con gente o, o con ganas de trabajar, porque ganas no tengo muchas. Y entonces s\u00ed, para.\n\nRecipient\nDe que mire.\n\nCaller\nS\u00ed, para hablar con ella.\n\nRecipient\nOk, si, ya le avis\u00e9 para que se comunique con usted, ya le puse que igual para, a lo mejor para ma\u00f1ana est\u00e1 disponible y ya usted y ya para que ya se comunique con usted.\n\nCaller\nMa\u00f1ana, ma\u00f1ana yo me toca trabajar en Forni, pero mi hermano va a andar trabajando aqu\u00ed en Aledo, en caso de que ella necesite que mi hermano vaya a ver para que le explique. Mi hermano est\u00e1 como a 15 minutos de ah\u00ed del trabajo.\n\nRecipient\nOk, entonces hermanos, va a estar disponible ma\u00f1ana.\n\nCaller\nPuede ir ah\u00ed a ver el trabajo en caso de que, en caso de que necesite explicarnos algo o cualquier cosa.\n\nRecipient\nOk, est\u00e1 bien, d\u00e9jeme yo le aviso.\n\nCaller\n\u00c1ndele pues, bueno, andamos aqu\u00ed trabajando, pero yo ahorita es muy tarde, como puede haber el proyecto, qui\u00e9n sabe si ya es muy tarde.\n\nRecipient\n\u00c1ndele, gracias. S\u00ed, no, no creo la verdad, porque aparte ella andaba ocupada y anduvo en un trabajo, as\u00ed es que no creo que para hoy, para serles sincero, pero igual y yo como quiera le aviso para que se comunique con usted, ya sea as\u00ed en caso de que ma\u00f1ana tenga tiempo y si no, pues ya se ponen de.\n\nCaller\n\u00c1ndele pues, ah\u00ed espero la llamada.\n\nRecipient\n\u00c1ndale, gracias, buen fin de semana. OK."
-    },
     "238367827": {
       "wc_lead_id": "238367827",
       "phone": "+18179922609",
       "value": "Google Ads",
       "note": "WC #238367827 | Google Ads | Keyword: yard drainage fort worth | Landing: /areas-we-serve/fort-worth/standing-water",
       "first_seen": "2026-05-30T14:45:45.564063+00:00",
-      "attempts": 91,
+      "attempts": 92,
       "caller_name": "Searway B.",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
