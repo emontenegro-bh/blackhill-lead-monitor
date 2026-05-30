@@ -389,7 +389,7 @@
     "last_lead": "2026-05-30T14:45:45.564100",
     "total_calls": 27
   },
-  "last_run": "2026-05-30T17:20:13.472869+00:00",
+  "last_run": "2026-05-30T17:25:15.555511+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -887,27 +887,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "238241936": {
-      "wc_lead_id": "238241936",
-      "phone": "+18065189839",
-      "value": "Google Ads",
-      "note": "WC #238241936 | Google Ads",
-      "first_seen": "2026-05-29T17:20:21.266511+00:00",
-      "attempts": 301,
-      "caller_name": "James Lebron",
-      "lead_source_raw": "google",
-      "lead_medium_raw": "cpc",
-      "call_duration": "2 minutes and 10 seconds",
-      "received_at": "2026-05-29T17:17:12Z",
-      "transcription": "Recipient\nGood afternoon. Thank you for calling. Black to Landscaping. This is Carlos. I may direct your call.\n\nCaller\nYes, it's music. LeBron again. I was calling to see if y' all were. Y' all located in. Four, word three.\n\nRecipient\nWe are in white settlement. White Settlement, Texas. White Settlement. I mean, it is. I think it pops up as Fort Worth. And, like, the maps.\n\nCaller\nYou were close to. What are you close to Fort Worth?\n\nRecipient\nMm. Yeah. And we're over here by the base. There's, like, a military base where we're, like, literally right in front of us.\n\nCaller\nOh, damn. Third. Is that going down 35?\n\nRecipient\nYeah.\n\nCaller\nOkay, yeah. You all close to the military base.\n\nRecipient\nYes. We're, like, literally right next to it.\n\nCaller\nIn. Oh, oh, okay, okay. But what's that area called?\n\nRecipient\nWhite settlement.\n\nCaller\nBecause I'm not familiar with it. Huh?\n\nRecipient\nIt's white.\n\nCaller\nWhite Salmon.\n\nRecipient\nWhite settlement. Yes.\n\nCaller\nOh, oh, okay, okay. White Solomon to me. It's over there. By. By. By 30. 30.\n\nRecipient\nOkay. No, we're over here. If you put our address, it'll show you where we're at.\n\nCaller\nOkay. Do you have the address?\n\nRecipient\nLike, on the map.\n\nCaller\nYou have the address? It did pop up, but now I can't find anymore. Yeah, I think I should. Okay, sir. Thank you.\n\nRecipient\nYou're welcome.\n\nCaller\nOh, no."
-    },
     "238311644": {
       "wc_lead_id": "238311644",
       "phone": "+14695440646",
       "value": "Google Business Profile",
       "note": "WC #238311644 | Google Business Profile",
       "first_seen": "2026-05-29T21:45:17.892956+00:00",
-      "attempts": 246,
+      "attempts": 247,
       "caller_name": "Aguila Martinez",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -921,7 +907,7 @@
       "value": "Google Ads",
       "note": "WC #238367827 | Google Ads | Keyword: yard drainage fort worth | Landing: /areas-we-serve/fort-worth/standing-water",
       "first_seen": "2026-05-30T14:45:45.564063+00:00",
-      "attempts": 34,
+      "attempts": 35,
       "caller_name": "Searway B.",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
