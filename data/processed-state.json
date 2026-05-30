@@ -389,7 +389,7 @@
     "last_lead": "2026-05-30T14:45:45.564100",
     "total_calls": 27
   },
-  "last_run": "2026-05-30T17:00:16.439090+00:00",
+  "last_run": "2026-05-30T17:05:21.016804+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -887,27 +887,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "238235771": {
-      "wc_lead_id": "238235771",
-      "phone": "+18065189839",
-      "value": "Google Ads",
-      "note": "WC #238235771 | Google Ads",
-      "first_seen": "2026-05-29T17:00:21.638492+00:00",
-      "attempts": 301,
-      "caller_name": "James Lebron",
-      "lead_source_raw": "google",
-      "lead_medium_raw": "cpc",
-      "call_duration": "1 minute and 14 seconds",
-      "received_at": "2026-05-29T16:57:53Z",
-      "transcription": "Recipient\nGood morning. Thank you for calling. Blackout Landscaping. This is Carlos. I'm going to direct your call.\n\nCaller\nYes, I was calling to see if y' all hiring, by chance. I checked online. We're at general labor jobs.\n\nRecipient\nOkay. Do you. What? I'm sorry.\n\nCaller\nYeah, I'll just. Wait, wait, say that again. My bad. I'm inside Home Depot.\n\nRecipient\nNo, no. I was just asking you. You're calling in regards to. You said labor.\n\nCaller\nYeah, general labor. I'm trying to look for a job. So I'll see if y' all were hiring. Yeah.\n\nRecipient\nOh, okay. You can stop by this, fill out an application if you'd like. We are looking for a maintenance cre.\n\nCaller\nOkay. Okay. Yes, I'll see. I'll see if I can stop by today. My name is LeBron, so.\n\nRecipient\nOkay, we close that. We're here until five, so just as long as it's before five.\n\nCaller\nOkay. All right. Okay, thank you.\n\nRecipient\nYou're welcome."
-    },
     "238241936": {
       "wc_lead_id": "238241936",
       "phone": "+18065189839",
       "value": "Google Ads",
       "note": "WC #238241936 | Google Ads",
       "first_seen": "2026-05-29T17:20:21.266511+00:00",
-      "attempts": 297,
+      "attempts": 298,
       "caller_name": "James Lebron",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -921,7 +907,7 @@
       "value": "Google Business Profile",
       "note": "WC #238311644 | Google Business Profile",
       "first_seen": "2026-05-29T21:45:17.892956+00:00",
-      "attempts": 242,
+      "attempts": 243,
       "caller_name": "Aguila Martinez",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -935,7 +921,7 @@
       "value": "Google Ads",
       "note": "WC #238367827 | Google Ads | Keyword: yard drainage fort worth | Landing: /areas-we-serve/fort-worth/standing-water",
       "first_seen": "2026-05-30T14:45:45.564063+00:00",
-      "attempts": 30,
+      "attempts": 31,
       "caller_name": "Searway B.",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
