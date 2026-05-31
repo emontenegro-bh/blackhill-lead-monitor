@@ -391,7 +391,7 @@
     "last_lead": "2026-05-30T22:25:12.734193",
     "total_calls": 28
   },
-  "last_run": "2026-05-31T04:25:10.608953+00:00",
+  "last_run": "2026-05-31T04:30:14.260038+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -895,7 +895,7 @@
       "value": "Google Ads",
       "note": "WC #238367827 | Google Ads | Keyword: yard drainage fort worth | Landing: /areas-we-serve/fort-worth/standing-water",
       "first_seen": "2026-05-30T14:45:45.564063+00:00",
-      "attempts": 173,
+      "attempts": 174,
       "caller_name": "Searway B.",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
