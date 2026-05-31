@@ -392,7 +392,7 @@
     "last_lead": "2026-05-30T22:25:12.734193",
     "total_calls": 28
   },
-  "last_run": "2026-05-31T14:45:12.355150+00:00",
+  "last_run": "2026-05-31T14:50:13.915467+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -889,22 +889,7 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "238367827": {
-      "wc_lead_id": "238367827",
-      "phone": "+18179922609",
-      "value": "Google Ads",
-      "note": "WC #238367827 | Google Ads | Keyword: yard drainage fort worth | Landing: /areas-we-serve/fort-worth/standing-water",
-      "first_seen": "2026-05-30T14:45:45.564063+00:00",
-      "attempts": 302,
-      "caller_name": "Searway B.",
-      "lead_source_raw": "google",
-      "lead_medium_raw": "cpc",
-      "call_duration": "1 minute and 5 seconds",
-      "received_at": "2026-05-30T14:44:08Z",
-      "transcription": "Recipient\nThank you for calling Black Hill Landscaping. Please leave your name, number and a brief message and we will return your call as soon as possible.\n\nCaller\nYeah, hi, this is Ben Sierway. I live in for Texas zip code 76116. Need a French drain consultation and you know, your availability for your work schedule based on our project scope. In addition to, you know, the financial cost of the project.\n\nRecipient\nIt.\n\nCaller\nOur second most important. Maybe it could be our most important guest. My wife. The ability to slot us in in the timeline. 8179-9226-0981-7992-2609. Call me anytime."
-    }
-  },
+  "pending_call_attributions": {},
   "round_robin_state": {
     "last_index": 0
   }
