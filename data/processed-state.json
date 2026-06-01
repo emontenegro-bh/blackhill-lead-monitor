@@ -391,15 +391,16 @@
     "238608073",
     "238626511",
     "238626242",
-    "238634844"
+    "238634844",
+    "238690344"
   ],
   "stats": {
-    "total_leads": 167,
+    "total_leads": 168,
     "total_spam": 173,
-    "last_lead": "2026-06-01T17:20:17.076965",
-    "total_calls": 35
+    "last_lead": "2026-06-01T20:00:22.716923",
+    "total_calls": 36
   },
-  "last_run": "2026-06-01T19:55:18.052352+00:00",
+  "last_run": "2026-06-01T20:00:22.718316+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -903,7 +904,7 @@
       "value": "Google Business Profile",
       "note": "WC #238603051 | Google Business Profile",
       "first_seen": "2026-06-01T16:00:22.740771+00:00",
-      "attempts": 48,
+      "attempts": 49,
       "caller_name": "Line Moms",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -917,7 +918,7 @@
       "value": "Google Business Profile",
       "note": "WC #238608073 | Google Business Profile",
       "first_seen": "2026-06-01T16:10:19.488890+00:00",
-      "attempts": 46,
+      "attempts": 47,
       "caller_name": "Brown Jill",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -931,7 +932,7 @@
       "value": "Google Ads",
       "note": "WC #238626511 | Google Ads",
       "first_seen": "2026-06-01T17:00:29.654011+00:00",
-      "attempts": 36,
+      "attempts": 37,
       "caller_name": "Lawson Darla",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -945,7 +946,7 @@
       "value": "Google Ads",
       "note": "WC #238626242 | Google Ads",
       "first_seen": "2026-06-01T17:00:30.100790+00:00",
-      "attempts": 36,
+      "attempts": 37,
       "caller_name": "Lawson Darla",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -959,13 +960,27 @@
       "value": "Google Business Profile",
       "note": "WC #238634844 | Google Business Profile",
       "first_seen": "2026-06-01T17:20:17.076942+00:00",
-      "attempts": 32,
+      "attempts": 33,
       "caller_name": "Brown Jill",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "13 seconds",
       "received_at": "2026-06-01T17:19:56Z",
       "transcription": "Recipient\nThe person you are trying to reach is not available."
+    },
+    "238690344": {
+      "wc_lead_id": "238690344",
+      "phone": "+18172043969",
+      "value": "Google Business Profile",
+      "note": "WC #238690344 | Google Business Profile",
+      "first_seen": "2026-06-01T20:00:22.716893+00:00",
+      "attempts": 1,
+      "caller_name": "Brown Jill",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "12 seconds",
+      "received_at": "2026-06-01T19:56:54Z",
+      "transcription": "Recipient\nThe person you are trying to reach is not available. Goodbye."
     }
   },
   "round_robin_state": {
