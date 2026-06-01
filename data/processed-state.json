@@ -386,15 +386,16 @@
     "238414355",
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD-wg7PAAA=",
     "238575279",
-    "238575034"
+    "238575034",
+    "238603051"
   ],
   "stats": {
-    "total_leads": 162,
+    "total_leads": 163,
     "total_spam": 173,
-    "last_lead": "2026-06-01T14:50:28.627225",
-    "total_calls": 30
+    "last_lead": "2026-06-01T16:00:22.740807",
+    "total_calls": 31
   },
-  "last_run": "2026-06-01T15:55:18.476833+00:00",
+  "last_run": "2026-06-01T16:00:22.741839+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -891,7 +892,22 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {},
+  "pending_call_attributions": {
+    "238603051": {
+      "wc_lead_id": "238603051",
+      "phone": "+18179449812",
+      "value": "Google Business Profile",
+      "note": "WC #238603051 | Google Business Profile",
+      "first_seen": "2026-06-01T16:00:22.740771+00:00",
+      "attempts": 1,
+      "caller_name": "Line Moms",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "2 minutes and 22 seconds",
+      "received_at": "2026-06-01T15:57:13Z",
+      "transcription": "Recipient\n\u00bfblack your landscaping misses Evelyn, how can I help you?\n\nCaller\nHola, buenos d\u00edas. Me dijeron que viniera a las 11, Que viniera a las 11 a un entrenamiento y estoy aqu\u00ed afuera, pero no s\u00e9, un se\u00f1or me dijo que viniera ma\u00f1ana.\n\nRecipient\n\u00bfok, y la pregunta?\n\nCaller\nEs que el viernes, el viernes yo llam\u00e9 y pregunt\u00e9 si ocupaban trabajadores entonces me dijeron que viniera hoy.\n\nRecipient\n\u00bfhuh?\n\nCaller\nPara aplicar.\n\nRecipient\n\u00bfy nadie adentro?\n\nCaller\nEst\u00e1 un se\u00f1or, un g\u00fcerito, pero me dijo que ma\u00f1ana a las 9, no s\u00e9 si \u00e9l me entendi\u00f3, pero no s\u00e9, por eso estoy llamando.\n\nRecipient\nOk, si alguien est\u00e1 en la oficina.\n\nCaller\nNo, no, no hay n.\n\nRecipient\nOk, si no hay nadie en la oficina entonces tiene que regresar ma\u00f1ana si hay alguien en la oficina vaya a hablar con la persona en la oficina.\n\nCaller\nBueno, entonces el se\u00f1or era el \u00fanico que estaba en la oficina, pero no s\u00e9 si parece que \u00e9l no es el encargado de entrevistarlos o no s\u00e9. Entonces me dijo que regresara ma\u00f1ana a las 9, entonces ma\u00f1ana a las 9 vuelvo.\n\nRecipient\n\u00bfok? Please tevin.\n\nCaller\nOk, OK, perfecto, gracias.\n\nRecipient\nOk, bye.\n\nCaller\nBueno."
+    }
+  },
   "round_robin_state": {
     "last_index": 0
   }
