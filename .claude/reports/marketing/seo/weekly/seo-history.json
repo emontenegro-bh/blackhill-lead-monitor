@@ -83,5 +83,22 @@
     "title_issues": 0,
     "h1_issues": 0,
     "meta_issues": 0
+  },
+  "2026-06-01": {
+    "score": 83,
+    "pages_live": 191,
+    "pages_missing": 2,
+    "total_issues": 122,
+    "alt_text_pct": 89.7,
+    "images_total": 2013,
+    "images_good": 1806,
+    "images_poor": 191,
+    "images_missing": 16,
+    "schema_local_business": 143,
+    "schema_faq": 156,
+    "schema_aggregate_rating": 90,
+    "title_issues": 87,
+    "h1_issues": 0,
+    "meta_issues": 21
   }
 }
