@@ -384,15 +384,17 @@
     "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD-wg7NAAA=",
     "238392340",
     "238414355",
-    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD-wg7PAAA="
+    "AAMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAAAAACsFcvBmmtHSZKnLmwQYCiDBwAQtg8BmilZQpP5XHXIHpLtAAAAAAEMAAAQtg8BmilZQpP5XHXIHpLtAAD-wg7PAAA=",
+    "238575279",
+    "238575034"
   ],
   "stats": {
-    "total_leads": 160,
+    "total_leads": 162,
     "total_spam": 173,
-    "last_lead": "2026-05-30T22:25:12.734193",
-    "total_calls": 28
+    "last_lead": "2026-06-01T14:50:28.627225",
+    "total_calls": 30
   },
-  "last_run": "2026-06-01T14:45:17.896174+00:00",
+  "last_run": "2026-06-01T14:50:28.628182+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
