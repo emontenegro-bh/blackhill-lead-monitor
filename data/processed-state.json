@@ -395,7 +395,7 @@
     "last_lead": "2026-06-01T16:00:22.740807",
     "total_calls": 31
   },
-  "last_run": "2026-06-01T16:00:22.741839+00:00",
+  "last_run": "2026-06-01T16:05:17.494044+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -899,7 +899,7 @@
       "value": "Google Business Profile",
       "note": "WC #238603051 | Google Business Profile",
       "first_seen": "2026-06-01T16:00:22.740771+00:00",
-      "attempts": 1,
+      "attempts": 2,
       "caller_name": "Line Moms",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
