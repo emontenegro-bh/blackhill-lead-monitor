@@ -398,15 +398,16 @@
     "238784393",
     "238786234",
     "238846490",
-    "238862234"
+    "238862234",
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABAwd1YAAAAA=="
   ],
   "stats": {
     "total_leads": 172,
-    "total_spam": 175,
+    "total_spam": 176,
     "last_lead": "2026-06-02T16:05:28.341042",
     "total_calls": 40
   },
-  "last_run": "2026-06-02T19:00:25.625698+00:00",
+  "last_run": "2026-06-02T19:04:30.156439+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
