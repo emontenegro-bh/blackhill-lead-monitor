@@ -408,7 +408,7 @@
     "last_lead": "2026-06-02T16:05:28.341042",
     "total_calls": 40
   },
-  "last_run": "2026-06-02T20:00:22.525910+00:00",
+  "last_run": "2026-06-02T20:05:20.716272+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -906,27 +906,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "238690344": {
-      "wc_lead_id": "238690344",
-      "phone": "+18172043969",
-      "value": "Google Business Profile",
-      "note": "WC #238690344 | Google Business Profile",
-      "first_seen": "2026-06-01T20:00:22.716893+00:00",
-      "attempts": 296,
-      "caller_name": "Brown Jill",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "12 seconds",
-      "received_at": "2026-06-01T19:56:54Z",
-      "transcription": "Recipient\nThe person you are trying to reach is not available. Goodbye."
-    },
     "238725935": {
       "wc_lead_id": "238725935",
       "phone": "+12145422383",
       "value": "Referral",
       "note": "WC #238725935 | Referral",
       "first_seen": "2026-06-01T22:15:15.891457+00:00",
-      "attempts": 268,
+      "attempts": 269,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
@@ -940,7 +926,7 @@
       "value": "Google Ads",
       "note": "WC #238784393 | Google Ads",
       "first_seen": "2026-06-02T12:40:20.213455+00:00",
-      "attempts": 91,
+      "attempts": 92,
       "caller_name": "Blackwood Brett",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
