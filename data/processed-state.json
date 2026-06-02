@@ -404,7 +404,7 @@
     "last_lead": "2026-06-02T12:55:23.192011",
     "total_calls": 39
   },
-  "last_run": "2026-06-02T15:55:23.178046+00:00",
+  "last_run": "2026-06-02T16:00:36.851012+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -902,27 +902,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "238603051": {
-      "wc_lead_id": "238603051",
-      "phone": "+18179449812",
-      "value": "Google Business Profile",
-      "note": "WC #238603051 | Google Business Profile",
-      "first_seen": "2026-06-01T16:00:22.740771+00:00",
-      "attempts": 294,
-      "caller_name": "Line Moms",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "2 minutes and 22 seconds",
-      "received_at": "2026-06-01T15:57:13Z",
-      "transcription": "Recipient\n\u00bfblack your landscaping misses Evelyn, how can I help you?\n\nCaller\nHola, buenos d\u00edas. Me dijeron que viniera a las 11, Que viniera a las 11 a un entrenamiento y estoy aqu\u00ed afuera, pero no s\u00e9, un se\u00f1or me dijo que viniera ma\u00f1ana.\n\nRecipient\n\u00bfok, y la pregunta?\n\nCaller\nEs que el viernes, el viernes yo llam\u00e9 y pregunt\u00e9 si ocupaban trabajadores entonces me dijeron que viniera hoy.\n\nRecipient\n\u00bfhuh?\n\nCaller\nPara aplicar.\n\nRecipient\n\u00bfy nadie adentro?\n\nCaller\nEst\u00e1 un se\u00f1or, un g\u00fcerito, pero me dijo que ma\u00f1ana a las 9, no s\u00e9 si \u00e9l me entendi\u00f3, pero no s\u00e9, por eso estoy llamando.\n\nRecipient\nOk, si alguien est\u00e1 en la oficina.\n\nCaller\nNo, no, no hay n.\n\nRecipient\nOk, si no hay nadie en la oficina entonces tiene que regresar ma\u00f1ana si hay alguien en la oficina vaya a hablar con la persona en la oficina.\n\nCaller\nBueno, entonces el se\u00f1or era el \u00fanico que estaba en la oficina, pero no s\u00e9 si parece que \u00e9l no es el encargado de entrevistarlos o no s\u00e9. Entonces me dijo que regresara ma\u00f1ana a las 9, entonces ma\u00f1ana a las 9 vuelvo.\n\nRecipient\n\u00bfok? Please tevin.\n\nCaller\nOk, OK, perfecto, gracias.\n\nRecipient\nOk, bye.\n\nCaller\nBueno."
-    },
     "238608073": {
       "wc_lead_id": "238608073",
       "phone": "+18172043969",
       "value": "Google Business Profile",
       "note": "WC #238608073 | Google Business Profile",
       "first_seen": "2026-06-01T16:10:19.488890+00:00",
-      "attempts": 292,
+      "attempts": 293,
       "caller_name": "Brown Jill",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -936,7 +922,7 @@
       "value": "Google Business Profile",
       "note": "WC #238634844 | Google Business Profile",
       "first_seen": "2026-06-01T17:20:17.076942+00:00",
-      "attempts": 278,
+      "attempts": 279,
       "caller_name": "Brown Jill",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -950,7 +936,7 @@
       "value": "Google Business Profile",
       "note": "WC #238690344 | Google Business Profile",
       "first_seen": "2026-06-01T20:00:22.716893+00:00",
-      "attempts": 246,
+      "attempts": 247,
       "caller_name": "Brown Jill",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -964,7 +950,7 @@
       "value": "Referral",
       "note": "WC #238725935 | Referral",
       "first_seen": "2026-06-01T22:15:15.891457+00:00",
-      "attempts": 218,
+      "attempts": 219,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
@@ -978,7 +964,7 @@
       "value": "Google Ads",
       "note": "WC #238784393 | Google Ads",
       "first_seen": "2026-06-02T12:40:20.213455+00:00",
-      "attempts": 41,
+      "attempts": 42,
       "caller_name": "Blackwood Brett",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
