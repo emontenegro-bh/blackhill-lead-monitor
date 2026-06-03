@@ -409,7 +409,7 @@
     "last_lead": "2026-06-03T00:45:15.518990",
     "total_calls": 41
   },
-  "last_run": "2026-06-03T05:25:14.117248+00:00",
+  "last_run": "2026-06-03T05:30:14.163815+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -913,7 +913,7 @@
       "value": "Google Ads",
       "note": "WC #238784393 | Google Ads",
       "first_seen": "2026-06-02T12:40:20.213455+00:00",
-      "attempts": 207,
+      "attempts": 208,
       "caller_name": "Blackwood Brett",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
