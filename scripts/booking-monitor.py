@@ -165,21 +165,23 @@ def graph_request(endpoint, token):
 
 # --- Bookings ---
 
-def discover_booking_business(token):
-    """Find the booking business ID."""
+def discover_booking_businesses(token):
+    """Find all booking business IDs on the tenant."""
     resp, status = graph_request("/solutions/bookingBusinesses", token)
     if status != 200:
         log.error(f"Failed to list booking businesses: {status} - {resp}")
-        return None
-
+        return []
     businesses = resp.get("value", [])
     if not businesses:
         log.error("No booking businesses found.")
-        return None
-
-    biz = businesses[0]
-    log.info(f"Found booking business: {biz.get('displayName')} (id: {biz.get('id')})")
-    return biz.get("id")
+        return []
+    ids = []
+    for b in businesses:
+        bid = b.get("id")
+        if bid:
+            ids.append(bid)
+            log.info(f"Booking business: {b.get('displayName')} (id: {bid})")
+    return ids
 
 
 def get_appointments(token, business_id, lookback_hours=LOOKBACK_HOURS):
@@ -337,7 +339,7 @@ def load_state():
             return json.load(f)
     return {
         "processed": {},
-        "business_id": None,
+        "business_ids": [],
         "stats": {"created": 0, "exists": 0, "errors": 0, "total_runs": 0},
     }
 
@@ -640,44 +642,65 @@ def notify_new_booking(customer, service_name, appointment_date, aspire_result, 
 # --- Main ---
 
 def process_appointments(token, state):
-    """Find and process new booking appointments."""
-    business_id = state.get("business_id")
-
-    if not business_id:
-        business_id = discover_booking_business(token)
-        if not business_id:
-            log.error("Cannot discover booking business. Check API permissions (Bookings.Read.All as Application permission with admin consent).")
+    """Find and process new booking appointments across all Bookings calendars."""
+    business_ids = state.get("business_ids")
+    if not business_ids:
+        # Migrate from legacy single-business field if present
+        legacy = state.get("business_id")
+        business_ids = discover_booking_businesses(token)
+        if not business_ids:
+            log.error("Cannot discover booking businesses. Check API permissions (Bookings.Read.All as Application permission with admin consent).")
             sys.exit(1)
-        state["business_id"] = business_id
+        state["business_ids"] = business_ids
+        state.pop("business_id", None)
         save_state(state)
+        if legacy and legacy not in business_ids:
+            log.warning(f"Legacy business_id {legacy} not in current discovery — was the calendar deleted?")
 
-    appointments = get_appointments(token, business_id)
-    if not appointments:
+    # Periodically re-discover so newly added calendars get picked up automatically.
+    runs = state["stats"].get("total_runs", 0)
+    if runs and runs % 50 == 0:
+        discovered = discover_booking_businesses(token)
+        new_ids = [b for b in discovered if b not in business_ids]
+        if new_ids:
+            log.warning(f"New booking calendar(s) detected, adding to monitor: {new_ids}")
+            business_ids.extend(new_ids)
+            state["business_ids"] = business_ids
+
+    # Fetch appointments from every calendar.
+    all_appointments = []  # (business_id, appt) tuples
+    for bid in business_ids:
+        appts = get_appointments(token, bid)
+        if appts:
+            log.info(f"Calendar {bid}: {len(appts)} appointment(s) in window.")
+            for a in appts:
+                all_appointments.append((bid, a))
+
+    if not all_appointments:
         log.info("No appointments found in window.")
         return
 
     # Guard against bulk reprocessing after state file reset.
     # If state has no processed entries and we see many appointments,
     # only process those from the last 48 hours to avoid re-creating old contacts.
-    if not state["processed"] and len(appointments) > 5:
+    if not state["processed"] and len(all_appointments) > 5:
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=48)).isoformat()
-        recent = [a for a in appointments
+        recent = [(b, a) for b, a in all_appointments
                   if a.get("startDateTime", {}).get("dateTime", "") >= cutoff
                   or a.get("startDateTime", {}).get("dateTime", "") == ""]
-        skipped = len(appointments) - len(recent)
+        skipped = len(all_appointments) - len(recent)
         if skipped > 0:
             log.warning(
-                f"State file appears reset — {len(appointments)} appointments found but "
+                f"State file appears reset — {len(all_appointments)} appointments found but "
                 f"only processing {len(recent)} from last 48h. "
                 f"Skipping {skipped} older appointments to prevent duplicate contacts. "
                 f"Mark older appointments as processed manually if needed."
             )
-            # Mark skipped appointments so they aren't retried
-            for appt in appointments:
+            for bid, appt in all_appointments:
                 appt_id = appt.get("id", "")
                 start_dt = appt.get("startDateTime", {}).get("dateTime", "")
                 if appt_id and start_dt < cutoff:
-                    customer = extract_customer(appt, business_id, token)
+                    customer = extract_customer(appt, bid, token)
                     state["processed"][appt_id] = {
                         "customer_name": customer["name"],
                         "customer_email": customer.get("email", ""),
@@ -686,15 +709,15 @@ def process_appointments(token, state):
                         "skipped": "state_reset_guard",
                         "processed_at": datetime.now(timezone.utc).isoformat(),
                     }
-            appointments = recent
+            all_appointments = recent
 
     new_count = 0
-    for appt in appointments:
+    for bid, appt in all_appointments:
         appt_id = appt.get("id", "")
         if not appt_id or appt_id in state["processed"]:
             continue
 
-        customer = extract_customer(appt, business_id, token)
+        customer = extract_customer(appt, bid, token)
         if not customer["name"]:
             log.debug(f"Skipping appointment {appt_id}: no customer name")
             continue
@@ -809,17 +832,20 @@ def test_connection():
         print(json.dumps({"success": False, "message": "Auth failed. Run ms-auth-setup.py"}))
         return
 
-    business_id = discover_booking_business(token)
-    if not business_id:
+    business_ids = discover_booking_businesses(token)
+    if not business_ids:
         print(json.dumps({"success": False, "message": "No booking businesses found"}))
         return
 
-    appointments = get_appointments(token, business_id, lookback_hours=24 * 30)
+    totals = {}
+    for bid in business_ids:
+        appts = get_appointments(token, bid, lookback_hours=24 * 30)
+        totals[bid] = len(appts)
     print(json.dumps({
         "success": True,
-        "business_id": business_id,
-        "recent_appointments": len(appointments),
-        "message": f"Connected. Found {len(appointments)} appointments in last 30 days.",
+        "business_ids": business_ids,
+        "recent_appointments_by_calendar": totals,
+        "message": f"Connected. Watching {len(business_ids)} calendar(s); {sum(totals.values())} appointments in last 30 days.",
     }, indent=2))
 
 
@@ -831,7 +857,10 @@ def show_status():
 
     print("Booking Monitor Status")
     print("=" * 40)
-    print(f"Business ID:      {state.get('business_id', 'Not discovered')}")
+    bids = state.get("business_ids") or ([state["business_id"]] if state.get("business_id") else [])
+    print(f"Calendars watched: {len(bids)}")
+    for bid in bids:
+        print(f"  - {bid}")
     print(f"Total runs:       {stats.get('total_runs', 0)}")
     print(f"Contacts created: {stats.get('created', 0)}")
     print(f"Already existed:  {stats.get('exists', 0)}")
@@ -866,22 +895,26 @@ def list_bookings():
         return
 
     state = load_state()
-    business_id = state.get("business_id")
-    if not business_id:
-        business_id = discover_booking_business(token)
-        if not business_id:
+    business_ids = state.get("business_ids") or ([state["business_id"]] if state.get("business_id") else [])
+    if not business_ids:
+        business_ids = discover_booking_businesses(token)
+        if not business_ids:
             return
 
-    appointments = get_appointments(token, business_id, lookback_hours=24 * 14)
-    print(f"Recent Bookings ({len(appointments)})")
+    all_appts = []
+    for bid in business_ids:
+        for a in get_appointments(token, bid, lookback_hours=24 * 14):
+            all_appts.append((bid, a))
+
+    print(f"Recent Bookings ({len(all_appts)})")
     print("=" * 60)
 
-    for appt in appointments:
-        customer = extract_customer(appt, business_id, token)
+    for bid, appt in all_appts:
+        customer = extract_customer(appt, bid, token)
         start = appt.get("startDateTime", {}).get("dateTime", "")[:16]
         service = appt.get("serviceName", "?")
         processed = "Y" if appt.get("id") in state.get("processed", {}) else " "
-        print(f"  [{processed}] {customer['name']} ({customer['email']}) {customer['phone']}")
+        print(f"  [{processed}] {customer['name']} ({customer['email']}) {customer['phone']}  [{bid}]")
         if customer.get("address"):
             print(f"      Address: {customer['address']}, {customer.get('city', '')} {customer.get('state', '')} {customer.get('zip', '')}")
         print(f"      {service} - {start}")

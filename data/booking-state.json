@@ -495,13 +495,51 @@
         "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/322134467274"
       },
       "processed_at": "2026-04-23T17:44:29.791389+00:00"
+    },
+    "AAMkAGUwMmU2ZjRjLTFmMjMtNGI1ZC04NDE3LTk1ODYyYjNmNmU3ZgBGAAAAAABDJ9Wmb83ZRrpzD12nXQm6BwBZrqdi8p01T6GHKyJ20gr0AAAAAAENAABZrqdi8p01T6GHKyJ20gr0AAAZ7LfIAAA=": {
+      "customer_name": "Ben Searway",
+      "customer_email": "westridgeave@gmail.com",
+      "appointment_date": "2026-06-02T15:30:00.0000000Z",
+      "service": "Virtual Consultation",
+      "skipped": "pre_seed_multi_calendar_manual_backfill",
+      "processed_at": "2026-06-03T23:47:44.500545+00:00"
+    },
+    "AAMkAGUwMmU2ZjRjLTFmMjMtNGI1ZC04NDE3LTk1ODYyYjNmNmU3ZgBGAAAAAABDJ9Wmb83ZRrpzD12nXQm6BwBZrqdi8p01T6GHKyJ20gr0AAAAAAENAABZrqdi8p01T6GHKyJ20gr0AAATpN0HAAA=": {
+      "customer_name": "Alex Serman",
+      "customer_email": "alex.serman@mac.com",
+      "appointment_date": "2026-05-25T15:00:00.0000000Z",
+      "service": "Virtual Consultation",
+      "skipped": "pre_seed_multi_calendar_manual_backfill",
+      "processed_at": "2026-06-03T23:47:44.500545+00:00"
+    },
+    "AAMkAGUwMmU2ZjRjLTFmMjMtNGI1ZC04NDE3LTk1ODYyYjNmNmU3ZgBGAAAAAABDJ9Wmb83ZRrpzD12nXQm6BwBZrqdi8p01T6GHKyJ20gr0AAAAAAENAABZrqdi8p01T6GHKyJ20gr0AAAL62z0AAA=": {
+      "customer_name": "Scott Sloter",
+      "customer_email": "scott@sloter.net",
+      "appointment_date": "2026-05-15T13:00:00.0000000Z",
+      "service": "Virtual Consultation",
+      "skipped": "pre_seed_multi_calendar_manual_backfill",
+      "processed_at": "2026-06-03T23:47:44.500545+00:00"
+    },
+    "AAMkAGUwMmU2ZjRjLTFmMjMtNGI1ZC04NDE3LTk1ODYyYjNmNmU3ZgBGAAAAAABDJ9Wmb83ZRrpzD12nXQm6BwBZrqdi8p01T6GHKyJ20gr0AAAAAAENAABZrqdi8p01T6GHKyJ20gr0AAAH1lywAAA=": {
+      "customer_name": "test",
+      "customer_email": "test@gmail.com",
+      "appointment_date": "2026-05-14T14:00:00.0000000Z",
+      "service": "Virtual Consultation",
+      "skipped": "pre_seed_multi_calendar_test_entry",
+      "processed_at": "2026-06-03T23:47:44.500545+00:00"
     }
   },
-  "business_id": "MeanGreenCustomerMeet@meangreenlawncare.com",
   "stats": {
     "created": 5,
     "exists": 18,
     "errors": 8,
     "total_runs": 925
-  }
+  },
+  "business_ids": [
+    "MeanGreenCustomerMeet@meangreenlawncare.com",
+    "BlackHill15MinConsultation@meangreenlawncare.com",
+    "BlackHillConsultation@meangreenlawncare.com",
+    "BlackHillLandscaping@meangreenlawncare.com",
+    "BlackHillLandscaping1@blackhilltx.com"
+  ]
 }
