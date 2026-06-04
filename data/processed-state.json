@@ -408,15 +408,16 @@
     "239124053",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABAwd1YwAAAA==",
     "239175691",
-    "239293438"
+    "239293438",
+    "239336414"
   ],
   "stats": {
     "total_leads": 174,
-    "total_spam": 182,
+    "total_spam": 183,
     "last_lead": "2026-06-03T18:35:28.598074",
     "total_calls": 41
   },
-  "last_run": "2026-06-04T17:45:16.955667+00:00",
+  "last_run": "2026-06-04T17:50:13.399645+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
