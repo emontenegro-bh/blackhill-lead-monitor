@@ -116,9 +116,9 @@ def load_config_from_env():
         },
         "mailchimp": {
             "enabled": bool(os.environ.get("MAILCHIMP_API_KEY")),
-            "api_key": os.environ.get("MAILCHIMP_API_KEY", ""),
-            "server_prefix": os.environ.get("MAILCHIMP_SERVER", "us20"),
-            "list_id": os.environ.get("MAILCHIMP_LIST_ID", ""),
+            "api_key": (os.environ.get("MAILCHIMP_API_KEY") or "").strip(),
+            "server_prefix": (os.environ.get("MAILCHIMP_SERVER") or "us20").strip(),
+            "list_id": (os.environ.get("MAILCHIMP_LIST_ID") or "").strip(),
             "tag": "web-lead",
         },
         "aspire": {
