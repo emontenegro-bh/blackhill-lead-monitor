@@ -410,15 +410,16 @@
     "239175691",
     "239293438",
     "239336414",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABAwd1ZQAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABAwd1ZQAAAA==",
+    "239433075"
   ],
   "stats": {
-    "total_leads": 174,
+    "total_leads": 175,
     "total_spam": 184,
-    "last_lead": "2026-06-03T18:35:28.598074",
+    "last_lead": "2026-06-05T01:50:25.347177",
     "total_calls": 41
   },
-  "last_run": "2026-06-05T01:45:11.693285+00:00",
+  "last_run": "2026-06-05T01:50:25.348406+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -917,6 +918,13 @@
       "service": "Commercial Maintenance",
       "lead_type": "web_form",
       "date": "2026-06-03"
+    },
+    "239433075": {
+      "aspire_contact_id": "2657",
+      "traffic_source": "google / organic",
+      "service": "Drainage Solutions",
+      "lead_type": "web_form",
+      "date": "2026-06-05"
     }
   },
   "dismissed_matches": [
@@ -924,6 +932,6 @@
   ],
   "pending_call_attributions": {},
   "round_robin_state": {
-    "last_index": 0
+    "last_index": 1
   }
 }
