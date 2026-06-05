@@ -426,7 +426,7 @@
     "last_lead": "2026-06-05T18:55:14.477917",
     "total_calls": 44
   },
-  "last_run": "2026-06-05T22:45:13.312837+00:00",
+  "last_run": "2026-06-05T22:50:18.203884+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -944,7 +944,7 @@
       "value": "Google Business Profile",
       "note": "WC #239526361 | Google Business Profile",
       "first_seen": "2026-06-05T16:30:15.281844+00:00",
-      "attempts": 78,
+      "attempts": 79,
       "caller_name": "Avila David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -958,7 +958,7 @@
       "value": "Google Ads",
       "note": "WC #239569830 | Google Ads",
       "first_seen": "2026-06-05T18:55:14.477857+00:00",
-      "attempts": 48,
+      "attempts": 49,
       "caller_name": "Austin Donna",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
