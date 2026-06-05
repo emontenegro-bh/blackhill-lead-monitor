@@ -416,15 +416,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4QAAAA==",
     "239526361",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4gAAAA==",
-    "239537263"
+    "239537263",
+    "239569830"
   ],
   "stats": {
-    "total_leads": 177,
+    "total_leads": 178,
     "total_spam": 187,
-    "last_lead": "2026-06-05T17:05:44.207682",
-    "total_calls": 43
+    "last_lead": "2026-06-05T18:55:14.477917",
+    "total_calls": 44
   },
-  "last_run": "2026-06-05T18:50:14.937370+00:00",
+  "last_run": "2026-06-05T18:55:14.479276+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -942,13 +943,27 @@
       "value": "Google Business Profile",
       "note": "WC #239526361 | Google Business Profile",
       "first_seen": "2026-06-05T16:30:15.281844+00:00",
-      "attempts": 30,
+      "attempts": 31,
       "caller_name": "Avila David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "2 minutes and 18 seconds",
       "received_at": "2026-06-05T16:27:02Z",
       "transcription": "Recipient\nForeign. Hello, thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the next available team member. We appreciate your patience. Hello, thank you for calling Black Hill Landscaping, please. Good morning. Thank you for calling Black Hill. How can I direct your call?\n\nCaller\nHello. I was just looking if you had any job opportunities at all for an entry level person.\n\nRecipient\nYes. Oh, what kind of job opportunity? So, we are hiring, but we are currently only hiring field positions right now.\n\nCaller\nYeah, for landscaping.\n\nRecipient\nFor maintenance.\n\nCaller\nMaintenance. Oh, snap.\n\nRecipient\nYeah, it's like a. It's commercial. It's. Yeah, it's commercial maintenance. So we handle a lot of municipalities and.\n\nCaller\nWould you be able to train?\n\nRecipient\nRight of ways for the cities. And it's like mowing, blowing, edging. You have to know how to use a zero turn because they're big properties. They're not small properties.\n\nCaller\nOh, yeah.\n\nRecipient\nSo zero turns are biggest usage. And it's not. We're not hiring. Entry level, you do have to have experience and you are tested by our maintenance manager.\n\nCaller\nOh, okay. So no entry level people.\n\nRecipient\nNo, we. We do not train.\n\nCaller\nOkay, well, we tried. I appreciate you, though, for the information.\n\nRecipient\nAbsolutely. And during the wintertime, we do have entry positions available because it gives us the time to train if you do not have the experience. But as you can imagine, in the high season, it's very much.\n\nCaller\nYeah, right now it's a busy, busy season, though.\n\nRecipient\nExactly.\n\nCaller\nYeah. Okay, that makes a lot of sense. So I understand.\n\nRecipient\nOkay. All right, great. Well, if you have any other questions, please don't hesitate to reach out.\n\nCaller\nWell, okay. Appreciate you. Take care.\n\nRecipient\nAbsolutely. Take care. Bye."
+    },
+    "239569830": {
+      "wc_lead_id": "239569830",
+      "phone": "+18172370657",
+      "value": "Google Ads",
+      "note": "WC #239569830 | Google Ads",
+      "first_seen": "2026-06-05T18:55:14.477857+00:00",
+      "attempts": 1,
+      "caller_name": "Austin Donna",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "1 minute and 29 seconds",
+      "received_at": "2026-06-05T18:50:41Z",
+      "transcription": "Recipient\nForeign. Hello, thank you for calling Black Hill Landscaping. Please hold for just a moment. Thank you so much for holding. This is Denise. How can I help you?\n\nCaller\nHi, Denise. This is person that needs my yard mode, and I'm calling you. Is that what y' all do?\n\nRecipient\nYes, I mean, we're a landscaping company. Is this for residential or for commercial?\n\nCaller\nResidential.\n\nRecipient\nOkay. Our residential packages start at $500 a.\n\nCaller\nOh, okay. So you don't just come occasionally, like once every two weeks and just mow a yard or mowing edge or something like that.\n\nRecipient\nNo, no, we're by contract. We do 38 services out of the year. And we also do. We do fertilization, irrigation. It's more like a full service.\n\nCaller\nRight?\n\nRecipient\nType.\n\nCaller\nWell, I wish I could do that, but I can't. So.\n\nRecipient\nMaintenance. No, we understand.\n\nCaller\nThank you, and I hope it was a great day. Okay. Thank you.\n\nRecipient\nThank you. You too. Take care. Bye.\n\nCaller\nBye. Bye. You too. Bye."
     }
   },
   "round_robin_state": {
