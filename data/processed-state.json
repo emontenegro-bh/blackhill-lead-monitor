@@ -415,15 +415,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4AAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4QAAAA==",
     "239526361",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4gAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4gAAAA==",
+    "239537263"
   ],
   "stats": {
-    "total_leads": 176,
+    "total_leads": 177,
     "total_spam": 187,
-    "last_lead": "2026-06-05T16:30:15.281874",
-    "total_calls": 42
+    "last_lead": "2026-06-05T17:05:44.207682",
+    "total_calls": 43
   },
-  "last_run": "2026-06-05T17:00:17.812812+00:00",
+  "last_run": "2026-06-05T17:05:44.209023+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -941,7 +942,7 @@
       "value": "Google Business Profile",
       "note": "WC #239526361 | Google Business Profile",
       "first_seen": "2026-06-05T16:30:15.281844+00:00",
-      "attempts": 7,
+      "attempts": 8,
       "caller_name": "Avila David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
