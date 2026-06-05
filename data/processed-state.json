@@ -413,15 +413,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABAwd1ZQAAAA==",
     "239433075",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4AAAAA==",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4QAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABBN4_4QAAAA==",
+    "239526361"
   ],
   "stats": {
-    "total_leads": 175,
+    "total_leads": 176,
     "total_spam": 186,
-    "last_lead": "2026-06-05T01:50:25.347177",
-    "total_calls": 41
+    "last_lead": "2026-06-05T16:30:15.281874",
+    "total_calls": 42
   },
-  "last_run": "2026-06-05T16:25:14.196952+00:00",
+  "last_run": "2026-06-05T16:30:15.283808+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -932,7 +933,22 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {},
+  "pending_call_attributions": {
+    "239526361": {
+      "wc_lead_id": "239526361",
+      "phone": "+12406438150",
+      "value": "Google Business Profile",
+      "note": "WC #239526361 | Google Business Profile",
+      "first_seen": "2026-06-05T16:30:15.281844+00:00",
+      "attempts": 1,
+      "caller_name": "Avila David",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "2 minutes and 18 seconds",
+      "received_at": "2026-06-05T16:27:02Z",
+      "transcription": "Recipient\nForeign. Hello, thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the next available team member. We appreciate your patience. Hello, thank you for calling Black Hill Landscaping, please. Good morning. Thank you for calling Black Hill. How can I direct your call?\n\nCaller\nHello. I was just looking if you had any job opportunities at all for an entry level person.\n\nRecipient\nYes. Oh, what kind of job opportunity? So, we are hiring, but we are currently only hiring field positions right now.\n\nCaller\nYeah, for landscaping.\n\nRecipient\nFor maintenance.\n\nCaller\nMaintenance. Oh, snap.\n\nRecipient\nYeah, it's like a. It's commercial. It's. Yeah, it's commercial maintenance. So we handle a lot of municipalities and.\n\nCaller\nWould you be able to train?\n\nRecipient\nRight of ways for the cities. And it's like mowing, blowing, edging. You have to know how to use a zero turn because they're big properties. They're not small properties.\n\nCaller\nOh, yeah.\n\nRecipient\nSo zero turns are biggest usage. And it's not. We're not hiring. Entry level, you do have to have experience and you are tested by our maintenance manager.\n\nCaller\nOh, okay. So no entry level people.\n\nRecipient\nNo, we. We do not train.\n\nCaller\nOkay, well, we tried. I appreciate you, though, for the information.\n\nRecipient\nAbsolutely. And during the wintertime, we do have entry positions available because it gives us the time to train if you do not have the experience. But as you can imagine, in the high season, it's very much.\n\nCaller\nYeah, right now it's a busy, busy season, though.\n\nRecipient\nExactly.\n\nCaller\nYeah. Okay, that makes a lot of sense. So I understand.\n\nRecipient\nOkay. All right, great. Well, if you have any other questions, please don't hesitate to reach out.\n\nCaller\nWell, okay. Appreciate you. Take care.\n\nRecipient\nAbsolutely. Take care. Bye."
+    }
+  },
   "round_robin_state": {
     "last_index": 1
   }
