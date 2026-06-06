@@ -132,6 +132,31 @@ def fetch_all_calls(token, secret, profile_id):
     print(f"DIAGNOSTIC (last 360 days, all types): {len(diag_leads)} leads, "
           f"lead_type breakdown: {dict(type_counter)}", file=sys.stderr)
 
+    # Field structure of phone-call leads (look for voicemail-related fields)
+    phone_leads = [l for l in diag_leads if (l.get("lead_type") or "").lower() == "phone call"]
+    if phone_leads:
+        all_keys = set()
+        for l in phone_leads:
+            all_keys.update(l.keys())
+        vm_keys = sorted(k for k in all_keys if "voice" in k.lower() or "mail" in k.lower() or "message" in k.lower())
+        print(f"DIAGNOSTIC: phone-call lead has {len(all_keys)} fields total", file=sys.stderr)
+        print(f"DIAGNOSTIC: voicemail-related field names: {vm_keys}", file=sys.stderr)
+        print(f"DIAGNOSTIC: all phone-call field names: {sorted(all_keys)}", file=sys.stderr)
+
+        # Distribution of every plausibly-relevant categorical field
+        for field in ("answer_status", "lead_status", "call_status", "call_result",
+                      "quotable", "duplicate", "spam"):
+            values = Counter(str(l.get(field)) if l.get(field) is not None else "(null)" for l in phone_leads)
+            print(f"DIAGNOSTIC: {field} distribution: {dict(values)}", file=sys.stderr)
+
+        # Dump 2 sample records (first answered, first non-answered) for full inspection
+        sample_answered = next((l for l in phone_leads if (l.get("answer_status") or "").lower() == "answered"), None)
+        sample_other = next((l for l in phone_leads if (l.get("answer_status") or "").lower() != "answered"), None)
+        if sample_answered:
+            print(f"DIAGNOSTIC: sample ANSWERED record: {json.dumps(sample_answered, default=str)[:2000]}", file=sys.stderr)
+        if sample_other:
+            print(f"DIAGNOSTIC: sample NON-ANSWERED record: {json.dumps(sample_other, default=str)[:2000]}", file=sys.stderr)
+
     all_calls = []
     window_end = today
     while True:
