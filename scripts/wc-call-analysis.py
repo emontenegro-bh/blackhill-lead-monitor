@@ -80,11 +80,12 @@ def is_business_hours(dt_local):
     return 8 <= hour < 18
 
 
-def fetch_all_calls(token, secret, profile_id):
+def fetch_all_calls(token, secret, profile_id, start_date):
     # Diagnostic: get one page with no lead_type filter so we can see which
     # lead types WhatConverts actually has data for.
     diag = wc_request(token, secret, "/leads", {
         "profile_id": profile_id,
+        "start_date": start_date,
         "leads_per_page": 50,
         "page_number": 1,
     })
@@ -101,6 +102,7 @@ def fetch_all_calls(token, secret, profile_id):
     while True:
         params = {
             "profile_id": profile_id,
+            "start_date": start_date,
             "lead_type": "phone_call",
             "leads_per_page": 250,
             "page_number": page,
@@ -135,8 +137,10 @@ def main():
     secret = os.environ["WC_API_SECRET"].strip()
     profile_id = os.environ.get("WC_PROFILE_ID", "162442").strip()
 
-    print(f"Fetching all phone-call leads for profile {profile_id}...", file=sys.stderr)
-    calls = fetch_all_calls(token, secret, profile_id)
+    # WhatConverts requires start_date. Go back 5 years to capture full history.
+    start_date = "2021-01-01T00:00:00Z"
+    print(f"Fetching all phone-call leads for profile {profile_id} since {start_date}...", file=sys.stderr)
+    calls = fetch_all_calls(token, secret, profile_id, start_date)
     print(f"Fetched {len(calls)} raw call records.", file=sys.stderr)
 
     # Filter own numbers and parse
