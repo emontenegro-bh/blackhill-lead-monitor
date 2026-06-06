@@ -43,8 +43,13 @@ def wc_request(token, secret, endpoint, params):
         "Authorization": f"Basic {auth}",
         "Accept": "application/json",
     })
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return json.loads(resp.read().decode())
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")[:600]
+        print(f"WC API {e.code} on {endpoint} params={params}: {body}", file=sys.stderr)
+        raise
 
 
 def normalize_phone(raw):
@@ -137,8 +142,9 @@ def main():
     secret = os.environ["WC_API_SECRET"].strip()
     profile_id = os.environ.get("WC_PROFILE_ID", "162442").strip()
 
-    # WhatConverts requires start_date. Go back 5 years to capture full history.
-    start_date = "2021-01-01T00:00:00Z"
+    # WhatConverts requires start_date. Try YYYY-MM-DD (date-only) which the
+    # API docs list as the canonical format. Go back 5 years for full history.
+    start_date = "2021-01-01"
     print(f"Fetching all phone-call leads for profile {profile_id} since {start_date}...", file=sys.stderr)
     calls = fetch_all_calls(token, secret, profile_id, start_date)
     print(f"Fetched {len(calls)} raw call records.", file=sys.stderr)
