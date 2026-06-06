@@ -23,7 +23,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 CENTRAL = ZoneInfo("America/Chicago")
@@ -85,47 +85,74 @@ def is_business_hours(dt_local):
     return 8 <= hour < 18
 
 
-def fetch_all_calls(token, secret, profile_id, start_date):
-    # Diagnostic: get one page with no lead_type filter so we can see which
-    # lead types WhatConverts actually has data for.
-    diag = wc_request(token, secret, "/leads", {
-        "profile_id": profile_id,
-        "start_date": start_date,
-        "leads_per_page": 50,
-        "page_number": 1,
-    })
-    type_counter = Counter()
-    for lead in diag.get("leads", []):
-        type_counter[lead.get("lead_type") or "(none)"] += 1
-    print(f"DIAGNOSTIC: total_leads={diag.get('total_leads')}, "
-          f"total_pages={diag.get('total_pages')}, "
-          f"lead_type sample (first page): {dict(type_counter)}",
-          file=sys.stderr)
-
+def fetch_window(token, secret, profile_id, start_date, end_date, lead_type=None):
+    """Fetch all leads in a single date window, paginated."""
     page = 1
     out = []
     while True:
         params = {
             "profile_id": profile_id,
             "start_date": start_date,
-            "lead_type": "phone_call",
+            "end_date": end_date,
             "leads_per_page": 250,
             "page_number": page,
         }
+        if lead_type:
+            params["lead_type"] = lead_type
         try:
             data = wc_request(token, secret, "/leads", params)
-        except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="replace")[:400]
-            print(f"ERROR page {page}: HTTP {e.code} {body}", file=sys.stderr)
+        except urllib.error.HTTPError:
             sys.exit(1)
         leads = data.get("leads", [])
         out.extend(leads)
         total_pages = data.get("total_pages", 1)
-        print(f"  page {page}/{total_pages}: +{len(leads)} (running {len(out)})", file=sys.stderr)
         if page >= total_pages or not leads:
             break
         page += 1
     return out
+
+
+def fetch_all_calls(token, secret, profile_id):
+    """WhatConverts caps date range to 400 days. Walk back in 360-day windows
+    from today until we hit a window with zero results (i.e., before account
+    history started)."""
+    # Diagnostic: probe most-recent 360 days with no lead_type filter to see
+    # which lead types this profile actually has.
+    today = datetime.now(timezone.utc).date()
+    probe_start = today - timedelta(days=360)
+    diag_leads = fetch_window(
+        token, secret, profile_id,
+        probe_start.strftime("%Y-%m-%d"),
+        today.strftime("%Y-%m-%d"),
+        lead_type=None,
+    )
+    type_counter = Counter()
+    for lead in diag_leads:
+        type_counter[lead.get("lead_type") or "(none)"] += 1
+    print(f"DIAGNOSTIC (last 360 days, all types): {len(diag_leads)} leads, "
+          f"lead_type breakdown: {dict(type_counter)}", file=sys.stderr)
+
+    all_calls = []
+    window_end = today
+    while True:
+        window_start = window_end - timedelta(days=360)
+        win_calls = fetch_window(
+            token, secret, profile_id,
+            window_start.strftime("%Y-%m-%d"),
+            window_end.strftime("%Y-%m-%d"),
+            lead_type="phone_call",
+        )
+        print(f"  window {window_start} -> {window_end}: +{len(win_calls)} calls "
+              f"(running {len(all_calls) + len(win_calls)})", file=sys.stderr)
+        if not win_calls:
+            # No data this far back; assume history ends here.
+            break
+        all_calls.extend(win_calls)
+        window_end = window_start - timedelta(days=1)
+        # Safety cap: don't walk past 2018.
+        if window_end.year < 2018:
+            break
+    return all_calls
 
 
 def classify_answer_status(status):
@@ -142,11 +169,8 @@ def main():
     secret = os.environ["WC_API_SECRET"].strip()
     profile_id = os.environ.get("WC_PROFILE_ID", "162442").strip()
 
-    # WhatConverts requires start_date. Try YYYY-MM-DD (date-only) which the
-    # API docs list as the canonical format. Go back 5 years for full history.
-    start_date = "2021-01-01"
-    print(f"Fetching all phone-call leads for profile {profile_id} since {start_date}...", file=sys.stderr)
-    calls = fetch_all_calls(token, secret, profile_id, start_date)
+    print(f"Fetching all phone-call leads for profile {profile_id}...", file=sys.stderr)
+    calls = fetch_all_calls(token, secret, profile_id)
     print(f"Fetched {len(calls)} raw call records.", file=sys.stderr)
 
     # Filter own numbers and parse
