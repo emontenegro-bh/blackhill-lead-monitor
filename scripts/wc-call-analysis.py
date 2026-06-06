@@ -81,6 +81,21 @@ def is_business_hours(dt_local):
 
 
 def fetch_all_calls(token, secret, profile_id):
+    # Diagnostic: get one page with no lead_type filter so we can see which
+    # lead types WhatConverts actually has data for.
+    diag = wc_request(token, secret, "/leads", {
+        "profile_id": profile_id,
+        "leads_per_page": 50,
+        "page_number": 1,
+    })
+    type_counter = Counter()
+    for lead in diag.get("leads", []):
+        type_counter[lead.get("lead_type") or "(none)"] += 1
+    print(f"DIAGNOSTIC: total_leads={diag.get('total_leads')}, "
+          f"total_pages={diag.get('total_pages')}, "
+          f"lead_type sample (first page): {dict(type_counter)}",
+          file=sys.stderr)
+
     page = 1
     out = []
     while True:
