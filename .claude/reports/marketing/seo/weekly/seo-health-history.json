@@ -694,5 +694,83 @@
       "website_clicks": 1,
       "direction_requests": 7
     }
+  },
+  {
+    "date": "2026-06-08",
+    "date_range": "2026-05-30 to 2026-06-05",
+    "gsc": {
+      "impressions": 5491,
+      "clicks": 47,
+      "ctr": 0.86,
+      "avg_position": 18.58
+    },
+    "priority_keywords": [
+      {
+        "query": "backyard designers benbrook tx",
+        "position": 48.2,
+        "impressions": 25,
+        "clicks": 0
+      },
+      {
+        "query": "arlington commercial landscaping",
+        "position": 15.8,
+        "impressions": 19,
+        "clicks": 0
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1.2,
+        "impressions": 16,
+        "clicks": 8
+      },
+      {
+        "query": "sprinkler repair fort worth",
+        "position": 18,
+        "impressions": 13,
+        "clicks": 1
+      },
+      {
+        "query": "blackhill landscaping",
+        "position": 1.5,
+        "impressions": 12,
+        "clicks": 5
+      },
+      {
+        "query": "mean green landscaping",
+        "position": 4.5,
+        "impressions": 11,
+        "clicks": 1
+      },
+      {
+        "query": "aledo landscaping",
+        "position": 9.7,
+        "impressions": 11,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 19.1,
+        "impressions": 10,
+        "clicks": 0
+      },
+      {
+        "query": "24 hour tree service fort worth",
+        "position": 6.4,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "lawn care services near me",
+        "position": 14.4,
+        "impressions": 7,
+        "clicks": 1
+      }
+    ],
+    "gbp": {
+      "total_views": 75,
+      "calls": 1,
+      "website_clicks": 3,
+      "direction_requests": 6
+    }
   }
 ]
