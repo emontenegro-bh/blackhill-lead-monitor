@@ -435,15 +435,16 @@
     "240106989",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABB3pWsQAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABB3pWsAAAAA==",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABB3pWrwAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABB3pWrwAAAA==",
+    "240124342"
   ],
   "stats": {
     "total_leads": 181,
-    "total_spam": 199,
+    "total_spam": 200,
     "last_lead": "2026-06-08T19:55:21.452992",
     "total_calls": 45
   },
-  "last_run": "2026-06-09T13:25:18.563587+00:00",
+  "last_run": "2026-06-09T13:30:21.507011+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -968,22 +969,7 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "239865719": {
-      "wc_lead_id": "239865719",
-      "phone": "+18173608828",
-      "value": "Google Business Profile",
-      "note": "WC #239865719 | Google Business Profile",
-      "first_seen": "2026-06-08T13:25:19.307348+00:00",
-      "attempts": 297,
-      "caller_name": "Bailey Maureen",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "44 seconds",
-      "received_at": "2026-06-08T13:22:57Z",
-      "transcription": "Recipient\nGood morning. Thank you for calling. Black to Landscaping. This is Carlos. I'm going to direct your call.\n\nCaller\nHi. Who would I need to speak to to feature you guys on the scorecards out at Rockwood Park? The golf course? The scorecards.\n\nRecipient\nNo, thank you. If you can, please.\n\nCaller\nRockwood park is the golf course in downtown Fort Worth.\n\nRecipient\nOkay. No, thank you. Please remove us from your calling list. Thank you."
-    }
-  },
+  "pending_call_attributions": {},
   "round_robin_state": {
     "last_index": 0
   }
