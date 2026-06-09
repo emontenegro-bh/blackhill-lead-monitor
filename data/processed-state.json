@@ -435,7 +435,7 @@
     "last_lead": "2026-06-08T19:55:21.452992",
     "total_calls": 45
   },
-  "last_run": "2026-06-09T04:40:13.980063+00:00",
+  "last_run": "2026-06-09T04:45:15.958118+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -967,7 +967,7 @@
       "value": "Google Business Profile",
       "note": "WC #239865719 | Google Business Profile",
       "first_seen": "2026-06-08T13:25:19.307348+00:00",
-      "attempts": 190,
+      "attempts": 191,
       "caller_name": "Bailey Maureen",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
