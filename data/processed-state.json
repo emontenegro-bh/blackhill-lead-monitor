@@ -442,15 +442,16 @@
     "240335176",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABB3pWtgAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABB3pWtQAAAA==",
-    "240355227"
+    "240355227",
+    "240406439"
   ],
   "stats": {
-    "total_leads": 182,
+    "total_leads": 183,
     "total_spam": 203,
-    "last_lead": "2026-06-10T13:25:19.828101",
-    "total_calls": 46
+    "last_lead": "2026-06-10T16:05:17.724173",
+    "total_calls": 47
   },
-  "last_run": "2026-06-10T16:00:18.568416+00:00",
+  "last_run": "2026-06-10T16:05:17.725624+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -982,13 +983,27 @@
       "value": "Google Ads",
       "note": "WC #240355227 | Google Ads",
       "first_seen": "2026-06-10T13:25:19.828069+00:00",
-      "attempts": 31,
+      "attempts": 32,
       "caller_name": "Blackwood Brett",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
       "call_duration": "2 minutes and 51 seconds",
       "received_at": "2026-06-10T13:20:40Z",
       "transcription": "Recipient\nGood morning. Thank you for calling Black Hill Landscaping. This is Carlos. I direct your call.\n\nCaller\nHey, Carlos, this is Brett Blackwood. I called you guys a couple weeks ago to come by and give me an estimate, and y' all never showed up.\n\nRecipient\nOkay, give me one second. Can I get your address?\n\nCaller\nWe got 308 paint pony trail, north Fort Worth, Texas.\n\nRecipient\nOkay.\n\nCaller\nWe're over by.\n\nRecipient\nThree. Sorry, three. Zero, eight. And then you said paint p, a, p, a, I, n, t.\n\nCaller\nPaint. Yeah. Paint pony trail.\n\nRecipient\nPaint. Ponytail, pony trail. Right.\n\nCaller\nYeah, if you come down White Settlement Road, you know, when you cross Chapel Creek.\n\nRecipient\nAll right.\n\nCaller\nYou know where the fire station is on the left.\n\nRecipient\nOkay.\n\nCaller\nAnd then there's two churches. If you turn right, right there and go in between the two churches, that's Paint Pony.\n\nRecipient\nOkay. And you're looking. You're waiting on an estimate.\n\nCaller\nYeah, y' all were supposed to be here two Mondays ago. I talked to some girl.\n\nRecipient\nOh, okay. I apologize about that. I might have booked you incorrectly. But let me just go ahead. Can I get your name?\n\nCaller\nBrett.\n\nRecipient\nBrett. Okay. And it's Blackwood.\n\nCaller\nYeah.\n\nRecipient\nPerfect. Let me just go ahead and follow up with them to see. Because I don't know if I might have double booked or I might have not put you in the system. I apologize about that. Let me go ahead and check with them and then call you back. Could you give me a few minutes to call you back?\n\nCaller\nWell, yeah, sure, that's fine.\n\nRecipient\nOkay. And what was the. What were you looking for? I'm sorry.\n\nCaller\nI have a section in the very back of my property, have three acres. I have a section in the very back of my property.\n\nRecipient\nAll right.\n\nCaller\nAnd there's a. Probably a hundred foot of just rock that had been piled up there over the years to previous owners and us as well. I need that just to be picked up and hauled off. It's not. I mean, there's not a whole lot of work. It's just basically skid work, you know, pulling off. Pulling some of it off from the.\n\nRecipient\nOh, okay.\n\nCaller\nLandscaping fences of the neighbors behind us.\n\nRecipient\nOkay.\n\nCaller\nBut it's not a tremendous amount. You know.\n\nRecipient\nAlrighty. No problem. Okay. Let me go ahead.\n\nCaller\nMaybe. Maybe a dump truckload at best.\n\nRecipient\nOh, okay. Alrighty. Let me go ahead and get with our sales team and then we'll go ahead and. Go ahead and have somebody give you a call.\n\nCaller\nOkay, good deal. Thank you.\n\nRecipient\nPerfect. Thank you. Sorry about that. Thank you very much.\n\nCaller\nBye. Bye. Oh, you're good. Bye. Bye."
+    },
+    "240406439": {
+      "wc_lead_id": "240406439",
+      "phone": "+18179753861",
+      "value": "Google Business Profile",
+      "note": "WC #240406439 | Google Business Profile",
+      "first_seen": "2026-06-10T16:05:17.724146+00:00",
+      "attempts": 1,
+      "caller_name": "Mote Johnny",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "1 minute and 32 seconds",
+      "received_at": "2026-06-10T16:03:13Z",
+      "transcription": "Recipient\nForeign. Good morning. Thank you for calling Black Hill Landscaping. This is Carlos. I may direct your call.\n\nCaller\nWell, I'm trying to find somebody that can let me know where you get your fresh drain supplies.\n\nRecipient\nThe what? I'm sorry.\n\nCaller\nSo I can. A French drain supply? You do landscaping? You do French drain?\n\nRecipient\nOkay. We. Yes. So we install French drains. Do you need. Were you looking for a service? We're not a supplier.\n\nCaller\nWell, that's what I'm looking for is a supplier.\n\nRecipient\nOh, no, we're not a supplier, sir. We do. We do installations. We do. You know, we work on. We do the French strengths, but we don't sell any parts or anything like that. You would have to contact like a. I mean, look for a French joint supplier. Maybe.\n\nCaller\nDo you have one that you could recommend?\n\nRecipient\nI wouldn't. You could try put in Google and see which ones pop up. Because if you're buying it for like, residential, it's different than if you're buying it as like wholesale for business. So that would be something that maybe you would Google.\n\nCaller\nOkay. All right. Thank you.\n\nRecipient\nOkay. You're welcome. Thank you."
     }
   },
   "round_robin_state": {
