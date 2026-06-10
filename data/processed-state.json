@@ -445,15 +445,16 @@
     "240355227",
     "240406439",
     "240458354",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABB3pWtwAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABB3pWtwAAAA==",
+    "240506947"
   ],
   "stats": {
-    "total_leads": 184,
+    "total_leads": 185,
     "total_spam": 203,
-    "last_lead": "2026-06-10T18:45:34.899410",
+    "last_lead": "2026-06-10T21:35:28.218674",
     "total_calls": 47
   },
-  "last_run": "2026-06-10T21:30:34.161564+00:00",
+  "last_run": "2026-06-10T21:35:28.219760+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -973,6 +974,13 @@
       "service": "Commercial Maintenance",
       "lead_type": "web_form",
       "date": "2026-06-08"
+    },
+    "240506947": {
+      "aspire_contact_id": "2667",
+      "traffic_source": "google / cpc",
+      "service": "Sprinkler Services",
+      "lead_type": "web_form",
+      "date": "2026-06-10"
     }
   },
   "dismissed_matches": [
@@ -985,7 +993,7 @@
       "value": "Google Ads",
       "note": "WC #240355227 | Google Ads",
       "first_seen": "2026-06-10T13:25:19.828069+00:00",
-      "attempts": 97,
+      "attempts": 98,
       "caller_name": "Blackwood Brett",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -999,7 +1007,7 @@
       "value": "Google Business Profile",
       "note": "WC #240406439 | Google Business Profile",
       "first_seen": "2026-06-10T16:05:17.724146+00:00",
-      "attempts": 66,
+      "attempts": 67,
       "caller_name": "Mote Johnny",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
