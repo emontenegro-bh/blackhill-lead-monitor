@@ -1,0 +1,46 @@
+{
+  "camp_settings": {
+    "BH_CommercialMaint_Search": {
+      "bidding": "MAXIMIZE_CONVERSIONS",
+      "budget": 20.0,
+      "tcpa": 80.0
+    },
+    "BH_FertWeedControl_Search": {
+      "bidding": "MAXIMIZE_CONVERSIONS",
+      "budget": 50.0,
+      "tcpa": 75.0
+    },
+    "BH_LeadGen_Form_Search": {
+      "bidding": "MAXIMIZE_CONVERSIONS",
+      "budget": 55.0,
+      "tcpa": 75.0
+    },
+    "BH_PC_Irrigationservice": {
+      "bidding": "MAXIMIZE_CONVERSIONS",
+      "budget": 50.0,
+      "tcpa": 65.0
+    }
+  },
+  "conv_goals": {
+    "Android installs (all other apps)": false,
+    "Calls from Smart Campaign Ads": true,
+    "Calls from ads": false,
+    "Clicks to call": true,
+    "Lead form - Submit": false,
+    "Leads (162442)": false,
+    "Local actions - Menu views": true,
+    "Phone Calls From Ads": false,
+    "Phone Number clicks BH": false,
+    "Smart campaign ad clicks to call": true,
+    "Smart campaign map clicks to call": true,
+    "Smart campaign map directions": true,
+    "Store visits": true,
+    "Submit lead form BH": true,
+    "WhatConverts Call Extensions": true,
+    "YouTube channel subscriptions": false,
+    "YouTube follow-on views": false,
+    "local_services_message_lead": true,
+    "local_services_phone_lead": true
+  },
+  "updated": "2026-06-11T18:21:55.212921"
+}

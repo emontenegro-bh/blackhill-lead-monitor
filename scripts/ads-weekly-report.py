@@ -1507,6 +1507,15 @@ authorized; your job is quality review, not suspicion. Past mistakes from this t
 typo'd keywords (e.g. "irrigation istallation"), broken ValueTrack URL syntax, and \
 inconsistent match types. Check their changes for errors like these.
 - Changes from other emails (the owner, API automation) are routine.
+- The change log shows RAW TYPED INPUT, not final stored state. Keywords logged with quote \
+marks in the text and UNSPECIFIED match type are normalized by the Google Ads UI into clean \
+phrase-match keywords. Do not report quote marks or unspecified match types from the change \
+log as live account damage. Delete-then-recreate of the same keyword IS real damage \
+(performance history reset) and should be flagged.
+- Phone call conversions ("Calls from ads") are DELIBERATELY set as secondary per the owner's \
+decision (June 2026): bidding optimizes on web form submits only. Never recommend promoting \
+call conversions to primary. Low primary conversion counts partly reflect this choice; \
+account for it when judging bidding performance.
 
 Writing rules:
 - Plain language for a busy non-technical owner. No jargon without a one-phrase explanation.
