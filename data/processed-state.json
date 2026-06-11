@@ -459,7 +459,7 @@
     "last_lead": "2026-06-10T21:35:28.218674",
     "total_calls": 47
   },
-  "last_run": "2026-06-11T16:00:26.435938+00:00",
+  "last_run": "2026-06-11T16:05:25.492697+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -991,22 +991,7 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "240406439": {
-      "wc_lead_id": "240406439",
-      "phone": "+18179753861",
-      "value": "Google Business Profile",
-      "note": "WC #240406439 | Google Business Profile",
-      "first_seen": "2026-06-10T16:05:17.724146+00:00",
-      "attempts": 294,
-      "caller_name": "Mote Johnny",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "1 minute and 32 seconds",
-      "received_at": "2026-06-10T16:03:13Z",
-      "transcription": "Recipient\nForeign. Good morning. Thank you for calling Black Hill Landscaping. This is Carlos. I may direct your call.\n\nCaller\nWell, I'm trying to find somebody that can let me know where you get your fresh drain supplies.\n\nRecipient\nThe what? I'm sorry.\n\nCaller\nSo I can. A French drain supply? You do landscaping? You do French drain?\n\nRecipient\nOkay. We. Yes. So we install French drains. Do you need. Were you looking for a service? We're not a supplier.\n\nCaller\nWell, that's what I'm looking for is a supplier.\n\nRecipient\nOh, no, we're not a supplier, sir. We do. We do installations. We do. You know, we work on. We do the French strengths, but we don't sell any parts or anything like that. You would have to contact like a. I mean, look for a French joint supplier. Maybe.\n\nCaller\nDo you have one that you could recommend?\n\nRecipient\nI wouldn't. You could try put in Google and see which ones pop up. Because if you're buying it for like, residential, it's different than if you're buying it as like wholesale for business. So that would be something that maybe you would Google.\n\nCaller\nOkay. All right. Thank you.\n\nRecipient\nOkay. You're welcome. Thank you."
-    }
-  },
+  "pending_call_attributions": {},
   "round_robin_state": {
     "last_index": 0
   }
