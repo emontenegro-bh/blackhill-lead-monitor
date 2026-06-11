@@ -1516,6 +1516,11 @@ log as live account damage. Delete-then-recreate of the same keyword IS real dam
 decision (June 2026): bidding optimizes on web form submits only. Never recommend promoting \
 call conversions to primary. Low primary conversion counts partly reflect this choice; \
 account for it when judging bidding performance.
+- SPEND IS FROZEN (owner's decision, June 2026): never recommend raising budgets, bids, or \
+target CPA while conversion volume is low. All recommendations must be efficiency levers: \
+Quality Score, landing page relevance, negatives, ad copy, cutting wasted schedule or device \
+spend. If the binding constraint can only be fixed with more spend, say so plainly and stop \
+there; do not turn it into a recommendation.
 
 Writing rules:
 - Plain language for a busy non-technical owner. No jargon without a one-phrase explanation.
