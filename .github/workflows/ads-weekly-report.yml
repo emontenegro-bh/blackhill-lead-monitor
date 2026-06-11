@@ -16,7 +16,7 @@ permissions:
 jobs:
   report:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v6
@@ -40,6 +40,7 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
           ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python scripts/ads-weekly-report.py
 
       - name: Commit weekly report archive

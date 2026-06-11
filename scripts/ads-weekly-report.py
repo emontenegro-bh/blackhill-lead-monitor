@@ -17,8 +17,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta, date
 
-# --- Global timeout: kill the process if it runs longer than 5 minutes ---
-SCRIPT_TIMEOUT = 420  # seconds
+# --- Global timeout: kill the process if it runs longer than 10 minutes ---
+SCRIPT_TIMEOUT = 600  # seconds
 
 def _timeout_handler(signum, frame):
     print(f"ERROR: Script timed out after {SCRIPT_TIMEOUT}s", file=sys.stderr)
@@ -280,7 +280,7 @@ rows = safe_query(f"""
            metrics.cost_micros, metrics.clicks, metrics.conversions, metrics.ctr
     FROM search_term_view
     WHERE segments.date BETWEEN '{this_week_start}' AND '{this_week_end}'
-      AND metrics.conversions >= 1
+      AND metrics.conversions > 0
     ORDER BY metrics.conversions DESC
     LIMIT 10
 """)
@@ -1413,6 +1413,203 @@ if days_until_review >= -7:
 md.append(f"---\n*Targets: CPA <= ${TARGET_CPA:.0f} | Impr Share >= {TARGET_IMPR_SHARE:.0f}%*")
 
 report_text = "\n".join(md)
+
+
+# ============================================================
+# ANALYST COMMENTARY (Claude Fable 5)
+# ============================================================
+
+FABLE_MODEL = "claude-fable-5"
+
+FABLE_SYSTEM_PROMPT = """You are the weekly Google Ads analyst for Black Hill Landscaping, \
+a commercial landscaping and irrigation company in DFW, Texas.
+
+Business rules you must apply:
+- Black Hill does NOT offer residential lawn mowing. Residential mowing search terms are waste \
+and should be negatives. Commercial mowing IS a service. Irrigation, landscaping installs, \
+sprinkler repair, and drainage are core services.
+- Targets: CPA at or under $80, impression share at or above 50%.
+- umairmg3417@gmail.com is the sanctioned web dev team with editor access. Their changes are \
+authorized; your job is quality review, not suspicion. Past mistakes from this team include \
+typo'd keywords (e.g. "irrigation istallation"), broken ValueTrack URL syntax, and \
+inconsistent match types. Check their changes for errors like these.
+- Changes from other emails (the owner, API automation) are routine.
+
+Writing rules:
+- Plain language for a busy non-technical owner. No jargon without a one-phrase explanation.
+- Never use em dashes.
+- Do not restate numbers already in the report unless you are interpreting them.
+- If the data is insufficient to support a conclusion, say so. Never speculate as fact.
+- No markdown tables. Use short bullets and numbered lists only.
+
+Output EXACTLY these four markdown sections and nothing else:
+### The Big Picture
+(3-5 sentences: the real story of the week against the 4-week trend)
+### Anomalies & Watch Items
+(bullets; anything unusual in spend, CPC, QS, schedule, devices; say "Nothing unusual this week." if clean)
+### Web Dev Team Change Review
+(bullets reviewing umairmg3417 changes for errors; say "No web dev team changes this week." if none)
+### Priority Actions
+(numbered, max 5, most important first; end each with "Confidence: high/medium/low")"""
+
+
+def _collect_change_events():
+    rows = safe_query(f"""
+        SELECT change_event.change_date_time,
+               change_event.user_email,
+               change_event.change_resource_type,
+               change_event.resource_change_operation,
+               change_event.changed_fields,
+               change_event.new_resource,
+               campaign.name
+        FROM change_event
+        WHERE change_event.change_date_time BETWEEN '{this_week_start} 00:00:00' AND '{this_week_end} 23:59:59'
+        ORDER BY change_event.change_date_time DESC
+        LIMIT 500
+    """)
+    events = []
+    for r in rows:
+        ce = r.change_event
+        rtype = getattr(ce.change_resource_type, "name", str(ce.change_resource_type))
+        op = getattr(ce.resource_change_operation, "name", str(ce.resource_change_operation))
+        detail = ""
+        try:
+            kw = ce.new_resource.ad_group_criterion.keyword
+            if kw.text:
+                detail = f' | keyword="{kw.text}" match={getattr(kw.match_type, "name", "")}'
+        except Exception:
+            pass
+        try:
+            urls = list(ce.new_resource.ad.final_urls)
+            if urls:
+                detail += f" | final_urls={urls[:2]}"
+        except Exception:
+            pass
+        fields = ",".join(list(ce.changed_fields.paths)[:8])
+        events.append(
+            f"{ce.change_date_time} | {ce.user_email} | {op} {rtype}"
+            f" | campaign={r.campaign.name or 'n/a'} | fields={fields}{detail}"
+        )
+    return events
+
+
+def _load_prior_reports(rdir, limit=4):
+    try:
+        today_name = f"{now.strftime('%Y-%m-%d')}.md"
+        files = sorted(
+            f for f in os.listdir(rdir)
+            if f.endswith(".md") and f[:4].isdigit() and f != today_name
+        )[-limit:]
+        chunks = []
+        for fn in files:
+            with open(os.path.join(rdir, fn)) as fh:
+                chunks.append(f"===== PRIOR REPORT {fn} =====\n{fh.read()}")
+        return "\n\n".join(chunks)
+    except Exception as e:
+        print(f"Prior report load warning: {e}", file=sys.stderr)
+        return ""
+
+
+def _call_fable(user_prompt):
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        print("No ANTHROPIC_API_KEY configured; skipping analyst commentary.")
+        return None
+    body = json.dumps({
+        "model": FABLE_MODEL,
+        "max_tokens": 3000,
+        "system": FABLE_SYSTEM_PROMPT,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }).encode()
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=body,
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=180) as resp:
+            data = json.load(resp)
+        text = "".join(
+            b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"
+        ).strip()
+        return text or None
+    except Exception as e:
+        print(f"Analyst commentary failed (report sent without it): {e}", file=sys.stderr)
+        return None
+
+
+def _commentary_to_html(text):
+    import html as _html
+    import re as _re
+    parts = ['<div class="section">']
+    parts.append('<h2>Analyst Commentary <span style="font-size:11px;color:#888;font-weight:400;">Claude Fable 5</span></h2>')
+    open_list = None
+
+    def close_list():
+        nonlocal open_list
+        if open_list:
+            parts.append(f"</{open_list}>")
+            open_list = None
+
+    for raw in text.splitlines():
+        s = raw.strip()
+        if not s:
+            close_list()
+            continue
+        esc = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", _html.escape(s))
+        if esc.startswith("### "):
+            close_list()
+            parts.append(f'<div style="font-size:13px;font-weight:700;color:#f0c040;margin:14px 0 6px;">{esc[4:]}</div>')
+        elif esc.startswith(("- ", "* ")):
+            if open_list != "ul":
+                close_list()
+                parts.append('<ul style="margin:4px 0 8px 18px;padding:0;">')
+                open_list = "ul"
+            parts.append(f'<li style="font-size:13px;color:#ccc;line-height:1.6;margin-bottom:4px;">{esc[2:]}</li>')
+        elif _re.match(r"^\d+\. ", esc):
+            if open_list != "ol":
+                close_list()
+                parts.append('<ol style="margin:4px 0 8px 18px;padding:0;">')
+                open_list = "ol"
+            parts.append(f'<li style="font-size:13px;color:#ccc;line-height:1.6;margin-bottom:4px;">{esc.split(". ", 1)[1]}</li>')
+        else:
+            close_list()
+            parts.append(f'<div style="font-size:13px;color:#ccc;line-height:1.6;margin-bottom:6px;">{esc}</div>')
+    close_list()
+    parts.append("</div>")
+    return "\n".join(parts)
+
+
+_report_dir = os.path.join(REPO_ROOT, ".claude", "reports", "marketing", "google-ads", "weekly")
+change_events = _collect_change_events()
+prior_reports = _load_prior_reports(_report_dir)
+events_text = "\n".join(change_events) if change_events else "(no change events in the account this week)"
+
+fable_prompt = f"""Here is this week's deterministic Google Ads report, the prior weekly reports
+for trend context, and the raw account change log for the week. Write your analyst commentary.
+
+===== THIS WEEK'S REPORT =====
+{report_text}
+
+{prior_reports}
+
+===== ACCOUNT CHANGE LOG (past 7 days, newest first) =====
+{events_text}"""
+
+commentary = _call_fable(fable_prompt)
+if commentary:
+    section_md = f"## Analyst Commentary (Claude Fable 5)\n{commentary}\n"
+    marker = "## Did We Move the Needle?"
+    if marker in report_text:
+        report_text = report_text.replace(marker, f"{section_md}\n{marker}", 1)
+    else:
+        report_text += f"\n{section_md}"
+    html_report = html_report.replace('<div class="section">', _commentary_to_html(commentary) + '\n<div class="section">', 1)
+    print(f"Analyst commentary added ({len(commentary)} chars, {len(change_events)} change events reviewed).")
 
 
 # ============================================================
