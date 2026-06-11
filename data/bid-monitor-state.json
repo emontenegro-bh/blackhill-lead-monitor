@@ -1,0 +1,478 @@
+{
+  "last_run": "2026-06-11T15:15:50.136770+00:00",
+  "seen": {
+    "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
+      "first_seen": "2026-06-11",
+      "title": "Veteran's Memorial (construction)"
+    },
+    "bedford:ca8a2650-d01a-4661-b34a-9f94a481d81f": {
+      "first_seen": "2026-06-11",
+      "title": "City Vehicle Washes"
+    },
+    "bedford:cb151cc7-d1c4-4eac-8ab5-d207381ddde0": {
+      "first_seen": "2026-06-11",
+      "title": "Old Bedford School Renovations"
+    },
+    "bidnet:444051322538": {
+      "first_seen": "2026-06-11",
+      "title": "STATE LET CONSTRUCTION CONTRACT, TARRANT CO, LANDSCAPE DEVELOPMENT"
+    },
+    "bidnet:444051414719": {
+      "first_seen": "2026-06-11",
+      "title": "STATE LET CONSTRUCTION CONTRACT, TARRANT CO, LANDSCAPE DEVELOPMENT"
+    },
+    "bidnet:444051414733": {
+      "first_seen": "2026-06-11",
+      "title": "STATE LET CONSTRUCTION CONTRACT, TARRANT CO, LANDSCAPE DEVELOPMENT"
+    },
+    "bonfire-arlingtontx:231896": {
+      "first_seen": "2026-06-11",
+      "title": "Request for Proposals for the Sale of 501 N. East Street Property"
+    },
+    "bonfire-arlingtontx:235341": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Requirements Contract for Janitorial and Related Services Citywide"
+    },
+    "bonfire-arlingtontx:236053": {
+      "first_seen": "2026-06-11",
+      "title": "Request for Proposals Annual Requirements Contract for Electrical Services for the Parks, Recreation & Culture Departmen"
+    },
+    "bonfire-arlingtontx:236272": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Requirements Contract for Citywide Communication Cable and Installation Services"
+    },
+    "bonfire-arlingtontx:236364": {
+      "first_seen": "2026-06-11",
+      "title": "Entertainment District Corridor Landscape Improvements Phase 2"
+    },
+    "bonfire-arlingtontx:236772": {
+      "first_seen": "2026-06-11",
+      "title": "Construction of Improvements to the 1015 W. Main Street Bathroom"
+    },
+    "bonfire-arlingtontx:237028": {
+      "first_seen": "2026-06-11",
+      "title": "Housing Rehabilitation Job Order Contracting Services"
+    },
+    "bonfire-arlingtontx:237645": {
+      "first_seen": "2026-06-11",
+      "title": "Request for Qualifications for Architectural Design of the Public Works South Field Operations Facility"
+    },
+    "bonfire-arlingtontx:239543": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Requirements Contract Maintenance and Repair of Operable Walls for the Parks and Recreation Facilities"
+    },
+    "bonfire-arlingtontx:240082": {
+      "first_seen": "2026-06-11",
+      "title": "Collection of Delinquent Property Taxes and Municipal Court Debts"
+    },
+    "bonfire-arlingtontx:240168": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Requirements Contract for Auto Body and Collision Repair Services"
+    },
+    "bonfire-burlesontx:235806": {
+      "first_seen": "2026-06-11",
+      "title": "PROFESSIONAL SERVICES: ARCHITECTURAL, ENGINEERING, RIGHT-OF-WAY ACQUISITION, AND SURVEYING SERVICES"
+    },
+    "bonfire-burlesontx:237502": {
+      "first_seen": "2026-06-11",
+      "title": "RFCSP 2026-022 Burleson Legacy Park - Phase 1"
+    },
+    "bonfire-burlesontx:237718": {
+      "first_seen": "2026-06-11",
+      "title": "Hidden creek Softball Complex Demolition"
+    },
+    "bonfire-dallascityhall:229821": {
+      "first_seen": "2026-06-11",
+      "title": "Electric Switchgear Repair Services"
+    },
+    "bonfire-dallascityhall:232703": {
+      "first_seen": "2026-06-11",
+      "title": "Janitorial Supplies, Trash Bags, and Liners"
+    },
+    "bonfire-dallascityhall:232909": {
+      "first_seen": "2026-06-11",
+      "title": "Bond Traffic Signal Construction \u2013 Group 5 \u2013 Mountain Creek Parkway at Fox Creek Trail, Lake June Road at Houghton Road,"
+    },
+    "bonfire-dallascityhall:234611": {
+      "first_seen": "2026-06-11",
+      "title": "Cathodic Protection System Surveys & Inspections"
+    },
+    "bonfire-dallascityhall:235360": {
+      "first_seen": "2026-06-11",
+      "title": "WATER AND WASTEWATER MAIN REPLACEMENTS AT VARIOUS LOCATIONS"
+    },
+    "bonfire-dallascityhall:235363": {
+      "first_seen": "2026-06-11",
+      "title": "48\u201d WATER TRANSMISSION MAIN RELOCATION PROJECT AND WATER AND WASTEWATER MAIN REPLACEMENTS AT VARIOUS LOCATIONS"
+    },
+    "bonfire-dallascityhall:235435": {
+      "first_seen": "2026-06-11",
+      "title": "TPW Median Maintenance"
+    },
+    "bonfire-dallascityhall:235476": {
+      "first_seen": "2026-06-11",
+      "title": "Operational Management of The Southern Skates Roller Rink"
+    },
+    "bonfire-dallascityhall:235481": {
+      "first_seen": "2026-06-11",
+      "title": "Dallas Airport System Airport Pavement Maintenance"
+    },
+    "bonfire-dallascityhall:236488": {
+      "first_seen": "2026-06-11",
+      "title": "Semi-Automatic Weapons Exchange"
+    },
+    "bonfire-dallascityhall:236564": {
+      "first_seen": "2026-06-11",
+      "title": "Ductile Iron Pipe"
+    },
+    "bonfire-dallascityhall:236809": {
+      "first_seen": "2026-06-11",
+      "title": "Infrastructure Needs Assessment for Martin Luther King Station Area"
+    },
+    "bonfire-dallascityhall:237232": {
+      "first_seen": "2026-06-11",
+      "title": "ESWTP RESIDUALS HANDLING IMPROVEMENTS PHASE II"
+    },
+    "bonfire-dallascityhall:237321": {
+      "first_seen": "2026-06-11",
+      "title": "Data Center Network Infrastructure Services"
+    },
+    "bonfire-dallascityhall:237510": {
+      "first_seen": "2026-06-11",
+      "title": "Sewer Odor and Corrosion Control Services"
+    },
+    "bonfire-dallascityhall:238626": {
+      "first_seen": "2026-06-11",
+      "title": "MLK Parade Planning"
+    },
+    "bonfire-dallascityhall:238653": {
+      "first_seen": "2026-06-11",
+      "title": "WATER AND WASTEWATER MAIN REPLACEMENTS AT VARIOUS LOCATIONS"
+    },
+    "bonfire-dallascityhall:238676": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of Compressor Replacement - *218218"
+    },
+    "bonfire-dallascityhall:238693": {
+      "first_seen": "2026-06-11",
+      "title": "Ron Kirk Bridge Re-Coating Services"
+    },
+    "bonfire-dallascityhall:239001": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of Electronic Items for IT *217952"
+    },
+    "bonfire-dallascityhall:239164": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of ELIMINATOR BALL VALVE - *217784"
+    },
+    "bonfire-dallascityhall:239211": {
+      "first_seen": "2026-06-11",
+      "title": "CIZ26-TPW-4005 \u2013 2026 On-Call Paving Contract"
+    },
+    "bonfire-dallascityhall:239326": {
+      "first_seen": "2026-06-11",
+      "title": "Advanced Metering Infrastructure (AMI) Proof of Concept Program"
+    },
+    "bonfire-dallascityhall:239353": {
+      "first_seen": "2026-06-11",
+      "title": "Field Maintenance Consumable & Labor"
+    },
+    "bonfire-dallascityhall:239949": {
+      "first_seen": "2026-06-11",
+      "title": "2026 Assessment, Master Planning, and Renovation of Dallas Water Utilities Employee-Occupied Buildings and Office Spaces"
+    },
+    "bonfire-dallascityhall:240110": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of Lab Supplies *217994"
+    },
+    "bonfire-dallascityhall:240119": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of WATER SUPPLY, GROUNDWATER, SEWAGE TREATMENT, AND RELATED EQU - *218149"
+    },
+    "bonfire-dallascityhall:240134": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of Floodplain Management Outreach Items*218473"
+    },
+    "bonfire-dallascityhall:240161": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of JANITORIAL SUPPLIES, GENERAL LINE*218412"
+    },
+    "bonfire-fortworthtexas:178620": {
+      "first_seen": "2026-06-11",
+      "title": "ITB Paving Improvements: Trinity Park, Z. Boaz South Park, and Pecan Valley Golf Course"
+    },
+    "bonfire-fortworthtexas:216715": {
+      "first_seen": "2026-06-11",
+      "title": "Site Development Adjacent to Casino Beach Park"
+    },
+    "bonfire-fortworthtexas:223974": {
+      "first_seen": "2026-06-11",
+      "title": "PW - CPN 103417 - Water and Sanitary Sewer Replacements Contract 2019, WSM-M"
+    },
+    "bonfire-fortworthtexas:227032": {
+      "first_seen": "2026-06-11",
+      "title": "RFP Commerce Street Development"
+    },
+    "bonfire-fortworthtexas:229242": {
+      "first_seen": "2026-06-11",
+      "title": "PW Gate 1 Turn Lane, City Project No. 104125"
+    },
+    "bonfire-fortworthtexas:231052": {
+      "first_seen": "2026-06-11",
+      "title": "RFP Standby Disaster Debris Hauling and Transport Services"
+    },
+    "bonfire-fortworthtexas:231637": {
+      "first_seen": "2026-06-11",
+      "title": "RFP Chemical Tank"
+    },
+    "bonfire-fortworthtexas:232699": {
+      "first_seen": "2026-06-11",
+      "title": "PW CSP - C01239 - Mary's Creek Water Reclamation Facility"
+    },
+    "bonfire-fortworthtexas:233644": {
+      "first_seen": "2026-06-11",
+      "title": "RFP Rental of Crack Seal Machines"
+    },
+    "bonfire-fortworthtexas:234823": {
+      "first_seen": "2026-06-11",
+      "title": "RFP Underpass Biohazard Cleanup and Decontamination Services"
+    },
+    "bonfire-fortworthtexas:234829": {
+      "first_seen": "2026-06-11",
+      "title": "RFP Traffic Signal Poles and Arms"
+    },
+    "bonfire-fortworthtexas:236506": {
+      "first_seen": "2026-06-11",
+      "title": "RFP Standard Workwear"
+    },
+    "bonfire-fortworthtexas:236622": {
+      "first_seen": "2026-06-11",
+      "title": "ITB Barksdale Dam Repairs"
+    },
+    "bonfire-fortworthtexas:237015": {
+      "first_seen": "2026-06-11",
+      "title": "RFP Residential Plumbing Services"
+    },
+    "bonfire-fortworthtexas:237794": {
+      "first_seen": "2026-06-11",
+      "title": "PW University Drive Improvements City Project Number: 102497"
+    },
+    "bonfire-fortworthtexas:237952": {
+      "first_seen": "2026-06-11",
+      "title": "RFQt Pavement Repair Products"
+    },
+    "bonfire-fortworthtexas:238438": {
+      "first_seen": "2026-06-11",
+      "title": "RFQt Small Arms Ammunition"
+    },
+    "bonfire-fortworthtexas:238646": {
+      "first_seen": "2026-06-11",
+      "title": "PW - CPN 102787 - Water and Sanitary Sewer Rehabilitation Contract 116"
+    },
+    "bonfire-fortworthtexas:238784": {
+      "first_seen": "2026-06-11",
+      "title": "PW - 105114-1 - Part 1 - Northside IV Water Transmission Main, Phase 1 C- Segment 1 and Part 2 - Northside III-Phase III"
+    },
+    "bonfire-fortworthtexas:238800": {
+      "first_seen": "2026-06-11",
+      "title": "PW - CPN 100997-1 - Sanitary Sewer M-245 Parallel Relief Pipeline Part 1"
+    },
+    "bonfire-parkercountytx:239131": {
+      "first_seen": "2026-06-11",
+      "title": "Pavement Striping Services"
+    },
+    "civicplus-cityofbenbrook:8": {
+      "first_seen": "2026-06-11",
+      "title": "Request for Proposal for Solid Waste and Recycling Services"
+    },
+    "civicplus-cityofhaltomcity:27": {
+      "first_seen": "2026-06-11",
+      "title": "B2026-312-005 - Denton Hwy. 8\u201d Water Line (3100 Denton Hwy.)"
+    },
+    "civicplus-cityofmansfield:192": {
+      "first_seen": "2026-06-11",
+      "title": "Design Services for Welcome Center and Facility Uses at Geyer Commons"
+    },
+    "civicplus-cityofmansfield:194": {
+      "first_seen": "2026-06-11",
+      "title": "Paving Improvements for Hillcrest Street"
+    },
+    "civicplus-cityofmansfield:195": {
+      "first_seen": "2026-06-11",
+      "title": "FY27 Audio Visual Equipment Rental & Production Mgmt."
+    },
+    "firecrawl-cityofcrowley:https://www.ci.crowley.tx.us/cd/bids-rfp/request-proposals-city-crowley-city-hall-generator": {
+      "first_seen": "2026-06-11",
+      "title": "Request for Proposals for City of Crowley City Hall Generator"
+    },
+    "firecrawl-cityofeuless:https://www.eulesstx.gov/Home/Components/RFP/RFP/200/639": {
+      "first_seen": "2026-06-11",
+      "title": "Request for Qualifications (RFQ) Comprehensive Land Use Plan Revisions / Unified Development Code Revisions / Economic D"
+    },
+    "firecrawl-cityofeuless:https://www.eulesstx.gov/home/showpublisheddocument/1030/637044039316500000": {
+      "first_seen": "2026-06-11",
+      "title": "Bidding Instructions"
+    },
+    "grandprairie:141951": {
+      "first_seen": "2026-06-11",
+      "title": "Flood Warning Monitoring System Upgrade"
+    },
+    "grandprairie:141986": {
+      "first_seen": "2026-06-11",
+      "title": "Historic Water Tower Refurbishment"
+    },
+    "ionwave-fortworthisd:26-070-A": {
+      "first_seen": "2026-06-11",
+      "title": "General Retail Merchandise,Groceries,Supplies,Equipment and Services"
+    },
+    "ionwave-fortworthisd:26-084": {
+      "first_seen": "2026-06-11",
+      "title": "Publishers"
+    },
+    "ionwave-fortworthisd:26-085": {
+      "first_seen": "2026-06-11",
+      "title": "Library Supplies, Equipment, and Furniture"
+    },
+    "ionwave-fortworthisd:26-086": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase and Development of Land Surrounding Farrington Field"
+    },
+    "ionwave-fortworthisd:26-087": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of Charles Nash Elementary School"
+    },
+    "ionwave-tarrantcounty:F2026097": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Administration of Family Drug Court"
+    },
+    "ionwave-tarrantcounty:F2026105": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Aggregate Road Surface Treatment"
+    },
+    "ionwave-tarrantcounty:F2026113 Addendum 4": {
+      "first_seen": "2026-06-11",
+      "title": "Precinct 2 Maintenance Center Building Expansion"
+    },
+    "ionwave-tarrantcounty:F2026117 Addendum 1": {
+      "first_seen": "2026-06-11",
+      "title": "Linkcrest Drive Drainage Improvements"
+    },
+    "ionwave-tarrantcounty:F2026118": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for HVAC Air Filters and Filter Replacement Services"
+    },
+    "ionwave-tarrantcounty:F2026120 Addendum 1": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of Truck Mounted Telescopic Aerial Device"
+    },
+    "ionwave-tarrantcounty:F2026121 Addendum 2": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for HRIS Solution"
+    },
+    "ionwave-tarrantcounty:F2026122 Addendum 1": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Behavioral Management and Support Services"
+    },
+    "ionwave-tarrantcounty:F2026123": {
+      "first_seen": "2026-06-11",
+      "title": "Pyramid Boulevard Culvert Improvements"
+    },
+    "ionwave-tarrantcounty:F2026124": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of Poster, Vinyl Printer and Cutting System with Maintenance"
+    },
+    "ionwave-tarrantcounty:F2026125": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Truck and Bus Repairs"
+    },
+    "ionwave-tarrantcounty:F2026126": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of UiPath Licenses"
+    },
+    "ionwave-tarrantcounty:F2026127": {
+      "first_seen": "2026-06-11",
+      "title": "Purchase of Inseyets Online Pro and Unlimited Unlocks Subscription"
+    },
+    "ionwave-tarrantcounty:F2026128": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Printing and Processing of Tax Statements"
+    },
+    "ionwave-tarrantcounty:F2026130": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Isilon and Cloudpools Hardware and Software Maintenance"
+    },
+    "ionwave-tarrantcounty:F2026132": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Temporary Clerical Personnel"
+    },
+    "ionwave-tarrantcounty:F2026133": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Disposable Paper and Plastic Products"
+    },
+    "ionwave-tarrantcounty:F2026134": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Traffic Paint"
+    },
+    "ionwave-tarrantcounty:F2026137": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Moving Services"
+    },
+    "ionwave-tarrantcounty:F2026139": {
+      "first_seen": "2026-06-11",
+      "title": "Annual Contract for Aerial Application of Pesticides for Mosquito Control"
+    },
+    "publicpurchase:212856": {
+      "first_seen": "2026-06-11",
+      "title": "Bid posting #212856 (open title on site)"
+    },
+    "publicpurchase:212987": {
+      "first_seen": "2026-06-11",
+      "title": "Bid posting #212987 (open title on site)"
+    },
+    "publicpurchase:213178": {
+      "first_seen": "2026-06-11",
+      "title": "Bid posting #213178 (open title on site)"
+    },
+    "publicpurchase:213224": {
+      "first_seen": "2026-06-11",
+      "title": "Bid posting #213224 (open title on site)"
+    },
+    "saginaw:https://www.ci.saginaw.tx.us/government/bid_detail_T10_R16.php": {
+      "first_seen": "2026-06-11",
+      "title": "CANCELED -Valve Replacement Bid Proposal"
+    },
+    "saginaw:https://www.ci.saginaw.tx.us/government/government/bid_opportunities.php": {
+      "first_seen": "2026-06-11",
+      "title": "Bid Opportunities"
+    },
+    "weatherford-notices:28161": {
+      "first_seen": "2026-06-11",
+      "title": "RFP-2026-012-Substation-Power-Transformer-Procurement-Bid-Package"
+    },
+    "weatherford-notices:28171": {
+      "first_seen": "2026-06-11",
+      "title": "RFP-2026-012-Substation-Power-Transformer-Procurement-Bid-Package-With-Datasheet"
+    },
+    "weatherford-notices:28177": {
+      "first_seen": "2026-06-11",
+      "title": "RFP_2026-013_PROFESSIONAL_AUDITING_SERVICES"
+    },
+    "weatherford-notices:28200": {
+      "first_seen": "2026-06-11",
+      "title": "RFP-2026-014-Substation-Battery-Maintenance-Inspection-and-Testing-Bid-Package"
+    },
+    "weatherford-notices:28273": {
+      "first_seen": "2026-06-11",
+      "title": "Bid-Tabulation"
+    },
+    "willowpark:498": {
+      "first_seen": "2026-06-11",
+      "title": "Notice of Public Hearing - Bankhead Highway Annexation"
+    },
+    "willowpark:499": {
+      "first_seen": "2026-06-11",
+      "title": "Notice of Public Hearing - Haney Property Annexation"
+    }
+  },
+  "source_failures": {}
+}
