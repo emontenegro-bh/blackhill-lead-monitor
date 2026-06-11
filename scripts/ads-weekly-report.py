@@ -1621,7 +1621,10 @@ def _anthropic_messages(model, user_prompt, api_key):
         return json.load(resp)
 
 
+fable_failure_reason = None
+
 def _call_fable(user_prompt):
+    global fable_failure_reason
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         print("No ANTHROPIC_API_KEY configured; skipping analyst commentary.")
@@ -1635,9 +1638,14 @@ def _call_fable(user_prompt):
                 detail = e.read().decode()[:500]
             except Exception:
                 pass
+            if "credit balance" in detail.lower():
+                fable_failure_reason = "API credits exhausted. Top up at console.anthropic.com (Plans & Billing) to restore the analyst commentary."
+            else:
+                fable_failure_reason = f"API error (HTTP {e.code})."
             print(f"Analyst commentary: {model} HTTP {e.code}: {detail}", file=sys.stderr)
             continue
         except Exception as e:
+            fable_failure_reason = "API unreachable."
             print(f"Analyst commentary: {model} failed: {e}", file=sys.stderr)
             continue
         if data.get("stop_reason") == "refusal":
@@ -1722,6 +1730,13 @@ if commentary:
         report_text += f"\n{section_md}"
     html_report = html_report.replace('<div class="section">', _commentary_to_html(commentary) + '\n<div class="section">', 1)
     print(f"Analyst commentary added ({len(commentary)} chars, {len(change_events)} change events reviewed).")
+elif fable_failure_reason:
+    notice = f"Analyst commentary unavailable: {fable_failure_reason}"
+    report_text = report_text.replace(
+        "## Did We Move the Needle?", f"*{notice}*\n\n## Did We Move the Needle?", 1)
+    notice_html = (f'<div style="margin-bottom:14px;padding:10px 14px;background:#2a1a1a;'
+                   f'border:1px solid #e74c3c;border-radius:6px;font-size:12px;color:#e74c3c;">{notice}</div>')
+    html_report = html_report.replace('<div class="section">', notice_html + '\n<div class="section">', 1)
 
 
 # ============================================================
