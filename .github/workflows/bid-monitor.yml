@@ -1,0 +1,59 @@
+name: City Bid Monitor
+
+on:
+  schedule:
+    - cron: '7 12 * * *'  # 7:07 AM CDT / 6:07 AM CST daily
+  workflow_dispatch: {}
+
+concurrency:
+  group: bid-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Scan city bid sources
+        env:
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: python scripts/bid-monitor.py
+
+      - name: Persist bid state
+        if: always()
+        run: |
+          if [ -f data/bid-monitor-state.json ]; then
+            git config user.name "Bid Monitor Bot"
+            git config user.email "noreply@blackhilltx.com"
+            git add data/bid-monitor-state.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Update bid monitor state"
+              for i in 1 2 3; do
+                git pull --rebase origin main || true
+                git push && break || sleep 2
+              done
+            fi
+          fi
+
+  notify-failure:
+    needs: [scan]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "City Bid Monitor"
+    secrets: inherit
