@@ -423,7 +423,8 @@ def get_aspire_revenue(start_date, end_date):
         odata_filter = (f"OpportunityStatusName eq 'Won' "
                         f"and WonDate ge {start_date}T00:00:00Z "
                         f"and WonDate le {end_date}T23:59:59Z")
-        params = f"$filter={odata_filter}&$select=WonDollars,OpportunityName,BillingContactID"
+        params = (f"$filter={odata_filter}"
+                  f"&$select=WonDollars,OpportunityName,BillingContactID,OpportunityID,OpportunityNumber")
         url = f"{base_url}/Opportunities?{urllib.parse.quote(params, safe='=&$,()/%:@')}"
         req = urllib.request.Request(url, headers={
             "Authorization": f"Bearer {token}", "Accept": "application/json",
@@ -434,39 +435,36 @@ def get_aspire_revenue(start_date, end_date):
 
         # Cross-reference with WhatConverts lead mappings
         wc_map = _load_wc_contact_map()
-        cpc_won = 0.0
-        cpc_count = 0
-        organic_won = 0.0
-        organic_count = 0
-        other_won = 0.0
-        other_count = 0
+        buckets = {"cpc": [], "organic": [], "other": []}
         for o in opps:
             dollars = float(o.get("WonDollars", 0) or 0)
             cid = o.get("BillingContactID")
             if not cid or int(cid) not in wc_map:
                 continue
             source = wc_map[int(cid)].lower()
-            if "cpc" in source:
-                cpc_won += dollars
-                cpc_count += 1
-            elif "organic" in source:
-                organic_won += dollars
-                organic_count += 1
-            else:
-                other_won += dollars
-                other_count += 1
+            key = "cpc" if "cpc" in source else "organic" if "organic" in source else "other"
+            opp_id = o.get("OpportunityID")
+            buckets[key].append({
+                "name": o.get("OpportunityName") or "Unnamed opportunity",
+                "dollars": dollars,
+                "number": o.get("OpportunityNumber"),
+                "url": f"https://cloud.youraspire.com/app/opportunities/{opp_id}" if opp_id else None,
+                "source": key,
+            })
 
-        total_wc = cpc_won + organic_won + other_won
-        total_count = cpc_count + organic_count + other_count
+        cpc_won = sum(x["dollars"] for x in buckets["cpc"])
+        organic_won = sum(x["dollars"] for x in buckets["organic"])
+        other_won = sum(x["dollars"] for x in buckets["other"])
         return {
-            "total_won": total_wc,
-            "count": total_count,
+            "total_won": cpc_won + organic_won + other_won,
+            "count": sum(len(b) for b in buckets.values()),
             "cpc_won": cpc_won,
-            "cpc_count": cpc_count,
+            "cpc_count": len(buckets["cpc"]),
             "organic_won": organic_won,
-            "organic_count": organic_count,
+            "organic_count": len(buckets["organic"]),
             "other_won": other_won,
-            "other_count": other_count,
+            "other_count": len(buckets["other"]),
+            "won_opps": buckets["cpc"] + buckets["organic"] + buckets["other"],
         }
     except Exception as e:
         print(f"Aspire revenue query skipped: {e}", file=sys.stderr)
@@ -858,6 +856,23 @@ if aspire_revenue and acct_this:
     h('</tr></table>')
     if aspire_revenue["other_won"] > 0:
         h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#666;">+ ${aspire_revenue["other_won"]:,.0f} from other sources ({aspire_revenue["other_count"]} opps)</div>')
+    won_opps = aspire_revenue.get("won_opps") or []
+    if won_opps:
+        source_labels = {"cpc": ("Ads", "#27ae60"), "organic": ("Organic", "#3498db"), "other": ("Other", "#888")}
+        h('<div style="margin-top:12px;">')
+        h('<div style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Closed Leads This Week</div>')
+        for opp in won_opps:
+            label, lcolor = source_labels[opp["source"]]
+            num = f" #{opp['number']}" if opp.get("number") else ""
+            name_html = opp["name"]
+            if opp.get("url"):
+                name_html = f'<a href="{opp["url"]}" style="color:#fff;text-decoration:underline;">{opp["name"]}{num}</a>'
+            else:
+                name_html = f'{opp["name"]}{num}'
+            h(f'<div style="margin-bottom:4px;padding:8px 12px;background:#1a1a1a;border-radius:4px;font-size:12px;">')
+            h(f'<span style="color:{lcolor};font-weight:700;">[{label}]</span> {name_html} '
+              f'<span style="color:#27ae60;font-weight:600;">${opp["dollars"]:,.0f}</span></div>')
+        h('</div>')
     h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">Only counting revenue from leads tracked in WhatConverts</div>')
     h('</div>')
 
@@ -1280,7 +1295,15 @@ if aspire_revenue and acct_this:
     md.append(f"|--------|--------|")
     md.append(f"| Ad Spend This Week | ${acct_this['spend']:.0f} |")
     md.append(f"| Won Revenue This Week | ${aspire_revenue['total_won']:,.0f} ({aspire_revenue['count']} opportunities) |")
+    md.append(f"| Won from Ads | ${aspire_revenue['cpc_won']:,.0f} ({aspire_revenue['cpc_count']} opps) |")
+    md.append(f"| Won from Organic | ${aspire_revenue['organic_won']:,.0f} ({aspire_revenue['organic_count']} opps) |")
     md.append("")
+    for opp in aspire_revenue.get("won_opps") or []:
+        num = f" #{opp['number']}" if opp.get("number") else ""
+        link = f"[{opp['name']}{num}]({opp['url']})" if opp.get("url") else f"{opp['name']}{num}"
+        md.append(f"- **[{opp['source'].upper()}]** {link} -- ${opp['dollars']:,.0f}")
+    if aspire_revenue.get("won_opps"):
+        md.append("")
     md.append("*Correlation only -- not direct attribution between ads and won deals*")
     md.append("")
 
@@ -1450,7 +1473,24 @@ Output EXACTLY these four markdown sections and nothing else:
 ### Web Dev Team Change Review
 (bullets reviewing umairmg3417 changes for errors; say "No web dev team changes this week." if none)
 ### Priority Actions
-(numbered, max 5, most important first; end each with "Confidence: high/medium/low")"""
+(numbered, max 5, most important first; end each with "Confidence: high/medium/low")
+
+Priority Actions rules. These are strict:
+- First identify the single binding constraint this week: the one thing most limiting leads \
+(examples: impression share lost to ad rank, lost to budget, low QS on the highest-spend \
+keywords, weak landing page experience, bad search term waste). Action 1 must attack that \
+constraint directly.
+- Every action must be executable this week and name the specific campaign, keyword, ad \
+group, or setting it applies to, with a concrete change (a number, a bid, a specific \
+negative keyword, a specific headline swap).
+- If the blocker is ad rank, do not say "consider improving quality score". Say which QS \
+component is low on which high-spend keywords and the specific fix (e.g. rewrite ad group X \
+headlines to include keyword Y, raise bids Z% on campaign W, fix landing page mismatch on \
+URL V), and what result to expect by next week's report.
+- Ban vague verbs: consider, explore, monitor, review, evaluate, keep an eye on. If an \
+action cannot be stated concretely, it does not belong in the list.
+- State the expected payoff of each action in plain terms (more impressions, lower CPA, \
+more calls), so the owner knows why it is worth doing."""
 
 
 def _collect_change_events():
