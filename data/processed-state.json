@@ -457,7 +457,7 @@
     "last_lead": "2026-06-10T21:35:28.218674",
     "total_calls": 47
   },
-  "last_run": "2026-06-11T11:25:13.603981+00:00",
+  "last_run": "2026-06-11T11:30:18.782520+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -996,7 +996,7 @@
       "value": "Google Ads",
       "note": "WC #240355227 | Google Ads",
       "first_seen": "2026-06-10T13:25:19.828069+00:00",
-      "attempts": 268,
+      "attempts": 269,
       "caller_name": "Blackwood Brett",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1010,7 +1010,7 @@
       "value": "Google Business Profile",
       "note": "WC #240406439 | Google Business Profile",
       "first_seen": "2026-06-10T16:05:17.724146+00:00",
-      "attempts": 237,
+      "attempts": 238,
       "caller_name": "Mote Johnny",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
