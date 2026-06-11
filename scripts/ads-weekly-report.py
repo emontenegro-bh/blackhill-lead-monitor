@@ -420,7 +420,7 @@ hour_blocks = bucket_hours(hour_data)
 
 # --- 10. Aspire won revenue from WhatConverts leads only ---
 def _load_wc_contact_map():
-    """Load WhatConverts lead mappings → {aspire_contact_id: traffic_source}."""
+    """Load WhatConverts lead mappings → {aspire_contact_id: {source, lead_type}}."""
     state_path = os.path.join(REPO_ROOT, "data", "processed-state.json")
     if not os.path.exists(state_path):
         return {}
@@ -430,7 +430,10 @@ def _load_wc_contact_map():
     for _wc_id, info in state.get("lead_mappings", {}).items():
         cid = info.get("aspire_contact_id")
         if cid:
-            contact_map[int(cid)] = info.get("traffic_source", "unknown")
+            contact_map[int(cid)] = {
+                "source": info.get("traffic_source", "unknown"),
+                "lead_type": info.get("lead_type", ""),
+            }
     return contact_map
 
 
@@ -479,7 +482,7 @@ def get_aspire_revenue(start_date, end_date):
             cid = o.get("BillingContactID")
             if not cid or int(cid) not in wc_map:
                 continue
-            source = wc_map[int(cid)].lower()
+            source = wc_map[int(cid)]["source"].lower()
             key = "cpc" if "cpc" in source else "organic" if "organic" in source else "other"
             opp_id = o.get("OpportunityID")
             buckets[key].append({
@@ -489,6 +492,32 @@ def get_aspire_revenue(start_date, end_date):
                 "url": f"https://cloud.youraspire.com/app/opportunities/{opp_id}" if opp_id else None,
                 "source": key,
             })
+
+        # Trailing-90-day won revenue by lead type (calls vs web forms)
+        lead_type_90d = None
+        try:
+            d90 = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+            filt90 = f"OpportunityStatusName eq 'Won' and WonDate ge {d90}T00:00:00Z"
+            params90 = f"$filter={filt90}&$select=WonDollars,BillingContactID"
+            url90 = f"{base_url}/Opportunities?{urllib.parse.quote(params90, safe='=&$,()/%:@')}"
+            req90 = urllib.request.Request(url90, headers={
+                "Authorization": f"Bearer {token}", "Accept": "application/json",
+            })
+            with urllib.request.urlopen(req90, timeout=30) as resp:
+                d = json.loads(resp.read().decode())
+                opps90 = d if isinstance(d, list) else [d]
+            lt = {"phone_call": {"won": 0, "dollars": 0.0}, "web_form": {"won": 0, "dollars": 0.0}}
+            for o in opps90:
+                cid = o.get("BillingContactID")
+                if not cid or int(cid) not in wc_map:
+                    continue
+                ltype = wc_map[int(cid)]["lead_type"]
+                if ltype in lt:
+                    lt[ltype]["won"] += 1
+                    lt[ltype]["dollars"] += float(o.get("WonDollars", 0) or 0)
+            lead_type_90d = lt
+        except Exception as e:
+            print(f"Lead-type rollup skipped: {e}", file=sys.stderr)
 
         cpc_won = sum(x["dollars"] for x in buckets["cpc"])
         organic_won = sum(x["dollars"] for x in buckets["organic"])
@@ -503,6 +532,7 @@ def get_aspire_revenue(start_date, end_date):
             "other_won": other_won,
             "other_count": len(buckets["other"]),
             "won_opps": buckets["cpc"] + buckets["organic"] + buckets["other"],
+            "lead_type_90d": lead_type_90d,
         }
     except Exception as e:
         print(f"Aspire revenue query skipped: {e}", file=sys.stderr)
@@ -911,6 +941,14 @@ if aspire_revenue and acct_this:
             h(f'<span style="color:{lcolor};font-weight:700;">[{label}]</span> {name_html} '
               f'<span style="color:#27ae60;font-weight:600;">${opp["dollars"]:,.0f}</span></div>')
         h('</div>')
+    lt90 = aspire_revenue.get("lead_type_90d")
+    if lt90:
+        f90 = lt90["web_form"]
+        c90 = lt90["phone_call"]
+        h(f'<div style="text-align:center;margin-top:10px;font-size:12px;color:#aaa;">')
+        h(f'Last 90 days won: web forms <span style="color:#27ae60;font-weight:600;">${f90["dollars"]:,.0f}</span> ({f90["won"]} opps) '
+          f'&bull; phone calls <span style="color:#f39c12;font-weight:600;">${c90["dollars"]:,.0f}</span> ({c90["won"]} opps)')
+        h(f'</div>')
     h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">Only counting revenue from leads tracked in WhatConverts</div>')
     h('</div>')
 
@@ -1347,6 +1385,12 @@ if aspire_revenue and acct_this:
         link = f"[{opp['name']}{num}]({opp['url']})" if opp.get("url") else f"{opp['name']}{num}"
         md.append(f"- **[{opp['source'].upper()}]** {link} -- ${opp['dollars']:,.0f}")
     if aspire_revenue.get("won_opps"):
+        md.append("")
+    lt90 = aspire_revenue.get("lead_type_90d")
+    if lt90:
+        f90, c90 = lt90["web_form"], lt90["phone_call"]
+        md.append(f"*Last 90 days won: web forms ${f90['dollars']:,.0f} ({f90['won']} opps) | "
+                  f"phone calls ${c90['dollars']:,.0f} ({c90['won']} opps)*")
         md.append("")
     md.append("*Correlation only -- not direct attribution between ads and won deals*")
     md.append("")
