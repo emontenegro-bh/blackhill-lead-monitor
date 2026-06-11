@@ -458,7 +458,7 @@
     "last_lead": "2026-06-10T21:35:28.218674",
     "total_calls": 47
   },
-  "last_run": "2026-06-11T14:15:21.815360+00:00",
+  "last_run": "2026-06-11T14:20:25.223804+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -997,7 +997,7 @@
       "value": "Google Business Profile",
       "note": "WC #240406439 | Google Business Profile",
       "first_seen": "2026-06-10T16:05:17.724146+00:00",
-      "attempts": 272,
+      "attempts": 273,
       "caller_name": "Mote Johnny",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
