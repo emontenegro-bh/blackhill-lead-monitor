@@ -163,7 +163,7 @@ RULES:
 
     user_text = f"Subject: {original_subject}\n\nReply content:\n{reply_body[:3000]}"
     payload = {
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-6",
         "max_tokens": 4096,
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_text}],
@@ -316,7 +316,7 @@ def test_connections(config):
 
     print("Testing Claude API...", end=" ")
     payload = json.dumps({
-        "model": "claude-sonnet-4-20250514", "max_tokens": 10,
+        "model": "claude-sonnet-4-6", "max_tokens": 10,
         "messages": [{"role": "user", "content": "Say OK"}],
     }).encode()
     req = urllib.request.Request(

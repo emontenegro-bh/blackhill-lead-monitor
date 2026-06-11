@@ -43,7 +43,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 STATE_FILE = SCRIPT_DIR.parent / "data" / "reply-pipeline-state.json"
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
+CLAUDE_MODEL = "claude-sonnet-4-6"
 CLAUDE_TIMEOUT = 60
 SCRIPT_TIMEOUT = 90
 MAX_PROCESSED_UIDS = 1000

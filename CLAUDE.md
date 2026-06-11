@@ -570,7 +570,7 @@ Inter-skill communication documents at `~/.claude/handoffs/` that pass context b
 - WhatConverts API: Updates may return success but not persist — always verify writes with a follow-up read.
 
 ## Model IDs
-- Use `claude-sonnet-4-20250514` for Anthropic API calls. Do NOT guess model IDs — this is the verified working ID.
+- Use `claude-sonnet-4-6` for Anthropic API calls. Do NOT guess model IDs — this is the verified working ID. (Previously `claude-sonnet-4-20250514`; retired June 15, 2026 — migrated 2026-06-11.) For weekly ads analyst commentary use `claude-fable-5`.
 
 ## Proposal Monitor
 - The proposal monitor must use client-side date filtering (not API `created_after`/`updated_after`) to avoid reprocessing old projects.
