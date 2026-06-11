@@ -206,16 +206,54 @@ rows = safe_query(f"""
 """)
 # Exclude own/sister brand variants -- never recommend these as negatives.
 BRAND_SAFE = ("black hill", "blackhill", "mean green", "meangreen")
+
+# Pull existing negatives (shared lists + campaign-level) so we never
+# re-recommend a term that is already blocked. 28-day spend on a term can
+# predate the negative that now blocks it.
+existing_negs = []
+for r in safe_query("""
+    SELECT shared_criterion.keyword.text, shared_criterion.keyword.match_type
+    FROM shared_criterion WHERE shared_criterion.type = 'KEYWORD'
+"""):
+    existing_negs.append((r.shared_criterion.keyword.text.lower(),
+                          r.shared_criterion.keyword.match_type.name))
+for r in safe_query("""
+    SELECT campaign_criterion.keyword.text, campaign_criterion.keyword.match_type
+    FROM campaign_criterion
+    WHERE campaign_criterion.negative = TRUE AND campaign_criterion.type = 'KEYWORD'
+"""):
+    existing_negs.append((r.campaign_criterion.keyword.text.lower(),
+                          r.campaign_criterion.keyword.match_type.name))
+
+def _already_blocked(term):
+    t = term.lower()
+    words = t.split()
+    for neg, mtype in existing_negs:
+        if mtype == "EXACT" and t == neg:
+            return True
+        if mtype == "PHRASE":
+            nwords = neg.split()
+            if any(words[i:i + len(nwords)] == nwords for i in range(len(words))):
+                return True
+        if mtype == "BROAD" and all(w in words for w in neg.split()):
+            return True
+    return False
+
+already_blocked_terms = []
 for row in rows:
     term = row.search_term_view.search_term
     if any(b in term.lower() for b in BRAND_SAFE):
         continue
-    waste_terms.append({
+    entry = {
         "term": term,
         "campaign": row.campaign.name,
         "spend": row.metrics.cost_micros / 1_000_000,
         "clicks": row.metrics.clicks,
-    })
+    }
+    if _already_blocked(term):
+        already_blocked_terms.append(entry)
+    else:
+        waste_terms.append(entry)
 
 # --- 5. Quality Score tracker ---
 qs_keywords = []
@@ -991,6 +1029,12 @@ if waste_terms:
         h(f'<tr><td style="color:#e74c3c;">{w["term"]}</td><td class="right">{w["clicks"]}</td><td class="right">${w["spend"]:.2f}</td><td style="font-size:12px;color:#888;">{w["campaign"]}</td></tr>')
     h('</table>')
     h('<div style="font-size:11px;color:#555;margin-top:8px;">Search terms with 2+ clicks and 0 conversions in the last 28 days. Review and add as negatives.</div>')
+    if already_blocked_terms:
+        blocked_total = sum(w["spend"] for w in already_blocked_terms)
+        h(f'<div style="margin-top:10px;padding:10px 14px;background:#1a2a1a;border-radius:6px;font-size:12px;color:#27ae60;">')
+        h(f'Already handled: ${blocked_total:.0f} of past-28-day waste is now blocked by existing negatives ')
+        h(f'({", ".join(w["term"] for w in already_blocked_terms[:6])}). This spend happened before the negatives went live.')
+        h(f'</div>')
     h('</div>')
 
 # --- Ad copy performance ---
@@ -1365,6 +1409,12 @@ if waste_terms:
     md.append(f"|-------------|--------|-------|----------|")
     for w in waste_terms[:7]:
         md.append(f"| {w['term']} | {w['clicks']} | ${w['spend']:.2f} | {w['campaign']} |")
+    md.append("")
+
+if already_blocked_terms:
+    blocked_total = sum(w["spend"] for w in already_blocked_terms)
+    md.append(f"*Already handled: ${blocked_total:.0f} of past-28-day waste is now blocked by existing negatives "
+              f"({', '.join(w['term'] for w in already_blocked_terms[:6])}). This spend happened before the negatives went live.*")
     md.append("")
 
 if headlines or descriptions:
