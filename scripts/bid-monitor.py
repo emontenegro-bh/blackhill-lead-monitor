@@ -37,7 +37,6 @@ FIRECRAWL_KEY = os.environ.get("FIRECRAWL_API_KEY", "").strip()
 DRY_RUN = "--dry-run" in sys.argv
 
 MAX_SEEN_IDS = 6000          # FIFO cap on remembered postings
-MAX_OTHER_IN_EMAIL = 25      # cap the non-matching "awareness" list
 CONSECUTIVE_FAIL_ALERT = 3   # exit nonzero if a source fails this many runs in a row
 
 # CivicPlus 404s bot UAs; Euless (Akamai) needs the complete Chrome header set,
@@ -63,6 +62,15 @@ SERVICE_KEYWORDS = [
     "hydromulch", "hydroseed", "erosion", "weed", "brush removal", "brush control",
     "park maintenance", "parks maintenance", "beautification", "xeriscap",
     "planting", "shrub", "fertiliz", "herbicide", "mulch", "bed maintenance",
+]
+
+# Veto list: a posting that hits a service keyword only incidentally (e.g.
+# "Right-of-Way Acquisition" inside an A/E services contract) is not relevant.
+# These mark design/professional-services and other-trade work, not field work.
+EXCLUDE_KEYWORDS = [
+    "architectural", "engineering", "surveying", "appraisal", "acquisition",
+    "janitorial", "electrical", "plumbing", "roofing", "asbestos", "paving",
+    "auditing", "software", "insurance", "legal services", "demolition",
 ]
 
 # BidNet returns statewide results; keep only DFW-area agencies.
@@ -378,6 +386,60 @@ def scrape_weatherford_isd():
     return items
 
 
+# -------------------------------------------------------------------- ESBD ---
+# Texas SmartBuy Electronic State Business Daily — the official PUBLIC source
+# for state-agency solicitations (TxDOT mowing/landscape lettings appear here
+# with a link to the agency's own posting, unlike BidNet which locks the
+# agency behind registration). The backend only answers real browsers (plain
+# requests and Firecrawl both hang), so this source drives headless Chromium
+# and calls the JSON service from page context.
+ESBD_KEYWORDS = ["mowing", "landscape", "landscaping", "grounds", "irrigation"]
+ESBD_SERVICE = "/app/extensions/CPA/CPAMain/1.0.0/services/ESBD.Service.ss?c=852252&n=2"
+
+
+def scrape_esbd():
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        raise RuntimeError("playwright not installed — ESBD skipped")
+    items, seen = [], set()
+    with sync_playwright() as p:
+        # Must be the FULL chromium build in new-headless mode — the default
+        # "headless shell" build gets fingerprinted and the service call hangs.
+        browser = p.chromium.launch(headless=True, channel="chromium")
+        try:
+            # Present as regular Chrome and let the SPA make its own service
+            # call, then intercept the response.
+            page = browser.new_page(user_agent=HEADERS["User-Agent"])
+            for kw in ESBD_KEYWORDS:
+                # The NetSuite backend throttles ~66s per query before
+                # responding; this is normal, not a hang.
+                with page.expect_response(lambda r: "ESBD.Service.ss" in r.url, timeout=300000) as resp_info:
+                    page.goto(f"https://www.txsmartbuy.gov/esbd?keyword={quote(kw)}",
+                              wait_until="domcontentloaded", timeout=60000)
+                data = resp_info.value.json()
+                for l in (data or {}).get("lines", []):
+                    if l.get("statusName") != "Posted":
+                        continue
+                    sid = str(l.get("internalid"))
+                    if sid in seen:
+                        continue
+                    seen.add(sid)
+                    hay = f"{l.get('title', '')} {l.get('agencyName', '')}".lower()
+                    if not any(t in hay for t in REGION_TERMS):
+                        continue
+                    agency = re.sub(r"\s*-\s*\w+\s*$", "", l.get("agencyName", "")).strip()
+                    sol_id = l.get("solicitationId", "")
+                    url = (l.get("url") or "").strip() or f"https://www.txsmartbuy.gov/esbd/{sol_id}"
+                    items.append(make_item(
+                        "esbd", agency, sid, l.get("title", ""),
+                        close=l.get("responseDue", ""), url=url, ref=sol_id,
+                    ))
+        finally:
+            browser.close()
+    return items
+
+
 # ---------------------------------------------------------- BidNet Direct ---
 # Statewide Texas Purchasing Group; server-rendered HTML with ?keywords=
 # search. Region-filter rows to DFW-area agencies. Catches member cities not
@@ -413,7 +475,7 @@ def scrape_bidnet():
             # anchor text is the whole row: "TITLE Texas N day(s) left Published ... Closing ... ID"
             title = re.split(r"\s+\d+\s+day\(s\)\s+left", title)[0]
             title = re.sub(r"\s+Texas$", "", title).strip()
-            items.append(make_item("bidnet", "BidNet (regional)", sol_id, title, close=close,
+            items.append(make_item("bidnet", "BidNet (regional — agency name requires login)", sol_id, title, close=close,
                                    url=urljoin("https://www.bidnetdirect.com", href)))
     log(f"bidnet: kept {len(items)}, dropped {dropped} outside DFW region")
     return items
@@ -472,15 +534,22 @@ def build_sources():
     sources.append(("City of Grand Prairie", scrape_grand_prairie))
     sources.append(("Weatherford Bid Notices", scrape_weatherford_notices))
     sources.append(("Weatherford ISD", scrape_weatherford_isd))
+    sources.append(("ESBD (state of Texas)", scrape_esbd))
     sources.append(("BidNet Direct (regional)", scrape_bidnet))
     for agency, url in FIRECRAWL_SITES:
         sources.append((agency, lambda a=agency, u=url: scrape_firecrawl(a, u)))
     return sources
 
 
+def _norm_title(t):
+    return re.sub(r"[^a-z0-9]+", "", t.lower())
+
+
 def is_relevant(item):
     text = item["title"].lower()
-    return any(kw in text for kw in SERVICE_KEYWORDS)
+    if not any(kw in text for kw in SERVICE_KEYWORDS):
+        return False
+    return not any(kw in text for kw in EXCLUDE_KEYWORDS)
 
 
 def load_state():
@@ -507,7 +576,7 @@ def esc(s):
     return html_mod.escape(s or "")
 
 
-def build_email(relevant, other, errors, total_sources, ok_sources):
+def build_email(relevant, errors, total_sources, ok_sources):
     today = now_utc().astimezone().strftime("%B %-d, %Y")
     rows = []
     for it in sorted(relevant, key=lambda x: (x["agency"], x["title"])):
@@ -517,19 +586,6 @@ def build_email(relevant, other, errors, total_sources, ok_sources):
         rows.append(
             f'<li style="margin-bottom:10px;"><strong>{esc(it["agency"])}</strong> &mdash; {link}'
             f'<br><span style="color:#666;font-size:13px;">{esc(it["id"].split(":")[0])}{ref}{close}</span></li>'
-        )
-    other_html = ""
-    if other:
-        shown = other[:MAX_OTHER_IN_EMAIL]
-        lis = "".join(
-            f'<li style="margin-bottom:4px;color:#555;font-size:13px;">{esc(it["agency"])} &mdash; '
-            f'<a href="{esc(it["url"])}" style="color:#555;">{esc(it["title"])}</a></li>'
-            for it in shown
-        )
-        more = f'<p style="color:#888;font-size:12px;">+{len(other) - len(shown)} more not shown</p>' if len(other) > len(shown) else ""
-        other_html = (
-            '<h3 style="color:#444;margin-top:28px;">Other new postings (not keyword-matched)</h3>'
-            f"<ul>{lis}</ul>{more}"
         )
     error_html = ""
     if errors:
@@ -545,7 +601,6 @@ def build_email(relevant, other, errors, total_sources, ok_sources):
     <p style="color:#444;">{len(relevant)} new landscaping / grounds-maintenance posting(s) found across
       {ok_sources} sources scanned.</p>
     <ul style="padding-left:20px;">{''.join(rows)}</ul>
-    {other_html}
     {error_html}
     <p style="color:#999;font-size:12px;margin-top:32px;">Black Hill bid monitor &middot; runs daily &middot;
       emails only when new matching opportunities appear</p>
@@ -598,17 +653,26 @@ def main():
             failures[name] = failures.get(name, 0) + 1
             log(f"{name}: ERROR {e}")
 
+    # Prefer direct-source links: drop BidNet rows that duplicate a posting
+    # another source already provides publicly (BidNet locks details behind
+    # registration). Both stay open in their sources until close, so a
+    # same-run title match is sufficient.
+    direct_titles = {_norm_title(it["title"]) for it in all_items if not it["id"].startswith("bidnet:")}
+    bidnet_dupes = [it for it in all_items if it["id"].startswith("bidnet:") and _norm_title(it["title"]) in direct_titles]
+    if bidnet_dupes:
+        all_items = [it for it in all_items if it not in bidnet_dupes]
+        log(f"dropped {len(bidnet_dupes)} BidNet duplicate(s) of direct-source postings")
+
     new_items = [it for it in all_items if it["id"] not in seen]
     for it in all_items:
         if it["id"] not in seen:
             seen[it["id"]] = {"title": it["title"][:120], "first_seen": today}
 
     relevant = [it for it in new_items if is_relevant(it)]
-    other = [it for it in new_items if not is_relevant(it)]
     log(f"total open: {len(all_items)} | new: {len(new_items)} | relevant new: {len(relevant)} | errors: {len(errors)}")
 
     if relevant:
-        subject, plain, html_body = build_email(relevant, other, errors, len(sources), len(sources) - len(errors))
+        subject, plain, html_body = build_email(relevant, errors, len(sources), len(sources) - len(errors))
         if DRY_RUN:
             log("DRY RUN — would send:")
             print(subject)
