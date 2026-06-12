@@ -430,11 +430,19 @@ def scrape_esbd():
                         continue
                     agency = re.sub(r"\s*-\s*\w+\s*$", "", l.get("agencyName", "")).strip()
                     sol_id = l.get("solicitationId", "")
-                    url = (l.get("url") or "").strip() or f"https://www.txsmartbuy.gov/esbd/{sol_id}"
-                    items.append(make_item(
+                    # ESBD's own detail page is per-bid (verified: renders full
+                    # solicitation + PDF); the record's `url` field is often
+                    # just the agency's general lettings page — keep it as a
+                    # secondary link only.
+                    url = f"https://www.txsmartbuy.gov/esbd/{sol_id}" if sol_id else (l.get("url") or "").strip()
+                    item = make_item(
                         "esbd", agency, sid, l.get("title", ""),
                         close=l.get("responseDue", ""), url=url, ref=sol_id,
-                    ))
+                    )
+                    agency_url = (l.get("url") or "").strip()
+                    if agency_url and agency_url != url:
+                        item["agency_url"] = agency_url
+                    items.append(item)
         finally:
             browser.close()
     return items
@@ -582,10 +590,11 @@ def build_email(relevant, errors, total_sources, ok_sources):
     for it in sorted(relevant, key=lambda x: (x["agency"], x["title"])):
         ref = f" &middot; {esc(it['ref'])}" if it["ref"] else ""
         close = f" &middot; closes {esc(it['close'])}" if it["close"] else ""
+        agency_link = f' &middot; <a href="{esc(it["agency_url"])}" style="color:#666;">agency site</a>' if it.get("agency_url") else ""
         link = f'<a href="{esc(it["url"])}">{esc(it["title"])}</a>' if it["url"] else esc(it["title"])
         rows.append(
             f'<li style="margin-bottom:10px;"><strong>{esc(it["agency"])}</strong> &mdash; {link}'
-            f'<br><span style="color:#666;font-size:13px;">{esc(it["id"].split(":")[0])}{ref}{close}</span></li>'
+            f'<br><span style="color:#666;font-size:13px;">{esc(it["id"].split(":")[0])}{ref}{close}{agency_link}</span></li>'
         )
     error_html = ""
     if errors:
@@ -611,6 +620,8 @@ def build_email(relevant, errors, total_sources, ok_sources):
         plain_lines.append(f"- {it['agency']}: {it['title']}" + (f" (closes {it['close']})" if it["close"] else ""))
         if it["url"]:
             plain_lines.append(f"  {it['url']}")
+        if it.get("agency_url"):
+            plain_lines.append(f"  agency site: {it['agency_url']}")
     subject = f"{len(relevant)} new bid opportunit{'y' if len(relevant) == 1 else 'ies'} — {today}"
     return subject, "\n".join(plain_lines), html_body
 
