@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-11T15:15:50.136770+00:00",
+  "last_run": "2026-06-12T00:08:33.864543+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -181,6 +181,10 @@
       "first_seen": "2026-06-11",
       "title": "2026 Assessment, Master Planning, and Renovation of Dallas Water Utilities Employee-Occupied Buildings and Office Spaces"
     },
+    "bonfire-dallascityhall:240108": {
+      "first_seen": "2026-06-12",
+      "title": "Fee Study"
+    },
     "bonfire-dallascityhall:240110": {
       "first_seen": "2026-06-11",
       "title": "Purchase of Lab Supplies *217994"
@@ -196,6 +200,10 @@
     "bonfire-dallascityhall:240161": {
       "first_seen": "2026-06-11",
       "title": "Purchase of JANITORIAL SUPPLIES, GENERAL LINE*218412"
+    },
+    "bonfire-dallascityhall:240344": {
+      "first_seen": "2026-06-12",
+      "title": "Purchase of - POLICE EQUIPMENT AND SUPPLIES - 218498"
     },
     "bonfire-fortworthtexas:178620": {
       "first_seen": "2026-06-11",
@@ -301,6 +309,26 @@
       "first_seen": "2026-06-11",
       "title": "FY27 Audio Visual Equipment Rental & Production Mgmt."
     },
+    "esbd:514182": {
+      "first_seen": "2026-06-12",
+      "title": "IDIQ Pools for Architectural and Engineering Services by Category"
+    },
+    "esbd:523527": {
+      "first_seen": "2026-06-12",
+      "title": "STATE LET CONSTRUCTION CONTRACT, TARRANT CO, LANDSCAPE DEVELOPMENT"
+    },
+    "esbd:523637": {
+      "first_seen": "2026-06-12",
+      "title": "STATE LET CONSTRUCTION CONTRACT, TARRANT CO, LANDSCAPE DEVELOPMENT"
+    },
+    "esbd:523826": {
+      "first_seen": "2026-06-12",
+      "title": "STATE LET CONSTRUCTION CONTRACT, TARRANT CO, LANDSCAPE DEVELOPMENT"
+    },
+    "esbd:526172": {
+      "first_seen": "2026-06-12",
+      "title": "RFB for Physical Education Building Demolition"
+    },
     "firecrawl-cityofcrowley:https://www.ci.crowley.tx.us/cd/bids-rfp/request-proposals-city-crowley-city-hall-generator": {
       "first_seen": "2026-06-11",
       "title": "Request for Proposals for City of Crowley City Hall Generator"
@@ -393,9 +421,17 @@
       "first_seen": "2026-06-11",
       "title": "Purchase of Inseyets Online Pro and Unlimited Unlocks Subscription"
     },
+    "ionwave-tarrantcounty:F2026127 Addendum 1": {
+      "first_seen": "2026-06-12",
+      "title": "Purchase of Inseyets Online Pro and Unlimited Unlocks Subscription"
+    },
     "ionwave-tarrantcounty:F2026128": {
       "first_seen": "2026-06-11",
       "title": "Annual Contract for Printing and Processing of Tax Statements"
+    },
+    "ionwave-tarrantcounty:F2026129 Addendum 1": {
+      "first_seen": "2026-06-12",
+      "title": "Annual Contract for HVAC Water Treatment Services, Water Treatment Equipment Repairs, and Cooling Tower Cleaning Service"
     },
     "ionwave-tarrantcounty:F2026130": {
       "first_seen": "2026-06-11",
@@ -413,13 +449,29 @@
       "first_seen": "2026-06-11",
       "title": "Annual Contract for Traffic Paint"
     },
+    "ionwave-tarrantcounty:F2026135": {
+      "first_seen": "2026-06-12",
+      "title": "Annual Contract for Quickbase Enterprise Platform Subscription"
+    },
+    "ionwave-tarrantcounty:F2026136": {
+      "first_seen": "2026-06-12",
+      "title": "Annual Contract for Fence and Gate Installation, Demolition, and Repairs"
+    },
     "ionwave-tarrantcounty:F2026137": {
       "first_seen": "2026-06-11",
       "title": "Annual Contract for Moving Services"
     },
+    "ionwave-tarrantcounty:F2026138": {
+      "first_seen": "2026-06-12",
+      "title": "Medical Examiner's Office Drying Rooms Renovation"
+    },
     "ionwave-tarrantcounty:F2026139": {
       "first_seen": "2026-06-11",
       "title": "Annual Contract for Aerial Application of Pesticides for Mosquito Control"
+    },
+    "ionwave-tarrantcounty:F2026141 Addendum 1": {
+      "first_seen": "2026-06-12",
+      "title": "Annual Contract for Dental PPO and Dental HMO Plan"
     },
     "publicpurchase:212856": {
       "first_seen": "2026-06-11",
