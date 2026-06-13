@@ -466,7 +466,7 @@
     "last_lead": "2026-06-12T17:10:18.169796",
     "total_calls": 49
   },
-  "last_run": "2026-06-13T17:10:15.906108+00:00",
+  "last_run": "2026-06-13T17:15:13.595472+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -998,22 +998,7 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "240870675": {
-      "wc_lead_id": "240870675",
-      "phone": "+14695253316",
-      "value": "Google Business Profile",
-      "note": "WC #240870675 | Google Business Profile",
-      "first_seen": "2026-06-12T17:10:18.169763+00:00",
-      "attempts": 299,
-      "caller_name": "Crave Shave Llc",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "58 seconds",
-      "received_at": "2026-06-12T17:08:07Z",
-      "transcription": "Recipient\nHello, black hill landscaping. This is trinity. How. I hope you.\n\nCaller\nHi, Trinity. This is Sean from Crave the Fun. How are you?\n\nRecipient\nGood. How are you?\n\nCaller\nReal good. You guys reached out about possibly doing an event on June 26th.\n\nRecipient\nYes. What company are you calling from again?\n\nCaller\nThis is Crave the Fun. You requested information about the dessert truck on June 26th?\n\nRecipient\nYes, yes, I did.\n\nCaller\nOkay. Awesome. Unfortunately, I'm on vacation that week, so I won't be available.\n\nRecipient\nOkay, well, thank you for contacting me.\n\nCaller\nYep. Just wanted to let you know. But thank you so much for reaching out.\n\nRecipient\nOkay, take care. Bye. Bye.\n\nCaller\nBye. Bye."
-    }
-  },
+  "pending_call_attributions": {},
   "round_robin_state": {
     "last_index": 0
   }
