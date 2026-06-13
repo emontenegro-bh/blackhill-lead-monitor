@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-12T15:41:16.797705+00:00",
+  "last_run": "2026-06-13T14:26:55.267187+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -293,6 +293,10 @@
       "first_seen": "2026-06-11",
       "title": "Pavement Striping Services"
     },
+    "bonfire-parkercountytx:240505": {
+      "first_seen": "2026-06-13",
+      "title": "BALLISTIC WINDSHIELDS"
+    },
     "civicplus-cityofbenbrook:8": {
       "first_seen": "2026-06-11",
       "title": "Request for Proposal for Solid Waste and Recycling Services"
@@ -524,6 +528,14 @@
     "weatherford-notices:28273": {
       "first_seen": "2026-06-11",
       "title": "Bid-Tabulation"
+    },
+    "weatherford-notices:28315": {
+      "first_seen": "2026-06-13",
+      "title": "RFP 2026-015 Sale and Redevelopment of City Owned Properties"
+    },
+    "weatherford-notices:28316": {
+      "first_seen": "2026-06-13",
+      "title": "RFP 2026 013 Professional Audit Services Bid Tabulation"
     },
     "willowpark:498": {
       "first_seen": "2026-06-11",
