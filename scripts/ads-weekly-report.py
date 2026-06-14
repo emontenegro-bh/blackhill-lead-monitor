@@ -394,7 +394,11 @@ for row in rows:
     hour_data[hr]["clicks"] += row.metrics.clicks
     hour_data[hr]["conversions"] += row.metrics.conversions
 
-CST_OFFSET = -5  # CDT (April = daylight saving)
+# segments.hour is ALREADY in the account's timezone (America/Chicago) -- Google
+# reports hour-of-day in account-local time with DST handled. Do NOT apply an
+# offset. (Bug fixed 2026-06-14: previously subtracted 5h assuming the hours were
+# UTC, which shifted every block ~5h earlier and invented overnight "waste" that
+# did not exist -- live data showed $0 spend 12a-8a, all spend 8a-midnight.)
 def bucket_hours(hdata):
     blocks = [
         ("12a-4a", range(0, 4)),
@@ -407,12 +411,11 @@ def bucket_hours(hdata):
     result = []
     for label, hrs in blocks:
         b = {"label": label, "spend": 0, "clicks": 0, "conversions": 0}
-        for utc_hr in range(24):
-            cst_hr = (utc_hr + CST_OFFSET) % 24
-            if cst_hr in hrs and utc_hr in hdata:
-                b["spend"] += hdata[utc_hr]["spend"]
-                b["clicks"] += hdata[utc_hr]["clicks"]
-                b["conversions"] += hdata[utc_hr]["conversions"]
+        for hr in hrs:
+            if hr in hdata:
+                b["spend"] += hdata[hr]["spend"]
+                b["clicks"] += hdata[hr]["clicks"]
+                b["conversions"] += hdata[hr]["conversions"]
         result.append(b)
     return result
 
@@ -1123,7 +1126,7 @@ if device_data or hour_blocks:
     if hour_blocks:
         best_block = max(hour_blocks, key=lambda b: b["conversions"])
         quiet_block = min((b for b in hour_blocks if b["spend"] > 0), key=lambda b: b["conversions"], default=None)
-        h(f'<div style="font-size:13px;color:#c8963e;font-weight:600;margin:{"16px" if device_data else "0"} 0 8px;">By Time of Day (CST)</div>')
+        h(f'<div style="font-size:13px;color:#c8963e;font-weight:600;margin:{"16px" if device_data else "0"} 0 8px;">By Time of Day (Central)</div>')
         h('<table><tr><th>Time Block</th><th class="right">Spend</th><th class="right">Clicks</th><th class="right">Conv</th></tr>')
         for blk in hour_blocks:
             if blk["spend"] < 0.50:
@@ -1491,7 +1494,7 @@ if device_data or hour_blocks:
             conv_rate = (dd["conversions"] / dd["clicks"] * 100) if dd["clicks"] > 0 else 0
             md.append(f"| {DEVICE_NAMES_MD.get(dev, dev)} | ${dd['spend']:.0f} | {dd['clicks']} | {dd['conversions']:.0f} | {conv_rate:.1f}% |")
     if hour_blocks:
-        md.append("### By Time of Day (CST)")
+        md.append("### By Time of Day (Central)")
         md.append(f"| Time Block | Spend | Clicks | Conv |")
         md.append(f"|------------|-------|--------|------|")
         for blk in hour_blocks:
