@@ -469,15 +469,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadFwAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadGAAAAA==",
     "241247690",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadGgAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadGgAAAA==",
+    "241303144"
   ],
   "stats": {
-    "total_leads": 188,
+    "total_leads": 189,
     "total_spam": 216,
-    "last_lead": "2026-06-14T23:30:28.282734",
+    "last_lead": "2026-06-15T17:55:40.672625",
     "total_calls": 49
   },
-  "last_run": "2026-06-15T17:45:17.378348+00:00",
+  "last_run": "2026-06-15T17:55:40.673982+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1015,11 +1016,9 @@
     "241303144": {
       "aspire_contact_id": "2671",
       "traffic_source": "google / cpc",
-      "service": "fuzzy-matched",
+      "service": "Drainage Solutions",
       "lead_type": "web_form",
-      "date": "2026-06-15",
-      "match_score": 1.0,
-      "match_method": "exact_email"
+      "date": "2026-06-15"
     }
   },
   "dismissed_matches": [
@@ -1027,6 +1026,6 @@
   ],
   "pending_call_attributions": {},
   "round_robin_state": {
-    "last_index": 1
+    "last_index": 0
   }
 }
