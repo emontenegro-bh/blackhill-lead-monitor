@@ -1011,6 +1011,15 @@
       "service": "Lawn Services",
       "lead_type": "web_form",
       "date": "2026-06-14"
+    },
+    "241303144": {
+      "aspire_contact_id": "2671",
+      "traffic_source": "google / cpc",
+      "service": "fuzzy-matched",
+      "lead_type": "web_form",
+      "date": "2026-06-15",
+      "match_score": 1.0,
+      "match_method": "exact_email"
     }
   },
   "dismissed_matches": [
