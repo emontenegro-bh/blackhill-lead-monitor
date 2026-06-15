@@ -470,15 +470,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadGAAAAA==",
     "241247690",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadGgAAAA==",
-    "241303144"
+    "241303144",
+    "241325736"
   ],
   "stats": {
-    "total_leads": 189,
+    "total_leads": 190,
     "total_spam": 216,
-    "last_lead": "2026-06-15T17:55:40.672625",
-    "total_calls": 49
+    "last_lead": "2026-06-15T18:50:20.294901",
+    "total_calls": 50
   },
-  "last_run": "2026-06-15T18:45:17.583205+00:00",
+  "last_run": "2026-06-15T18:50:20.296054+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1024,7 +1025,22 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {},
+  "pending_call_attributions": {
+    "241325736": {
+      "wc_lead_id": "241325736",
+      "phone": "+12562920512",
+      "value": "Google Business Profile",
+      "note": "WC #241325736 | Google Business Profile",
+      "first_seen": "2026-06-15T18:50:20.294866+00:00",
+      "attempts": 1,
+      "caller_name": "Grayson Al",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "31 seconds",
+      "received_at": "2026-06-15T18:46:58Z",
+      "transcription": "Recipient\nForeign. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment."
+    }
+  },
   "round_robin_state": {
     "last_index": 0
   }
