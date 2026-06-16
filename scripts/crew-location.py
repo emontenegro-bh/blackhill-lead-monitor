@@ -187,8 +187,11 @@ def post_to_teams(webhook_url, text):
 def send_email(text):
     sender = os.environ.get("GMAIL_EMAIL", "").strip()
     pw = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
-    recipients = [a.strip() for a in os.environ.get(
-        "CREW_LOC_TO", "evelin@blackhilltx.com,denisse@blackhilltx.com").split(",") if a.strip()]
+    # Empty/unset CREW_LOC_TO falls back to the default pair (the workflow sets
+    # the env var to "" on scheduled runs, so treat blank as default).
+    to_env = os.environ.get("CREW_LOC_TO", "").strip()
+    default_to = "evelin@blackhilltx.com,denisse@blackhilltx.com"
+    recipients = [a.strip() for a in (to_env or default_to).split(",") if a.strip()]
     if not (sender and pw and recipients):
         return False
     html_body = "<br>".join(

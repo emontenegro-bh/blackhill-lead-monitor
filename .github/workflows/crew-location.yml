@@ -5,7 +5,12 @@ on:
     # 19:40 UTC = 2:40pm CDT (summer) / 1:40pm CST (winter). Job takes ~7 min,
     # so the report lands before 3pm Central year-round. Weekdays only.
     - cron: '40 19 * * 1-5'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      to:
+        description: 'Override email recipients (comma-separated). Blank = default (evelin + denisse).'
+        required: false
+        default: ''
 
 concurrency:
   group: crew-location
@@ -32,6 +37,7 @@ jobs:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          CREW_LOC_TO: ${{ github.event.inputs.to }}
         run: python scripts/crew-location.py
 
   notify-failure:
