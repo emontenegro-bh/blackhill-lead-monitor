@@ -483,7 +483,7 @@
     "last_lead": "2026-06-16T14:05:28.504751",
     "total_calls": 52
   },
-  "last_run": "2026-06-16T14:50:29.010321+00:00",
+  "last_run": "2026-06-16T14:55:22.468470+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1036,7 +1036,7 @@
       "value": "Google Business Profile",
       "note": "WC #241325736 | Google Business Profile",
       "first_seen": "2026-06-15T18:50:20.294866+00:00",
-      "attempts": 246,
+      "attempts": 247,
       "caller_name": "Grayson Al",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1050,7 +1050,7 @@
       "value": "Phone Call ",
       "note": "WC #241360412 | Phone Call",
       "first_seen": "2026-06-15T20:25:17.746057+00:00",
-      "attempts": 227,
+      "attempts": 228,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1064,7 +1064,7 @@
       "value": "Google Ads",
       "note": "WC #241471020 | Google Ads",
       "first_seen": "2026-06-16T14:05:28.504719+00:00",
-      "attempts": 10,
+      "attempts": 11,
       "caller_name": "Flat Top Turf",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
