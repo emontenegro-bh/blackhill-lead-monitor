@@ -139,7 +139,6 @@ def crew_status(api_key, crew, now_ms):
 
     trips.sort(key=lambda t: t["tsTime"])
     last = trips[-1]
-    miles = round(sum((t.get("distanceTravelled") or 0) for t in trips), 1)
     last_addr = clean_addr(last.get("teAddress"))
     parked_ms = last["teTime"]
     parked_for = (now_ms - parked_ms) / 60000  # minutes since last trip ended
@@ -147,15 +146,13 @@ def crew_status(api_key, crew, now_ms):
     if parked_for < 8:
         # Trip just closed; truck is moving or stopped only momentarily.
         state = "moving"
-        summary = (f"En route near {last_addr} "
-                   f"(last update {fmt_time(parked_ms)}, {len(trips)} stops, {miles} mi today)")
+        summary = f"En route near {last_addr} (last update {fmt_time(parked_ms)})"
     else:
         state = "parked"
         summary = (f"At {last_addr} — parked {human_gap(parked_for)} "
-                   f"(since {fmt_time(parked_ms)}; {len(trips)} stops, {miles} mi today)")
+                   f"(since {fmt_time(parked_ms)})")
     return {**crew, "state": state, "summary": summary,
-            "last_addr": last_addr, "parked_since": fmt_time(parked_ms),
-            "stops": len(trips), "miles": miles}
+            "last_addr": last_addr, "parked_since": fmt_time(parked_ms)}
 
 
 ICON = {"moving": "🚚", "parked": "📍", "idle": "💤", "no_vehicle": "⚠️"}
