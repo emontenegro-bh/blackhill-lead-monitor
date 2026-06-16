@@ -1,0 +1,43 @@
+name: Crew Location Report
+
+on:
+  schedule:
+    # 19:40 UTC = 2:40pm CDT (summer) / 1:40pm CST (winter). Job takes ~7 min,
+    # so the report lands before 3pm Central year-round. Weekdays only.
+    - cron: '40 19 * * 1-5'
+  workflow_dispatch: {}
+
+concurrency:
+  group: crew-location
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Send crew location report
+        env:
+          AZUGA_API_KEY: ${{ secrets.AZUGA_API_KEY }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/crew-location.py
+
+  notify-failure:
+    needs: [report]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Crew Location Report"
+    secrets: inherit
