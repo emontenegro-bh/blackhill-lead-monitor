@@ -473,15 +473,16 @@
     "241303144",
     "241325736",
     "241360412",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadGwAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadGwAAAA==",
+    "241465363"
   ],
   "stats": {
     "total_leads": 191,
-    "total_spam": 217,
+    "total_spam": 218,
     "last_lead": "2026-06-15T20:25:17.746088",
     "total_calls": 51
   },
-  "last_run": "2026-06-16T13:35:19.236550+00:00",
+  "last_run": "2026-06-16T13:40:23.141392+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1034,7 +1035,7 @@
       "value": "Google Business Profile",
       "note": "WC #241325736 | Google Business Profile",
       "first_seen": "2026-06-15T18:50:20.294866+00:00",
-      "attempts": 231,
+      "attempts": 232,
       "caller_name": "Grayson Al",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1048,7 +1049,7 @@
       "value": "Phone Call ",
       "note": "WC #241360412 | Phone Call",
       "first_seen": "2026-06-15T20:25:17.746057+00:00",
-      "attempts": 212,
+      "attempts": 213,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
