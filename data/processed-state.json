@@ -486,7 +486,7 @@
     "last_lead": "2026-06-16T15:20:38.452874",
     "total_calls": 54
   },
-  "last_run": "2026-06-16T20:20:31.919197+00:00",
+  "last_run": "2026-06-16T20:25:27.530246+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1033,27 +1033,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "241360412": {
-      "wc_lead_id": "241360412",
-      "phone": "+13256274082",
-      "value": "Phone Call ",
-      "note": "WC #241360412 | Phone Call",
-      "first_seen": "2026-06-15T20:25:17.746057+00:00",
-      "attempts": 294,
-      "caller_name": "Oaks Eric",
-      "lead_source_raw": "(direct)",
-      "lead_medium_raw": "(none)",
-      "call_duration": "2 minutes and 38 seconds",
-      "received_at": "2026-06-15T20:21:33Z",
-      "transcription": "Recipient\nGood afternoon. Thank you for calling Black and Landscaping. This is Carlos and my director. Call.\n\nCaller\nYeah. My name is Eric oaks. I'm at 2801 Plumbago here in Fort Worth. Y' all did a sprinkle repair for me just a little bit ago. For some reason, my system just stopped working.\n\nRecipient\nOkay, give me one second. Give me one second.\n\nCaller\nIt.\n\nRecipient\nAnd you said your system stopped working, Mr. Oaks.\n\nCaller\nYes. Yeah, it was working fine.\n\nRecipient\nIt just completely shut off or.\n\nCaller\nWell, not the thing is that when I had it programmed to turn on, it didn't turn on. So I went out, I tried to turn on the manual mode and it still wouldn't turn on.\n\nRecipient\nOkay, so. Eric. Oops. Alrighty. So the system is not turning on.\n\nCaller\nYes. It's great.\n\nRecipient\nAll right? So it's off. It's not on at all. Right.\n\nCaller\nWell, the panel has power to it. You can still see license on the panel and it is showing that, like, it's running, but there's no water coming out.\n\nRecipient\nOkay. And is this a good callback? A good number for you? 325-627-4082.\n\nCaller\nThat's correct.\n\nRecipient\nAll right. Okay. I'm notifying Denise Montenegro. She will probably be giving you a call as soon as she's. She's out on the field right now, but as soon as she's done, she. More than likely she'll give you a call. Just set up the appointment or she'll let. Have me call you and let you know. Okay.\n\nCaller\nOkay. I appreciate it. Thank you.\n\nRecipient\nAlrighty. Thank you."
-    },
     "241471020": {
       "wc_lead_id": "241471020",
       "phone": "+18178971222",
       "value": "Google Ads",
       "note": "WC #241471020 | Google Ads",
       "first_seen": "2026-06-16T14:05:28.504719+00:00",
-      "attempts": 77,
+      "attempts": 78,
       "caller_name": "Flat Top Turf",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1067,7 +1053,7 @@
       "value": "Google Business Profile",
       "note": "WC #241489593 | Google Business Profile",
       "first_seen": "2026-06-16T15:05:25.926031+00:00",
-      "attempts": 65,
+      "attempts": 66,
       "caller_name": "Mckown William",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1081,7 +1067,7 @@
       "value": "Google Business Profile",
       "note": "WC #241495511 | Google Business Profile",
       "first_seen": "2026-06-16T15:20:38.452831+00:00",
-      "attempts": 62,
+      "attempts": 63,
       "caller_name": "Fort Worth Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
