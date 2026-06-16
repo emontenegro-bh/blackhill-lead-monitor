@@ -2,9 +2,9 @@ name: Crew Location Report
 
 on:
   schedule:
-    # 19:40 UTC = 2:40pm CDT (summer) / 1:40pm CST (winter). Job takes ~7 min,
-    # so the report lands before 3pm Central year-round. Weekdays only.
-    - cron: '40 19 * * 1-5'
+    # 20:53 UTC = 3:53pm CDT (summer) / 2:53pm CST (winter). Job takes ~7 min,
+    # so the email lands ~4pm Central (summer). Weekdays only.
+    - cron: '53 20 * * 1-5'
   workflow_dispatch:
     inputs:
       to:
