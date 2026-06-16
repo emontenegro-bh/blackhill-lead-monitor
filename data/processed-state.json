@@ -476,15 +476,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadGwAAAA==",
     "241465363",
     "241471020",
-    "241489593"
+    "241489593",
+    "241495511"
   ],
   "stats": {
-    "total_leads": 193,
+    "total_leads": 194,
     "total_spam": 218,
-    "last_lead": "2026-06-16T15:05:25.926063",
-    "total_calls": 53
+    "last_lead": "2026-06-16T15:20:38.452874",
+    "total_calls": 54
   },
-  "last_run": "2026-06-16T15:15:30.033365+00:00",
+  "last_run": "2026-06-16T15:20:38.454694+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1037,7 +1038,7 @@
       "value": "Google Business Profile",
       "note": "WC #241325736 | Google Business Profile",
       "first_seen": "2026-06-15T18:50:20.294866+00:00",
-      "attempts": 251,
+      "attempts": 252,
       "caller_name": "Grayson Al",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1051,7 +1052,7 @@
       "value": "Phone Call ",
       "note": "WC #241360412 | Phone Call",
       "first_seen": "2026-06-15T20:25:17.746057+00:00",
-      "attempts": 232,
+      "attempts": 233,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1065,7 +1066,7 @@
       "value": "Google Ads",
       "note": "WC #241471020 | Google Ads",
       "first_seen": "2026-06-16T14:05:28.504719+00:00",
-      "attempts": 15,
+      "attempts": 16,
       "caller_name": "Flat Top Turf",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1079,13 +1080,27 @@
       "value": "Google Business Profile",
       "note": "WC #241489593 | Google Business Profile",
       "first_seen": "2026-06-16T15:05:25.926031+00:00",
-      "attempts": 3,
+      "attempts": 4,
       "caller_name": "Mckown William",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "2 minutes and 22 seconds",
       "received_at": "2026-06-16T15:01:10Z",
       "transcription": "Recipient\nGood morning. Black Hill Landscaping, this is Trinity. How may I help you?\n\nCaller\nHey, Trinity, this is Bill McCown at Frio's Gourmet Pops. How are you today?\n\nRecipient\nGood, good. Thank you. How are.\n\nCaller\nGood. They keeping you busy?\n\nRecipient\nYou? Trying to.\n\nCaller\nWell, good. Hey, I just wanted to follow up. I saw you and you had inquired about getting some popsicles for an office party.\n\nRecipient\nYes, yes. So I'm going to meet with my team tomorrow and I'll be able to have a better insight of what budget I'm looking at.\n\nCaller\nOkay. Okay. Yeah. That's fantastic. So you're needed on the 26th, though, is that right? From 11 to 12.\n\nRecipient\nYes, yes.\n\nCaller\nAnd you're wanted. You're wanting to do a cart as opposed to a truck, correct?\n\nRecipient\nYeah, that's probably going to be the less expensive, right?\n\nCaller\nYes, ma'. Am. Yeah, it'll be.\n\nRecipient\nYes. Okay. And what does the cart run?\n\nCaller\nSo the cart's 25 an hour. That'll include the dry ice and all that good stuff. And then the van is 75 an hour, and then it's $5 a pop.\n\nRecipient\n$5 a pop. Okay. This is good information. What's your phone number again? Just in case.\n\nCaller\nYeah, it's 214-803-6454.\n\nRecipient\n214. 6454.\n\nCaller\nYes, ma'. Am.\n\nRecipient\nOkay. Yes. Okay. So like I said, let me. Let me get with my team tomorrow, and then I'll have a better site of what we're looking to do after tomorrow.\n\nCaller\nFantastic. Yeah, just give me a call.\n\nRecipient\nOkay, thank you.\n\nCaller\nYes, ma'. Am. Bye. Bye.\n\nRecipient\nBye. Bye."
+    },
+    "241495511": {
+      "wc_lead_id": "241495511",
+      "phone": "+18174502300",
+      "value": "Google Business Profile",
+      "note": "WC #241495511 | Google Business Profile",
+      "first_seen": "2026-06-16T15:20:38.452831+00:00",
+      "attempts": 1,
+      "caller_name": "Fort Worth Tx",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "53 seconds",
+      "received_at": "2026-06-16T15:18:56Z",
+      "transcription": "Recipient\nGood morning. Black Hill Landscaping, this is Trinity. How may I help you?\n\nCaller\nHi, how are you? Mail. Good morning.\n\nRecipient\nGood. How are you? Good morning.\n\nCaller\nI'm the good mail. My name is Efren. I'm just calling you Mail. I'm looking for work. You're not hiring people right now.\n\nRecipient\nWe're taking applications.\n\nCaller\nOkay.\n\nRecipient\nYou're welcome to come into the office to fill out an application.\n\nCaller\nCan I go? Okay, perfect. I'll be there.\n\nRecipient\nOkay. Thank you.\n\nCaller\nThank you, ma'. Am. Appreciate it. Bye. Bye."
     }
   },
   "round_robin_state": {
