@@ -99,6 +99,18 @@ def clean_addr(addr):
     return (addr or "").replace(", USA", "").strip() or "unknown location"
 
 
+# Company shop / yard — show as "Shop" instead of the full street address.
+SHOP_STREET_HINTS = ("grants ln", "grants lane")
+
+
+def label_addr(addr):
+    a = clean_addr(addr)
+    al = a.lower()
+    if any(h in al for h in SHOP_STREET_HINTS) and "white settlement" in al:
+        return "Shop"
+    return a
+
+
 def resolve_vehicle_ids(api_key):
     """Map field-crew names -> vehicleId + driver, from the live roster."""
     data = azuga_get(api_key, "/v3/vehicle")
@@ -139,7 +151,7 @@ def crew_status(api_key, crew, now_ms):
 
     trips.sort(key=lambda t: t["tsTime"])
     last = trips[-1]
-    last_addr = clean_addr(last.get("teAddress"))
+    last_addr = label_addr(last.get("teAddress"))
     parked_ms = last["teTime"]
     parked_for = (now_ms - parked_ms) / 60000  # minutes since last trip ended
 
