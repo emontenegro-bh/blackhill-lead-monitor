@@ -39,7 +39,7 @@ jobs:
       - name: Send crew location report
         env:
           AZUGA_API_KEY: ${{ secrets.AZUGA_API_KEY }}
-          TEAMS_WEBHOOK_URL: ${{ github.event.inputs.skip_teams == 'true' && '' || secrets.TEAMS_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL: ${{ github.event.inputs.skip_teams != 'true' && secrets.TEAMS_WEBHOOK_URL || '' }}
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           CREW_LOC_TO: ${{ github.event.inputs.to }}
