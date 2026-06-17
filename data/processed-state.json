@@ -490,7 +490,7 @@
     "last_lead": "2026-06-16T21:15:18.465708",
     "total_calls": 55
   },
-  "last_run": "2026-06-17T18:55:15.142964+00:00",
+  "last_run": "2026-06-17T19:00:33.064641+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1043,7 +1043,7 @@
       "value": "Google Business Profile",
       "note": "WC #241607547 | Google Business Profile",
       "first_seen": "2026-06-16T21:15:18.465670+00:00",
-      "attempts": 266,
+      "attempts": 267,
       "caller_name": "Fort Worth Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
