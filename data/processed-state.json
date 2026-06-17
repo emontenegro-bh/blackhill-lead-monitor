@@ -491,7 +491,7 @@
     "last_lead": "2026-06-17T20:15:27.063108",
     "total_calls": 56
   },
-  "last_run": "2026-06-17T20:20:24.984746+00:00",
+  "last_run": "2026-06-17T20:25:25.618359+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1044,7 +1044,7 @@
       "value": "Google Business Profile",
       "note": "WC #241607547 | Google Business Profile",
       "first_seen": "2026-06-16T21:15:18.465670+00:00",
-      "attempts": 284,
+      "attempts": 285,
       "caller_name": "Fort Worth Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1058,7 +1058,7 @@
       "value": "Phone Call ",
       "note": "WC #241808477 | Phone Call",
       "first_seen": "2026-06-17T20:15:27.063080+00:00",
-      "attempts": 2,
+      "attempts": 3,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
