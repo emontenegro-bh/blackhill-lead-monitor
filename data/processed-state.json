@@ -493,7 +493,7 @@
     "last_lead": "2026-06-17T21:55:17.698848",
     "total_calls": 58
   },
-  "last_run": "2026-06-17T21:55:17.700164+00:00",
+  "last_run": "2026-06-17T22:00:28.393548+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1046,7 +1046,7 @@
       "value": "Phone Call ",
       "note": "WC #241808477 | Phone Call",
       "first_seen": "2026-06-17T20:15:27.063080+00:00",
-      "attempts": 21,
+      "attempts": 22,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1060,27 +1060,13 @@
       "value": "Google Business Profile",
       "note": "WC #241813924 | Google Business Profile",
       "first_seen": "2026-06-17T20:35:15.597027+00:00",
-      "attempts": 17,
+      "attempts": 18,
       "caller_name": "Lohman Robert",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "1 minute and 28 seconds",
       "received_at": "2026-06-17T20:32:55Z",
       "transcription": "Recipient\nGood afternoon. Thank you for calling Blackville Landscaping. This is Carlos. I may direct your call.\n\nCaller\nCarlos. My name is Bob Lohman and I'm with Stone Surface Solutions. We are distributor for stain proof sealers. And with your permission, I'd like to email you a little, you know, a little bit of information about us and how maybe, I don't know if you guys use sealers or not on any of your projects, but we would be a good source for you.\n\nRecipient\nI can provide you with an email and you can send any information there. If interested. Somebody will reach out to you.\n\nCaller\nThank you very much. What would that be?\n\nRecipient\nWhenever you're ready. Hello? H E L L O.\n\nCaller\nIf. H e l l. Okay.\n\nRecipient\n@blackkilltx for TexasTX.com.\n\nCaller\nC k h I l l. And what was it?\n\nRecipient\nTxt for tom.x for xavier.com.\n\nCaller\nOh, okay. Dot com. Okay, sir, thank you for talking to me.\n\nRecipient\nYes. All right. You're welcome. Bye. Bye.\n\nCaller\nGood day."
-    },
-    "241832262": {
-      "wc_lead_id": "241832262",
-      "phone": "+18172665885",
-      "value": "Google Business Profile",
-      "note": "WC #241832262 | Google Business Profile",
-      "first_seen": "2026-06-17T21:55:17.698813+00:00",
-      "attempts": 1,
-      "caller_name": "Turner Jerry",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "3 minutes and 11 seconds",
-      "received_at": "2026-06-17T21:51:02Z",
-      "transcription": "Recipient\nGood afternoon. Thank you for calling Black Hair Landscaping, this is Carlos. I'm going to direct your call.\n\nCaller\nYeah, I'm just looking to, I guess, get a quote on some catch basin work.\n\nRecipient\nOn some. What? I'm sorry.\n\nCaller\nCatch basin, like French drain type stuff.\n\nRecipient\nGive me one second. All right. Can I get the property address?\n\nCaller\n9968 pack saddle, TR.\n\nRecipient\nOne second. And you said nine nine six eight Pack Saddle Trail.\n\nCaller\nPack saddle package.\n\nRecipient\nMm. Okay. All right. And you are looking, you said, for what, what type of service? I'm sorry.\n\nCaller\nFrench drain.\n\nRecipient\nFrench Train. Okay. All right, let me see if our sales. Well, actually our sales team, she's on. On a site at the moment. Let me get your information and then I'll have her give you a call.\n\nCaller\nOkay. Yeah, I've dug basically all of it. I can't get the grade to be correct, and I have all the materials, so I just need somebody to go and do the grade. Basically, I've done the hard part.\n\nRecipient\nThe grading.\n\nCaller\nYes.\n\nRecipient\nOkay. All right. Yeah, they would. So the way it works is I would get your information, we would send you a. A date as to when we can stop by, and they would look at the, you know, the property and then they would let you know what, you know, what they recommend and give you a quote on that based off on that. Okay. Alrighty. So let me just get your info. Can I get your name, last name, phone number and email, please?\n\nCaller\nJerry Turner. Phone number is 817-26-6-5885.\n\nRecipient\nOr. Okay, perfect. And then can I get a good email to send you the date for when they're going to go and look at the property?\n\nCaller\nMy full namemail.com Jerry Nicholas. N I c h o l a s turnermail.com.\n\nRecipient\nOkay. Jerrynicholusturnermail.com.\n\nCaller\nYes.\n\nRecipient\nPerfect. And it'll just be grading for French Train. Perfect.\n\nCaller\nAnd I want you to specify I've already dug the trenches, too.\n\nRecipient\nOkay. That you've already. What? I'm sorry.\n\nCaller\nI've already dug the trenches.\n\nRecipient\nOkay. All right. Okay. Let me send this out and then somebody will be reaching out to you. Okay.\n\nCaller\nAll right. Thank you.\n\nRecipient\nYou're welcome."
     }
   },
   "round_robin_state": {
