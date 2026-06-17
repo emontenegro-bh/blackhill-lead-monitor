@@ -492,7 +492,7 @@
     "last_lead": "2026-06-17T20:35:15.597053",
     "total_calls": 57
   },
-  "last_run": "2026-06-17T21:15:16.772784+00:00",
+  "last_run": "2026-06-17T21:20:22.038964+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1039,27 +1039,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "241607547": {
-      "wc_lead_id": "241607547",
-      "phone": "+18174502300",
-      "value": "Google Business Profile",
-      "note": "WC #241607547 | Google Business Profile",
-      "first_seen": "2026-06-16T21:15:18.465670+00:00",
-      "attempts": 295,
-      "caller_name": "Fort Worth Tx",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "2 minutes and 59 seconds",
-      "received_at": "2026-06-16T21:12:17Z",
-      "transcription": ""
-    },
     "241808477": {
       "wc_lead_id": "241808477",
       "phone": "+13256274082",
       "value": "Phone Call ",
       "note": "WC #241808477 | Phone Call",
       "first_seen": "2026-06-17T20:15:27.063080+00:00",
-      "attempts": 13,
+      "attempts": 14,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1073,7 +1059,7 @@
       "value": "Google Business Profile",
       "note": "WC #241813924 | Google Business Profile",
       "first_seen": "2026-06-17T20:35:15.597027+00:00",
-      "attempts": 9,
+      "attempts": 10,
       "caller_name": "Lohman Robert",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
