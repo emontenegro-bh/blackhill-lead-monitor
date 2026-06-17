@@ -480,15 +480,16 @@
     "241495511",
     "241557847",
     "241607547",
-    "241617301"
+    "241617301",
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABCwadHQAAAA=="
   ],
   "stats": {
     "total_leads": 195,
-    "total_spam": 220,
+    "total_spam": 221,
     "last_lead": "2026-06-16T21:15:18.465708",
     "total_calls": 55
   },
-  "last_run": "2026-06-17T14:50:21.909190+00:00",
+  "last_run": "2026-06-17T14:53:06.758240+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
