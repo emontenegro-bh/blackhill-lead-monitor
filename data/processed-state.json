@@ -488,7 +488,7 @@
     "last_lead": "2026-06-16T21:15:18.465708",
     "total_calls": 55
   },
-  "last_run": "2026-06-17T14:05:24.847615+00:00",
+  "last_run": "2026-06-17T14:10:28.910930+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1035,27 +1035,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "241471020": {
-      "wc_lead_id": "241471020",
-      "phone": "+18178971222",
-      "value": "Google Ads",
-      "note": "WC #241471020 | Google Ads",
-      "first_seen": "2026-06-16T14:05:28.504719+00:00",
-      "attempts": 295,
-      "caller_name": "Flat Top Turf",
-      "lead_source_raw": "google",
-      "lead_medium_raw": "cpc",
-      "call_duration": "2 minutes and 37 seconds",
-      "received_at": "2026-06-16T14:00:41Z",
-      "transcription": "Recipient\nGood morning. Thank you for calling Blackout Landscaping. This is Carlos. I'm a director call.\n\nCaller\nHi, I was meaning to speak with whoever handles y' all sod orders.\n\nRecipient\nMay I ask who is this and what this. Who I'm speaking with? I'm sorry.\n\nCaller\nHang on just one second. I can't hear you very well. I'm going to put you in my. Okay. Can you hear me?\n\nRecipient\nI can hear you.\n\nCaller\nOkay, let me continue to turn you up. Anyway, I was hoping to get in contact with whoever places orders for your sod.\n\nRecipient\nOkay, what. What company are you calling from?\n\nCaller\nFlat top turf and ag.\n\nRecipient\nOkay, so it's. Is it artificial sod?\n\nCaller\nNo, it's not artificial. It's natural grass.\n\nRecipient\nOkay, you can send. Do you have something to write with? I can provide you with an email where you can send your quotes. Hello?\n\nCaller\nYes, I'm getting to my.\n\nRecipient\nOh, sorry.\n\nCaller\nNo, that's okay. I'm driving, so I was having to get there.\n\nRecipient\nAnd then just put there, like. Okay, I can text you if you want. I can send you a text message, and I'll just provide you with the email and then.\n\nCaller\nThat would be awesome.\n\nRecipient\nOkay. And then on the subject.\n\nCaller\nThat would be awesome. So I.\n\nRecipient\nMm.\n\nCaller\nI was just going to say I own a sod farm.\n\nRecipient\nSorry.\n\nCaller\nIn just north of Abilene and I bring quite a bit of trucks over to the Metroplex and I was just gonna. Wanted to talk about where when you all need natural grass, where you're getting it from, what you're paying for it and so forth.\n\nRecipient\nYeah, definitely. Let me see. So Your number is 817-897-1222.\n\nCaller\nThat is correct.\n\nRecipient\nOkay, I'm just gonna send you a text, and I'm gonna put the email address. And on this subject, I would recommend you put, you know, just something like sod quote or something or not that. Not marketing sales. So it won't get filtered to our junk. They're just something like.\n\nCaller\nSure. Okay.\n\nRecipient\nQuote or something. Okay.\n\nCaller\nAll right. Absolutely. Love you.\n\nRecipient\nPerfect. All right, thank you. Bye. Bye.\n\nCaller\nAll right. Thank you for your help. Bye.\n\nRecipient\nYou're welcome."
-    },
     "241489593": {
       "wc_lead_id": "241489593",
       "phone": "+12148036454",
       "value": "Google Business Profile",
       "note": "WC #241489593 | Google Business Profile",
       "first_seen": "2026-06-16T15:05:25.926031+00:00",
-      "attempts": 283,
+      "attempts": 284,
       "caller_name": "Mckown William",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1069,7 +1055,7 @@
       "value": "Google Business Profile",
       "note": "WC #241495511 | Google Business Profile",
       "first_seen": "2026-06-16T15:20:38.452831+00:00",
-      "attempts": 280,
+      "attempts": 281,
       "caller_name": "Fort Worth Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1083,7 +1069,7 @@
       "value": "Google Business Profile",
       "note": "WC #241607547 | Google Business Profile",
       "first_seen": "2026-06-16T21:15:18.465670+00:00",
-      "attempts": 207,
+      "attempts": 208,
       "caller_name": "Fort Worth Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
