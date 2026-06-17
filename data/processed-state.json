@@ -489,7 +489,7 @@
     "last_lead": "2026-06-16T21:15:18.465708",
     "total_calls": 55
   },
-  "last_run": "2026-06-17T15:00:28.357220+00:00",
+  "last_run": "2026-06-17T15:05:25.087553+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1042,7 +1042,7 @@
       "value": "Google Business Profile",
       "note": "WC #241489593 | Google Business Profile",
       "first_seen": "2026-06-16T15:05:25.926031+00:00",
-      "attempts": 294,
+      "attempts": 295,
       "caller_name": "Mckown William",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1056,7 +1056,7 @@
       "value": "Google Business Profile",
       "note": "WC #241495511 | Google Business Profile",
       "first_seen": "2026-06-16T15:20:38.452831+00:00",
-      "attempts": 291,
+      "attempts": 292,
       "caller_name": "Fort Worth Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1070,7 +1070,7 @@
       "value": "Google Business Profile",
       "note": "WC #241607547 | Google Business Profile",
       "first_seen": "2026-06-16T21:15:18.465670+00:00",
-      "attempts": 218,
+      "attempts": 219,
       "caller_name": "Fort Worth Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
