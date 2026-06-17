@@ -489,7 +489,7 @@
     "last_lead": "2026-06-16T21:15:18.465708",
     "total_calls": 55
   },
-  "last_run": "2026-06-17T15:20:24.327259+00:00",
+  "last_run": "2026-06-17T15:25:29.396603+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1036,27 +1036,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "241495511": {
-      "wc_lead_id": "241495511",
-      "phone": "+18174502300",
-      "value": "Google Business Profile",
-      "note": "WC #241495511 | Google Business Profile",
-      "first_seen": "2026-06-16T15:20:38.452831+00:00",
-      "attempts": 295,
-      "caller_name": "Fort Worth Tx",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "53 seconds",
-      "received_at": "2026-06-16T15:18:56Z",
-      "transcription": "Recipient\nGood morning. Black Hill Landscaping, this is Trinity. How may I help you?\n\nCaller\nHi, how are you? Mail. Good morning.\n\nRecipient\nGood. How are you? Good morning.\n\nCaller\nI'm the good mail. My name is Efren. I'm just calling you Mail. I'm looking for work. You're not hiring people right now.\n\nRecipient\nWe're taking applications.\n\nCaller\nOkay.\n\nRecipient\nYou're welcome to come into the office to fill out an application.\n\nCaller\nCan I go? Okay, perfect. I'll be there.\n\nRecipient\nOkay. Thank you.\n\nCaller\nThank you, ma'. Am. Appreciate it. Bye. Bye."
-    },
     "241607547": {
       "wc_lead_id": "241607547",
       "phone": "+18174502300",
       "value": "Google Business Profile",
       "note": "WC #241607547 | Google Business Profile",
       "first_seen": "2026-06-16T21:15:18.465670+00:00",
-      "attempts": 222,
+      "attempts": 223,
       "caller_name": "Fort Worth Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
