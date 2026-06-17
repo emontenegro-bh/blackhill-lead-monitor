@@ -88,8 +88,10 @@ def clean_addr(addr):
 
 
 # Company shop / yard — show as "Shop" instead of the full street address.
-# Azuga geocodes the yard as either Grants Ln or Corina Dr (both in White Settlement).
-SHOP_STREET_HINTS = ("grants ln", "grants lane", "corina dr", "corina drive")
+# Azuga geocodes the yard a few different ways (Grants Ln, Corina Dr, or Ozona Ave),
+# all in White Settlement.
+SHOP_STREET_HINTS = ("grants ln", "grants lane", "corina dr", "corina drive",
+                     "ozona ave", "ozona avenue")
 
 
 def label_addr(addr):

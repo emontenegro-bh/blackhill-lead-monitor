@@ -2,9 +2,11 @@ name: Crew Location Report
 
 on:
   schedule:
-    # 21:00 UTC = 4:00pm CDT (summer) / 3:00pm CST (winter). One fast API call,
-    # so the email lands at ~4pm Central (summer). Weekdays only.
-    - cron: '0 21 * * 1-5'
+    # 20:43 UTC = 3:43pm CDT (summer) / 2:43pm CST (winter). Runs ~17 min early
+    # on an off-the-hour minute to dodge GitHub's top-of-hour scheduler congestion
+    # (which was delaying delivery to ~6pm), so the email lands by ~4pm Central.
+    # Weekdays only.
+    - cron: '43 20 * * 1-5'
   workflow_dispatch:
     inputs:
       to:
