@@ -492,7 +492,7 @@
     "last_lead": "2026-06-17T20:35:15.597053",
     "total_calls": 57
   },
-  "last_run": "2026-06-17T21:20:22.038964+00:00",
+  "last_run": "2026-06-17T21:25:19.659099+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1045,7 +1045,7 @@
       "value": "Phone Call ",
       "note": "WC #241808477 | Phone Call",
       "first_seen": "2026-06-17T20:15:27.063080+00:00",
-      "attempts": 14,
+      "attempts": 15,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1059,7 +1059,7 @@
       "value": "Google Business Profile",
       "note": "WC #241813924 | Google Business Profile",
       "first_seen": "2026-06-17T20:35:15.597027+00:00",
-      "attempts": 10,
+      "attempts": 11,
       "caller_name": "Lohman Robert",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
