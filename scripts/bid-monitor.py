@@ -122,6 +122,11 @@ BONFIRE_ORGS = [
     ("City of Dallas", "dallascityhall"),
     ("Parker County", "parkercountytx"),
     ("City of Burleson", "burlesontx"),
+    ("City of Lewisville", "cityoflewisville"),
+    ("Denton County", "dentoncounty"),
+    ("City of Southlake", "southlake"),
+    ("DFW Airport", "dfwairport"),
+    ("City of Frisco", "friscotexas"),  # friscotexas.gov/883 embeds this Bonfire portal
 ]
 
 
@@ -152,6 +157,12 @@ CIVICPLUS_SITES = [
     ("City of White Settlement", "https://www.wstx.us/Bids.aspx"),
     ("City of Azle", "https://www.cityofazle.org/Bids.aspx"),
     ("City of Forest Hill", "https://www.foresthilltx.org/Bids.aspx"),
+    ("City of Haslet", "https://www.haslet.org/Bids.aspx"),
+    ("City of Midlothian", "https://www.midlothian.tx.us/Bids.aspx"),
+    ("City of Kennedale", "https://www.cityofkennedale.com/Bids.aspx"),
+    ("City of Richland Hills", "https://www.richlandhills.com/Bids.aspx"),
+    ("City of Westworth Village", "https://www.cityofwestworth.com/Bids.aspx"),
+    ("City of Cleburne", "https://www.cleburne.net/Bids.aspx"),  # /207/Bid-Opportunities maps to this CivicPlus module
 ]
 
 
@@ -183,6 +194,14 @@ IONWAVE_SITES = [
     ("Tarrant County", "https://tarrantcountytx.ionwave.net/SourcingEvents.aspx?SourceType=1"),
     ("City of Keller", "https://cityofkeller.ionwave.net/SourcingEvents.aspx?SourceType=1"),
     ("Fort Worth ISD", "https://fwisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("City of Irving", "https://cityofirving.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("City of Grapevine", "https://gpvine.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Town of Flower Mound", "https://flower-mound.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("City of Carrollton", "https://carrolltonbids.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("City of Plano", "https://planotx.ionwave.net/SourcingEvents.aspx?SourceType=1"),  # /CurrentSourcingEvents.aspx 302s; this is the live path
+    ("White Settlement ISD", "https://wsisdebid.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Grapevine-Colleyville ISD", "https://gcisdbid.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Aledo ISD", "https://aledoisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
 ]
 
 
