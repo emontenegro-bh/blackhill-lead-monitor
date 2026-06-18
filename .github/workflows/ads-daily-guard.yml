@@ -45,9 +45,24 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .claude/states/ads-guard-state.json || true
-          git diff --staged --quiet || git commit -m "Ads guard snapshot - $(date +%Y-%m-%d)"
-          git pull --rebase || true
-          git push
+          if git diff --staged --quiet; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+          git commit -m "Ads guard snapshot - $(date +%Y-%m-%d)"
+          # This repo's main races with state-file bots every few minutes; the push
+          # can lose the race in the gap between rebase and push. Retry the
+          # rebase+push loop before failing (see feedback_lead_monitor_push_rebase).
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push; then
+              echo "Pushed guard state on attempt $i."
+              exit 0
+            fi
+            echo "Push attempt $i lost the race; retrying..."
+            sleep 5
+          done
+          echo "ERROR: could not push guard state after 5 attempts."
+          exit 1
 
   notify-failure:
     needs: [guard]

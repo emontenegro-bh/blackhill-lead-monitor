@@ -36,9 +36,23 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .claude/reports/marketing/seo/weekly/*.md .claude/reports/marketing/seo/weekly/*.json || true
-          git diff --staged --quiet || git commit -m "Weekly SEO audit - $(date +%Y-%m-%d)"
-          git pull --rebase || true
-          git push
+          if git diff --staged --quiet; then
+            echo "No audit changes to commit."
+            exit 0
+          fi
+          git commit -m "Weekly SEO audit - $(date +%Y-%m-%d)"
+          # main races with state-file bots; retry rebase+push before failing
+          # (see feedback_lead_monitor_push_rebase).
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push; then
+              echo "Pushed on attempt $i."
+              exit 0
+            fi
+            echo "Push attempt $i lost the race; retrying..."
+            sleep 5
+          done
+          echo "ERROR: could not push after 5 attempts."
+          exit 1
 
   notify-failure:
     needs: [audit]
