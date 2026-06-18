@@ -491,15 +491,16 @@
     "241988799",
     "241988243",
     "241999358",
-    "242019123"
+    "242019123",
+    "242055882"
   ],
   "stats": {
-    "total_leads": 201,
+    "total_leads": 202,
     "total_spam": 225,
-    "last_lead": "2026-06-18T19:30:22.087860",
-    "total_calls": 60
+    "last_lead": "2026-06-18T21:55:17.138302",
+    "total_calls": 61
   },
-  "last_run": "2026-06-18T21:50:15.750992+00:00",
+  "last_run": "2026-06-18T21:55:17.139683+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1059,13 +1060,27 @@
       "value": "Google Organic",
       "note": "WC #241988243 | Google Organic | Landing: /blog/landscaping-secrets-for-a-drought-resilient-texas-lawn",
       "first_seen": "2026-06-18T17:45:19.329469+00:00",
-      "attempts": 51,
+      "attempts": 52,
       "caller_name": "Creative",
       "lead_source_raw": "google",
       "lead_medium_raw": "organic",
       "call_duration": "1 minute and 12 seconds",
       "received_at": "2026-06-18T17:42:24Z",
       "transcription": "Recipient\nForeign. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment. Thank you for calling Black Hill. How can I direct your call?\n\nCaller\nWho is this? Ma', am.\n\nRecipient\nHi, this is Black Hill Landscaping. How can we help you?\n\nCaller\nI think I have the wrong number. I was calling Firefighters, Movers. I'm sorry.\n\nRecipient\nOh, unfortunately, that's not us.\n\nCaller\nThe number I called was. Well, okay. I called 817380.\n\nRecipient\nWhat number did you dial?\n\nCaller\nWait a minute. Let me give you the number I called. They may have changed their number. 817-380-8161. Is that your number?\n\nRecipient\nNo, that is not our number. I think you might have dialed the wrong one.\n\nCaller\nOh, I'm sorry. Thank you for answering.\n\nRecipient\nNo worries. Have a good day. Bye.\n\nCaller\nThank you."
+    },
+    "242055882": {
+      "wc_lead_id": "242055882",
+      "phone": "+18172337680",
+      "value": "Google Business Profile",
+      "note": "WC #242055882 | Google Business Profile",
+      "first_seen": "2026-06-18T21:55:17.138273+00:00",
+      "attempts": 1,
+      "caller_name": "Eason James",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "34 seconds",
+      "received_at": "2026-06-18T21:54:12Z",
+      "transcription": "Recipient\nGood afternoon. Thank you for calling black hill landscaping. This is carlos. I'm a director. Call black hill landscaping. This. This is carlos with black hill landscaping. How may I direct your."
     }
   },
   "round_robin_state": {
