@@ -499,7 +499,7 @@
     "last_lead": "2026-06-18T19:30:22.087860",
     "total_calls": 60
   },
-  "last_run": "2026-06-18T20:35:16.959450+00:00",
+  "last_run": "2026-06-18T20:40:20.175197+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1053,27 +1053,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "241813924": {
-      "wc_lead_id": "241813924",
-      "phone": "+18179097271",
-      "value": "Google Business Profile",
-      "note": "WC #241813924 | Google Business Profile",
-      "first_seen": "2026-06-17T20:35:15.597027+00:00",
-      "attempts": 295,
-      "caller_name": "Lohman Robert",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "1 minute and 28 seconds",
-      "received_at": "2026-06-17T20:32:55Z",
-      "transcription": "Recipient\nGood afternoon. Thank you for calling Blackville Landscaping. This is Carlos. I may direct your call.\n\nCaller\nCarlos. My name is Bob Lohman and I'm with Stone Surface Solutions. We are distributor for stain proof sealers. And with your permission, I'd like to email you a little, you know, a little bit of information about us and how maybe, I don't know if you guys use sealers or not on any of your projects, but we would be a good source for you.\n\nRecipient\nI can provide you with an email and you can send any information there. If interested. Somebody will reach out to you.\n\nCaller\nThank you very much. What would that be?\n\nRecipient\nWhenever you're ready. Hello? H E L L O.\n\nCaller\nIf. H e l l. Okay.\n\nRecipient\n@blackkilltx for TexasTX.com.\n\nCaller\nC k h I l l. And what was it?\n\nRecipient\nTxt for tom.x for xavier.com.\n\nCaller\nOh, okay. Dot com. Okay, sir, thank you for talking to me.\n\nRecipient\nYes. All right. You're welcome. Bye. Bye.\n\nCaller\nGood day."
-    },
     "241988243": {
       "wc_lead_id": "241988243",
       "phone": "+18174294295",
       "value": "Google Organic",
       "note": "WC #241988243 | Google Organic | Landing: /blog/landscaping-secrets-for-a-drought-resilient-texas-lawn",
       "first_seen": "2026-06-18T17:45:19.329469+00:00",
-      "attempts": 36,
+      "attempts": 37,
       "caller_name": "Creative",
       "lead_source_raw": "google",
       "lead_medium_raw": "organic",
