@@ -6,9 +6,9 @@
       "tcpa": 80.0
     },
     "BH_FertWeedControl_Search": {
-      "bidding": "TARGET_SPEND",
+      "bidding": "MAXIMIZE_CONVERSIONS",
       "budget": 50.0,
-      "tcpa": 0.0
+      "tcpa": 85.0
     },
     "BH_LeadGen_Form_Search": {
       "bidding": "MAXIMIZE_CONVERSIONS",
@@ -18,7 +18,7 @@
     "BH_PC_Irrigationservice": {
       "bidding": "MAXIMIZE_CONVERSIONS",
       "budget": 50.0,
-      "tcpa": 65.0
+      "tcpa": 75.0
     }
   },
   "conv_goals": {
@@ -42,5 +42,5 @@
     "local_services_message_lead": true,
     "local_services_phone_lead": true
   },
-  "updated": "2026-06-17T15:55:37.661440"
+  "updated": "2026-06-18T17:15:10.470074"
 }
