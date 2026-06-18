@@ -500,7 +500,7 @@
     "last_lead": "2026-06-18T21:55:17.138302",
     "total_calls": 61
   },
-  "last_run": "2026-06-18T22:23:09.846663+00:00",
+  "last_run": "2026-06-18T22:25:13.224965+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1060,7 +1060,7 @@
       "value": "Google Organic",
       "note": "WC #241988243 | Google Organic | Landing: /blog/landscaping-secrets-for-a-drought-resilient-texas-lawn",
       "first_seen": "2026-06-18T17:45:19.329469+00:00",
-      "attempts": 58,
+      "attempts": 59,
       "caller_name": "Creative",
       "lead_source_raw": "google",
       "lead_medium_raw": "organic",
@@ -1074,7 +1074,7 @@
       "value": "Google Business Profile",
       "note": "WC #242055882 | Google Business Profile",
       "first_seen": "2026-06-18T21:55:17.138273+00:00",
-      "attempts": 7,
+      "attempts": 8,
       "caller_name": "Eason James",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
