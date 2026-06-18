@@ -499,7 +499,7 @@
     "last_lead": "2026-06-18T19:30:22.087860",
     "total_calls": 60
   },
-  "last_run": "2026-06-18T19:55:21.288595+00:00",
+  "last_run": "2026-06-18T20:00:29.386419+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1059,7 +1059,7 @@
       "value": "Phone Call ",
       "note": "WC #241808477 | Phone Call",
       "first_seen": "2026-06-17T20:15:27.063080+00:00",
-      "attempts": 291,
+      "attempts": 292,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1073,7 +1073,7 @@
       "value": "Google Business Profile",
       "note": "WC #241813924 | Google Business Profile",
       "first_seen": "2026-06-17T20:35:15.597027+00:00",
-      "attempts": 287,
+      "attempts": 288,
       "caller_name": "Lohman Robert",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1087,27 +1087,13 @@
       "value": "Google Organic",
       "note": "WC #241988243 | Google Organic | Landing: /blog/landscaping-secrets-for-a-drought-resilient-texas-lawn",
       "first_seen": "2026-06-18T17:45:19.329469+00:00",
-      "attempts": 28,
+      "attempts": 29,
       "caller_name": "Creative",
       "lead_source_raw": "google",
       "lead_medium_raw": "organic",
       "call_duration": "1 minute and 12 seconds",
       "received_at": "2026-06-18T17:42:24Z",
       "transcription": "Recipient\nForeign. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment. Thank you for calling Black Hill. How can I direct your call?\n\nCaller\nWho is this? Ma', am.\n\nRecipient\nHi, this is Black Hill Landscaping. How can we help you?\n\nCaller\nI think I have the wrong number. I was calling Firefighters, Movers. I'm sorry.\n\nRecipient\nOh, unfortunately, that's not us.\n\nCaller\nThe number I called was. Well, okay. I called 817380.\n\nRecipient\nWhat number did you dial?\n\nCaller\nWait a minute. Let me give you the number I called. They may have changed their number. 817-380-8161. Is that your number?\n\nRecipient\nNo, that is not our number. I think you might have dialed the wrong one.\n\nCaller\nOh, I'm sorry. Thank you for answering.\n\nRecipient\nNo worries. Have a good day. Bye.\n\nCaller\nThank you."
-    },
-    "242019123": {
-      "wc_lead_id": "242019123",
-      "phone": "+15126944739",
-      "value": "Google Organic",
-      "note": "WC #242019123 | Google Organic | Landing: /areas-we-serve/aledo",
-      "first_seen": "2026-06-18T19:30:22.087830+00:00",
-      "attempts": 7,
-      "caller_name": "Solano Austin",
-      "lead_source_raw": "google",
-      "lead_medium_raw": "organic",
-      "call_duration": "3 minutes and 28 seconds",
-      "received_at": "2026-06-18T19:25:55Z",
-      "transcription": "Recipient\nGood afternoon. Thank you for calling Black Hill Landscaping. This is Carlos and my director. Call.\n\nCaller\nHi, Carlos, My name is Austin. I'm interested in speaking with somebody about solving a drain problem I have outside. They've identified some blockage and wanted to see if you guys could help me out.\n\nRecipient\nOkay. Are you a current customer of ours? Previous customer. Or would you be a new customer?\n\nCaller\nNew customer.\n\nRecipient\nOkay, give me one second. I'm just going to take some information down from you and then I'll go ahead and have our sales team reach out to you. Okay.\n\nCaller\nOkay.\n\nRecipient\nAll righty. And then what is your address?\n\nCaller\n13817 Greenhook Road, Alito, Texas, 7600.\n\nRecipient\nOkay. All right, perfect. Okay, so it is within our service area. Just wanted to make sure. And then. Okay, one second. All right, so can I get your name, last name, and then email address, which is where we would be sending you the date for when they're going to go to the walkthrough and then they'll send you the proposal there.\n\nCaller\nYes, it's austin. A u s t I n. Last name solano. S o l a, n o. And it's.\n\nRecipient\nOkay.\n\nCaller\nAustin solano gmail.\n\nRecipient\nAustin. What? I'm sorry.\n\nCaller\nAustin solano gmail.\n\nRecipient\nOkay. Solano at Gmail. And would this be a good number to call you back? 512-694-4739.\n\nCaller\nYes.\n\nRecipient\nOkay. All right. And then you said it's for a drainage. It's. What is the issue with it? The. It's a French drain. You.\n\nCaller\nYeah, but it's a drain that literally takes like a 75 degree angle. And the plumber said, hey, you got some blockage right there. So a landscaping company could come out here and probably dig up this exact spot right here, clean that out or replace it and then. Yeah, that's why I'm calling, calling you guys.\n\nRecipient\nOkay? No problem. Perfect. Did the drainage issue.\n\nCaller\nIt's not a big job, but you could go a long way with me. So it's.\n\nRecipient\nYeah, no problem. Okay, take the 75 degree angle. If there's a blockage, maybe jig it clean out and replace. Perfect. So what they do is they'll reach back out to you and then they'll send you a date as to when they have availability to go and inspect it. And then based off of that, they'll just go ahead and send you out a proposal as to what they recommend.\n\nCaller\nSounds good. Thank you.\n\nRecipient\nOkay, perfect. Thank you. Have a good one. If you don't hear from them by end of day today, please give me a call back. Well, not end of day, I'm sorry. By around 4:30, give me a call. So I can just notify them, let them know and they'll call you with probably, if not today, by tomorrow morning.\n\nCaller\nAll right, Sounds good. Thank you.\n\nRecipient\nThank you. Bye. Bye."
     }
   },
   "round_robin_state": {
