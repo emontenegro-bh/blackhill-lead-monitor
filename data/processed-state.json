@@ -499,7 +499,7 @@
     "last_lead": "2026-06-18T19:30:22.087860",
     "total_calls": 60
   },
-  "last_run": "2026-06-18T20:55:14.916565+00:00",
+  "last_run": "2026-06-18T21:00:22.435546+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1059,7 +1059,7 @@
       "value": "Google Organic",
       "note": "WC #241988243 | Google Organic | Landing: /blog/landscaping-secrets-for-a-drought-resilient-texas-lawn",
       "first_seen": "2026-06-18T17:45:19.329469+00:00",
-      "attempts": 40,
+      "attempts": 41,
       "caller_name": "Creative",
       "lead_source_raw": "google",
       "lead_medium_raw": "organic",
