@@ -487,15 +487,17 @@
     "241813924",
     "241832262",
     "241838955",
-    "241900511"
+    "241900511",
+    "241988799",
+    "241988243"
   ],
   "stats": {
-    "total_leads": 198,
-    "total_spam": 224,
-    "last_lead": "2026-06-17T21:55:17.698848",
-    "total_calls": 58
+    "total_leads": 199,
+    "total_spam": 225,
+    "last_lead": "2026-06-18T17:45:19.329496",
+    "total_calls": 59
   },
-  "last_run": "2026-06-18T17:40:18.224351+00:00",
+  "last_run": "2026-06-18T17:45:19.330610+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1048,7 +1050,7 @@
       "value": "Phone Call ",
       "note": "WC #241808477 | Phone Call",
       "first_seen": "2026-06-17T20:15:27.063080+00:00",
-      "attempts": 263,
+      "attempts": 264,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1062,13 +1064,27 @@
       "value": "Google Business Profile",
       "note": "WC #241813924 | Google Business Profile",
       "first_seen": "2026-06-17T20:35:15.597027+00:00",
-      "attempts": 259,
+      "attempts": 260,
       "caller_name": "Lohman Robert",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "1 minute and 28 seconds",
       "received_at": "2026-06-17T20:32:55Z",
       "transcription": "Recipient\nGood afternoon. Thank you for calling Blackville Landscaping. This is Carlos. I may direct your call.\n\nCaller\nCarlos. My name is Bob Lohman and I'm with Stone Surface Solutions. We are distributor for stain proof sealers. And with your permission, I'd like to email you a little, you know, a little bit of information about us and how maybe, I don't know if you guys use sealers or not on any of your projects, but we would be a good source for you.\n\nRecipient\nI can provide you with an email and you can send any information there. If interested. Somebody will reach out to you.\n\nCaller\nThank you very much. What would that be?\n\nRecipient\nWhenever you're ready. Hello? H E L L O.\n\nCaller\nIf. H e l l. Okay.\n\nRecipient\n@blackkilltx for TexasTX.com.\n\nCaller\nC k h I l l. And what was it?\n\nRecipient\nTxt for tom.x for xavier.com.\n\nCaller\nOh, okay. Dot com. Okay, sir, thank you for talking to me.\n\nRecipient\nYes. All right. You're welcome. Bye. Bye.\n\nCaller\nGood day."
+    },
+    "241988243": {
+      "wc_lead_id": "241988243",
+      "phone": "+18174294295",
+      "value": "Google Organic",
+      "note": "WC #241988243 | Google Organic | Landing: /blog/landscaping-secrets-for-a-drought-resilient-texas-lawn",
+      "first_seen": "2026-06-18T17:45:19.329469+00:00",
+      "attempts": 1,
+      "caller_name": "Creative",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "organic",
+      "call_duration": "1 minute and 12 seconds",
+      "received_at": "2026-06-18T17:42:24Z",
+      "transcription": "Recipient\nForeign. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment. Thank you for calling Black Hill. How can I direct your call?\n\nCaller\nWho is this? Ma', am.\n\nRecipient\nHi, this is Black Hill Landscaping. How can we help you?\n\nCaller\nI think I have the wrong number. I was calling Firefighters, Movers. I'm sorry.\n\nRecipient\nOh, unfortunately, that's not us.\n\nCaller\nThe number I called was. Well, okay. I called 817380.\n\nRecipient\nWhat number did you dial?\n\nCaller\nWait a minute. Let me give you the number I called. They may have changed their number. 817-380-8161. Is that your number?\n\nRecipient\nNo, that is not our number. I think you might have dialed the wrong one.\n\nCaller\nOh, I'm sorry. Thank you for answering.\n\nRecipient\nNo worries. Have a good day. Bye.\n\nCaller\nThank you."
     }
   },
   "round_robin_state": {
