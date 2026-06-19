@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-18T15:55:32.922189+00:00",
+  "last_run": "2026-06-19T15:43:26.929468+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -141,6 +141,10 @@
       "first_seen": "2026-06-11",
       "title": "Data Center Network Infrastructure Services"
     },
+    "bonfire-dallascityhall:237476": {
+      "first_seen": "2026-06-19",
+      "title": "Gymnasium Floor Maintenance and Repair"
+    },
     "bonfire-dallascityhall:237510": {
       "first_seen": "2026-06-11",
       "title": "Sewer Odor and Corrosion Control Services"
@@ -217,6 +221,10 @@
       "first_seen": "2026-06-16",
       "title": "Purchase of AIR COMPRESSORS AND ACCESSORIES, MAINTENANCE AND REPAIR"
     },
+    "bonfire-dallascityhall:240783": {
+      "first_seen": "2026-06-19",
+      "title": "Swimming Pool & Water Fountain Chemicals & Supplies"
+    },
     "bonfire-dallascityhall:240808": {
       "first_seen": "2026-06-17",
       "title": "Purchase of TESTING AND CALIBRATION SERVICES - *218646"
@@ -233,9 +241,21 @@
       "first_seen": "2026-06-17",
       "title": "Purchase of PIPE AND TUBING FITTINGS *218143"
     },
+    "bonfire-dallascityhall:241151": {
+      "first_seen": "2026-06-19",
+      "title": "Alarm Services - Monitoring, Installation, Maintenance and Repairs"
+    },
     "bonfire-dallascityhall:241167": {
       "first_seen": "2026-06-18",
       "title": "Purchase of - FASTENING, PACKAGING, STRAPPING, TYING EQUIPMENT & SUPPLIES *218352"
+    },
+    "bonfire-dallascityhall:241201": {
+      "first_seen": "2026-06-19",
+      "title": "Parking Citation and Meter Management"
+    },
+    "bonfire-dallascityhall:241270": {
+      "first_seen": "2026-06-19",
+      "title": "Solar Power Equipment Maintenance and Repair"
     },
     "bonfire-fortworthtexas:178620": {
       "first_seen": "2026-06-11",
@@ -405,6 +425,10 @@
       "first_seen": "2026-06-11",
       "title": "Historic Water Tower Refurbishment"
     },
+    "grandprairie:143265": {
+      "first_seen": "2026-06-19",
+      "title": "Crack and Joint Sealing Services"
+    },
     "ionwave-fortworthisd:26-070-A": {
       "first_seen": "2026-06-11",
       "title": "General Retail Merchandise,Groceries,Supplies,Equipment and Services"
@@ -521,6 +545,10 @@
       "first_seen": "2026-06-12",
       "title": "Medical Examiner's Office Drying Rooms Renovation"
     },
+    "ionwave-tarrantcounty:F2026138 Addendum 1": {
+      "first_seen": "2026-06-19",
+      "title": "Medical Examiner's Office Drying Rooms Renovation"
+    },
     "ionwave-tarrantcounty:F2026139": {
       "first_seen": "2026-06-11",
       "title": "Annual Contract for Aerial Application of Pesticides for Mosquito Control"
@@ -607,19 +635,18 @@
     }
   },
   "source_failures": {
-    "Aledo ISD": 1,
-    "BidNet Direct (regional)": 1,
-    "City of Carrollton": 1,
-    "City of Euless": 1,
-    "City of Frisco": 1,
-    "City of Grapevine": 1,
-    "City of Irving": 1,
-    "City of Lewisville": 1,
-    "City of Plano": 1,
-    "City of Southlake": 1,
-    "DFW Airport": 1,
-    "Denton County": 1,
-    "Town of Flower Mound": 1,
-    "White Settlement ISD": 1
+    "Aledo ISD": 2,
+    "City of Carrollton": 2,
+    "City of Frisco": 2,
+    "City of Grapevine": 2,
+    "City of Irving": 2,
+    "City of Lewisville": 2,
+    "City of Plano": 2,
+    "City of Southlake": 2,
+    "DFW Airport": 2,
+    "Denton County": 2,
+    "Grapevine-Colleyville ISD": 1,
+    "Town of Flower Mound": 2,
+    "White Settlement ISD": 2
   }
 }
