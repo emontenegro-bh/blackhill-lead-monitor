@@ -505,7 +505,7 @@
     "last_lead": "2026-06-19T19:05:15.335618",
     "total_calls": 63
   },
-  "last_run": "2026-06-19T19:30:17.711237+00:00",
+  "last_run": "2026-06-19T19:35:15.689275+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1072,7 +1072,7 @@
       "value": "Google Business Profile",
       "note": "WC #242055882 | Google Business Profile",
       "first_seen": "2026-06-18T21:55:17.138273+00:00",
-      "attempts": 265,
+      "attempts": 266,
       "caller_name": "Eason James",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1086,7 +1086,7 @@
       "value": "Google Business Profile",
       "note": "WC #242165773 | Google Business Profile",
       "first_seen": "2026-06-19T16:20:18.365179+00:00",
-      "attempts": 39,
+      "attempts": 40,
       "caller_name": "Coral Spring Fl",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1100,7 +1100,7 @@
       "value": "Phone Call ",
       "note": "WC #242212911 | Phone Call",
       "first_seen": "2026-06-19T19:05:15.335584+00:00",
-      "attempts": 6,
+      "attempts": 7,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
