@@ -503,7 +503,7 @@
     "last_lead": "2026-06-19T16:20:18.365221",
     "total_calls": 62
   },
-  "last_run": "2026-06-19T17:45:15.037829+00:00",
+  "last_run": "2026-06-19T17:50:18.581955+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1064,27 +1064,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "241988243": {
-      "wc_lead_id": "241988243",
-      "phone": "+18174294295",
-      "value": "Google Organic",
-      "note": "WC #241988243 | Google Organic | Landing: /blog/landscaping-secrets-for-a-drought-resilient-texas-lawn",
-      "first_seen": "2026-06-18T17:45:19.329469+00:00",
-      "attempts": 294,
-      "caller_name": "Creative",
-      "lead_source_raw": "google",
-      "lead_medium_raw": "organic",
-      "call_duration": "1 minute and 12 seconds",
-      "received_at": "2026-06-18T17:42:24Z",
-      "transcription": "Recipient\nForeign. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment. Thank you for calling Black Hill. How can I direct your call?\n\nCaller\nWho is this? Ma', am.\n\nRecipient\nHi, this is Black Hill Landscaping. How can we help you?\n\nCaller\nI think I have the wrong number. I was calling Firefighters, Movers. I'm sorry.\n\nRecipient\nOh, unfortunately, that's not us.\n\nCaller\nThe number I called was. Well, okay. I called 817380.\n\nRecipient\nWhat number did you dial?\n\nCaller\nWait a minute. Let me give you the number I called. They may have changed their number. 817-380-8161. Is that your number?\n\nRecipient\nNo, that is not our number. I think you might have dialed the wrong one.\n\nCaller\nOh, I'm sorry. Thank you for answering.\n\nRecipient\nNo worries. Have a good day. Bye.\n\nCaller\nThank you."
-    },
     "242055882": {
       "wc_lead_id": "242055882",
       "phone": "+18172337680",
       "value": "Google Business Profile",
       "note": "WC #242055882 | Google Business Profile",
       "first_seen": "2026-06-18T21:55:17.138273+00:00",
-      "attempts": 243,
+      "attempts": 244,
       "caller_name": "Eason James",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1098,7 +1084,7 @@
       "value": "Google Business Profile",
       "note": "WC #242165773 | Google Business Profile",
       "first_seen": "2026-06-19T16:20:18.365179+00:00",
-      "attempts": 17,
+      "attempts": 18,
       "caller_name": "Coral Spring Fl",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
