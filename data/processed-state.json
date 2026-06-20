@@ -508,7 +508,7 @@
     "last_lead": "2026-06-19T19:05:15.335618",
     "total_calls": 63
   },
-  "last_run": "2026-06-20T18:05:14.965152+00:00",
+  "last_run": "2026-06-20T18:10:15.005324+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1075,7 +1075,7 @@
       "value": "Phone Call ",
       "note": "WC #242212911 | Phone Call",
       "first_seen": "2026-06-19T19:05:15.335584+00:00",
-      "attempts": 286,
+      "attempts": 287,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
