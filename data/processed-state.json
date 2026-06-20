@@ -508,7 +508,7 @@
     "last_lead": "2026-06-19T19:05:15.335618",
     "total_calls": 63
   },
-  "last_run": "2026-06-20T19:05:14.162944+00:00",
+  "last_run": "2026-06-20T19:10:16.912107+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1068,22 +1068,7 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "242212911": {
-      "wc_lead_id": "242212911",
-      "phone": "+13256274082",
-      "value": "Phone Call ",
-      "note": "WC #242212911 | Phone Call",
-      "first_seen": "2026-06-19T19:05:15.335584+00:00",
-      "attempts": 298,
-      "caller_name": "Oaks Eric",
-      "lead_source_raw": "(direct)",
-      "lead_medium_raw": "(none)",
-      "call_duration": "2 minutes and 8 seconds",
-      "received_at": "2026-06-19T19:02:44Z",
-      "transcription": "Recipient\nGood afternoon. Thank you for coming back to landscaping. This is Kyla Samaya, Director Kong.\n\nCaller\nYeah, this is Eric Oaks, 2801 Flambago Drive, Fort Worth. And I was just calling. I've been trying to get a hold of Denise, but I had a little trouble getting a hold of her, getting a call back or anything.\n\nRecipient\nGive me one second. Mr. Oaks, I did speak with her and let me just check because I believe.\n\nCaller\nGive me one second.\n\nRecipient\nIt's going to be for tomorrow. Give me one second.\n\nCaller\nOkay?\n\nRecipient\nGive me. I'm just going over the messages.\n\nCaller\nOkay.\n\nRecipient\nIt's going to be next week. I don't have a date yet right now because of the. Due to the rain, so because of the weather, they had to be pushed. So it'll be next week. Let me just confirm with her and see when she's going to go ahead and schedule you okay?\n\nCaller\nOkay, that'll be great. Yeah, next week is fine, because like I said, we've been getting rain, so my grass is not any danger of dying or nothing, you know, so that's good.\n\nRecipient\nYeah, no, I know. And we can't send her like our guys aren't in due to the rain. But let me just get with Denise and see when she. When she's available to send somebody out there.\n\nCaller\nOkay.\n\nRecipient\nOkay? All right, I'll follow up with you. You can follow up with me if you want Monday, but I'll still. I'll try and call you as soon as I have an answer from her.\n\nCaller\nOkay. Yeah, that'd be great. I probably check back Monday if you're not able to get back with me today, whatever. That's okay. I'll check back Monday.\n\nRecipient\nOkay? Perfect. All righty, Mr. Oates. Thank you. All righty and bye. Bye.\n\nCaller\nOkay. Talk to you later."
-    }
-  },
+  "pending_call_attributions": {},
   "round_robin_state": {
     "last_index": 1
   }
