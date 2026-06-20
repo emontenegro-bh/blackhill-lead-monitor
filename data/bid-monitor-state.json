@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-19T15:43:26.929468+00:00",
+  "last_run": "2026-06-20T14:31:07.540367+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -589,6 +589,10 @@
       "first_seen": "2026-06-11",
       "title": "Bid posting #213224 (open title on site)"
     },
+    "publicpurchase:213686": {
+      "first_seen": "2026-06-20",
+      "title": "Bid posting #213686 (open title on site)"
+    },
     "saginaw:https://www.ci.saginaw.tx.us/government/bid_detail_T10_R16.php": {
       "first_seen": "2026-06-11",
       "title": "CANCELED -Valve Replacement Bid Proposal"
@@ -635,18 +639,18 @@
     }
   },
   "source_failures": {
-    "Aledo ISD": 2,
-    "City of Carrollton": 2,
-    "City of Frisco": 2,
-    "City of Grapevine": 2,
-    "City of Irving": 2,
-    "City of Lewisville": 2,
-    "City of Plano": 2,
-    "City of Southlake": 2,
-    "DFW Airport": 2,
-    "Denton County": 2,
-    "Grapevine-Colleyville ISD": 1,
-    "Town of Flower Mound": 2,
-    "White Settlement ISD": 2
+    "Aledo ISD": 3,
+    "City of Carrollton": 3,
+    "City of Frisco": 3,
+    "City of Grapevine": 3,
+    "City of Irving": 3,
+    "City of Lewisville": 3,
+    "City of Plano": 3,
+    "City of Southlake": 3,
+    "DFW Airport": 3,
+    "Denton County": 3,
+    "Grapevine-Colleyville ISD": 2,
+    "Town of Flower Mound": 3,
+    "White Settlement ISD": 3
   }
 }
