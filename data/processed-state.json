@@ -509,7 +509,7 @@
     "last_lead": "2026-06-21T16:00:18.019460",
     "total_calls": 64
   },
-  "last_run": "2026-06-21T18:50:15.069648+00:00",
+  "last_run": "2026-06-21T18:55:13.915613+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1076,7 +1076,7 @@
       "value": "Google Ads",
       "note": "WC #242389444 | Google Ads | Keyword: fort worth sod installation | Landing: /areas-we-serve/fort-worth/sod-installation",
       "first_seen": "2026-06-21T16:00:18.019431+00:00",
-      "attempts": 37,
+      "attempts": 38,
       "caller_name": "Markwood Calvin",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
