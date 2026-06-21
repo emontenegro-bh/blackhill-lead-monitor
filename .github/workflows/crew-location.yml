@@ -7,6 +7,12 @@ on:
   # was delaying / dropping the 4pm email. See repo README for the cron-job setup.
   repository_dispatch:
     types: [crew-location-report]
+  # INTERIM safety net (re-added 2026-06-21): GitHub schedules drift late / get
+  # skipped, but this guarantees the report fires while the reliable cron-job.org
+  # external trigger is being set up. REMOVE this schedule block once cron-job.org
+  # is confirmed delivering, to avoid duplicate emails. 20:37 UTC = 3:37pm CDT.
+  schedule:
+    - cron: '37 20 * * 1-5'
   workflow_dispatch:
     inputs:
       to:
