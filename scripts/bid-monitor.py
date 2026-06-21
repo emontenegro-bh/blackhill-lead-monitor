@@ -71,6 +71,10 @@ EXCLUDE_KEYWORDS = [
     "architectural", "engineering", "surveying", "appraisal", "acquisition",
     "janitorial", "electrical", "plumbing", "roofing", "asbestos", "paving",
     "auditing", "software", "insurance", "legal services", "demolition",
+    # Construction-delivery / prime-contractor procurements that merely contain
+    # "landscape" — Black Hill would be a sub, not the bidder (Evelin, Jun 21).
+    "construction manager at risk", "cmar", "design-build", "design build",
+    "state let construction", "state-let construction",
 ]
 
 # BidNet returns statewide results; keep only DFW-area agencies.
