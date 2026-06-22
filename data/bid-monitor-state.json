@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-22T17:15:35.339396+00:00",
+  "last_run": "2026-06-22T21:11:01.173964+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -84,6 +84,10 @@
     "bonfire-burlesontx:237718": {
       "first_seen": "2026-06-11",
       "title": "Hidden creek Softball Complex Demolition"
+    },
+    "bonfire-cityoflewisville:238526": {
+      "first_seen": "2026-06-22",
+      "title": "Annual Contract for Generator Maintenance"
     },
     "bonfire-dallascityhall:229821": {
       "first_seen": "2026-06-11",
@@ -257,6 +261,78 @@
       "first_seen": "2026-06-19",
       "title": "Solar Power Equipment Maintenance and Repair"
     },
+    "bonfire-dallascityhall:241489": {
+      "first_seen": "2026-06-22",
+      "title": "Purchase of Universal Input Panel Meter - *218374"
+    },
+    "bonfire-dallascityhall:241542": {
+      "first_seen": "2026-06-22",
+      "title": "Purchase of Filter Pads, Vacuum Gauge, Fischer & Porter - *218295"
+    },
+    "bonfire-dentoncounty:232332": {
+      "first_seen": "2026-06-22",
+      "title": "Alton Bridge Bank Stabilization & Bridge Scour"
+    },
+    "bonfire-dfwairport:229891": {
+      "first_seen": "2026-06-22",
+      "title": "Airport Wide Pest Management"
+    },
+    "bonfire-dfwairport:231369": {
+      "first_seen": "2026-06-22",
+      "title": "Terminal F Custodial Services"
+    },
+    "bonfire-dfwairport:234498": {
+      "first_seen": "2026-06-22",
+      "title": "Escalator and Moving Sidewalk Cleaning Services"
+    },
+    "bonfire-dfwairport:236137": {
+      "first_seen": "2026-06-22",
+      "title": "Professional Research Data Collection Services"
+    },
+    "bonfire-dfwairport:236487": {
+      "first_seen": "2026-06-22",
+      "title": "Organic Food Waste Processing"
+    },
+    "bonfire-dfwairport:236897": {
+      "first_seen": "2026-06-22",
+      "title": "Terminal D South Digital Curbside & Directories"
+    },
+    "bonfire-dfwairport:237902": {
+      "first_seen": "2026-06-22",
+      "title": "AI Video Creation Services"
+    },
+    "bonfire-dfwairport:239658": {
+      "first_seen": "2026-06-22",
+      "title": "Parking Lot Striping Services"
+    },
+    "bonfire-dfwairport:239705": {
+      "first_seen": "2026-06-22",
+      "title": "Terminal B Parking Garage Rehabilitation (Section A)"
+    },
+    "bonfire-dfwairport:240600": {
+      "first_seen": "2026-06-22",
+      "title": "Executive Photography & Related Services"
+    },
+    "bonfire-dfwairport:241017": {
+      "first_seen": "2026-06-22",
+      "title": "Request for Quote - Executive Placement Services"
+    },
+    "bonfire-dfwairport:241123": {
+      "first_seen": "2026-06-22",
+      "title": "Replacement Parts for AOA Gate Strong Arms"
+    },
+    "bonfire-dfwairport:241350": {
+      "first_seen": "2026-06-22",
+      "title": "Falconry Services"
+    },
+    "bonfire-dfwairport:241415": {
+      "first_seen": "2026-06-22",
+      "title": "Broom Brush & Mounting Kit for Kubota Tractor"
+    },
+    "bonfire-dfwairport:241509": {
+      "first_seen": "2026-06-22",
+      "title": "Miscellaneous Industrial Items"
+    },
     "bonfire-fortworthtexas:178620": {
       "first_seen": "2026-06-11",
       "title": "ITB Paving Improvements: Trinity Park, Z. Boaz South Park, and Pecan Valley Golf Course"
@@ -349,6 +425,18 @@
       "first_seen": "2026-06-17",
       "title": "PW 2027 Concrete Restoration Contract 3, City Project No. 106806"
     },
+    "bonfire-friscotexas:236404": {
+      "first_seen": "2026-06-22",
+      "title": "Timber Ridge EST Rehabilitation"
+    },
+    "bonfire-friscotexas:238278": {
+      "first_seen": "2026-06-22",
+      "title": "Sterling Ranch Pavement Improvements"
+    },
+    "bonfire-friscotexas:240066": {
+      "first_seen": "2026-06-22",
+      "title": "Safe Streets For All (SS4A) Grant Program Consultant Services"
+    },
     "bonfire-parkercountytx:239131": {
       "first_seen": "2026-06-11",
       "title": "Pavement Striping Services"
@@ -356,6 +444,18 @@
     "bonfire-parkercountytx:240505": {
       "first_seen": "2026-06-13",
       "title": "BALLISTIC WINDSHIELDS"
+    },
+    "bonfire-southlake:233327": {
+      "first_seen": "2026-06-22",
+      "title": "******** NOTIFICATION ONLY ******** TURF & PARKING IMPROVEMENTS AT NORTH PARK ******** NOTIFICATION ONLY ********"
+    },
+    "bonfire-southlake:235973": {
+      "first_seen": "2026-06-22",
+      "title": "Cloud Based Artificial Intelligence Platform for City of Southlake"
+    },
+    "bonfire-southlake:240696": {
+      "first_seen": "2026-06-22",
+      "title": "******** NOTIFICATION ONLY ******** TW KING PUMP STATION PUMP IMPROVEMENTS ******** NOTIFICATION ONLY ********"
     },
     "civicplus-cityofbenbrook:8": {
       "first_seen": "2026-06-11",
@@ -380,6 +480,10 @@
     "civicplus-cityofmansfield:195": {
       "first_seen": "2026-06-11",
       "title": "FY27 Audio Visual Equipment Rental & Production Mgmt."
+    },
+    "civicplus-cityofmidlothian:218": {
+      "first_seen": "2026-06-22",
+      "title": "Development of the 14th Street Corridor"
     },
     "esbd:514182": {
       "first_seen": "2026-06-12",
@@ -428,6 +532,70 @@
     "grandprairie:143265": {
       "first_seen": "2026-06-19",
       "title": "Crack and Joint Sealing Services"
+    },
+    "ionwave-cityofcarrollton:ENG2026-07": {
+      "first_seen": "2026-06-22",
+      "title": "Downtown Silos Exterior East Side Painting 2026"
+    },
+    "ionwave-cityofcarrollton:RFP #26-027 Addendum 1": {
+      "first_seen": "2026-06-22",
+      "title": "Parks and Recreation Management Software Platform"
+    },
+    "ionwave-cityofgrapevine:36-26": {
+      "first_seen": "2026-06-22",
+      "title": "CMAR RAW WATER PUMP STATION IMPROVEMENTS 2026"
+    },
+    "ionwave-cityofirving:100SB-26": {
+      "first_seen": "2026-06-22",
+      "title": "Backflow Device Testing and Repair Services"
+    },
+    "ionwave-cityofirving:103LR-26F Addendum 1": {
+      "first_seen": "2026-06-22",
+      "title": "Professional Services - Annual IDIQ Traffic Engineering"
+    },
+    "ionwave-cityofirving:108LR-26F Addendum 2": {
+      "first_seen": "2026-06-22",
+      "title": "Irving & Grand Prairie - Joint Fire Training Center (FTC) Pavement Repair"
+    },
+    "ionwave-cityofirving:109LR-26F": {
+      "first_seen": "2026-06-22",
+      "title": "Concrete Making Materials"
+    },
+    "ionwave-cityofirving:111LR-26F": {
+      "first_seen": "2026-06-22",
+      "title": "Belt Line Elevated Storage Tank Rehabilitation"
+    },
+    "ionwave-cityofirving:112C-26": {
+      "first_seen": "2026-06-22",
+      "title": "Library Strategic Plan Update"
+    },
+    "ionwave-cityofirving:114LR-26F": {
+      "first_seen": "2026-06-22",
+      "title": "Architectural Design Services and Feasibility Study for the Domestic Violence Shelter"
+    },
+    "ionwave-cityofirving:116LR-26F": {
+      "first_seen": "2026-06-22",
+      "title": "Las Brisas Sewer Relocation"
+    },
+    "ionwave-cityofplano:2026-0290-OA": {
+      "first_seen": "2026-06-22",
+      "title": "Reinforcing Steel"
+    },
+    "ionwave-cityofplano:2026-0412-B Addendum 1": {
+      "first_seen": "2026-06-22",
+      "title": "Building 059 - Fire Station No 7 Re-Roof FAC-F-00139"
+    },
+    "ionwave-cityofplano:2026-0422-B": {
+      "first_seen": "2026-06-22",
+      "title": "Legacy Trail Pond Restoration, PKR-D-00006"
+    },
+    "ionwave-cityofplano:2026-0433-AC Addendum 1": {
+      "first_seen": "2026-06-22",
+      "title": "Pond Restoration Program"
+    },
+    "ionwave-cityofplano:2026-0502-ER": {
+      "first_seen": "2026-06-22",
+      "title": "Residential Concrete Pavement Maintenance Requirements Contract - 2025, Project No. PW-S-00042"
     },
     "ionwave-fortworthisd:26-070-A": {
       "first_seen": "2026-06-11",
@@ -573,6 +741,22 @@
       "first_seen": "2026-06-18",
       "title": "Annual Contract for Marketing Services"
     },
+    "ionwave-townofflowermound:2026-101-A": {
+      "first_seen": "2026-06-22",
+      "title": "Request for Statement of Qualifications for Professional Engineering Services for Various Projects"
+    },
+    "ionwave-townofflowermound:2026-95-A Addendum 1": {
+      "first_seen": "2026-06-22",
+      "title": "Disaster Debris Monitoring and Consulting Services"
+    },
+    "ionwave-whitesettlementisd:2526-10": {
+      "first_seen": "2026-06-22",
+      "title": "Playground Landing and Curbs"
+    },
+    "ionwave-whitesettlementisd:2526-11 Addendum 1": {
+      "first_seen": "2026-06-22",
+      "title": "CONSTRUCTION MANAGER AT-RISK (CMAR)"
+    },
     "publicpurchase:212856": {
       "first_seen": "2026-06-11",
       "title": "Bid posting #212856 (open title on site)"
@@ -638,19 +822,5 @@
       "title": "Notice of Public Hearing - Haney Property Annexation"
     }
   },
-  "source_failures": {
-    "Aledo ISD": 5,
-    "City of Carrollton": 5,
-    "City of Frisco": 5,
-    "City of Grapevine": 5,
-    "City of Irving": 5,
-    "City of Lewisville": 5,
-    "City of Plano": 5,
-    "City of Southlake": 5,
-    "DFW Airport": 5,
-    "Denton County": 5,
-    "Grapevine-Colleyville ISD": 4,
-    "Town of Flower Mound": 5,
-    "White Settlement ISD": 5
-  }
+  "source_failures": {}
 }
