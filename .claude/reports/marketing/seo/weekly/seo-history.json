@@ -134,5 +134,22 @@
     "title_issues": 87,
     "h1_issues": 0,
     "meta_issues": 21
+  },
+  "2026-06-22": {
+    "score": 0,
+    "pages_live": 0,
+    "pages_missing": 28,
+    "total_issues": 28,
+    "alt_text_pct": 0,
+    "images_total": 0,
+    "images_good": 0,
+    "images_poor": 0,
+    "images_missing": 0,
+    "schema_local_business": 0,
+    "schema_faq": 0,
+    "schema_aggregate_rating": 0,
+    "title_issues": 0,
+    "h1_issues": 0,
+    "meta_issues": 0
   }
 }
