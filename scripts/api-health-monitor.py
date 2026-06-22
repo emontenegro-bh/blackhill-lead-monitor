@@ -54,7 +54,7 @@ SCRIPT_TARGETS = {
         "build-maintenance-cross-sell-csv.py", "get-contact-emails.py",
     ],
     "whatconverts": ["whatconverts-roi-sync.py", "whatconverts-lead-monitor.py"],
-    "companycam": ["proposal-monitor.py", "companycam-query.py"],
+    "companycam": ["companycam-query.py"],
     "hubspot": ["hubspot-sync.py", "hubspot-builder-pipeline.py",
                 "whatconverts-lead-monitor.py"],
     "google_ads": ["morning-briefing.py", "ads-smoke-test.py",
