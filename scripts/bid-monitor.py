@@ -19,11 +19,12 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
-from urllib.parse import urljoin, quote
+from urllib.parse import urljoin, quote, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -99,10 +100,36 @@ def log(msg):
     print(f"[{now_utc().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+# Bonfire (bonfirehub.com) and Ionwave (ionwave.net) share backend infra per
+# platform, so many rapid requests across their subdomains trip a shared 429
+# rate limit on the runner IP. Pace requests to the same registrable domain and
+# retry on 429 with backoff (honoring Retry-After when present).
+_MIN_HOST_INTERVAL = 2.5   # seconds between requests to the same host family
+_last_host_hit = {}
+
+
+def _host_key(url):
+    host = (urlparse(url).hostname or "").split(".")
+    return ".".join(host[-2:]) if len(host) >= 2 else ".".join(host)
+
+
 def fetch(url, **kwargs):
     kwargs.setdefault("headers", HEADERS)
     kwargs.setdefault("timeout", 30)
-    r = requests.get(url, **kwargs)
+    key = _host_key(url)
+    attempts = 5
+    for attempt in range(attempts):
+        wait = _MIN_HOST_INTERVAL - (time.monotonic() - _last_host_hit.get(key, 0.0))
+        if wait > 0:
+            time.sleep(wait)
+        _last_host_hit[key] = time.monotonic()
+        r = requests.get(url, **kwargs)
+        if r.status_code == 429 and attempt < attempts - 1:
+            ra = r.headers.get("Retry-After", "")
+            time.sleep(float(ra) if ra.isdigit() else 8.0 * (attempt + 1))
+            continue
+        r.raise_for_status()
+        return r
     r.raise_for_status()
     return r
 
