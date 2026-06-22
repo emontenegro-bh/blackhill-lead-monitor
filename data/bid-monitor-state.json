@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-21T14:34:52.339816+00:00",
+  "last_run": "2026-06-22T17:15:35.339396+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -639,18 +639,18 @@
     }
   },
   "source_failures": {
-    "Aledo ISD": 4,
-    "City of Carrollton": 4,
-    "City of Frisco": 4,
-    "City of Grapevine": 4,
-    "City of Irving": 4,
-    "City of Lewisville": 4,
-    "City of Plano": 4,
-    "City of Southlake": 4,
-    "DFW Airport": 4,
-    "Denton County": 4,
-    "Grapevine-Colleyville ISD": 3,
-    "Town of Flower Mound": 4,
-    "White Settlement ISD": 4
+    "Aledo ISD": 5,
+    "City of Carrollton": 5,
+    "City of Frisco": 5,
+    "City of Grapevine": 5,
+    "City of Irving": 5,
+    "City of Lewisville": 5,
+    "City of Plano": 5,
+    "City of Southlake": 5,
+    "DFW Airport": 5,
+    "Denton County": 5,
+    "Grapevine-Colleyville ISD": 4,
+    "Town of Flower Mound": 5,
+    "White Settlement ISD": 5
   }
 }
