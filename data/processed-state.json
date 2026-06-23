@@ -514,15 +514,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABDh0aDgAAAA==",
     "242629511",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABDh0aEAAAAA==",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABDh0aEQAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABDh0aEQAAAA==",
+    "242876207"
   ],
   "stats": {
-    "total_leads": 211,
+    "total_leads": 212,
     "total_spam": 232,
-    "last_lead": "2026-06-22T20:30:21.320238",
-    "total_calls": 67
+    "last_lead": "2026-06-23T22:20:19.255216",
+    "total_calls": 68
   },
-  "last_run": "2026-06-23T22:15:13.502492+00:00",
+  "last_run": "2026-06-23T22:20:19.257009+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1096,7 +1097,22 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {},
+  "pending_call_attributions": {
+    "242876207": {
+      "wc_lead_id": "242876207",
+      "phone": "+15805760607",
+      "value": "Google Business Profile",
+      "note": "WC #242876207 | Google Business Profile",
+      "first_seen": "2026-06-23T22:20:19.255135+00:00",
+      "attempts": 1,
+      "caller_name": "Wireless Caller",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "55 seconds",
+      "received_at": "2026-06-23T22:17:40Z",
+      "transcription": "Recipient\nGood afternoon. Thank you for calling. Back to Landscaping. This is Carlos. I'm a director call.\n\nCaller\nHey, Carlos. How's it going? It's Diego Hernandez. Does that. Does that ring a bell? Carlos?\n\nRecipient\nHello.\n\nCaller\nCarlos, are you there, man?\n\nRecipient\nMay I ask what this call is in reference to and where you're calling from?\n\nCaller\nYeah. Yeah. Carlos. I tried to call sometime last week. Did you guys get my missed call by chance?\n\nRecipient\nWhere are you calling from and what is this in reference to?\n\nCaller\nYeah, from Next Gen Automations. I was calling because I wanted to.\n\nRecipient\nNo. Please remove us from your calling list. Thank you."
+    }
+  },
   "round_robin_state": {
     "last_index": 1
   }
