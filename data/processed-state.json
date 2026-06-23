@@ -521,7 +521,7 @@
     "last_lead": "2026-06-22T20:30:21.320238",
     "total_calls": 67
   },
-  "last_run": "2026-06-23T10:40:19.247392+00:00",
+  "last_run": "2026-06-23T10:45:17.609647+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1102,7 +1102,7 @@
       "value": "Google Business Profile",
       "note": "WC #242546580 | Google Business Profile",
       "first_seen": "2026-06-22T16:35:15.154752+00:00",
-      "attempts": 223,
+      "attempts": 224,
       "caller_name": "Dream Palace",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1116,7 +1116,7 @@
       "value": "Phone Call ",
       "note": "WC #242551479 | Phone Call | Landing: /areas-we-serve/fort-worth/sod-installation",
       "first_seen": "2026-06-22T16:45:18.885420+00:00",
-      "attempts": 221,
+      "attempts": 222,
       "caller_name": "Its Vivian",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1130,7 +1130,7 @@
       "value": "Google Business Profile",
       "note": "WC #242629511 | Google Business Profile",
       "first_seen": "2026-06-22T20:30:21.320210+00:00",
-      "attempts": 175,
+      "attempts": 176,
       "caller_name": "Kennedale Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
