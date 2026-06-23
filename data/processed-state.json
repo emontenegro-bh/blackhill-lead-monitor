@@ -522,7 +522,7 @@
     "last_lead": "2026-06-22T20:30:21.320238",
     "total_calls": 67
   },
-  "last_run": "2026-06-23T16:30:28.169797+00:00",
+  "last_run": "2026-06-23T16:35:27.846672+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1097,27 +1097,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "242546580": {
-      "wc_lead_id": "242546580",
-      "phone": "+18163253331",
-      "value": "Google Business Profile",
-      "note": "WC #242546580 | Google Business Profile",
-      "first_seen": "2026-06-22T16:35:15.154752+00:00",
-      "attempts": 294,
-      "caller_name": "Dream Palace",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "1 minute",
-      "received_at": "2026-06-22T16:30:41Z",
-      "transcription": "Recipient\nThank you for calling. Black Hill Landscaping. This is Trinity. How may I help you?\n\nCaller\nYes. Hi Chemmy, how are you?\n\nRecipient\nGood. Thank you.\n\nCaller\nChemmy? Are you the honor by any chance of Black Hill Landscaping?\n\nRecipient\nNo, I'm not. Can I help you with something, though?\n\nCaller\nNo problem, Chemmy, you will be honored one day of any other business.\n\nRecipient\nSay that again.\n\nCaller\nI'm saying you will be honor one day of any other business.\n\nRecipient\nWhat can I help you with?\n\nCaller\nNo, nothing. I'm upgrading. Bye bye.\n\nRecipient\nBye. Bye."
-    },
     "242551479": {
       "wc_lead_id": "242551479",
       "phone": "+18178635110",
       "value": "Phone Call ",
       "note": "WC #242551479 | Phone Call | Landing: /areas-we-serve/fort-worth/sod-installation",
       "first_seen": "2026-06-22T16:45:18.885420+00:00",
-      "attempts": 292,
+      "attempts": 293,
       "caller_name": "Its Vivian",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1131,7 +1117,7 @@
       "value": "Google Business Profile",
       "note": "WC #242629511 | Google Business Profile",
       "first_seen": "2026-06-22T20:30:21.320210+00:00",
-      "attempts": 246,
+      "attempts": 247,
       "caller_name": "Kennedale Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
