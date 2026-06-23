@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-22T21:11:01.173964+00:00",
+  "last_run": "2026-06-23T15:29:41.467974+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -268,6 +268,14 @@
     "bonfire-dallascityhall:241542": {
       "first_seen": "2026-06-22",
       "title": "Purchase of Filter Pads, Vacuum Gauge, Fischer & Porter - *218295"
+    },
+    "bonfire-dallascityhall:241619": {
+      "first_seen": "2026-06-23",
+      "title": "Purchase of Tubes for various slides - *218685"
+    },
+    "bonfire-dallascityhall:241638": {
+      "first_seen": "2026-06-23",
+      "title": "Purchase of Forensic Equipment - 218435"
     },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
@@ -565,6 +573,10 @@
       "first_seen": "2026-06-22",
       "title": "Belt Line Elevated Storage Tank Rehabilitation"
     },
+    "ionwave-cityofirving:111LR-26F Addendum 1": {
+      "first_seen": "2026-06-23",
+      "title": "Belt Line Elevated Storage Tank Rehabilitation"
+    },
     "ionwave-cityofirving:112C-26": {
       "first_seen": "2026-06-22",
       "title": "Library Strategic Plan Update"
@@ -739,6 +751,10 @@
     },
     "ionwave-tarrantcounty:F2026147": {
       "first_seen": "2026-06-18",
+      "title": "Annual Contract for Marketing Services"
+    },
+    "ionwave-tarrantcounty:F2026147 Addendum 1": {
+      "first_seen": "2026-06-23",
       "title": "Annual Contract for Marketing Services"
     },
     "ionwave-townofflowermound:2026-101-A": {
