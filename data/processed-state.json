@@ -522,7 +522,7 @@
     "last_lead": "2026-06-22T20:30:21.320238",
     "total_calls": 67
   },
-  "last_run": "2026-06-23T16:40:19.541760+00:00",
+  "last_run": "2026-06-23T16:45:28.072933+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1097,27 +1097,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "242551479": {
-      "wc_lead_id": "242551479",
-      "phone": "+18178635110",
-      "value": "Phone Call ",
-      "note": "WC #242551479 | Phone Call | Landing: /areas-we-serve/fort-worth/sod-installation",
-      "first_seen": "2026-06-22T16:45:18.885420+00:00",
-      "attempts": 294,
-      "caller_name": "Its Vivian",
-      "lead_source_raw": "(direct)",
-      "lead_medium_raw": "(none)",
-      "call_duration": "1 minute and 34 seconds",
-      "received_at": "2026-06-22T16:42:36Z",
-      "transcription": "Caller\nJet grass. I like the fake grass, though.\n\nRecipient\nThank you for calling Black Hill Landscaping. This is Trinity.\n\nCaller\nI wanted to get a quote on Gap brass insulation.\n\nRecipient\nGrass installation. Okay, what's a good phone number for you, ma'? Am?\n\nCaller\n817-863-5110.\n\nRecipient\n86351. Okay, and what was your name again?\n\nCaller\nVivian.\n\nRecipient\nVivian. Vivian. What's your last name?\n\nCaller\nAmes am yes.\n\nRecipient\nSay that again.\n\nCaller\nAmes am yes.\n\nRecipient\nAnd you said you need a graph installation. What's a good email address?\n\nCaller\nI don't have one.\n\nRecipient\nOkay, I will forward this message and I'll have somebody reach out to you. Okay.\n\nCaller\nOkay, thank you. Bye.\n\nRecipient\nHave a good day. Bye. Bye."
-    },
     "242629511": {
       "wc_lead_id": "242629511",
       "phone": "+18176721246",
       "value": "Google Business Profile",
       "note": "WC #242629511 | Google Business Profile",
       "first_seen": "2026-06-22T20:30:21.320210+00:00",
-      "attempts": 248,
+      "attempts": 249,
       "caller_name": "Kennedale Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
