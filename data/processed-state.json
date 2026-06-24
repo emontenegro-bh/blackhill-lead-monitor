@@ -517,15 +517,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABDh0aEQAAAA==",
     "242876207",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABDh0aEgAAAA==",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABDh0aEwAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABDh0aEwAAAA==",
+    "242997843"
   ],
   "stats": {
-    "total_leads": 212,
+    "total_leads": 213,
     "total_spam": 233,
-    "last_lead": "2026-06-23T22:20:19.255216",
+    "last_lead": "2026-06-24T16:45:33.418571",
     "total_calls": 68
   },
-  "last_run": "2026-06-24T16:40:16.033931+00:00",
+  "last_run": "2026-06-24T16:45:33.420137+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1106,7 +1107,7 @@
       "value": "Google Business Profile",
       "note": "WC #242876207 | Google Business Profile",
       "first_seen": "2026-06-23T22:20:19.255135+00:00",
-      "attempts": 228,
+      "attempts": 229,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1116,6 +1117,6 @@
     }
   },
   "round_robin_state": {
-    "last_index": 1
+    "last_index": 0
   }
 }
