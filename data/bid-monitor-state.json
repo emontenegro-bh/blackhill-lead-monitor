@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-23T15:29:41.467974+00:00",
+  "last_run": "2026-06-24T14:59:59.999020+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -277,6 +277,14 @@
       "first_seen": "2026-06-23",
       "title": "Purchase of Forensic Equipment - 218435"
     },
+    "bonfire-dallascityhall:241641": {
+      "first_seen": "2026-06-24",
+      "title": "Purchase of Cartridge Split Mechanical Seal - *218319"
+    },
+    "bonfire-dallascityhall:241648": {
+      "first_seen": "2026-06-24",
+      "title": "NOFA -YOUTH HOMELESS AND HOUSING SERVICES PROGRAM- TEXAS DEPARTMENT OF HOUSING AND COMMUNITY AFFAIRS (TDHCA) FUNDS - FY2"
+    },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
       "title": "Alton Bridge Bank Stabilization & Bridge Scour"
@@ -425,6 +433,14 @@
       "first_seen": "2026-06-11",
       "title": "PW - CPN 100997-1 - Sanitary Sewer M-245 Parallel Relief Pipeline Part 1"
     },
+    "bonfire-fortworthtexas:238896": {
+      "first_seen": "2026-06-24",
+      "title": "RFP Aluminum, Iron, Rebar, and Steel"
+    },
+    "bonfire-fortworthtexas:238901": {
+      "first_seen": "2026-06-24",
+      "title": "Flooring Materials, Installation, and Services"
+    },
     "bonfire-fortworthtexas:240811": {
       "first_seen": "2026-06-17",
       "title": "PW Northside Drive HROM City Project No. 106170"
@@ -432,6 +448,14 @@
     "bonfire-fortworthtexas:240982": {
       "first_seen": "2026-06-17",
       "title": "PW 2027 Concrete Restoration Contract 3, City Project No. 106806"
+    },
+    "bonfire-fortworthtexas:241725": {
+      "first_seen": "2026-06-24",
+      "title": "PW - 104940-4 - Northside III - Phase IV- 54 inch Water Transmission Main"
+    },
+    "bonfire-fortworthtexas:241807": {
+      "first_seen": "2026-06-24",
+      "title": "RFQ 2027 Transportation Impact Fees Financial Audit"
     },
     "bonfire-friscotexas:236404": {
       "first_seen": "2026-06-22",
@@ -488,6 +512,10 @@
     "civicplus-cityofmansfield:195": {
       "first_seen": "2026-06-11",
       "title": "FY27 Audio Visual Equipment Rental & Production Mgmt."
+    },
+    "civicplus-cityofmansfield:196": {
+      "first_seen": "2026-06-24",
+      "title": "Robert and Ann Smith Park Disc Golf Improvements"
     },
     "civicplus-cityofmidlothian:218": {
       "first_seen": "2026-06-22",
@@ -693,6 +721,10 @@
       "first_seen": "2026-06-12",
       "title": "Annual Contract for HVAC Water Treatment Services, Water Treatment Equipment Repairs, and Cooling Tower Cleaning Service"
     },
+    "ionwave-tarrantcounty:F2026129 Addendum 2": {
+      "first_seen": "2026-06-24",
+      "title": "Annual Contract for HVAC Water Treatment Services, Water Treatment Equipment Repairs, and Cooling Tower Cleaning Service"
+    },
     "ionwave-tarrantcounty:F2026130": {
       "first_seen": "2026-06-11",
       "title": "Annual Contract for Isilon and Cloudpools Hardware and Software Maintenance"
@@ -737,12 +769,20 @@
       "first_seen": "2026-06-12",
       "title": "Annual Contract for Dental PPO and Dental HMO Plan"
     },
+    "ionwave-tarrantcounty:F2026141 Addendum 2": {
+      "first_seen": "2026-06-24",
+      "title": "Annual Contract for Dental PPO and Dental HMO Plan"
+    },
     "ionwave-tarrantcounty:F2026142": {
       "first_seen": "2026-06-12",
       "title": "Annual Contract for Oil and Lubricants"
     },
     "ionwave-tarrantcounty:F2026143": {
       "first_seen": "2026-06-18",
+      "title": "Annual Contract for Juvenile Forensic Assessment Services"
+    },
+    "ionwave-tarrantcounty:F2026143 Addendum 1": {
+      "first_seen": "2026-06-24",
       "title": "Annual Contract for Juvenile Forensic Assessment Services"
     },
     "ionwave-tarrantcounty:F2026146": {
@@ -759,6 +799,10 @@
     },
     "ionwave-townofflowermound:2026-101-A": {
       "first_seen": "2026-06-22",
+      "title": "Request for Statement of Qualifications for Professional Engineering Services for Various Projects"
+    },
+    "ionwave-townofflowermound:2026-101-A Addendum 1": {
+      "first_seen": "2026-06-24",
       "title": "Request for Statement of Qualifications for Professional Engineering Services for Various Projects"
     },
     "ionwave-townofflowermound:2026-95-A Addendum 1": {
