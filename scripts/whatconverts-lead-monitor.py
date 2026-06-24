@@ -16,7 +16,7 @@ Usage:
   python3 whatconverts-lead-monitor.py --test       # Test WhatConverts API connection
 """
 
-import hashlib, json, os, sys, re, signal, smtplib, urllib.request, urllib.error, urllib.parse, base64
+import hashlib, json, os, sys, re, signal, smtplib, time, urllib.request, urllib.error, urllib.parse, base64
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -867,6 +867,64 @@ def _send_via_gmail_smtp(to_emails, subject, html_body, from_email=None, from_na
         return False, str(e)
 
 
+# Users confirmed to be members of the "Leads Alert" Teams channel. A mention the
+# channel can't resolve makes Power Automate's "post card" action fail the whole
+# post, which was causing sporadic Leads Alert flow failures (leads routed to a
+# non-member owner). Anyone not listed here is shown as plain text so the card
+# still posts. Extend without a code change via TEAMS_MENTION_EMAILS (comma-sep).
+TEAMS_MENTIONABLE = {
+    e.strip().lower()
+    for e in ("evelin@blackhilltx.com," + os.environ.get("TEAMS_MENTION_EMAILS", "")).split(",")
+    if e.strip()
+}
+
+
+def _mention_or_text(name, email):
+    """Return (display_text, entities) for an optional Teams @mention.
+
+    Only mentions users known to be in the channel; everyone else degrades to a
+    plain name so the flow never fails trying to resolve an unknown mention.
+    """
+    name = name or "Team"
+    email = (email or "").strip().lower()
+    if email in TEAMS_MENTIONABLE:
+        text = f"<at>{name}</at>"
+        return text, [{"type": "mention", "text": text,
+                       "mentioned": {"id": email, "name": name}}]
+    return name, []
+
+
+def _post_teams_card(webhook_url, card):
+    """POST an adaptive card to the Power Automate webhook, with retry.
+
+    Retries transient failures (timeouts, 5xx, 429); does not retry other 4xx
+    (a bad payload won't fix itself on retry). On failure raises with the
+    server's error body so the real Power Automate reason lands in the logs.
+    """
+    data = json.dumps(card).encode("utf-8")
+    last_err = "unknown error"
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(webhook_url, data=data,
+                                         headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                return resp.status
+        except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read().decode("utf-8", "replace")[:500]
+            except Exception:
+                pass
+            last_err = f"HTTP {e.code}: {body}".strip()
+            if not (e.code == 429 or 500 <= e.code < 600):
+                break  # non-retryable client error
+        except Exception as e:
+            last_err = str(e)
+        if attempt < 2:
+            time.sleep(2 * (attempt + 1))
+    raise RuntimeError(last_err)
+
+
 def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hubspot_status=None,
                             owner_name=None, owner_email=None):
     """Send lead alert to Microsoft Teams via Power Automate webhook."""
@@ -896,10 +954,8 @@ def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hub
     elif hubspot_status in ("created", "exists"):
         hubspot_text = hubspot_status.capitalize()
 
-    # Build assignee line with @mention
-    assignee_name = owner_name or "Team"
-    assignee_email = owner_email or ""
-    mention_text = f"<at>{assignee_name}</at>" if assignee_email else assignee_name
+    # Build assignee line; @mention only resolvable channel members (else plain text)
+    mention_text, mention_entities = _mention_or_text(owner_name, owner_email)
 
     card = {
         "type": "message",
@@ -950,26 +1006,14 @@ def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hub
                         "spacing": "Small"
                     }
                 ],
-                "msteams": {
-                    "entities": [{
-                        "type": "mention",
-                        "text": mention_text,
-                        "mentioned": {
-                            "id": assignee_email,
-                            "name": assignee_name
-                        }
-                    }] if assignee_email else []
-                }
+                "msteams": {"entities": mention_entities}
             }
         }]
     }
 
     try:
-        data = json.dumps(card).encode("utf-8")
-        req = urllib.request.Request(webhook_url, data=data,
-                                     headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            log(f"  Teams notification sent ({resp.status})")
+        status = _post_teams_card(webhook_url, card)
+        log(f"  Teams notification sent ({status})")
     except Exception as e:
         log(f"  WARNING: Teams notification failed (non-fatal): {e}")
 
