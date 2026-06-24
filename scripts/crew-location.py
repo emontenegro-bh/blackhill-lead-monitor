@@ -43,7 +43,8 @@ CONFIG_FILE = os.path.expanduser("~/.config/azuga/config.json")
 
 # Field crews only (driver-assigned working trucks). Matched by Azuga trackeeName,
 # and used as the display order.
-FIELD_CREWS = ["Maint 1", "Maint 2", "Maint 3", "Maint 4", "Land 1", "Irrigation"]
+FIELD_CREWS = ["Maint 1", "Maint 2", "Maint 3", "Maint 4", "Land 1", "Land 2",
+               "Irrigation", "Flatbed"]
 
 KMH_TO_MPH = 0.621371
 
