@@ -867,14 +867,14 @@ def _send_via_gmail_smtp(to_emails, subject, html_body, from_email=None, from_na
         return False, str(e)
 
 
-# Users confirmed to be members of the "Leads Alert" Teams channel. A mention the
-# channel can't resolve makes Power Automate's "post card" action fail the whole
-# post, which was causing sporadic Leads Alert flow failures (leads routed to a
-# non-member owner). Anyone not listed here is shown as plain text so the card
-# still posts. Extend without a code change via TEAMS_MENTION_EMAILS (comma-sep).
+# Users to @mention in the "Leads Alert" Teams channel. A mention the channel
+# can't resolve makes Power Automate's "post card" action fail the whole post,
+# so only known channel members are mentioned; anyone else degrades to plain
+# text. Both lead owners (Evelin, Denisse) are set up on the channel. Add more
+# via the TEAMS_MENTION_EMAILS env var (comma-separated).
 TEAMS_MENTIONABLE = {
     e.strip().lower()
-    for e in ("evelin@blackhilltx.com," + os.environ.get("TEAMS_MENTION_EMAILS", "")).split(",")
+    for e in ("evelin@blackhilltx.com,denisse@blackhilltx.com," + os.environ.get("TEAMS_MENTION_EMAILS", "")).split(",")
     if e.strip()
 }
 
@@ -940,6 +940,9 @@ def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hub
     service = lead.get("service_interest", "General Inquiry")
     source = lead.get("traffic_source", "Web Form")
     message = (lead.get("message", "") or "")[:300]
+    address_line = " ".join(
+        p for p in (str(lead.get(k, "") or "").strip() for k in ("address", "city", "state", "zip")) if p
+    ) or "Not provided"
 
     # Build Aspire/HubSpot status lines
     aspire_text = "Not added"
@@ -988,6 +991,7 @@ def send_teams_notification(config, lead, lead_type="lead", aspire_url=None, hub
                         "facts": [
                             {"title": "Phone", "value": phone},
                             {"title": "Email", "value": email},
+                            {"title": "Address", "value": address_line},
                             {"title": "Service", "value": service},
                             {"title": "Source", "value": source},
                         ]

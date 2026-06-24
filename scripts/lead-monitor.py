@@ -1327,14 +1327,14 @@ def create_aspire_contact(config, lead):
 
 # --- Notifications ---
 
-# Users confirmed to be members of the "Leads Alert" Teams channel. A mention the
-# channel can't resolve makes Power Automate's "post card" action fail the whole
-# post, which was causing sporadic Leads Alert flow failures. Anyone not listed
-# here is shown as plain text so the card still posts. Extend without a code
-# change via TEAMS_MENTION_EMAILS (comma-separated).
+# Users to @mention in the "Leads Alert" Teams channel. A mention the channel
+# can't resolve makes Power Automate's "post card" action fail the whole post,
+# so only known channel members are mentioned; anyone else degrades to plain
+# text. Both lead owners (Evelin, Denisse) are set up on the channel. Add more
+# via the TEAMS_MENTION_EMAILS env var (comma-separated).
 TEAMS_MENTIONABLE = {
     e.strip().lower()
-    for e in ("evelin@blackhilltx.com," + os.environ.get("TEAMS_MENTION_EMAILS", "")).split(",")
+    for e in ("evelin@blackhilltx.com,denisse@blackhilltx.com," + os.environ.get("TEAMS_MENTION_EMAILS", "")).split(",")
     if e.strip()
 }
 
@@ -1398,6 +1398,9 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
     email = lead.get("email", "Not provided")
     service = lead.get("service_interest", "General Inquiry")
     message = (lead.get("message", "") or "")[:300]
+    address_line = " ".join(
+        p for p in (str(lead.get(k, "") or "").strip() for k in ("address", "city", "state", "zip")) if p
+    ) or "Not provided"
 
     aspire_text = f"Contact ID: {aspire_id}" if aspire_id else "Not added"
     hubspot_text = f"Deal: {hubspot_id}" if hubspot_id else "Not added"
@@ -1436,6 +1439,7 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
                         "facts": [
                             {"title": "Phone", "value": phone},
                             {"title": "Email", "value": email},
+                            {"title": "Address", "value": address_line},
                             {"title": "Service", "value": service},
                             {"title": "Source", "value": "Email Inquiry"},
                         ]
