@@ -209,12 +209,12 @@
       "synced_at": "2026-05-11T18:05:15.138976+00:00"
     },
     "234870229": {
-      "last_status": "Delivered",
-      "opp_number": 3360,
-      "quote_value": 100,
+      "last_status": "Lost",
+      "opp_number": 3365,
+      "quote_value": 2650,
       "sales_value": 0,
       "traffic_source": "bing / organic",
-      "synced_at": "2026-05-11T18:05:17.007274+00:00"
+      "synced_at": "2026-06-24T17:32:11.011044+00:00"
     },
     "235415870": {
       "last_status": "Won",
@@ -265,20 +265,20 @@
       "synced_at": "2026-06-22T22:16:18.000509+00:00"
     },
     "224991451": {
-      "last_status": "Delivered",
+      "last_status": "Won",
       "opp_number": 3440,
       "quote_value": 30758,
-      "sales_value": 0,
+      "sales_value": 30758,
       "traffic_source": "google / cpc",
-      "synced_at": "2026-06-10T17:34:46.206007+00:00"
+      "synced_at": "2026-06-24T17:31:58.864981+00:00"
     },
     "239124053": {
-      "last_status": "Delivered",
+      "last_status": "Won",
       "opp_number": 3440,
       "quote_value": 30758,
-      "sales_value": 0,
+      "sales_value": 30758,
       "traffic_source": "google / cpc",
-      "synced_at": "2026-06-10T17:35:01.144544+00:00"
+      "synced_at": "2026-06-24T17:32:15.986566+00:00"
     },
     "240506947": {
       "last_status": "Won",
@@ -291,6 +291,6 @@
   },
   "stats": {
     "total_synced": 36,
-    "last_run": "2026-06-24T15:24:56.958573+00:00"
+    "last_run": "2026-06-24T17:32:19.439764+00:00"
   }
 }
