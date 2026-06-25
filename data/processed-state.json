@@ -538,7 +538,7 @@
     "last_lead": "2026-06-25T18:15:16.182397",
     "total_calls": 73
   },
-  "last_run": "2026-06-25T18:40:16.286733+00:00",
+  "last_run": "2026-06-25T18:45:19.422702+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1120,27 +1120,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "243032041": {
-      "wc_lead_id": "243032041",
-      "phone": "+16093349448",
-      "value": "Google Business Profile",
-      "note": "WC #243032041 | Google Business Profile",
-      "first_seen": "2026-06-24T18:40:18.050878+00:00",
-      "attempts": 299,
-      "caller_name": "Seeley Conley",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "35 seconds",
-      "received_at": "2026-06-24T18:36:41Z",
-      "transcription": "Recipient\nForeign.\n\nCaller\nHold on. I'm trying to find a mute in the middle. Mute in the middle. I cut it. Sorry.\n\nRecipient\nHello. Thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the next available team member. We appreciate your patience. Hello. Thank you."
-    },
     "243160511": {
       "wc_lead_id": "243160511",
       "phone": "+16823823205",
       "value": "Google Business Profile",
       "note": "WC #243160511 | Google Business Profile",
       "first_seen": "2026-06-25T14:10:36.465709+00:00",
-      "attempts": 57,
+      "attempts": 58,
       "caller_name": "Uac4u",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1154,7 +1140,7 @@
       "value": "Phone Call ",
       "note": "WC #243206183 | Phone Call",
       "first_seen": "2026-06-25T16:40:18.255673+00:00",
-      "attempts": 26,
+      "attempts": 27,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1168,7 +1154,7 @@
       "value": "Phone Call ",
       "note": "WC #243234618 | Phone Call",
       "first_seen": "2026-06-25T18:15:16.182364+00:00",
-      "attempts": 6,
+      "attempts": 7,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
