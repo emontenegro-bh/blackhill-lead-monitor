@@ -527,15 +527,17 @@
     "243159760",
     "243160511",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABEmboAAAB",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABEmbn-wAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABEmbn-wAAAA==",
+    "243206183",
+    "243206089"
   ],
   "stats": {
-    "total_leads": 216,
+    "total_leads": 218,
     "total_spam": 236,
-    "last_lead": "2026-06-25T14:10:36.465786",
-    "total_calls": 70
+    "last_lead": "2026-06-25T16:40:18.899776",
+    "total_calls": 72
   },
-  "last_run": "2026-06-25T16:35:15.791755+00:00",
+  "last_run": "2026-06-25T16:40:18.900970+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1123,7 +1125,7 @@
       "value": "Google Business Profile",
       "note": "WC #243032041 | Google Business Profile",
       "first_seen": "2026-06-24T18:40:18.050878+00:00",
-      "attempts": 273,
+      "attempts": 274,
       "caller_name": "Seeley Conley",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1137,13 +1139,41 @@
       "value": "Google Business Profile",
       "note": "WC #243160511 | Google Business Profile",
       "first_seen": "2026-06-25T14:10:36.465709+00:00",
-      "attempts": 31,
+      "attempts": 32,
       "caller_name": "Uac4u",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "43 seconds",
       "received_at": "2026-06-25T14:08:54Z",
       "transcription": "Recipient\nGood morning. Thank you for calling. Black to Landscaping. This is Carlos Amea, director call.\n\nCaller\nGood morning. It's really hard for me to hear you, sir.\n\nRecipient\nThis is Carlos Omari, director call.\n\nCaller\nHey, Carlos, can you transfer me to a manager? Carlos.\n\nRecipient\nMay I ask for assistant what this is in reference to?\n\nCaller\nSponsoring for Castleberry High School.\n\nRecipient\nNo. Please remove us from your calling list. Thank you.\n\nCaller\nOkay, thank you."
+    },
+    "243206183": {
+      "wc_lead_id": "243206183",
+      "phone": "+13256274082",
+      "value": "Phone Call ",
+      "note": "WC #243206183 | Phone Call",
+      "first_seen": "2026-06-25T16:40:18.255673+00:00",
+      "attempts": 1,
+      "caller_name": "Oaks Eric",
+      "lead_source_raw": "(direct)",
+      "lead_medium_raw": "(none)",
+      "call_duration": "48 seconds",
+      "received_at": "2026-06-25T16:36:36Z",
+      "transcription": "Caller\nSh.\n\nRecipient\nHello. Thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the next available team member. We appreciate your patience. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the. Thank you for calling Black Hill Landscaping. Our office is currently closed. Please leave your name, phone number and a brief."
+    },
+    "243206089": {
+      "wc_lead_id": "243206089",
+      "phone": "+18172690068",
+      "value": "Phone Call ",
+      "note": "WC #243206089 | Phone Call",
+      "first_seen": "2026-06-25T16:40:18.899751+00:00",
+      "attempts": 1,
+      "caller_name": "Hinkle Jansen",
+      "lead_source_raw": "(direct)",
+      "lead_medium_raw": "(none)",
+      "call_duration": "1 minute and 8 seconds",
+      "received_at": "2026-06-25T16:36:17Z",
+      "transcription": "Recipient\nThank you for calling Black Hill Landscape. In this training. How may help you.\n\nCaller\nYes. I was going to see if I get a quote on my house being.\n\nRecipient\nSaid mulch.\n\nCaller\nNo cut edge and mediated. I was just trying to get a quote on getting it mode.\n\nRecipient\nOkay, good. Okay, what's your name?\n\nCaller\nJansen winkle.\n\nRecipient\nOkay. And what's a good phone number for you?\n\nCaller\n817-269-006.\n\nRecipient\nOkay. Okay. I will forward this message on to the person that's in charge of that.\n\nCaller\nOkay.\n\nRecipient\nAnd they should be calling you back shortly. Okay.\n\nCaller\nAll right. Thank you, ma'. Am.\n\nRecipient\nBye bye."
     }
   },
   "round_robin_state": {
