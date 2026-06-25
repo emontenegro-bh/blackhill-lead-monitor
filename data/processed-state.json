@@ -535,7 +535,7 @@
     "last_lead": "2026-06-25T14:10:36.465786",
     "total_calls": 70
   },
-  "last_run": "2026-06-25T16:03:36.171342+00:00",
+  "last_run": "2026-06-25T16:05:15.679806+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1123,7 +1123,7 @@
       "value": "Google Business Profile",
       "note": "WC #243032041 | Google Business Profile",
       "first_seen": "2026-06-24T18:40:18.050878+00:00",
-      "attempts": 266,
+      "attempts": 267,
       "caller_name": "Seeley Conley",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1137,7 +1137,7 @@
       "value": "Google Business Profile",
       "note": "WC #243160511 | Google Business Profile",
       "first_seen": "2026-06-25T14:10:36.465709+00:00",
-      "attempts": 24,
+      "attempts": 25,
       "caller_name": "Uac4u",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
