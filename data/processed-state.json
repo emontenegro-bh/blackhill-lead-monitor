@@ -542,7 +542,7 @@
     "last_lead": "2026-06-25T18:15:16.182397",
     "total_calls": 73
   },
-  "last_run": "2026-06-26T10:25:15.532127+00:00",
+  "last_run": "2026-06-26T10:30:14.386234+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1130,7 +1130,7 @@
       "value": "Google Business Profile",
       "note": "WC #243160511 | Google Business Profile",
       "first_seen": "2026-06-25T14:10:36.465709+00:00",
-      "attempts": 249,
+      "attempts": 250,
       "caller_name": "Uac4u",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1144,7 +1144,7 @@
       "value": "Phone Call ",
       "note": "WC #243206183 | Phone Call",
       "first_seen": "2026-06-25T16:40:18.255673+00:00",
-      "attempts": 218,
+      "attempts": 219,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1158,7 +1158,7 @@
       "value": "Phone Call ",
       "note": "WC #243234618 | Phone Call",
       "first_seen": "2026-06-25T18:15:16.182364+00:00",
-      "attempts": 198,
+      "attempts": 199,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
