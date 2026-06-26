@@ -542,7 +542,7 @@
     "last_lead": "2026-06-25T18:15:16.182397",
     "total_calls": 73
   },
-  "last_run": "2026-06-26T14:20:15.046028+00:00",
+  "last_run": "2026-06-26T14:25:16.511498+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1130,7 +1130,7 @@
       "value": "Phone Call ",
       "note": "WC #243206183 | Phone Call",
       "first_seen": "2026-06-25T16:40:18.255673+00:00",
-      "attempts": 266,
+      "attempts": 267,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
@@ -1144,7 +1144,7 @@
       "value": "Phone Call ",
       "note": "WC #243234618 | Phone Call",
       "first_seen": "2026-06-25T18:15:16.182364+00:00",
-      "attempts": 246,
+      "attempts": 247,
       "caller_name": "Oaks Eric",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
