@@ -544,7 +544,7 @@
     "last_lead": "2026-06-26T17:00:20.438228",
     "total_calls": 74
   },
-  "last_run": "2026-06-26T18:15:18.596409+00:00",
+  "last_run": "2026-06-26T18:20:18.333670+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1126,27 +1126,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "243234618": {
-      "wc_lead_id": "243234618",
-      "phone": "+13256274082",
-      "value": "Phone Call ",
-      "note": "WC #243234618 | Phone Call",
-      "first_seen": "2026-06-25T18:15:16.182364+00:00",
-      "attempts": 295,
-      "caller_name": "Oaks Eric",
-      "lead_source_raw": "(direct)",
-      "lead_medium_raw": "(none)",
-      "call_duration": "1 minute and 56 seconds",
-      "received_at": "2026-06-25T18:11:21Z",
-      "transcription": "Recipient\nForeign. Good afternoon. Thank you for calling Blackjack Landscaping. This is Carlos on my director call.\n\nCaller\nThis is Eric Oaks. Let me try to call through and get hold to Denise.\n\nRecipient\nShe's not. Hi, Mr. Oak. She's not in at the moment. She's actually out. You were calling for your. The walkthrough, right? Or what was it that needed to be done?\n\nCaller\nWhat? Yeah, okay. My sprinkler system. John came over here last week sometime. I can't remember what day it was.\n\nRecipient\nUh huh.\n\nCaller\nIt's been. It's been. Yeah. He came here because after work was complete. I'll turn my sprinkler on. But it wouldn't turn on.\n\nRecipient\nOkay.\n\nCaller\nHe came on, he realized. He said. He thinking it's a broken wire somewhere. And he said he was going to get back with me, but nobody got back with it. It's been about two weeks now. Everybody's gotten back with.\n\nRecipient\nOkay, okay. Let me get like. I'm very Sorry about that, Mr. John. Denise. Unfortunately, she's out. She's been out, but let me go ahead and get with. I mean I do have access. I mean, I can't get a hold of her. So let me just get a hold of her and then also with John to see if they happy schedule. They. I think they do have you scheduled this week. I just can't provide you a specific date. But let me confirm with them before I commit to a date with you. Okay.\n\nCaller\nOkay, hey, but just. Just let them know that any. Any date, any date is okay with us because we always hear. I just need to know when they're going to.\n\nRecipient\nYes, we spoke last week and I did mention that like because you did tell me last week that you were available anytime, any day during the week. So they are aware of that. But let me just see when they. When they have you scheduled. Okay.\n\nCaller\nAll right, thank you. Appreciate you. Have a good day.\n\nRecipient\nYou're welcome. Thank you. Likewise."
-    },
     "243422104": {
       "wc_lead_id": "243422104",
       "phone": "+18177277633",
       "value": "Google Business Profile",
       "note": "WC #243422104 | Google Business Profile",
       "first_seen": "2026-06-26T17:00:20.438178+00:00",
-      "attempts": 16,
+      "attempts": 17,
       "caller_name": "Hasenjaeger E.",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
