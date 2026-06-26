@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-25T15:03:21.191246+00:00",
+  "last_run": "2026-06-26T14:51:53.265362+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -193,6 +193,10 @@
       "first_seen": "2026-06-11",
       "title": "Field Maintenance Consumable & Labor"
     },
+    "bonfire-dallascityhall:239820": {
+      "first_seen": "2026-06-26",
+      "title": "Herbicides and Pesticides"
+    },
     "bonfire-dallascityhall:239949": {
       "first_seen": "2026-06-11",
       "title": "2026 Assessment, Master Planning, and Renovation of Dallas Water Utilities Employee-Occupied Buildings and Office Spaces"
@@ -281,6 +285,10 @@
       "first_seen": "2026-06-23",
       "title": "Purchase of Tubes for various slides - *218685"
     },
+    "bonfire-dallascityhall:241627": {
+      "first_seen": "2026-06-26",
+      "title": "Consultant Services - Determination Remedies Non-Conforming Uses"
+    },
     "bonfire-dallascityhall:241638": {
       "first_seen": "2026-06-23",
       "title": "Purchase of Forensic Equipment - 218435"
@@ -296,6 +304,10 @@
     "bonfire-dallascityhall:241829": {
       "first_seen": "2026-06-25",
       "title": "Purchase of Heat Transfer Fluid, Wind Direction Sock, Antifreeze - *218622"
+    },
+    "bonfire-dallascityhall:242143": {
+      "first_seen": "2026-06-26",
+      "title": "Enterprise Print Management, Support, and Maintenance Services"
     },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
@@ -485,6 +497,10 @@
       "first_seen": "2026-06-22",
       "title": "Safe Streets For All (SS4A) Grant Program Consultant Services"
     },
+    "bonfire-friscotexas:241432": {
+      "first_seen": "2026-06-26",
+      "title": "Teel Parkway Parking Addition"
+    },
     "bonfire-parkercountytx:239131": {
       "first_seen": "2026-06-11",
       "title": "Pavement Striping Services"
@@ -665,6 +681,10 @@
       "first_seen": "2026-06-22",
       "title": "Residential Concrete Pavement Maintenance Requirements Contract - 2025, Project No. PW-S-00042"
     },
+    "ionwave-cityofplano:2026-0502-ER Addendum 1": {
+      "first_seen": "2026-06-26",
+      "title": "Residential Concrete Pavement Maintenance Requirements Contract - 2025, Project No. PW-S-00042"
+    },
     "ionwave-fortworthisd:26-070-A": {
       "first_seen": "2026-06-11",
       "title": "General Retail Merchandise,Groceries,Supplies,Equipment and Services"
@@ -684,6 +704,14 @@
     "ionwave-fortworthisd:26-087": {
       "first_seen": "2026-06-11",
       "title": "Purchase of Charles Nash Elementary School"
+    },
+    "ionwave-fortworthisd:26-087 Addendum 1": {
+      "first_seen": "2026-06-26",
+      "title": "Purchase of Charles Nash Elementary School"
+    },
+    "ionwave-fortworthisd:27-001": {
+      "first_seen": "2026-06-26",
+      "title": "Petroleum Products"
     },
     "ionwave-tarrantcounty:F2026097": {
       "first_seen": "2026-06-11",
@@ -821,6 +849,10 @@
       "first_seen": "2026-06-24",
       "title": "Annual Contract for Juvenile Forensic Assessment Services"
     },
+    "ionwave-tarrantcounty:F2026144": {
+      "first_seen": "2026-06-26",
+      "title": "Annual Contract for Prisoner Extradition Services"
+    },
     "ionwave-tarrantcounty:F2026146": {
       "first_seen": "2026-06-18",
       "title": "Annual Contract for Concealed Weapons Detector and High Speed Automated Checkpoint X-Ray Systems, Software and Maintenan"
@@ -872,6 +904,10 @@
     "publicpurchase:213686": {
       "first_seen": "2026-06-20",
       "title": "Bid posting #213686 (open title on site)"
+    },
+    "publicpurchase:213747": {
+      "first_seen": "2026-06-26",
+      "title": "Bid posting #213747 (open title on site)"
     },
     "saginaw:https://www.ci.saginaw.tx.us/government/bid_detail_T10_R16.php": {
       "first_seen": "2026-06-11",
