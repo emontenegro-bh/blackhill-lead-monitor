@@ -537,15 +537,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABEmboAwAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABEmboBAAAAA==",
     "243422104",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABE4i_iAAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABE4i_iAAAAA==",
+    "243574907"
   ],
   "stats": {
-    "total_leads": 220,
+    "total_leads": 221,
     "total_spam": 240,
-    "last_lead": "2026-06-26T17:00:20.438228",
-    "total_calls": 74
+    "last_lead": "2026-06-27T18:15:12.290993",
+    "total_calls": 75
   },
-  "last_run": "2026-06-27T18:10:15.534302+00:00",
+  "last_run": "2026-06-27T18:15:12.292179+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1135,7 +1136,22 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {},
+  "pending_call_attributions": {
+    "243574907": {
+      "wc_lead_id": "243574907",
+      "phone": "+18179629520",
+      "value": "Google Organic",
+      "note": "WC #243574907 | Google Organic | Landing: /areas-we-serve/keller",
+      "first_seen": "2026-06-27T18:15:12.290962+00:00",
+      "attempts": 1,
+      "caller_name": "Ibm Corporation",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "organic",
+      "call_duration": "15 seconds",
+      "received_at": "2026-06-27T18:10:27Z",
+      "transcription": "Recipient\nThank you for calling Black Hill Landscaping. Our office is currently closed."
+    }
+  },
   "round_robin_state": {
     "last_index": 0
   }
