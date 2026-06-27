@@ -1121,6 +1121,15 @@
       "service": "Commercial Maintenance",
       "lead_type": "web_form",
       "date": "2026-06-25"
+    },
+    "242997843": {
+      "aspire_contact_id": "2683",
+      "traffic_source": "google / cpc",
+      "service": "fuzzy-matched",
+      "lead_type": "web_form",
+      "date": "2026-06-24",
+      "match_score": 1.0,
+      "match_method": "exact_email"
     }
   },
   "dismissed_matches": [
