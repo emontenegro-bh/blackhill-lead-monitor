@@ -544,7 +544,7 @@
     "last_lead": "2026-06-26T17:00:20.438228",
     "total_calls": 74
   },
-  "last_run": "2026-06-27T00:20:13.029482+00:00",
+  "last_run": "2026-06-27T00:25:15.034732+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1132,7 +1132,7 @@
       "value": "Google Business Profile",
       "note": "WC #243422104 | Google Business Profile",
       "first_seen": "2026-06-26T17:00:20.438178+00:00",
-      "attempts": 93,
+      "attempts": 94,
       "caller_name": "Hasenjaeger E.",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
