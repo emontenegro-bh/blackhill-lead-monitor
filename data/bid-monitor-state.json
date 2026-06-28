@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-27T14:11:05.321364+00:00",
+  "last_run": "2026-06-28T14:17:41.266238+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -572,6 +572,10 @@
     "civicplus-cityofmidlothian:219": {
       "first_seen": "2026-06-27",
       "title": "Construction Services for Railway Avenue Public Parking Lot Project Request for Proposals"
+    },
+    "civicplus-cityofwhitesettlement:33": {
+      "first_seen": "2026-06-28",
+      "title": "CULVERT SCOUR PROTECTION FOR NORTH CHERRY LANE, CLIFFORD STREET, AND DALE LANE"
     },
     "esbd:514182": {
       "first_seen": "2026-06-12",
