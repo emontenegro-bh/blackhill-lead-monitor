@@ -3358,3 +3358,9 @@
 [2026-06-29 17:16:58] GBP Review Monitor starting...
 [2026-06-29 17:16:58] Fetched 47 reviews.
 [2026-06-29 17:16:58] No new reviews.
+[2026-06-29 19:21:27] GBP Review Monitor starting...
+[2026-06-29 19:21:28] Fetched 48 reviews.
+[2026-06-29 19:21:28] Found 1 new review(s).
+[2026-06-29 19:21:28] New 5-star review from Serena Surrett. Draft saved: /home/runner/work/blackhill-lead-monitor/blackhill-lead-monitor/data/gbp/pending-responses/AROOpzVHEeJNpRvuHgUXeDUIZnHZ6EjfX8py1URA.json
+[2026-06-29 19:21:29] Email sent via MS Graph (from evelin@blackhilltx.com).
+[2026-06-29 19:21:29] Done. 1 new review(s) processed.
