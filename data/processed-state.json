@@ -551,7 +551,7 @@
     "last_lead": "2026-06-29T18:50:14.961378",
     "total_calls": 77
   },
-  "last_run": "2026-06-29T19:20:14.229256+00:00",
+  "last_run": "2026-06-29T19:25:17.255909+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1155,7 +1155,7 @@
       "value": "Referral",
       "note": "WC #243817334 | Referral",
       "first_seen": "2026-06-29T16:45:13.956304+00:00",
-      "attempts": 33,
+      "attempts": 34,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
@@ -1169,7 +1169,7 @@
       "value": "Google Business Profile",
       "note": "WC #243862541 | Google Business Profile",
       "first_seen": "2026-06-29T18:50:14.961348+00:00",
-      "attempts": 7,
+      "attempts": 8,
       "caller_name": "Frisco Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
