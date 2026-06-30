@@ -554,15 +554,16 @@
     "244063548",
     "244068141",
     "244082787",
-    "244102722"
+    "244102722",
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFbg5TQAAAA=="
   ],
   "stats": {
     "total_leads": 229,
-    "total_spam": 246,
+    "total_spam": 247,
     "last_lead": "2026-06-30T19:15:15.839681",
     "total_calls": 82
   },
-  "last_run": "2026-06-30T23:10:18.061693+00:00",
+  "last_run": "2026-06-30T23:12:16.271053+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
