@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-29T16:14:37.694197+00:00",
+  "last_run": "2026-06-30T14:46:57.074361+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -385,6 +385,14 @@
       "first_seen": "2026-06-22",
       "title": "Miscellaneous Industrial Items"
     },
+    "bonfire-dfwairport:241686": {
+      "first_seen": "2026-06-30",
+      "title": "1W Lift Station at North Express Parking"
+    },
+    "bonfire-dfwairport:241695": {
+      "first_seen": "2026-06-30",
+      "title": "Northwest Midfield Checkpoint"
+    },
     "bonfire-dfwairport:241723": {
       "first_seen": "2026-06-29",
       "title": "Drone Subscription"
@@ -393,8 +401,16 @@
       "first_seen": "2026-06-25",
       "title": "3D Laser Scanning & Calibration Warranty and Maintenance Services"
     },
+    "bonfire-dfwairport:242212": {
+      "first_seen": "2026-06-30",
+      "title": "Tractors and Debris Blower"
+    },
     "bonfire-dfwairport:242460": {
       "first_seen": "2026-06-29",
+      "title": "Miscellaneous Industrial Items"
+    },
+    "bonfire-dfwairport:242492": {
+      "first_seen": "2026-06-30",
       "title": "Miscellaneous Industrial Items"
     },
     "bonfire-fortworthtexas:178620": {
@@ -488,6 +504,10 @@
     "bonfire-fortworthtexas:238901": {
       "first_seen": "2026-06-24",
       "title": "Flooring Materials, Installation, and Services"
+    },
+    "bonfire-fortworthtexas:239269": {
+      "first_seen": "2026-06-30",
+      "title": "RFP Filter Media"
     },
     "bonfire-fortworthtexas:240811": {
       "first_seen": "2026-06-17",
@@ -661,6 +681,10 @@
       "first_seen": "2026-06-22",
       "title": "Backflow Device Testing and Repair Services"
     },
+    "ionwave-cityofirving:100SB-26 Addendum 1": {
+      "first_seen": "2026-06-30",
+      "title": "Backflow Device Testing and Repair Services"
+    },
     "ionwave-cityofirving:103LR-26F Addendum 1": {
       "first_seen": "2026-06-22",
       "title": "Professional Services - Annual IDIQ Traffic Engineering"
@@ -696,6 +720,10 @@
     "ionwave-cityofirving:114LR-26F Addendum 1": {
       "first_seen": "2026-06-27",
       "title": "Architectural Design Services and Feasibility Study for the Domestic Violence Shelter"
+    },
+    "ionwave-cityofirving:115LR-26F": {
+      "first_seen": "2026-06-30",
+      "title": "Cimarron Park Aquatic Facility Park Unit Renovations"
     },
     "ionwave-cityofirving:116LR-26F": {
       "first_seen": "2026-06-22",
