@@ -558,7 +558,7 @@
     "last_lead": "2026-06-30T15:30:22.553000",
     "total_calls": 79
   },
-  "last_run": "2026-06-30T16:45:16.479616+00:00",
+  "last_run": "2026-06-30T16:50:18.900609+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1156,27 +1156,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "243817334": {
-      "wc_lead_id": "243817334",
-      "phone": "+12145422383",
-      "value": "Referral",
-      "note": "WC #243817334 | Referral",
-      "first_seen": "2026-06-29T16:45:13.956304+00:00",
-      "attempts": 294,
-      "caller_name": "Wireless Caller",
-      "lead_source_raw": "blackhilllandscaping.com",
-      "lead_medium_raw": "referral",
-      "call_duration": "2 minutes and 28 seconds",
-      "received_at": "2026-06-29T16:40:46Z",
-      "transcription": "Recipient\nForeign. Hello, thank you for calling Black Hill Landscape. Thank you for calling Black Hill. How can I direct your call.\n\nCaller\nHi. I just. I need to speak to someone about, like, an estimate that I sent.\n\nRecipient\nThat you sent or that was sent to you?\n\nCaller\nIt's for, like, a incident we had with the, like, with our vehicle getting hit.\n\nRecipient\nOh, yes, give me one second. What was it for? What was the incident?\n\nCaller\nIt was just something from one of the mowers hit our vehicle. And we got an estimate. And they said. Sent over. They said they sent over an estimate for the damage.\n\nRecipient\nOkay, give me one second. What's your first and last name?\n\nCaller\nJesse campbell. This is a black hill landscaping. Right.\n\nRecipient\nYes, sir.\n\nCaller\nOkay.\n\nRecipient\nOh, yes, regarding the car. The car estimate. Right. For the repair.\n\nCaller\nRight.\n\nRecipient\nOh, okay. Yes, I'll have Evelyn give you a call back. We're going to have you take it over to our body shop.\n\nCaller\nOkay.\n\nRecipient\nTo get a second assessment. We've sent it into the insurance and they said that that was really high. So they're going to have us send it to our local and then once she gets the evaluation back, we'll advise on how to proceed.\n\nCaller\nOkay. So I. I'll get, like, an email or you guys will call me back, or how. Or how would that work?\n\nRecipient\nYeah, you'll get an email. It's from our insurance, so we've already submitted the claim and now they'll guide you through the process.\n\nCaller\nOkay, so I should receive an email maybe from the insurance then, is what you're.\n\nRecipient\nYes, sir. Yes, it's columbia insurance.\n\nCaller\nOkay. I'll look out for it then.\n\nRecipient\nOkay, sounds good. If you need anything, give us a call back.\n\nCaller\nOkay, thank you. Bye. Bye.\n\nRecipient\nBye."
-    },
     "243862541": {
       "wc_lead_id": "243862541",
       "phone": "+19722144789",
       "value": "Google Business Profile",
       "note": "WC #243862541 | Google Business Profile",
       "first_seen": "2026-06-29T18:50:14.961348+00:00",
-      "attempts": 268,
+      "attempts": 269,
       "caller_name": "Frisco Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1190,7 +1176,7 @@
       "value": "Google Business Profile",
       "note": "WC #244001908 | Google Business Profile",
       "first_seen": "2026-06-30T14:05:15.769734+00:00",
-      "attempts": 34,
+      "attempts": 35,
       "caller_name": "Private",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1204,7 +1190,7 @@
       "value": "Google Business Profile",
       "note": "WC #244029595 | Google Business Profile",
       "first_seen": "2026-06-30T15:30:22.552962+00:00",
-      "attempts": 16,
+      "attempts": 17,
       "caller_name": "Fort Worth   Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
