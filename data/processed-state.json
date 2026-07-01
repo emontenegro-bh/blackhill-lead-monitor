@@ -564,7 +564,7 @@
     "last_lead": "2026-06-30T19:15:15.839681",
     "total_calls": 82
   },
-  "last_run": "2026-07-01T17:20:21.108069+00:00",
+  "last_run": "2026-07-01T17:25:15.442459+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1168,7 +1168,7 @@
       "value": "Google Business Profile",
       "note": "WC #244068141 | Google Business Profile",
       "first_seen": "2026-06-30T17:25:15.926912+00:00",
-      "attempts": 296,
+      "attempts": 297,
       "caller_name": "Godley       Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1182,7 +1182,7 @@
       "value": "Google Business Profile",
       "note": "WC #244082787 | Google Business Profile",
       "first_seen": "2026-06-30T18:15:18.603017+00:00",
-      "attempts": 286,
+      "attempts": 287,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1196,7 +1196,7 @@
       "value": "Google Business Profile",
       "note": "WC #244102722 | Google Business Profile",
       "first_seen": "2026-06-30T19:15:15.839641+00:00",
-      "attempts": 274,
+      "attempts": 275,
       "caller_name": "Burlison,robert",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
