@@ -565,7 +565,7 @@
     "last_lead": "2026-07-01T19:25:15.782878",
     "total_calls": 83
   },
-  "last_run": "2026-07-01T22:30:19.572667+00:00",
+  "last_run": "2026-07-01T22:35:14.062473+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1169,7 +1169,7 @@
       "value": "Google Business Profile",
       "note": "WC #244330091 | Google Business Profile",
       "first_seen": "2026-07-01T19:25:15.782831+00:00",
-      "attempts": 39,
+      "attempts": 40,
       "caller_name": "Bonita Spg   Fl",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
