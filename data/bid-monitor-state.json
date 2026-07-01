@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-30T14:46:57.074361+00:00",
+  "last_run": "2026-07-01T15:03:03.549555+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -393,6 +393,10 @@
       "first_seen": "2026-06-30",
       "title": "Northwest Midfield Checkpoint"
     },
+    "bonfire-dfwairport:241705": {
+      "first_seen": "2026-07-01",
+      "title": "REISSUE: Locksmith and Core Key System Services"
+    },
     "bonfire-dfwairport:241723": {
       "first_seen": "2026-06-29",
       "title": "Drone Subscription"
@@ -597,6 +601,10 @@
       "first_seen": "2026-06-24",
       "title": "Robert and Ann Smith Park Disc Golf Improvements"
     },
+    "civicplus-cityofmansfield:197": {
+      "first_seen": "2026-07-01",
+      "title": "Major Corridors Urban Design Plan"
+    },
     "civicplus-cityofmidlothian:218": {
       "first_seen": "2026-06-22",
       "title": "Development of the 14th Street Corridor"
@@ -739,6 +747,10 @@
     },
     "ionwave-cityofirving:119T-26": {
       "first_seen": "2026-06-27",
+      "title": "Tape Digitization"
+    },
+    "ionwave-cityofirving:119T-26 Addendum 1": {
+      "first_seen": "2026-07-01",
       "title": "Tape Digitization"
     },
     "ionwave-cityofplano:2026-0290-OA": {
@@ -969,6 +981,10 @@
       "first_seen": "2026-06-22",
       "title": "Disaster Debris Monitoring and Consulting Services"
     },
+    "ionwave-townofflowermound:2026-95-A Addendum 2": {
+      "first_seen": "2026-07-01",
+      "title": "Disaster Debris Monitoring and Consulting Services"
+    },
     "ionwave-whitesettlementisd:2526-10": {
       "first_seen": "2026-06-22",
       "title": "Playground Landing and Curbs"
@@ -1036,6 +1052,10 @@
     "weatherford-notices:28316": {
       "first_seen": "2026-06-13",
       "title": "RFP 2026 013 Professional Audit Services Bid Tabulation"
+    },
+    "weatherford-notices:28467": {
+      "first_seen": "2026-07-01",
+      "title": "RFP-2026-012-Substation-Power-Transformer-Procurement-Bid-Package-With-Datasheet"
     },
     "willowpark:498": {
       "first_seen": "2026-06-11",
