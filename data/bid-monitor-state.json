@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-01T15:03:03.549555+00:00",
+  "last_run": "2026-07-02T14:34:04.754859+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -72,6 +72,14 @@
     "bonfire-arlingtontx:240593": {
       "first_seen": "2026-06-18",
       "title": "39-inch Water Transmission Main Improvements"
+    },
+    "bonfire-arlingtontx:241979": {
+      "first_seen": "2026-07-02",
+      "title": "1707 and 1708 New York Avenue"
+    },
+    "bonfire-arlingtontx:242985": {
+      "first_seen": "2026-07-02",
+      "title": "Annual Requirements Contract for Overhead Door Maintenance and Repair Services"
     },
     "bonfire-burlesontx:235806": {
       "first_seen": "2026-06-11",
@@ -321,6 +329,26 @@
       "first_seen": "2026-06-27",
       "title": "Purchase of Police Equipment and Supplies - *218427"
     },
+    "bonfire-dallascityhall:242791": {
+      "first_seen": "2026-07-02",
+      "title": "Purchase of Bulk Bags *218793"
+    },
+    "bonfire-dallascityhall:242794": {
+      "first_seen": "2026-07-02",
+      "title": "Purchase of Electric Motors and Contactors *218844"
+    },
+    "bonfire-dallascityhall:242899": {
+      "first_seen": "2026-07-02",
+      "title": "Purchase of - Boom Crane Certification *218863"
+    },
+    "bonfire-dallascityhall:242922": {
+      "first_seen": "2026-07-02",
+      "title": "Purchase of - WATER SUPPLY, GROUNDWATER, SEWAGE TREATMENT, AND RELATED EQUIPMENT *218658"
+    },
+    "bonfire-dallascityhall:242999": {
+      "first_seen": "2026-07-02",
+      "title": "Bond 2024 Traffic Signal Construction Group 6 \u2013 Masters Drive at Checota Drive, Pear Ridge Drive at Haverwood Drive, Jef"
+    },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
       "title": "Alton Bridge Bank Stabilization & Bridge Scour"
@@ -352,6 +380,10 @@
     "bonfire-dfwairport:237902": {
       "first_seen": "2026-06-22",
       "title": "AI Video Creation Services"
+    },
+    "bonfire-dfwairport:238994": {
+      "first_seen": "2026-07-02",
+      "title": "E-III Fire Training Fuel Supply"
     },
     "bonfire-dfwairport:239658": {
       "first_seen": "2026-06-22",
@@ -745,6 +777,10 @@
       "first_seen": "2026-06-29",
       "title": "Advanced Metering Infrastructure Replacement"
     },
+    "ionwave-cityofirving:117LR-26F Addendum 1": {
+      "first_seen": "2026-07-02",
+      "title": "Advanced Metering Infrastructure Replacement"
+    },
     "ionwave-cityofirving:119T-26": {
       "first_seen": "2026-06-27",
       "title": "Tape Digitization"
@@ -752,6 +788,14 @@
     "ionwave-cityofirving:119T-26 Addendum 1": {
       "first_seen": "2026-07-01",
       "title": "Tape Digitization"
+    },
+    "ionwave-cityofirving:123SB-26": {
+      "first_seen": "2026-07-02",
+      "title": "Shredding Services"
+    },
+    "ionwave-cityofkeller:26-007": {
+      "first_seen": "2026-07-02",
+      "title": "2026 Janitorial Services - The Keller Pointe"
     },
     "ionwave-cityofplano:2026-0290-OA": {
       "first_seen": "2026-06-22",
@@ -969,6 +1013,10 @@
       "first_seen": "2026-06-23",
       "title": "Annual Contract for Marketing Services"
     },
+    "ionwave-tarrantcounty:F2026152": {
+      "first_seen": "2026-07-02",
+      "title": "Annual Contract for Out-Patient Treatment Services for Juveniles with Sexual Behavior Problems"
+    },
     "ionwave-townofflowermound:2026-101-A": {
       "first_seen": "2026-06-22",
       "title": "Request for Statement of Qualifications for Professional Engineering Services for Various Projects"
@@ -1056,6 +1104,10 @@
     "weatherford-notices:28467": {
       "first_seen": "2026-07-01",
       "title": "RFP-2026-012-Substation-Power-Transformer-Procurement-Bid-Package-With-Datasheet"
+    },
+    "weatherford-notices:28474": {
+      "first_seen": "2026-07-02",
+      "title": "QandA-with-Prop-Reports"
     },
     "willowpark:498": {
       "first_seen": "2026-06-11",
