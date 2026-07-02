@@ -568,7 +568,7 @@
     "last_lead": "2026-07-02T13:15:15.174856",
     "total_calls": 84
   },
-  "last_run": "2026-07-02T13:20:17.231812+00:00",
+  "last_run": "2026-07-02T13:25:15.726552+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1172,7 +1172,7 @@
       "value": "Google Business Profile",
       "note": "WC #244330091 | Google Business Profile",
       "first_seen": "2026-07-01T19:25:15.782831+00:00",
-      "attempts": 222,
+      "attempts": 223,
       "caller_name": "Bonita Spg   Fl",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1186,7 +1186,7 @@
       "value": "Google Business Profile",
       "note": "WC #244442190 | Google Business Profile",
       "first_seen": "2026-07-02T13:15:15.174817+00:00",
-      "attempts": 2,
+      "attempts": 3,
       "caller_name": "Arlington    Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
