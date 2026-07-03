@@ -586,7 +586,7 @@
     "last_lead": "2026-07-03T20:00:37.076314",
     "total_calls": 87
   },
-  "last_run": "2026-07-03T22:55:12.611440+00:00",
+  "last_run": "2026-07-03T23:00:27.572352+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1211,22 +1211,7 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "244607857": {
-      "wc_lead_id": "244607857",
-      "phone": "+18172109731",
-      "value": "Google Business Profile",
-      "note": "WC #244607857 | Google Business Profile",
-      "first_seen": "2026-07-02T22:55:13.302223+00:00",
-      "attempts": 299,
-      "caller_name": "Ellis Albert",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "58 seconds",
-      "received_at": "2026-07-02T22:51:48Z",
-      "transcription": "Recipient\nForeign. Good afternoon. Thank you for calling Black and Landscaping. This is Carlos, my director. Call.\n\nCaller\nHey, are you guys close tomorrow?\n\nRecipient\nYes, May I ask who I'm speaking with?\n\nCaller\nMy name is Albert.\n\nRecipient\nYes. How can I help you?\n\nCaller\nYeah, I will see if you guys are closed tomorrow for, like, I feel like people that are coming in and want to talk to the mechanic for a job.\n\nRecipient\nOh, we're not. We have a mechanic at the moment. We're not hiring for mechanics.\n\nCaller\nNo, I'm not as a mechanic, like, as a crew member.\n\nRecipient\nOh, okay. I mean, you can come and fill out an application. We are currently just hired, but you can definitely stop by on Monday.\n\nCaller\nOkay. Thank you so much."
-    }
-  },
+  "pending_call_attributions": {},
   "round_robin_state": {
     "last_index": 0
   }
