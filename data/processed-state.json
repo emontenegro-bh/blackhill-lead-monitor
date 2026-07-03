@@ -568,15 +568,16 @@
     "244589924",
     "244589656",
     "244607857",
-    "244627804"
+    "244627804",
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkVxgAAAA=="
   ],
   "stats": {
     "total_leads": 235,
-    "total_spam": 254,
+    "total_spam": 255,
     "last_lead": "2026-07-03T02:20:27.009963",
     "total_calls": 87
   },
-  "last_run": "2026-07-03T09:30:25.815206+00:00",
+  "last_run": "2026-07-03T09:32:37.038319+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
