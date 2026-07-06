@@ -595,7 +595,7 @@
     "last_lead": "2026-07-06T15:30:31.848562",
     "total_calls": 88
   },
-  "last_run": "2026-07-06T19:16:48.718123+00:00",
+  "last_run": "2026-07-06T19:20:24.821338+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1248,7 +1248,7 @@
       "value": "Google Business Profile",
       "note": "WC #245060569 | Google Business Profile",
       "first_seen": "2026-07-06T15:30:31.848531+00:00",
-      "attempts": 48,
+      "attempts": 49,
       "caller_name": "Ellis Albert",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
