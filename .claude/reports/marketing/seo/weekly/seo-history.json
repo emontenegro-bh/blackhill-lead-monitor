@@ -168,5 +168,22 @@
     "title_issues": 0,
     "h1_issues": 0,
     "meta_issues": 0
+  },
+  "2026-07-06": {
+    "score": 86,
+    "pages_live": 219,
+    "pages_missing": 0,
+    "total_issues": 118,
+    "alt_text_pct": 89.8,
+    "images_total": 2315,
+    "images_good": 2080,
+    "images_poor": 219,
+    "images_missing": 16,
+    "schema_local_business": 186,
+    "schema_faq": 184,
+    "schema_aggregate_rating": 184,
+    "title_issues": 83,
+    "h1_issues": 0,
+    "meta_issues": 23
   }
 }
