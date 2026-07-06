@@ -1660,6 +1660,41 @@ def retry_pending_call_attributions(config, state):
     state["pending_call_attributions"] = keep
 
 
+def _alert_aspire_failures(config, failures):
+    """Email an alert when leads were captured but failed to sync to Aspire.
+
+    These failures are otherwise invisible: the run still exits 0 because the
+    lead is saved in HubSpot and the owner is notified by email. This is the
+    replacement for the retired laptop aspire-watcher heartbeat monitor, which
+    only detected the laptop being off and never this real failure mode.
+    """
+    recipients = (config.get("notifications", {}).get("lead_recipients")
+                  or ["evelin@blackhilltx.com"])
+    n = len(failures)
+    rows = "".join(
+        f"<tr><td>{f['name']}</td><td>{f['email']}</td><td>{f['phone']}</td>"
+        f"<td>{f['service']}</td><td>WC #{f['wc_id']}</td></tr>"
+        for f in failures
+    )
+    subject = f"[ALERT] {n} lead(s) failed to sync to Aspire"
+    html_body = f"""<h3>Aspire sync failure</h3>
+<p>{n} lead(s) were captured this run but did <b>not</b> create an Aspire contact.
+They are saved in HubSpot and the owner was emailed, so nothing is lost, but they
+need to be added to Aspire manually. A transient cause (Aspire API/auth blip) will
+retry on the next run.</p>
+<table border="1" cellpadding="6" cellspacing="0">
+<tr><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Lead</th></tr>
+{rows}
+</table>
+<p style="color:#888;font-size:12px">Sent by whatconverts-lead-monitor.py (Aspire failure watch).</p>"""
+    ok, err = _send_via_gmail_smtp(recipients, subject, html_body,
+                                   from_name="Black Hill Lead Monitor")
+    if ok:
+        log(f"  Aspire-failure alert emailed to {', '.join(recipients)} ({n} lead(s))")
+    else:
+        log(f"  ERROR: could not send Aspire-failure alert: {err}")
+
+
 def process_leads(config, state):
     """Main processing loop: fetch WhatConverts leads and process new ones."""
     # Retry any phone calls we couldn't attribute yet (admin entered them since last run).
@@ -1677,6 +1712,11 @@ def process_leads(config, state):
 
     # Track emails flagged as spam within this run
     spam_emails = set()
+
+    # Track leads that failed to sync to Aspire (silent otherwise: the run still
+    # succeeds on HubSpot + owner email). Replaces the retired laptop
+    # aspire-watcher heartbeat monitor with a signal on the real failure mode.
+    aspire_failures = []
 
     for lead_data in leads:
         lead_id = str(lead_data.get("lead_id", ""))
@@ -1800,6 +1840,17 @@ def process_leads(config, state):
             lead["_aspire_url"] = aspire_url
         else:
             lead["_aspire_status"] = "not_created"
+            # A genuine Aspire creation failure (Aspire enabled, live run) is
+            # otherwise silent, so record it for the end-of-run alert. Skip the
+            # "disabled" and dry-run cases, which also land here but are expected.
+            if config.get("aspire", {}).get("enabled") and not DRY_RUN:
+                aspire_failures.append({
+                    "name": f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip() or "(no name)",
+                    "email": lead.get("email") or "(no email)",
+                    "phone": lead.get("phone") or "",
+                    "service": lead.get("service_interest", ""),
+                    "wc_id": lead_id,
+                })
 
         # HubSpot CRM (returns owner_id for notification routing)
         hubspot_status, owner_id = create_hubspot_contact(config, lead)
@@ -1855,6 +1906,10 @@ def process_leads(config, state):
             save_state(state)
 
     state["processed_ids"] = processed_ids
+
+    # Alert on any leads that were captured but failed to reach Aspire.
+    if aspire_failures:
+        _alert_aspire_failures(config, aspire_failures)
 
 
 # --- CLI Modes ---
