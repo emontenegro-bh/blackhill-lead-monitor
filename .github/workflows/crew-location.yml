@@ -13,11 +13,6 @@ on:
         description: 'Override email recipients (comma-separated). Blank = default (evelin + denisse).'
         required: false
         default: ''
-      skip_teams:
-        description: 'Skip posting to Teams (email only) — useful for tests.'
-        type: boolean
-        required: false
-        default: false
 
 concurrency:
   group: crew-location
@@ -41,7 +36,10 @@ jobs:
       - name: Send crew location report
         env:
           AZUGA_API_KEY: ${{ secrets.AZUGA_API_KEY }}
-          TEAMS_WEBHOOK_URL: ${{ github.event.inputs.skip_teams != 'true' && secrets.TEAMS_WEBHOOK_URL || '' }}
+          # Email-only delivery. This report is intentionally NOT posted to Teams:
+          # it shares the leads webhook (TEAMS_WEBHOOK_URL), whose Power Automate
+          # flow only renders adaptive-card payloads, so the plain-text crew report
+          # silently failed that flow (~6/week) while still returning HTTP 202.
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           CREW_LOC_TO: ${{ github.event.inputs.to }}
