@@ -1006,5 +1006,83 @@
       "website_clicks": 2,
       "direction_requests": 15
     }
+  },
+  {
+    "date": "2026-07-06",
+    "date_range": "2026-06-27 to 2026-07-03",
+    "gsc": {
+      "impressions": 10399,
+      "clicks": 36,
+      "ctr": 0.35,
+      "avg_position": 17.71
+    },
+    "priority_keywords": [
+      {
+        "query": "landscaping fort worth",
+        "position": 8.8,
+        "impressions": 123,
+        "clicks": 1
+      },
+      {
+        "query": "landscaping near me",
+        "position": 8.1,
+        "impressions": 42,
+        "clicks": 1
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 12.5,
+        "impressions": 30,
+        "clicks": 0
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1.2,
+        "impressions": 27,
+        "clicks": 7
+      },
+      {
+        "query": "arlington commercial landscaping",
+        "position": 7.8,
+        "impressions": 21,
+        "clicks": 0
+      },
+      {
+        "query": "24/7 emergency tree removal",
+        "position": 9,
+        "impressions": 20,
+        "clicks": 0
+      },
+      {
+        "query": "aledo culvert construction",
+        "position": 23,
+        "impressions": 20,
+        "clicks": 0
+      },
+      {
+        "query": "affordable landscaping fort worth tx",
+        "position": 13.9,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "affordable landscaping services fort worth tx",
+        "position": 21.1,
+        "impressions": 7,
+        "clicks": 0
+      },
+      {
+        "query": "aledo tree trimming",
+        "position": 29.1,
+        "impressions": 7,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 135,
+      "calls": 9,
+      "website_clicks": 5,
+      "direction_requests": 14
+    }
   }
 ]
