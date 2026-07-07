@@ -597,7 +597,7 @@
     "last_lead": "2026-07-06T15:30:31.848562",
     "total_calls": 88
   },
-  "last_run": "2026-07-07T15:25:16.728966+00:00",
+  "last_run": "2026-07-07T15:30:41.888744+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1243,22 +1243,7 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "245060569": {
-      "wc_lead_id": "245060569",
-      "phone": "+18172109731",
-      "value": "Google Business Profile",
-      "note": "WC #245060569 | Google Business Profile",
-      "first_seen": "2026-07-06T15:30:31.848531+00:00",
-      "attempts": 298,
-      "caller_name": "Ellis Albert",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "55 seconds",
-      "received_at": "2026-07-06T15:25:47Z",
-      "transcription": "Recipient\nGood morning. Thank you for calling Black Hill Landscaping. This is Carlos and my director Call.\n\nCaller\nHey, Carlos. I was just up there. I had a question about the schedule. If I were to get hired, what would the schedule look like?\n\nRecipient\nI'm sorry.\n\nCaller\nI said, if I were to get hired, what would the schedule look like?\n\nRecipient\nOh, that. It just depends. It's a Monday through Friday. We just work Monday through Friday. It's just 40 hours a week and. But that just depends. Like, if we do decide to proceed, then we would go over everything.\n\nCaller\nRyan, what's the start time like? Is it like, 6? 7?\n\nRecipient\nIt depends. Like 6, 7 would be more or less.\n\nCaller\nOkay. Okay. Thank you so much.\n\nRecipient\nYou're welcome."
-    }
-  },
+  "pending_call_attributions": {},
   "round_robin_state": {
     "last_index": 1
   }
