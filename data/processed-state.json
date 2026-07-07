@@ -599,7 +599,7 @@
     "last_lead": "2026-07-07T17:35:16.033981",
     "total_calls": 89
   },
-  "last_run": "2026-07-07T17:35:16.035212+00:00",
+  "last_run": "2026-07-07T17:40:36.951796+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1252,7 +1252,7 @@
       "value": "Google Ads",
       "note": "WC #245356820 | Google Ads | Keyword: sprinkler lawn repair | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
       "first_seen": "2026-07-07T17:35:16.033942+00:00",
-      "attempts": 1,
+      "attempts": 2,
       "caller_name": "Fort Worth   Tx",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
