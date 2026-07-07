@@ -590,15 +590,16 @@
     "245084182",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV0AAAAA==",
     "245281918",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV0gAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV0gAAAA==",
+    "245356820"
   ],
   "stats": {
-    "total_leads": 242,
+    "total_leads": 243,
     "total_spam": 264,
-    "last_lead": "2026-07-06T15:30:31.848562",
-    "total_calls": 88
+    "last_lead": "2026-07-07T17:35:16.033981",
+    "total_calls": 89
   },
-  "last_run": "2026-07-07T17:30:41.028660+00:00",
+  "last_run": "2026-07-07T17:35:16.035212+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1244,7 +1245,22 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {},
+  "pending_call_attributions": {
+    "245356820": {
+      "wc_lead_id": "245356820",
+      "phone": "+18178975331",
+      "value": "Google Ads",
+      "note": "WC #245356820 | Google Ads | Keyword: sprinkler lawn repair | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
+      "first_seen": "2026-07-07T17:35:16.033942+00:00",
+      "attempts": 1,
+      "caller_name": "Fort Worth   Tx",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "3 minutes and 10 seconds",
+      "received_at": "2026-07-07T17:32:03Z",
+      "transcription": ""
+    }
+  },
   "round_robin_state": {
     "last_index": 1
   }
