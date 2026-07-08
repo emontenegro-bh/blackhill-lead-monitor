@@ -593,15 +593,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV0gAAAA==",
     "245356820",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV0wAAAA==",
-    "245508371"
+    "245508371",
+    "245509967"
   ],
   "stats": {
-    "total_leads": 244,
+    "total_leads": 245,
     "total_spam": 265,
-    "last_lead": "2026-07-08T13:20:39.082305",
-    "total_calls": 90
+    "last_lead": "2026-07-08T13:25:15.623762",
+    "total_calls": 91
   },
-  "last_run": "2026-07-08T13:20:39.083787+00:00",
+  "last_run": "2026-07-08T13:25:15.625145+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1254,13 +1255,27 @@
       "value": "Google Ads",
       "note": "WC #245508371 | Google Ads",
       "first_seen": "2026-07-08T13:20:39.082273+00:00",
-      "attempts": 1,
+      "attempts": 2,
       "caller_name": "Greenville   Tx",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
       "call_duration": "44 seconds",
       "received_at": "2026-07-08T13:17:03Z",
       "transcription": "Recipient\nGood morning. Thank you for calling. Black and Landscaping. This is Carlos. I'm a director call.\n\nCaller\nGood morning. Are y' all owner, operator, Own your own stuff.\n\nRecipient\nI'm sorry.\n\nCaller\nYour own or operate a landscaping business? It's emotion.\n\nRecipient\nYeah, we. We offer landscaping services, maintenance services.\n\nCaller\nThank you.\n\nRecipient\nI'm sorry."
+    },
+    "245509967": {
+      "wc_lead_id": "245509967",
+      "phone": "+19038698623",
+      "value": "Google Ads",
+      "note": "WC #245509967 | Google Ads",
+      "first_seen": "2026-07-08T13:25:15.623737+00:00",
+      "attempts": 1,
+      "caller_name": "Greenville   Tx",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "1 minute and 4 seconds",
+      "received_at": "2026-07-08T13:23:32Z",
+      "transcription": "Caller\nMorning.\n\nRecipient\nGood morning. Black Hill landscape in this trinity. How may I help you?\n\nCaller\nI. I just want to know if y' all hiring.\n\nRecipient\nWe are accepting applications right now.\n\nCaller\nI'm just a helper, ma'. Am. That's all I am, is just a helper.\n\nRecipient\nOkay.\n\nCaller\nCan I ask you to help me fill that out?\n\nRecipient\nYou're welcome to come in and fill it out. Yes.\n\nCaller\nWhere's your location at?\n\nRecipient\nWe're on South Grant.\n\nCaller\nI do not have a car.\n\nRecipient\nOkay, well, then you'll have to find transportation because we don't provide it.\n\nCaller\nThank you.\n\nRecipient\nBye. Bye."
     }
   },
   "round_robin_state": {
