@@ -602,7 +602,7 @@
     "last_lead": "2026-07-08T13:25:15.623762",
     "total_calls": 91
   },
-  "last_run": "2026-07-08T13:35:17.770156+00:00",
+  "last_run": "2026-07-08T13:40:36.823678+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1255,7 +1255,7 @@
       "value": "Google Ads",
       "note": "WC #245508371 | Google Ads",
       "first_seen": "2026-07-08T13:20:39.082273+00:00",
-      "attempts": 4,
+      "attempts": 5,
       "caller_name": "Greenville   Tx",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1269,7 +1269,7 @@
       "value": "Google Ads",
       "note": "WC #245509967 | Google Ads",
       "first_seen": "2026-07-08T13:25:15.623737+00:00",
-      "attempts": 3,
+      "attempts": 4,
       "caller_name": "Greenville   Tx",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
