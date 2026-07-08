@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-07T15:17:50.876102+00:00",
+  "last_run": "2026-07-08T14:43:46.203833+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -369,6 +369,10 @@
       "first_seen": "2026-07-07",
       "title": "Purchase of Distraction Device Components - 217270"
     },
+    "bonfire-dallascityhall:243610": {
+      "first_seen": "2026-07-08",
+      "title": "Purchase of - COOLERS, DRINKING WATER, RENTAL OR LEASE *218944"
+    },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
       "title": "Alton Bridge Bank Stabilization & Bridge Scour"
@@ -473,6 +477,10 @@
       "first_seen": "2026-07-07",
       "title": "Terminal Exit Lane Program \u2013 Phase III"
     },
+    "bonfire-dfwairport:243523": {
+      "first_seen": "2026-07-08",
+      "title": "Cavender\u2019s Cowboy Hat"
+    },
     "bonfire-fortworthtexas:178620": {
       "first_seen": "2026-06-11",
       "title": "ITB Paving Improvements: Trinity Park, Z. Boaz South Park, and Pecan Valley Golf Course"
@@ -517,6 +525,10 @@
       "first_seen": "2026-06-11",
       "title": "RFP Traffic Signal Poles and Arms"
     },
+    "bonfire-fortworthtexas:235874": {
+      "first_seen": "2026-07-08",
+      "title": "RFI/Sources Sought \u2013 P-Card Commercial Card Compliance Solution"
+    },
     "bonfire-fortworthtexas:236506": {
       "first_seen": "2026-06-11",
       "title": "RFP Standard Workwear"
@@ -557,6 +569,10 @@
       "first_seen": "2026-06-11",
       "title": "PW - CPN 100997-1 - Sanitary Sewer M-245 Parallel Relief Pipeline Part 1"
     },
+    "bonfire-fortworthtexas:238870": {
+      "first_seen": "2026-07-08",
+      "title": "RFP Online Backflow Testing Management Solution"
+    },
     "bonfire-fortworthtexas:238896": {
       "first_seen": "2026-06-24",
       "title": "RFP Aluminum, Iron, Rebar, and Steel"
@@ -564,6 +580,14 @@
     "bonfire-fortworthtexas:238901": {
       "first_seen": "2026-06-24",
       "title": "Flooring Materials, Installation, and Services"
+    },
+    "bonfire-fortworthtexas:238985": {
+      "first_seen": "2026-07-08",
+      "title": "RFP Paint and Paint Supplies"
+    },
+    "bonfire-fortworthtexas:238995": {
+      "first_seen": "2026-07-08",
+      "title": "RFP Elevator and Escalator Maintenance and Repair"
     },
     "bonfire-fortworthtexas:239269": {
       "first_seen": "2026-06-30",
@@ -588,6 +612,14 @@
     "bonfire-fortworthtexas:242236": {
       "first_seen": "2026-06-27",
       "title": "PMD Job Order Contract"
+    },
+    "bonfire-fortworthtexas:243195": {
+      "first_seen": "2026-07-08",
+      "title": "PW - RFP Group 2026B"
+    },
+    "bonfire-fortworthtexas:243277": {
+      "first_seen": "2026-07-08",
+      "title": "PW - CPN 103498 - Water and Sanitary Sewer Replacement Contract 2021,WSM-A,Part1"
     },
     "bonfire-friscotexas:236404": {
       "first_seen": "2026-06-22",
@@ -636,6 +668,10 @@
     "civicplus-cityofhaltomcity:28": {
       "first_seen": "2026-06-25",
       "title": "Bid #B2026-061-001 - Medical / Pharmacy / Vision / Dental Benefits"
+    },
+    "civicplus-cityofhaltomcity:29": {
+      "first_seen": "2026-07-08",
+      "title": "Bid #B2026-312-006 - Meadow Oaks Dr. Improvements"
     },
     "civicplus-cityofkennedale:24": {
       "first_seen": "2026-06-18",
@@ -824,6 +860,14 @@
     "ionwave-cityofirving:126LR-26F": {
       "first_seen": "2026-07-07",
       "title": "Sale of Land Capacity at Hunter Ferrell Landfill"
+    },
+    "ionwave-cityofirving:130D-26F": {
+      "first_seen": "2026-07-08",
+      "title": "Stop Loss Insurance for City of Irving"
+    },
+    "ionwave-cityofirving:3B012-26JA": {
+      "first_seen": "2026-07-08",
+      "title": "GE Multilin Relay Replacements for Water Utilities-REBID"
     },
     "ionwave-cityofkeller:26-007": {
       "first_seen": "2026-07-02",
@@ -1049,6 +1093,10 @@
       "first_seen": "2026-06-23",
       "title": "Annual Contract for Marketing Services"
     },
+    "ionwave-tarrantcounty:F2026147 Addendum 2": {
+      "first_seen": "2026-07-08",
+      "title": "Annual Contract for Marketing Services"
+    },
     "ionwave-tarrantcounty:F2026152": {
       "first_seen": "2026-07-02",
       "title": "Annual Contract for Out-Patient Treatment Services for Juveniles with Sexual Behavior Problems"
@@ -1059,6 +1107,10 @@
     },
     "ionwave-townofflowermound:2026-101-A Addendum 1": {
       "first_seen": "2026-06-24",
+      "title": "Request for Statement of Qualifications for Professional Engineering Services for Various Projects"
+    },
+    "ionwave-townofflowermound:2026-101-A Addendum 2": {
+      "first_seen": "2026-07-08",
       "title": "Request for Statement of Qualifications for Professional Engineering Services for Various Projects"
     },
     "ionwave-townofflowermound:2026-95-A Addendum 1": {
