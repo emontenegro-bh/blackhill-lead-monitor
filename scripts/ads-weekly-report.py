@@ -1433,6 +1433,38 @@ if camp_data:
         md.append(f"| {name} | ${t['spend']:.0f}{spend_delta} | {t['conversions']:.0f}{conv_delta} | {cpa_str} | {t['impr_share']:.0f}%{is_delta} | {t['lost_rank']:.0f}% | {t['lost_budget']:.0f}% |")
     md.append("")
 
+# --- Irrigation Promo Watch (promo asset "$100 off Diagnosis w/ Repair" launched 2026-07-09) ---
+PROMO_LAUNCH = "2026-07-09"
+PROMO_CAMPAIGN = "BH_PC_Irrigationservice"
+PROMO_BASELINE_CTR = 2.06   # trailing-30d CTR at launch (see project_irrigation_promo_baseline)
+PROMO_BASELINE_CVR = 3.09
+_irr = camp_data.get(PROMO_CAMPAIGN, {}).get("this", {})
+if _irr:
+    _irr_ctr = _irr.get("ctr", 0)
+    _irr_cvr = (_irr["conversions"] / _irr["clicks"] * 100) if _irr.get("clicks") else 0
+    # control = other enabled campaigns (no promo), aggregated
+    _c_clicks = _c_impr = 0
+    for _nm, _d in camp_data.items():
+        if _nm == PROMO_CAMPAIGN:
+            continue
+        _t = _d.get("this", {})
+        _c_clicks += _t.get("clicks", 0)
+        _c_impr += _t.get("impressions", 0)
+    _ctrl_ctr = (_c_clicks / _c_impr * 100) if _c_impr else 0
+    _ctr_call = ("above" if _irr_ctr > PROMO_BASELINE_CTR + 0.15
+                 else "below" if _irr_ctr < PROMO_BASELINE_CTR - 0.15 else "flat vs")
+    md.append("## Irrigation Promo Watch")
+    md.append(f"*'$100 off Diagnosis w/ Repair' promo launched {PROMO_LAUNCH} on {PROMO_CAMPAIGN} only; the other campaigns are the control. "
+              f"Primary signal is CTR. Low volume, so read the trend over 2-4 weeks, not one week. No per-asset conversion attribution exists.*")
+    md.append("")
+    md.append("| Metric | Irrigation (this wk) | Baseline (pre-promo, 30d) | Control campaigns (this wk) |")
+    md.append("|--------|----------------------|---------------------------|------------------------------|")
+    md.append(f"| CTR | {_irr_ctr:.2f}% | {PROMO_BASELINE_CTR:.2f}% | {_ctrl_ctr:.2f}% |")
+    md.append(f"| Conv rate | {_irr_cvr:.2f}% | {PROMO_BASELINE_CVR:.2f}% | -- |")
+    md.append(f"| Clicks / Conv | {_irr.get('clicks',0)} / {_irr.get('conversions',0):.0f} | -- | -- |")
+    md.append(f"\n*Read: Irrigation CTR is {_ctr_call} the pre-promo baseline.*")
+    md.append("")
+
 if converting_terms:
     md.append("## Converting Search Terms")
     md.append(f"| Search Term | Conv | Spend | Clicks | CTR | Campaign |")
