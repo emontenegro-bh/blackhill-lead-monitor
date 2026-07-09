@@ -5,11 +5,6 @@
       "budget": 20.0,
       "tcpa": 80.0
     },
-    "BH_FertWeedControl_Search": {
-      "bidding": "MAXIMIZE_CONVERSIONS",
-      "budget": 50.0,
-      "tcpa": 75.0
-    },
     "BH_LeadGen_Form_Search": {
       "bidding": "MAXIMIZE_CONVERSIONS",
       "budget": 55.0,
@@ -42,5 +37,5 @@
     "local_services_message_lead": true,
     "local_services_phone_lead": true
   },
-  "updated": "2026-07-08T14:32:27.117790"
+  "updated": "2026-07-09T15:27:38.810741"
 }
