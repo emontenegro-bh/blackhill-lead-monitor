@@ -611,15 +611,16 @@
     "245782059",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABG6FZ3QAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABG6FZ3gAAAA==",
-    "245850718"
+    "245850718",
+    "245857497"
   ],
   "stats": {
     "total_leads": 251,
-    "total_spam": 269,
+    "total_spam": 270,
     "last_lead": "2026-07-09T15:40:37.988850",
     "total_calls": 91
   },
-  "last_run": "2026-07-09T19:35:15.205550+00:00",
+  "last_run": "2026-07-09T19:40:25.186921+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
