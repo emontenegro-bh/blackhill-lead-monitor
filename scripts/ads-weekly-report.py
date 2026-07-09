@@ -32,7 +32,8 @@ from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
 # --- Config ---
-TO_EMAIL = "evelin@blackhilltx.com"
+TO_EMAILS = ["evelin@blackhilltx.com", "Umair@blackhilltx.com"]
+TO_EMAIL = ", ".join(TO_EMAILS)  # comma-joined for the "To" header
 TARGET_CPA = 80.0
 TARGET_IMPR_SHARE = 50.0
 
@@ -1875,7 +1876,7 @@ try:
     with smtplib.SMTP("smtp.gmail.com", 587, timeout=30) as server:
         server.starttls()
         server.login(gmail_email, gmail_password)
-        server.sendmail(gmail_email, TO_EMAIL, msg.as_string())
+        server.sendmail(gmail_email, TO_EMAILS, msg.as_string())
     print("Email sent successfully via Gmail!")
 except Exception as e:
     print(f"Email send failed: {e}")
