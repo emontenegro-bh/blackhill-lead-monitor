@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-08T14:43:46.203833+00:00",
+  "last_run": "2026-07-09T15:40:02.565577+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -80,6 +80,10 @@
     "bonfire-arlingtontx:242985": {
       "first_seen": "2026-07-02",
       "title": "Annual Requirements Contract for Overhead Door Maintenance and Repair Services"
+    },
+    "bonfire-arlingtontx:243826": {
+      "first_seen": "2026-07-09",
+      "title": "Annual Requirements Contract for Fuel System Inspection, Testing, Maintenance, Repair, and Emergency Services"
     },
     "bonfire-burlesontx:235806": {
       "first_seen": "2026-06-11",
@@ -481,6 +485,10 @@
       "first_seen": "2026-07-08",
       "title": "Cavender\u2019s Cowboy Hat"
     },
+    "bonfire-dfwairport:243861": {
+      "first_seen": "2026-07-09",
+      "title": "Miscellaneous Industrial Items"
+    },
     "bonfire-fortworthtexas:178620": {
       "first_seen": "2026-06-11",
       "title": "ITB Paving Improvements: Trinity Park, Z. Boaz South Park, and Pecan Valley Golf Course"
@@ -593,6 +601,10 @@
       "first_seen": "2026-06-30",
       "title": "RFP Filter Media"
     },
+    "bonfire-fortworthtexas:239919": {
+      "first_seen": "2026-07-09",
+      "title": "ITB - Bulk Chemicals"
+    },
     "bonfire-fortworthtexas:240811": {
       "first_seen": "2026-06-17",
       "title": "PW Northside Drive HROM City Project No. 106170"
@@ -656,6 +668,10 @@
     "bonfire-southlake:240696": {
       "first_seen": "2026-06-22",
       "title": "******** NOTIFICATION ONLY ******** TW KING PUMP STATION PUMP IMPROVEMENTS ******** NOTIFICATION ONLY ********"
+    },
+    "civicplus-cityofbenbrook:19": {
+      "first_seen": "2026-07-09",
+      "title": "MISCELLANEOUS CONCRETE IMPROVEMENTS 2027"
     },
     "civicplus-cityofbenbrook:8": {
       "first_seen": "2026-06-11",
@@ -776,6 +792,10 @@
     "ionwave-cityofgrapevine:36-26 Addendum 1": {
       "first_seen": "2026-06-27",
       "title": "CMAR RAW WATER PUMP STATION IMPROVEMENTS 2026"
+    },
+    "ionwave-cityofgrapevine:38-26": {
+      "first_seen": "2026-07-09",
+      "title": "SETTLERS PARK PHASE 2 PROJECT"
     },
     "ionwave-cityofirving:100SB-26": {
       "first_seen": "2026-06-22",
@@ -1119,6 +1139,10 @@
     },
     "ionwave-townofflowermound:2026-95-A Addendum 2": {
       "first_seen": "2026-07-01",
+      "title": "Disaster Debris Monitoring and Consulting Services"
+    },
+    "ionwave-townofflowermound:2026-95-A Addendum 3": {
+      "first_seen": "2026-07-09",
       "title": "Disaster Debris Monitoring and Consulting Services"
     },
     "ionwave-whitesettlementisd:2526-10": {
