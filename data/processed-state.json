@@ -604,15 +604,16 @@
     "245616212",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV1wAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV2QAAAA==",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV2AAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABFvkV2AAAAA==",
+    "245757890"
   ],
   "stats": {
-    "total_leads": 249,
+    "total_leads": 250,
     "total_spam": 267,
-    "last_lead": "2026-07-08T18:55:27.031428",
+    "last_lead": "2026-07-09T14:30:42.688637",
     "total_calls": 91
   },
-  "last_run": "2026-07-09T14:25:16.204074+00:00",
+  "last_run": "2026-07-09T14:30:42.689930+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1281,6 +1282,13 @@
       "service": "Sprinkler Services",
       "lead_type": "web_form",
       "date": "2026-07-08"
+    },
+    "245757890": {
+      "aspire_contact_id": "2703",
+      "traffic_source": "google / organic",
+      "service": "Lawn Services",
+      "lead_type": "web_form",
+      "date": "2026-07-09"
     }
   },
   "dismissed_matches": [
@@ -1288,6 +1296,6 @@
   ],
   "pending_call_attributions": {},
   "round_robin_state": {
-    "last_index": 1
+    "last_index": 0
   }
 }
