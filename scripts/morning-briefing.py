@@ -473,7 +473,6 @@ def get_system_health():
 
     repos = [
         ("emontenegro-bh/blackhill-lead-monitor", "lead-monitor"),
-        ("emontenegro-bh/blackhill-ops-dashboard", "ops-dashboard"),
     ]
     failures = []
     total_workflows = 0
