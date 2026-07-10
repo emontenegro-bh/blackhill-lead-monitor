@@ -625,15 +625,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABHDcIkQAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABHDcIkAAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABHDcIjwAAAA==",
-    "245961190"
+    "245961190",
+    "246011049"
   ],
   "stats": {
-    "total_leads": 253,
+    "total_leads": 254,
     "total_spam": 274,
-    "last_lead": "2026-07-10T13:25:13.516299",
-    "total_calls": 92
+    "last_lead": "2026-07-10T16:15:16.825944",
+    "total_calls": 93
   },
-  "last_run": "2026-07-10T16:10:29.227631+00:00",
+  "last_run": "2026-07-10T16:15:16.827202+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1335,7 +1336,7 @@
       "value": "Referral",
       "note": "WC #245961190 | Referral",
       "first_seen": "2026-07-10T13:25:13.516267+00:00",
-      "attempts": 36,
+      "attempts": 37,
       "caller_name": "Deborah Crowe",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
