@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-09T15:40:02.565577+00:00",
+  "last_run": "2026-07-10T14:57:06.505385+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -376,6 +376,14 @@
     "bonfire-dallascityhall:243610": {
       "first_seen": "2026-07-08",
       "title": "Purchase of - COOLERS, DRINKING WATER, RENTAL OR LEASE *218944"
+    },
+    "bonfire-dallascityhall:243905": {
+      "first_seen": "2026-07-10",
+      "title": "Signage and Wayfinding Program Coordinator Services"
+    },
+    "bonfire-dallascityhall:244017": {
+      "first_seen": "2026-07-10",
+      "title": "ON-CALL AIRPORT PLANNING SERVICES"
     },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
@@ -905,6 +913,10 @@
       "first_seen": "2026-06-27",
       "title": "Building 059 - Fire Station No 7 Re-Roof FAC-F-00139"
     },
+    "ionwave-cityofplano:2026-0412-B Addendum 3": {
+      "first_seen": "2026-07-10",
+      "title": "Building 059 - Fire Station No 7 Re-Roof FAC-F-00139"
+    },
     "ionwave-cityofplano:2026-0422-B": {
       "first_seen": "2026-06-22",
       "title": "Legacy Trail Pond Restoration, PKR-D-00006"
@@ -1117,9 +1129,17 @@
       "first_seen": "2026-07-08",
       "title": "Annual Contract for Marketing Services"
     },
+    "ionwave-tarrantcounty:F2026149": {
+      "first_seen": "2026-07-10",
+      "title": "Annual Contract for Software-Defined Network Services"
+    },
     "ionwave-tarrantcounty:F2026152": {
       "first_seen": "2026-07-02",
       "title": "Annual Contract for Out-Patient Treatment Services for Juveniles with Sexual Behavior Problems"
+    },
+    "ionwave-tarrantcounty:F2026154": {
+      "first_seen": "2026-07-10",
+      "title": "Annual Contract for Urine, Hair Follicle, Nail, and Sweat Patch Drug Testing"
     },
     "ionwave-townofflowermound:2026-101-A": {
       "first_seen": "2026-06-22",
