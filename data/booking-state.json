@@ -575,13 +575,29 @@
         "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/333367182028"
       },
       "processed_at": "2026-06-30T01:50:43.447488+00:00"
+    },
+    "AAMkAGUwMmU2ZjRjLTFmMjMtNGI1ZC04NDE3LTk1ODYyYjNmNmU3ZgBGAAAAAABDJ9Wmb83ZRrpzD12nXQm6BwBZrqdi8p01T6GHKyJ20gr0AAAAAAENAABZrqdi8p01T6GHKyJ20gr0AAA0tpyoAAA=": {
+      "customer_name": "William Shane Dawkins",
+      "customer_email": "wsdawkins@gmail.com",
+      "appointment_date": "2026-07-13T15:00:00.0000000Z",
+      "service": "Virtual Consultation",
+      "aspire": {
+        "action": "created",
+        "contact_url": "https://cloud.youraspire.com/app/contacts/2707"
+      },
+      "hubspot": {
+        "action": "created",
+        "contact_url": "https://app-na2.hubspot.com/contacts//record/0-1/516636002019",
+        "deal_url": "https://app-na2.hubspot.com/contacts//record/0-3/335194225372"
+      },
+      "processed_at": "2026-07-10T15:41:26.248898+00:00"
     }
   },
   "stats": {
-    "created": 8,
+    "created": 9,
     "exists": 18,
     "errors": 8,
-    "total_runs": 1301
+    "total_runs": 1302
   },
   "business_ids": [
     "MeanGreenCustomerMeet@meangreenlawncare.com",
