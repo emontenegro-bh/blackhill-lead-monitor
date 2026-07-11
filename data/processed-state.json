@@ -635,7 +635,7 @@
     "last_lead": "2026-07-10T19:10:33.112051",
     "total_calls": 94
   },
-  "last_run": "2026-07-11T03:05:16.640544+00:00",
+  "last_run": "2026-07-11T03:10:30.098854+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1337,7 +1337,7 @@
       "value": "Referral",
       "note": "WC #245961190 | Referral",
       "first_seen": "2026-07-10T13:25:13.516267+00:00",
-      "attempts": 172,
+      "attempts": 173,
       "caller_name": "Deborah Crowe",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
@@ -1351,7 +1351,7 @@
       "value": "Google Business Profile",
       "note": "WC #246065173 | Google Business Profile",
       "first_seen": "2026-07-10T19:10:33.112019+00:00",
-      "attempts": 100,
+      "attempts": 101,
       "caller_name": "Michelle Montem",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
