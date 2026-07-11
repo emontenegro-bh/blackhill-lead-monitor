@@ -635,7 +635,7 @@
     "last_lead": "2026-07-10T19:10:33.112051",
     "total_calls": 94
   },
-  "last_run": "2026-07-11T13:25:15.370942+00:00",
+  "last_run": "2026-07-11T13:30:34.716226+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1331,27 +1331,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "245961190": {
-      "wc_lead_id": "245961190",
-      "phone": "+18142795636",
-      "value": "Referral",
-      "note": "WC #245961190 | Referral",
-      "first_seen": "2026-07-10T13:25:13.516267+00:00",
-      "attempts": 302,
-      "caller_name": "Deborah Crowe",
-      "lead_source_raw": "blackhilllandscaping.com",
-      "lead_medium_raw": "referral",
-      "call_duration": "38 seconds",
-      "received_at": "2026-07-10T13:21:31Z",
-      "transcription": "Recipient\nForeign.\n\nCaller\nAll right.\n\nRecipient\nGood morning. Thank you for calling Black Hill Landscaping. This is Carlos. I direct your call.\n\nCaller\nGood morning. Can I speak with Cindy, please?\n\nRecipient\nWith who? I'm sorry.\n\nCaller\nI'm trying to reach. What number did I dial?\n\nRecipient\n817-995-0324. You're calling Black Hill Landscaping?\n\nCaller\nI'm so sorry. I am so sorry. I got the wrong number. Thank you.\n\nRecipient\nNo, it's okay. All right. Bye. Bye.\n\nCaller\nOkay. All right, bye."
-    },
     "246065173": {
       "wc_lead_id": "246065173",
       "phone": "+19728612144",
       "value": "Google Business Profile",
       "note": "WC #246065173 | Google Business Profile",
       "first_seen": "2026-07-10T19:10:33.112019+00:00",
-      "attempts": 230,
+      "attempts": 231,
       "caller_name": "Michelle Montem",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
