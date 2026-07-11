@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-10T14:57:06.505385+00:00",
+  "last_run": "2026-07-11T13:55:53.050387+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -388,6 +388,10 @@
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
       "title": "Alton Bridge Bank Stabilization & Bridge Scour"
+    },
+    "bonfire-dentoncounty:239654": {
+      "first_seen": "2026-07-11",
+      "title": "Electrical and Generator Upgrades - Phase 2"
     },
     "bonfire-dfwairport:229891": {
       "first_seen": "2026-06-22",
@@ -801,6 +805,10 @@
       "first_seen": "2026-06-27",
       "title": "CMAR RAW WATER PUMP STATION IMPROVEMENTS 2026"
     },
+    "ionwave-cityofgrapevine:36-26 Addendum 2": {
+      "first_seen": "2026-07-11",
+      "title": "CMAR RAW WATER PUMP STATION IMPROVEMENTS 2026"
+    },
     "ionwave-cityofgrapevine:38-26": {
       "first_seen": "2026-07-09",
       "title": "SETTLERS PARK PHASE 2 PROJECT"
@@ -897,6 +905,10 @@
       "first_seen": "2026-07-08",
       "title": "GE Multilin Relay Replacements for Water Utilities-REBID"
     },
+    "ionwave-cityofirving:3B012-26JA Addendum 1": {
+      "first_seen": "2026-07-11",
+      "title": "GE Multilin Relay Replacements for Water Utilities-REBID"
+    },
     "ionwave-cityofkeller:26-007": {
       "first_seen": "2026-07-02",
       "title": "2026 Janitorial Services - The Keller Pointe"
@@ -931,6 +943,10 @@
     },
     "ionwave-cityofplano:2026-0480-B": {
       "first_seen": "2026-07-06",
+      "title": "Haggard Library Re-Roof (Building 060), Project No. FAC-F-00135"
+    },
+    "ionwave-cityofplano:2026-0480-B Addendum 2": {
+      "first_seen": "2026-07-11",
       "title": "Haggard Library Re-Roof (Building 060), Project No. FAC-F-00135"
     },
     "ionwave-cityofplano:2026-0502-ER": {
