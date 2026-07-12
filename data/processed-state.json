@@ -638,7 +638,7 @@
     "last_lead": "2026-07-11T18:10:41.712876",
     "total_calls": 95
   },
-  "last_run": "2026-07-12T12:05:13.737609+00:00",
+  "last_run": "2026-07-12T12:10:31.581794+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1347,7 +1347,7 @@
       "value": "Bing Ads",
       "note": "WC #246158854 | Bing Ads | Keyword: sprinkler repair near me | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
       "first_seen": "2026-07-11T14:15:14.615835+00:00",
-      "attempts": 274,
+      "attempts": 275,
       "caller_name": "Ama Shaffer",
       "lead_source_raw": "bing",
       "lead_medium_raw": "cpc",
