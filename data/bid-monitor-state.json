@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-11T13:55:53.050387+00:00",
+  "last_run": "2026-07-12T13:57:51.943574+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -104,6 +104,14 @@
     "bonfire-cityoflewisville:238526": {
       "first_seen": "2026-06-22",
       "title": "Annual Contract for Generator Maintenance"
+    },
+    "bonfire-cityoflewisville:242274": {
+      "first_seen": "2026-07-12",
+      "title": "Annual Contract for Street Light Repairs"
+    },
+    "bonfire-cityoflewisville:242279": {
+      "first_seen": "2026-07-12",
+      "title": "Annual Contract for Electrical Services at the Water & Wastewater Treatment Plants"
     },
     "bonfire-dallascityhall:229821": {
       "first_seen": "2026-06-11",
