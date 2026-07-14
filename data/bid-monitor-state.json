@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-13T15:04:07.518218+00:00",
+  "last_run": "2026-07-14T14:15:48.419263+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -72,6 +72,10 @@
     "bonfire-arlingtontx:240593": {
       "first_seen": "2026-06-18",
       "title": "39-inch Water Transmission Main Improvements"
+    },
+    "bonfire-arlingtontx:240963": {
+      "first_seen": "2026-07-14",
+      "title": "LED Walls for Council Chambers and Council Briefing Room"
     },
     "bonfire-arlingtontx:241979": {
       "first_seen": "2026-07-02",
@@ -505,6 +509,10 @@
       "first_seen": "2026-07-08",
       "title": "Cavender\u2019s Cowboy Hat"
     },
+    "bonfire-dfwairport:243565": {
+      "first_seen": "2026-07-14",
+      "title": "Remote Parking BAS-HVAC Rehabilitation"
+    },
     "bonfire-dfwairport:243861": {
       "first_seen": "2026-07-09",
       "title": "Miscellaneous Industrial Items"
@@ -885,12 +893,20 @@
       "first_seen": "2026-07-02",
       "title": "Advanced Metering Infrastructure Replacement"
     },
+    "ionwave-cityofirving:118LR-26F": {
+      "first_seen": "2026-07-14",
+      "title": "Construction Manager Advisor (CMA) Services - Freeport-Sterling Corridor Improvements Project and West Irving Creek Phas"
+    },
     "ionwave-cityofirving:119T-26": {
       "first_seen": "2026-06-27",
       "title": "Tape Digitization"
     },
     "ionwave-cityofirving:119T-26 Addendum 1": {
       "first_seen": "2026-07-01",
+      "title": "Tape Digitization"
+    },
+    "ionwave-cityofirving:119T-26 Addendum 2": {
+      "first_seen": "2026-07-14",
       "title": "Tape Digitization"
     },
     "ionwave-cityofirving:120C-26F": {
@@ -908,6 +924,10 @@
     "ionwave-cityofirving:126LR-26F": {
       "first_seen": "2026-07-07",
       "title": "Sale of Land Capacity at Hunter Ferrell Landfill"
+    },
+    "ionwave-cityofirving:127LR-26F": {
+      "first_seen": "2026-07-14",
+      "title": "Skyway Circle South Part 2 - Water & Wastewater Improvements"
     },
     "ionwave-cityofirving:130D-26F": {
       "first_seen": "2026-07-08",
