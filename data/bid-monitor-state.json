@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-14T14:15:48.419263+00:00",
+  "last_run": "2026-07-15T14:12:59.426359+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -397,6 +397,10 @@
       "first_seen": "2026-07-10",
       "title": "ON-CALL AIRPORT PLANNING SERVICES"
     },
+    "bonfire-dallascityhall:244612": {
+      "first_seen": "2026-07-15",
+      "title": "Purchase of Commercial\u2011grade 5\u2011gallon paint mixer capable of multi\u2011axis or high\u2011efficiency mixing. Unit must accommodate"
+    },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
       "title": "Alton Bridge Bank Stabilization & Bridge Scour"
@@ -629,6 +633,10 @@
       "first_seen": "2026-06-30",
       "title": "RFP Filter Media"
     },
+    "bonfire-fortworthtexas:239852": {
+      "first_seen": "2026-07-15",
+      "title": "RFP Citywide Unimproved Alleyway Grounds Maintenance"
+    },
     "bonfire-fortworthtexas:239919": {
       "first_seen": "2026-07-09",
       "title": "ITB - Bulk Chemicals"
@@ -660,6 +668,10 @@
     "bonfire-fortworthtexas:243277": {
       "first_seen": "2026-07-08",
       "title": "PW - CPN 103498 - Water and Sanitary Sewer Replacement Contract 2021,WSM-A,Part1"
+    },
+    "bonfire-fortworthtexas:244527": {
+      "first_seen": "2026-07-15",
+      "title": "FWS Air Traffic Control Tower Generator Replacement"
     },
     "bonfire-friscotexas:236404": {
       "first_seen": "2026-06-22",
@@ -965,6 +977,10 @@
       "first_seen": "2026-07-10",
       "title": "Building 059 - Fire Station No 7 Re-Roof FAC-F-00139"
     },
+    "ionwave-cityofplano:2026-0412-B Addendum 4": {
+      "first_seen": "2026-07-15",
+      "title": "Building 059 - Fire Station No 7 Re-Roof FAC-F-00139"
+    },
     "ionwave-cityofplano:2026-0422-B": {
       "first_seen": "2026-06-22",
       "title": "Legacy Trail Pond Restoration, PKR-D-00006"
@@ -992,6 +1008,10 @@
     "ionwave-cityofplano:2026-0502-ER Addendum 1": {
       "first_seen": "2026-06-26",
       "title": "Residential Concrete Pavement Maintenance Requirements Contract - 2025, Project No. PW-S-00042"
+    },
+    "ionwave-cityofplano:2026-0503-AC": {
+      "first_seen": "2026-07-15",
+      "title": "Backflow Testing, Inspection and Repair Services"
     },
     "ionwave-fortworthisd:26-070-A": {
       "first_seen": "2026-06-11",
