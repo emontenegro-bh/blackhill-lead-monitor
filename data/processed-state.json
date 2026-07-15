@@ -655,7 +655,7 @@
     "last_lead": "2026-07-14T19:20:37.098741",
     "total_calls": 97
   },
-  "last_run": "2026-07-15T09:20:37.146260+00:00",
+  "last_run": "2026-07-15T09:25:15.039620+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1392,7 +1392,7 @@
       "value": "Google Ads",
       "note": "WC #246688542 | Google Ads",
       "first_seen": "2026-07-14T16:35:15.533100+00:00",
-      "attempts": 213,
+      "attempts": 214,
       "caller_name": "Merriweather,ti",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1406,7 +1406,7 @@
       "value": "Google Business Profile",
       "note": "WC #246742948 | Google Business Profile",
       "first_seen": "2026-07-14T19:20:37.098712+00:00",
-      "attempts": 177,
+      "attempts": 178,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
