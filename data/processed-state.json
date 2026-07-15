@@ -659,7 +659,7 @@
     "last_lead": "2026-07-15T17:55:24.145719",
     "total_calls": 97
   },
-  "last_run": "2026-07-15T19:20:34.453007+00:00",
+  "last_run": "2026-07-15T19:25:22.488758+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1403,22 +1403,7 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {
-    "246742948": {
-      "wc_lead_id": "246742948",
-      "phone": "+18176359082",
-      "value": "Google Business Profile",
-      "note": "WC #246742948 | Google Business Profile",
-      "first_seen": "2026-07-14T19:20:37.098712+00:00",
-      "attempts": 301,
-      "caller_name": "Wireless Caller",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "58 seconds",
-      "received_at": "2026-07-14T19:17:05Z",
-      "transcription": "Recipient\nGood afternoon. Thank you for calling. Black and Landscaping, this is Fellows. I'm going to direct your call.\n\nCaller\nHey, Carlos, this is Josh Gonzalez again, man. How are you doing?\n\nRecipient\nGood. And yourself, josh?\n\nCaller\nGood, good. Hey, just giving you a call back today just to follow up, see if your owners got. Got any word back to you or not.\n\nRecipient\nNot yet, to be honest with you.\n\nCaller\nOkay.\n\nRecipient\nI'll just check up and then let you know if anything.\n\nCaller\nYeah, yeah. Just if. Just keep me in the loop.\n\nRecipient\nYes.\n\nCaller\nI think you've got my email and my card and everything, so you can call me anytime or shoot me an email. Just keep me in the loop. Okay?\n\nRecipient\nI will. Thank. You're welcome.\n\nCaller\nYes, sir. Thank you."
-    }
-  },
+  "pending_call_attributions": {},
   "round_robin_state": {
     "last_index": 1
   }
