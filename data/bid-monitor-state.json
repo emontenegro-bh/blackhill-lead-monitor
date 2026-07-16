@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-15T14:12:59.426359+00:00",
+  "last_run": "2026-07-16T14:24:18.544203+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -401,6 +401,18 @@
       "first_seen": "2026-07-15",
       "title": "Purchase of Commercial\u2011grade 5\u2011gallon paint mixer capable of multi\u2011axis or high\u2011efficiency mixing. Unit must accommodate"
     },
+    "bonfire-dallascityhall:244680": {
+      "first_seen": "2026-07-16",
+      "title": "Martin Luther King Jr Boulevard at Meadow Street (MCIP 30248) Intersection Improvements Construction Project"
+    },
+    "bonfire-dallascityhall:244774": {
+      "first_seen": "2026-07-16",
+      "title": "Purchase of Citation Folders - 219034"
+    },
+    "bonfire-dallascityhall:244788": {
+      "first_seen": "2026-07-16",
+      "title": "Purchase of Mosquito Control Chemicals - 219116"
+    },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
       "title": "Alton Bridge Bank Stabilization & Bridge Scour"
@@ -519,6 +531,14 @@
     },
     "bonfire-dfwairport:243861": {
       "first_seen": "2026-07-09",
+      "title": "Miscellaneous Industrial Items"
+    },
+    "bonfire-dfwairport:244130": {
+      "first_seen": "2026-07-16",
+      "title": "Job Order Contract"
+    },
+    "bonfire-dfwairport:244809": {
+      "first_seen": "2026-07-16",
       "title": "Miscellaneous Industrial Items"
     },
     "bonfire-fortworthtexas:178620": {
@@ -1201,8 +1221,16 @@
       "first_seen": "2026-07-08",
       "title": "Annual Contract for Marketing Services"
     },
+    "ionwave-tarrantcounty:F2026147 Addendum 3": {
+      "first_seen": "2026-07-16",
+      "title": "Annual Contract for Marketing Services"
+    },
     "ionwave-tarrantcounty:F2026149": {
       "first_seen": "2026-07-10",
+      "title": "Annual Contract for Software-Defined Network Services"
+    },
+    "ionwave-tarrantcounty:F2026149 Addendum 1": {
+      "first_seen": "2026-07-16",
       "title": "Annual Contract for Software-Defined Network Services"
     },
     "ionwave-tarrantcounty:F2026152": {
