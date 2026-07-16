@@ -665,7 +665,7 @@
     "last_lead": "2026-07-16T18:00:27.385279",
     "total_calls": 100
   },
-  "last_run": "2026-07-16T21:50:23.106211+00:00",
+  "last_run": "2026-07-16T21:55:15.899756+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1416,7 +1416,7 @@
       "value": "Google Organic",
       "note": "WC #247153399 | Google Organic",
       "first_seen": "2026-07-16T17:10:23.816914+00:00",
-      "attempts": 59,
+      "attempts": 60,
       "caller_name": "Jalen Moore",
       "lead_source_raw": "google",
       "lead_medium_raw": "organic",
@@ -1430,7 +1430,7 @@
       "value": "Google Ads",
       "note": "WC #247160771 | Google Ads | Landing: /areas-we-serve/fort-worth/commercial-landscape-maintenance",
       "first_seen": "2026-07-16T17:35:18.339216+00:00",
-      "attempts": 54,
+      "attempts": 55,
       "caller_name": "Tony Herrera",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1444,7 +1444,7 @@
       "value": "Google Business Profile",
       "note": "WC #247168144 | Google Business Profile",
       "first_seen": "2026-07-16T18:00:27.385250+00:00",
-      "attempts": 48,
+      "attempts": 49,
       "caller_name": "Simi Valley  Ca",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
