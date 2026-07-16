@@ -655,15 +655,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABHrgDNAAAAA==",
     "247064250",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIBgT3QAAAA==",
-    "247153399"
+    "247153399",
+    "247160771"
   ],
   "stats": {
-    "total_leads": 266,
+    "total_leads": 267,
     "total_spam": 284,
-    "last_lead": "2026-07-16T17:10:23.816948",
-    "total_calls": 98
+    "last_lead": "2026-07-16T17:35:18.339255",
+    "total_calls": 99
   },
-  "last_run": "2026-07-16T17:30:22.399728+00:00",
+  "last_run": "2026-07-16T17:35:18.340589+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1414,13 +1415,27 @@
       "value": "Google Organic",
       "note": "WC #247153399 | Google Organic",
       "first_seen": "2026-07-16T17:10:23.816914+00:00",
-      "attempts": 5,
+      "attempts": 6,
       "caller_name": "Jalen Moore",
       "lead_source_raw": "google",
       "lead_medium_raw": "organic",
       "call_duration": "48 seconds",
       "received_at": "2026-07-16T17:08:33Z",
       "transcription": "Recipient\nForeign. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the next available team member. We appreciate your patience. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the next available. Thank you for calling Black Hill Landscaping. Our office is currently closed. Please leave your name, phone number and a brief message about your project."
+    },
+    "247160771": {
+      "wc_lead_id": "247160771",
+      "phone": "+12012832451",
+      "value": "Google Ads",
+      "note": "WC #247160771 | Google Ads | Landing: /areas-we-serve/fort-worth/commercial-landscape-maintenance",
+      "first_seen": "2026-07-16T17:35:18.339216+00:00",
+      "attempts": 1,
+      "caller_name": "Tony Herrera",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "2 minutes and 44 seconds",
+      "received_at": "2026-07-16T17:32:27Z",
+      "transcription": "Recipient\n\u00bfgood afternoon, thank you for calling back to landscaping, this is Carlos, am I direct to call? Bueno, s\u00ed hablo espa\u00f1ol d\u00edgame.\n\nCaller\nUna pregunta, lo que pasa que ando buscando trabajo y habl\u00e9 al tel\u00e9fono este para ver si ocupaba gente.\n\nRecipient\nOk, ahorita ya, bueno ya ocupamos. Si est\u00e1bamos ocupando para una persona de mantenimiento estamos en el proceso ahorita lo que puede hacer es venir a hacer una aplicaci\u00f3n le recomendar\u00eda el d\u00eda de ma\u00f1ana como es a las 8.30 el proceso es, hacen su aplicaci\u00f3n, los ponen, ponemos a prueba con el mec\u00e1nico dependiendo lo que \u00e9l nos diga ya vamos a ver si vamos a seguir con el siguiente paso Si les recomiendo que venga como acabamos de ocupar una persona pero como es un proceso y tienen que pasar lo de r\u00e9cord de antecedentes y pasar un examen de drogas y a\u00fan no.\n\nCaller\nNo, si, eso s\u00ed, yo estoy limpio en todo eso.\n\nRecipient\nS\u00ed, si gusta venir el d\u00eda de ma\u00f1ana.\n\nCaller\n\u00bfla direcci\u00f3n es la que est\u00e1 aqu\u00ed en Internet, verdad? En West.\n\nRecipient\nDos \u00bfEn d\u00f3nde, perd\u00f3n?\n\nCaller\nYo agarr\u00e9 el n\u00famero aqu\u00ed por Internet.\n\nRecipient\nOk, bueno nosotros estamos localizados en 230 South Grant Lane en White Settlement OK, s\u00ed aqu\u00ed estamos, yo aqu\u00ed estoy desde las 8 puede venir como eso a las 8 y media m\u00e1s o menos aqu\u00ed me va enfrente, mi nombre es Carlos y ya le digo al mec\u00e1nico para que lo ponga a prueba.\n\nCaller\nOk, tambi\u00e9n.\n\nRecipient\nOk, de momento est\u00e1 trabajando.\n\nCaller\nS\u00ed.\n\nRecipient\nOk, est\u00e1 bien cuidado y tambi\u00e9n otra me puede traer su identificaci\u00f3n ya sea pasaporte o algo que tenga alguna identificaci\u00f3n que sea que est\u00e9 al corriente.\n\nCaller\nS\u00ed, mi licencia.\n\nRecipient\nAh OK, perfecto. Lo \u00fanico es de que si ahorita el puesto que bueno para el que est\u00e1bamos ocupando viene siendo de mantenimiento y est\u00e1 18 d\u00f3lares con 42 centavos son 40 40 horas a la semana casi no se ofrece tiempo extra.\n\nCaller\nOkay.\n\nRecipient\nOk.\n\nCaller\nBye."
     }
   },
   "round_robin_state": {
