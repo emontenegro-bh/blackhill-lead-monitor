@@ -343,10 +343,18 @@
       "sales_value": 0,
       "traffic_source": "bing / cpc",
       "synced_at": "2026-07-15T16:44:55.060130+00:00"
+    },
+    "246577766": {
+      "last_status": "Delivered",
+      "opp_number": 3543,
+      "quote_value": 10501,
+      "sales_value": 0,
+      "traffic_source": "ntp.msn.com / referral",
+      "synced_at": "2026-07-16T16:43:35.269954+00:00"
     }
   },
   "stats": {
-    "total_synced": 43,
-    "last_run": "2026-07-16T15:13:11.232293+00:00"
+    "total_synced": 44,
+    "last_run": "2026-07-16T16:43:35.946767+00:00"
   }
 }
