@@ -671,7 +671,7 @@
     "last_lead": "2026-07-17T17:05:30.027097",
     "total_calls": 101
   },
-  "last_run": "2026-07-17T18:00:23.432919+00:00",
+  "last_run": "2026-07-17T18:05:14.894615+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1430,27 +1430,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "247168144": {
-      "wc_lead_id": "247168144",
-      "phone": "+18053876788",
-      "value": "Google Business Profile",
-      "note": "WC #247168144 | Google Business Profile",
-      "first_seen": "2026-07-16T18:00:27.385250+00:00",
-      "attempts": 300,
-      "caller_name": "Simi Valley  Ca",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "1 minute and 36 seconds",
-      "received_at": "2026-07-16T17:57:14Z",
-      "transcription": "Recipient\nForeign. Hello. Thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the next available team member. We appreciate your patience. Hello. How can I help you?\n\nCaller\nHi, this is stuart with ophir admin services. Can I speak with evelyn? This is Stuart with Ophir Administrative Services. So I'm just following up on the information we sent regarding the website and or business registration. I just want to make sure that if she received it.\n\nRecipient\nI'm sorry, You. I can't really understand what you're saying. You're calling from where?\n\nCaller\nI'm calling from ophir admin services. So.\n\nRecipient\nDo you have her information already? And you sent it to her?\n\nCaller\nYes, just one. This is just a follow up callback regarding the information that we have sent regarding the website or business registration that we are offering.\n\nRecipient\nOkay, we're okay right now. Thank you. I appreciate it.\n\nCaller\nAll right, thank you so much. You have a good day.\n\nRecipient\nYoutube."
-    },
     "247334043": {
       "wc_lead_id": "247334043",
       "phone": "+17135023818",
       "value": "Google Ads",
       "note": "WC #247334043 | Google Ads | Keyword: sprinkler lawn repair | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
       "first_seen": "2026-07-17T15:10:22.672873+00:00",
-      "attempts": 37,
+      "attempts": 38,
       "caller_name": "Houston      Tx",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
