@@ -670,7 +670,7 @@
     "last_lead": "2026-07-17T17:05:30.027097",
     "total_calls": 101
   },
-  "last_run": "2026-07-17T17:44:48.690202+00:00",
+  "last_run": "2026-07-17T17:45:14.983135+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1435,7 +1435,7 @@
       "value": "Google Business Profile",
       "note": "WC #247168144 | Google Business Profile",
       "first_seen": "2026-07-16T18:00:27.385250+00:00",
-      "attempts": 296,
+      "attempts": 297,
       "caller_name": "Simi Valley  Ca",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1449,7 +1449,7 @@
       "value": "Google Ads",
       "note": "WC #247334043 | Google Ads | Keyword: sprinkler lawn repair | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
       "first_seen": "2026-07-17T15:10:22.672873+00:00",
-      "attempts": 33,
+      "attempts": 34,
       "caller_name": "Houston      Tx",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
