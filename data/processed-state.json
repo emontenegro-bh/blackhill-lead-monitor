@@ -663,15 +663,16 @@
     "247334043",
     "247347872",
     "247372964",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIBgT4QAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIBgT4QAAAA==",
+    "247470734"
   ],
   "stats": {
-    "total_leads": 271,
+    "total_leads": 272,
     "total_spam": 286,
-    "last_lead": "2026-07-17T17:05:30.027097",
+    "last_lead": "2026-07-18T01:15:24.795581",
     "total_calls": 101
   },
-  "last_run": "2026-07-18T01:10:12.667820+00:00",
+  "last_run": "2026-07-18T01:15:24.796955+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1424,6 +1425,13 @@
       "service": "Drainage Solutions",
       "lead_type": "web_form",
       "date": "2026-07-17"
+    },
+    "247470734": {
+      "aspire_contact_id": "2724",
+      "traffic_source": "google / cpc",
+      "service": "Lawn Services",
+      "lead_type": "web_form",
+      "date": "2026-07-18"
     }
   },
   "dismissed_matches": [
@@ -1436,7 +1444,7 @@
       "value": "Google Ads",
       "note": "WC #247334043 | Google Ads | Keyword: sprinkler lawn repair | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
       "first_seen": "2026-07-17T15:10:22.672873+00:00",
-      "attempts": 130,
+      "attempts": 131,
       "caller_name": "Houston      Tx",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1446,6 +1454,6 @@
     }
   },
   "round_robin_state": {
-    "last_index": 0
+    "last_index": 1
   }
 }
