@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-17T14:06:53.540829+00:00",
+  "last_run": "2026-07-18T13:50:58.056665+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -401,6 +401,10 @@
       "first_seen": "2026-07-10",
       "title": "ON-CALL AIRPORT PLANNING SERVICES"
     },
+    "bonfire-dallascityhall:244344": {
+      "first_seen": "2026-07-18",
+      "title": "REQUEST FOR PROPOSALS (RFP) FOR ARCHITECTURE AND ENGINEERING SERVICES FOR TWO (2) AQUATIC CENTERS"
+    },
     "bonfire-dallascityhall:244574": {
       "first_seen": "2026-07-17",
       "title": "2026 Bond and Capital Improvement Projects"
@@ -436,6 +440,10 @@
     "bonfire-dallascityhall:245121": {
       "first_seen": "2026-07-17",
       "title": "NOFA -YOUTH HOMELESS AND HOUSING SERVICES PROGRAM- TEXAS DEPARTMENT OF HOUSING AND COMMUNITY AFFAIRS (TDHCA) FUNDS - FY2"
+    },
+    "bonfire-dallascityhall:245201": {
+      "first_seen": "2026-07-18",
+      "title": "Purcase of Drug Tags - 00000219093"
     },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
@@ -567,6 +575,14 @@
     },
     "bonfire-dfwairport:244809": {
       "first_seen": "2026-07-16",
+      "title": "Miscellaneous Industrial Items"
+    },
+    "bonfire-dfwairport:245131": {
+      "first_seen": "2026-07-18",
+      "title": "Replacement Parts for Security Barriers"
+    },
+    "bonfire-dfwairport:245265": {
+      "first_seen": "2026-07-18",
       "title": "Miscellaneous Industrial Items"
     },
     "bonfire-fortworthtexas:178620": {
@@ -1237,6 +1253,10 @@
       "first_seen": "2026-06-26",
       "title": "Annual Contract for Prisoner Extradition Services"
     },
+    "ionwave-tarrantcounty:F2026144 Addendum 1": {
+      "first_seen": "2026-07-18",
+      "title": "Annual Contract for Prisoner Extradition Services"
+    },
     "ionwave-tarrantcounty:F2026146": {
       "first_seen": "2026-06-18",
       "title": "Annual Contract for Concealed Weapons Detector and High Speed Automated Checkpoint X-Ray Systems, Software and Maintenan"
@@ -1271,6 +1291,10 @@
     },
     "ionwave-tarrantcounty:F2026154": {
       "first_seen": "2026-07-10",
+      "title": "Annual Contract for Urine, Hair Follicle, Nail, and Sweat Patch Drug Testing"
+    },
+    "ionwave-tarrantcounty:F2026154 Addendum 1": {
+      "first_seen": "2026-07-18",
       "title": "Annual Contract for Urine, Hair Follicle, Nail, and Sweat Patch Drug Testing"
     },
     "ionwave-tarrantcounty:F2026155": {
