@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-19T13:54:49.055972+00:00",
+  "last_run": "2026-07-20T14:37:02.911112+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -569,6 +569,10 @@
       "first_seen": "2026-07-16",
       "title": "Job Order Contract"
     },
+    "bonfire-dfwairport:244586": {
+      "first_seen": "2026-07-20",
+      "title": "Executive Media Training Services"
+    },
     "bonfire-dfwairport:244696": {
       "first_seen": "2026-07-17",
       "title": "Supply of Propane Cylinders and Services"
@@ -876,6 +880,10 @@
     "grandprairie:143265": {
       "first_seen": "2026-06-19",
       "title": "Crack and Joint Sealing Services"
+    },
+    "grandprairie:144083": {
+      "first_seen": "2026-07-20",
+      "title": "Downtown Grand Prairie Construction Access Program Main Street Corridor"
     },
     "ionwave-cityofcarrollton:ENG2026-07": {
       "first_seen": "2026-06-22",
@@ -1368,6 +1376,10 @@
     "publicpurchase:213747": {
       "first_seen": "2026-06-26",
       "title": "Bid posting #213747 (open title on site)"
+    },
+    "publicpurchase:214407": {
+      "first_seen": "2026-07-20",
+      "title": "Bid posting #214407 (open title on site)"
     },
     "saginaw:https://www.ci.saginaw.tx.us/government/bid_detail_T10_R16.php": {
       "first_seen": "2026-06-11",
