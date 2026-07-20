@@ -692,7 +692,7 @@
     "last_lead": "2026-07-20T14:30:19.971060",
     "total_calls": 103
   },
-  "last_run": "2026-07-20T14:55:16.086847+00:00",
+  "last_run": "2026-07-20T15:00:26.728027+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1492,7 +1492,7 @@
       "value": "Google Business Profile",
       "note": "WC #247715796 | Google Business Profile",
       "first_seen": "2026-07-20T14:15:17.837061+00:00",
-      "attempts": 9,
+      "attempts": 10,
       "caller_name": "Google",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1506,7 +1506,7 @@
       "value": "Google Ads",
       "note": "WC #247719812 | Google Ads",
       "first_seen": "2026-07-20T14:30:19.971020+00:00",
-      "attempts": 6,
+      "attempts": 7,
       "caller_name": "K Buonfiglio",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
