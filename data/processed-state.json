@@ -705,15 +705,16 @@
     "248059150",
     "248074821",
     "248076974",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LftwAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LftwAAAA==",
+    "248095561"
   ],
   "stats": {
-    "total_leads": 288,
+    "total_leads": 289,
     "total_spam": 295,
-    "last_lead": "2026-07-21T19:40:16.322389",
+    "last_lead": "2026-07-21T20:40:26.229259",
     "total_calls": 108
   },
-  "last_run": "2026-07-21T20:35:17.480884+00:00",
+  "last_run": "2026-07-21T20:40:26.230755+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1536,6 +1537,13 @@
       "service": "Sprinkler Services",
       "lead_type": "web_form",
       "date": "2026-07-21"
+    },
+    "248095561": {
+      "aspire_contact_id": "2737",
+      "traffic_source": "google / cpc",
+      "service": "Drainage Solutions",
+      "lead_type": "web_form",
+      "date": "2026-07-21"
     }
   },
   "dismissed_matches": [
@@ -1548,7 +1556,7 @@
       "value": "Google Business Profile",
       "note": "WC #247951240 | Google Business Profile",
       "first_seen": "2026-07-21T13:25:17.232024+00:00",
-      "attempts": 91,
+      "attempts": 92,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1562,7 +1570,7 @@
       "value": "Google Business Profile",
       "note": "WC #247953881 | Google Business Profile",
       "first_seen": "2026-07-21T13:35:19.942769+00:00",
-      "attempts": 89,
+      "attempts": 90,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1576,7 +1584,7 @@
       "value": "Google Business Profile",
       "note": "WC #248017670 | Google Business Profile",
       "first_seen": "2026-07-21T16:40:16.415276+00:00",
-      "attempts": 51,
+      "attempts": 52,
       "caller_name": "Lewisville   Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1590,7 +1598,7 @@
       "value": "Google Business Profile",
       "note": "WC #248076974 | Google Business Profile",
       "first_seen": "2026-07-21T19:40:16.322352+00:00",
-      "attempts": 13,
+      "attempts": 14,
       "caller_name": "Jensen David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1600,6 +1608,6 @@
     }
   },
   "round_robin_state": {
-    "last_index": 0
+    "last_index": 1
   }
 }
