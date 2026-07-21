@@ -702,15 +702,16 @@
     "247989359",
     "248017670",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LftgAAAA==",
-    "248059150"
+    "248059150",
+    "248074821"
   ],
   "stats": {
     "total_leads": 287,
-    "total_spam": 294,
+    "total_spam": 295,
     "last_lead": "2026-07-21T18:45:31.876865",
     "total_calls": 107
   },
-  "last_run": "2026-07-21T19:25:18.253970+00:00",
+  "last_run": "2026-07-21T19:30:24.403177+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1545,7 +1546,7 @@
       "value": "Google Business Profile",
       "note": "WC #247951240 | Google Business Profile",
       "first_seen": "2026-07-21T13:25:17.232024+00:00",
-      "attempts": 76,
+      "attempts": 77,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1559,7 +1560,7 @@
       "value": "Google Business Profile",
       "note": "WC #247953881 | Google Business Profile",
       "first_seen": "2026-07-21T13:35:19.942769+00:00",
-      "attempts": 74,
+      "attempts": 75,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1573,7 +1574,7 @@
       "value": "Google Business Profile",
       "note": "WC #248017670 | Google Business Profile",
       "first_seen": "2026-07-21T16:40:16.415276+00:00",
-      "attempts": 36,
+      "attempts": 37,
       "caller_name": "Lewisville   Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
