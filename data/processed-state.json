@@ -703,7 +703,7 @@
     "last_lead": "2026-07-21T03:20:42.579135",
     "total_calls": 104
   },
-  "last_run": "2026-07-21T11:45:18.932672+00:00",
+  "last_run": "2026-07-21T11:50:18.550602+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1524,7 +1524,7 @@
       "value": "Google Business Profile",
       "note": "WC #247715796 | Google Business Profile",
       "first_seen": "2026-07-20T14:15:17.837061+00:00",
-      "attempts": 268,
+      "attempts": 269,
       "caller_name": "Google",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1538,7 +1538,7 @@
       "value": "Google Ads",
       "note": "WC #247719812 | Google Ads",
       "first_seen": "2026-07-20T14:30:19.971020+00:00",
-      "attempts": 265,
+      "attempts": 266,
       "caller_name": "K Buonfiglio",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1552,7 +1552,7 @@
       "value": "Google Business Profile",
       "note": "WC #247748151 | Google Business Profile",
       "first_seen": "2026-07-20T15:40:19.609885+00:00",
-      "attempts": 251,
+      "attempts": 252,
       "caller_name": "Bernal Jose",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
