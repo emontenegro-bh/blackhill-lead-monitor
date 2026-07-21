@@ -696,15 +696,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIvdazgAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIvdazQAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIvdazAAAAA==",
-    "247951240"
+    "247951240",
+    "247953881"
   ],
   "stats": {
-    "total_leads": 283,
+    "total_leads": 284,
     "total_spam": 293,
-    "last_lead": "2026-07-21T13:25:17.232053",
-    "total_calls": 105
+    "last_lead": "2026-07-21T13:35:19.942803",
+    "total_calls": 106
   },
-  "last_run": "2026-07-21T13:30:23.232945+00:00",
+  "last_run": "2026-07-21T13:35:19.944982+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1525,7 +1526,7 @@
       "value": "Google Business Profile",
       "note": "WC #247715796 | Google Business Profile",
       "first_seen": "2026-07-20T14:15:17.837061+00:00",
-      "attempts": 290,
+      "attempts": 291,
       "caller_name": "Google",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1539,7 +1540,7 @@
       "value": "Google Ads",
       "note": "WC #247719812 | Google Ads",
       "first_seen": "2026-07-20T14:30:19.971020+00:00",
-      "attempts": 287,
+      "attempts": 288,
       "caller_name": "K Buonfiglio",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1553,7 +1554,7 @@
       "value": "Google Business Profile",
       "note": "WC #247748151 | Google Business Profile",
       "first_seen": "2026-07-20T15:40:19.609885+00:00",
-      "attempts": 273,
+      "attempts": 274,
       "caller_name": "Bernal Jose",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1567,13 +1568,27 @@
       "value": "Google Business Profile",
       "note": "WC #247951240 | Google Business Profile",
       "first_seen": "2026-07-21T13:25:17.232024+00:00",
-      "attempts": 2,
+      "attempts": 3,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "1 minute and 21 seconds",
       "received_at": "2026-07-21T13:21:05Z",
       "transcription": "Recipient\nGood morning. Thank you for calling. Black to Landscaping. This is Carlos. I'm going to direct your call.\n\nCaller\nHey, Carlos. My name is Jalen. I. I came in the other day and you told me if y' all never called me back to give you a.\n\nRecipient\nFor what position was it for? I'm sorry.\n\nCaller\nI think it was from okra. You told me that they had like, a little test.\n\nRecipient\nFor what? I'm sorry.\n\nCaller\nBut it was. It was raining. Moku.\n\nRecipient\nOh, okay. Yeah, you can go ahead and stop by. Are you able to stop by today? Okay.\n\nCaller\nI can drop by today. I have to be in like an hour or two, if that's all right.\n\nRecipient\nThat's fine. Or if you. If it's better, you can stop by tomorrow. Tomorrow morning, around this time.\n\nCaller\nThis sounds good.\n\nRecipient\nWhich do you want? You prefer to come tomorrow or today?\n\nCaller\nOh, I prefer to come in today and do it.\n\nRecipient\nOkay, that's fine.\n\nCaller\nAll right. Yes, sir. Thank you.\n\nRecipient\nAlrighty. Okay, you're welcome."
+    },
+    "247953881": {
+      "wc_lead_id": "247953881",
+      "phone": "+18173579284",
+      "value": "Google Business Profile",
+      "note": "WC #247953881 | Google Business Profile",
+      "first_seen": "2026-07-21T13:35:19.942769+00:00",
+      "attempts": 1,
+      "caller_name": "Wireless Caller",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "38 seconds",
+      "received_at": "2026-07-21T13:31:56Z",
+      "transcription": "Recipient\nGood morning. Thank you for calling Blackia Landscaping. This is Carlos on my director call.\n\nCaller\nHey, sorry, this is Jalen again. I was wondering if it's actually okay if I come in within the next, like, 45 minutes?\n\nRecipient\nYeah, that's fine. That's okay.\n\nCaller\nOkay, cool. All right.\n\nRecipient\nAlrighty. Okay, see you here.\n\nCaller\nYes, sir.\n\nRecipient\nBye. Bye."
     }
   },
   "round_robin_state": {
