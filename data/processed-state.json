@@ -690,15 +690,17 @@
     "247855782",
     "247870990",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIvdaygAAAA==",
-    "247904026"
+    "247904026",
+    "247910290",
+    "247910281"
   ],
   "stats": {
-    "total_leads": 280,
+    "total_leads": 282,
     "total_spam": 293,
-    "last_lead": "2026-07-21T01:30:33.312923",
+    "last_lead": "2026-07-21T03:20:42.579135",
     "total_calls": 104
   },
-  "last_run": "2026-07-21T03:15:16.249905+00:00",
+  "last_run": "2026-07-21T03:20:42.580696+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1493,6 +1495,20 @@
       "service": "Sprinkler Services",
       "lead_type": "web_form",
       "date": "2026-07-21"
+    },
+    "247910290": {
+      "aspire_contact_id": "2729",
+      "traffic_source": "google / cpc",
+      "service": "Landscaping",
+      "lead_type": "web_form",
+      "date": "2026-07-21"
+    },
+    "247910281": {
+      "aspire_contact_id": "2730",
+      "traffic_source": "google / cpc",
+      "service": "Landscaping",
+      "lead_type": "web_form",
+      "date": "2026-07-21"
     }
   },
   "dismissed_matches": [
@@ -1505,7 +1521,7 @@
       "value": "Google Business Profile",
       "note": "WC #247715796 | Google Business Profile",
       "first_seen": "2026-07-20T14:15:17.837061+00:00",
-      "attempts": 163,
+      "attempts": 164,
       "caller_name": "Google",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1519,7 +1535,7 @@
       "value": "Google Ads",
       "note": "WC #247719812 | Google Ads",
       "first_seen": "2026-07-20T14:30:19.971020+00:00",
-      "attempts": 160,
+      "attempts": 161,
       "caller_name": "K Buonfiglio",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1533,7 +1549,7 @@
       "value": "Google Business Profile",
       "note": "WC #247748151 | Google Business Profile",
       "first_seen": "2026-07-20T15:40:19.609885+00:00",
-      "attempts": 146,
+      "attempts": 147,
       "caller_name": "Bernal Jose",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
