@@ -706,7 +706,7 @@
     "last_lead": "2026-07-21T13:35:19.942803",
     "total_calls": 106
   },
-  "last_run": "2026-07-21T14:30:23.179681+00:00",
+  "last_run": "2026-07-21T14:35:18.086086+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1521,27 +1521,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "247719812": {
-      "wc_lead_id": "247719812",
-      "phone": "+17852208508",
-      "value": "Google Ads",
-      "note": "WC #247719812 | Google Ads",
-      "first_seen": "2026-07-20T14:30:19.971020+00:00",
-      "attempts": 299,
-      "caller_name": "K Buonfiglio",
-      "lead_source_raw": "google",
-      "lead_medium_raw": "cpc",
-      "call_duration": "3 minutes and 50 seconds",
-      "received_at": "2026-07-20T14:25:19Z",
-      "transcription": "Recipient\nGood morning. Thank you for calling Black and Landscaping. This is Carlos on my director call.\n\nCaller\nI am looking to get a quote.\n\nRecipient\nAnd this is what?\n\nCaller\nIrrigation and possible landscaping.\n\nRecipient\nGive me one second. Let me just go ahead and get your address. Give me one second. Can I get your address just to see if it's within our service area?\n\nCaller\nYeah, it's 904 Gray with an A, wash drive and saginaw.\n\nRecipient\nOkay, So this is 904 gray washington drive.\n\nCaller\nI mean that'll get you here too.\n\nRecipient\nOkay. Or use. Or is it wash.\n\nCaller\nIt's wash but for some reason GPS puts it in as Washington.\n\nRecipient\nOh, okay. Yeah, that's what GPS it. They pulled it up as Washington.\n\nCaller\nYeah, I don't, I don't know why.\n\nRecipient\nOkay, no problem. Alrighty. Okay, so it is within our service area. Let me go. Let me go ahead and get your information. Our sales team, they're out at the moment on. They're out on the. On site. Sorry. So I can just go ahead and take your information and then I can have them give you a call.\n\nCaller\nOkay.\n\nRecipient\nGive me one second. Can I get your first name, last name, a good email address and a phone number?\n\nCaller\nYeah, can I just give you my phone number instead of the email?\n\nRecipient\nOkay.\n\nCaller\nBecause I'm not going to respond to emails. I don't ever check it.\n\nRecipient\nNope. Alrighty. The. The only thing is that like once you speak with them, if everything is done through email though, but don't. They'll go ahead and let you know and just letting you know like once you speak with them and if you do decide to proceed, because that's how we send out the proposals, the bids, like the appointment. Everything is email, but just to speak with them. It's fine. Can't get just a name, last name and your phone number.\n\nCaller\nOkay. Okay, yeah, I'll spell my name for you. It's k a I t l I n. Last name is b as in boy, u o n as in nancy. F as in frank. I g l I o.\n\nRecipient\nOkay, got it. And then good number for you.\n\nCaller\nArea code 785-220-8508.\n\nRecipient\nOkay. And you said you're looking for irrigation.\n\nCaller\nYes. And possible landscaping. We need dirt, I guess up against our foundation.\n\nRecipient\nOkay.\n\nCaller\nAnd maybe grass. I don't really know.\n\nRecipient\nNo problem. Alrighty. I'm just gonna put.\n\nCaller\nMmhmm.\n\nRecipient\nIrrigation and landscaping. Okay. Well, they should be reaching out to you. If you don't hear from our team by 12 noon today, they please give me a call back. My name is Carlos. And then I can get with them so they can. I can follow up with them so they can go ahead and call you by today. Okay.\n\nCaller\nOkay, Sounds good. Thank you.\n\nRecipient\nPerfect. Thank you. Bye. Bye."
-    },
     "247748151": {
       "wc_lead_id": "247748151",
       "phone": "+19725895359",
       "value": "Google Business Profile",
       "note": "WC #247748151 | Google Business Profile",
       "first_seen": "2026-07-20T15:40:19.609885+00:00",
-      "attempts": 285,
+      "attempts": 286,
       "caller_name": "Bernal Jose",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1555,7 +1541,7 @@
       "value": "Google Business Profile",
       "note": "WC #247951240 | Google Business Profile",
       "first_seen": "2026-07-21T13:25:17.232024+00:00",
-      "attempts": 14,
+      "attempts": 15,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1569,7 +1555,7 @@
       "value": "Google Business Profile",
       "note": "WC #247953881 | Google Business Profile",
       "first_seen": "2026-07-21T13:35:19.942769+00:00",
-      "attempts": 12,
+      "attempts": 13,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
