@@ -695,15 +695,16 @@
     "247910281",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIvdazgAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIvdazQAAAA==",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIvdazAAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABIvdazAAAAA==",
+    "247951240"
   ],
   "stats": {
-    "total_leads": 282,
+    "total_leads": 283,
     "total_spam": 293,
-    "last_lead": "2026-07-21T03:20:42.579135",
-    "total_calls": 104
+    "last_lead": "2026-07-21T13:25:17.232053",
+    "total_calls": 105
   },
-  "last_run": "2026-07-21T13:20:19.868447+00:00",
+  "last_run": "2026-07-21T13:25:17.233579+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1524,7 +1525,7 @@
       "value": "Google Business Profile",
       "note": "WC #247715796 | Google Business Profile",
       "first_seen": "2026-07-20T14:15:17.837061+00:00",
-      "attempts": 288,
+      "attempts": 289,
       "caller_name": "Google",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1538,7 +1539,7 @@
       "value": "Google Ads",
       "note": "WC #247719812 | Google Ads",
       "first_seen": "2026-07-20T14:30:19.971020+00:00",
-      "attempts": 285,
+      "attempts": 286,
       "caller_name": "K Buonfiglio",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1552,13 +1553,27 @@
       "value": "Google Business Profile",
       "note": "WC #247748151 | Google Business Profile",
       "first_seen": "2026-07-20T15:40:19.609885+00:00",
-      "attempts": 271,
+      "attempts": 272,
       "caller_name": "Bernal Jose",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "1 minute and 26 seconds",
       "received_at": "2026-07-20T15:36:55Z",
       "transcription": "Recipient\nGood morning. Thank you for calling Black Hill Landscaping. This is Trinity.\n\nCaller\nSo I was calling to see if you guys were doing any hiring.\n\nRecipient\nWe are taking applications right now. Yes.\n\nCaller\nAre you okay? Are y' all new at the. Are y' all here in this? Because I see y' all are right here in White Settlement.\n\nRecipient\nSo we've moved to white settlement about a year ago.\n\nCaller\nOh, okay.\n\nRecipient\nAbout a year ago. But we used to be. We used to be called Mean Green Landscaping.\n\nCaller\nOkay.\n\nRecipient\nAnd we just rebranded to Black Hill Landscaping in February.\n\nCaller\nOkay.\n\nRecipient\nOkay.\n\nCaller\nOkay. I was just wondering because. Yeah. Because I think I had a. Because I had went there one time and applied.\n\nRecipient\nUh huh.\n\nCaller\nBut I'm kind of, like, more in, like, upper management, you know, like, as a. As a superintendent role, account manager role and stuff like that.\n\nRecipient\nOkay. Yeah, well, right now we don't have those kind of openings.\n\nCaller\nOkay. All right. Thank you. Huh?\n\nRecipient\nOkay. You're welcome. Bye. Bye. Bye."
+    },
+    "247951240": {
+      "wc_lead_id": "247951240",
+      "phone": "+18173579284",
+      "value": "Google Business Profile",
+      "note": "WC #247951240 | Google Business Profile",
+      "first_seen": "2026-07-21T13:25:17.232024+00:00",
+      "attempts": 1,
+      "caller_name": "Wireless Caller",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "1 minute and 21 seconds",
+      "received_at": "2026-07-21T13:21:05Z",
+      "transcription": "Recipient\nGood morning. Thank you for calling. Black to Landscaping. This is Carlos. I'm going to direct your call.\n\nCaller\nHey, Carlos. My name is Jalen. I. I came in the other day and you told me if y' all never called me back to give you a.\n\nRecipient\nFor what position was it for? I'm sorry.\n\nCaller\nI think it was from okra. You told me that they had like, a little test.\n\nRecipient\nFor what? I'm sorry.\n\nCaller\nBut it was. It was raining. Moku.\n\nRecipient\nOh, okay. Yeah, you can go ahead and stop by. Are you able to stop by today? Okay.\n\nCaller\nI can drop by today. I have to be in like an hour or two, if that's all right.\n\nRecipient\nThat's fine. Or if you. If it's better, you can stop by tomorrow. Tomorrow morning, around this time.\n\nCaller\nThis sounds good.\n\nRecipient\nWhich do you want? You prefer to come tomorrow or today?\n\nCaller\nOh, I prefer to come in today and do it.\n\nRecipient\nOkay, that's fine.\n\nCaller\nAll right. Yes, sir. Thank you.\n\nRecipient\nAlrighty. Okay, you're welcome."
     }
   },
   "round_robin_state": {
