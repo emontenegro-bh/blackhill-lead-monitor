@@ -721,7 +721,7 @@
     "last_lead": "2026-07-22T17:15:19.464554",
     "total_calls": 109
   },
-  "last_run": "2026-07-22T17:30:24.231822+00:00",
+  "last_run": "2026-07-22T17:35:15.772672+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1563,7 +1563,7 @@
       "value": "Google Business Profile",
       "note": "WC #248076974 | Google Business Profile",
       "first_seen": "2026-07-21T19:40:16.322352+00:00",
-      "attempts": 272,
+      "attempts": 273,
       "caller_name": "Jensen David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
