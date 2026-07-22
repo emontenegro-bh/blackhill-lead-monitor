@@ -727,7 +727,7 @@
     "last_lead": "2026-07-22T18:35:19.986875",
     "total_calls": 111
   },
-  "last_run": "2026-07-22T20:45:20.111793+00:00",
+  "last_run": "2026-07-22T20:50:17.302693+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1576,7 +1576,7 @@
       "value": "Google Ads",
       "note": "WC #248270804 | Google Ads",
       "first_seen": "2026-07-22T17:40:16.507761+00:00",
-      "attempts": 39,
+      "attempts": 40,
       "caller_name": "Name Unknown",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1590,7 +1590,7 @@
       "value": "Google Ads",
       "note": "WC #248288951 | Google Ads",
       "first_seen": "2026-07-22T18:35:19.986847+00:00",
-      "attempts": 27,
+      "attempts": 28,
       "caller_name": "Robinson,sidney",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
