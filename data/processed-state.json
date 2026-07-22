@@ -716,15 +716,16 @@
     "248267460",
     "248270804",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfugAAAA==",
-    "248288498"
+    "248288498",
+    "248288951"
   ],
   "stats": {
-    "total_leads": 292,
+    "total_leads": 293,
     "total_spam": 299,
-    "last_lead": "2026-07-22T18:30:31.562130",
-    "total_calls": 110
+    "last_lead": "2026-07-22T18:35:19.986875",
+    "total_calls": 111
   },
-  "last_run": "2026-07-22T18:30:31.563755+00:00",
+  "last_run": "2026-07-22T18:35:19.989160+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1573,7 +1574,7 @@
       "value": "Google Business Profile",
       "note": "WC #248076974 | Google Business Profile",
       "first_seen": "2026-07-21T19:40:16.322352+00:00",
-      "attempts": 285,
+      "attempts": 286,
       "caller_name": "Jensen David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1587,13 +1588,27 @@
       "value": "Google Ads",
       "note": "WC #248270804 | Google Ads",
       "first_seen": "2026-07-22T17:40:16.507761+00:00",
-      "attempts": 12,
+      "attempts": 13,
       "caller_name": "Name Unknown",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
       "call_duration": "1 minute and 35 seconds",
       "received_at": "2026-07-22T17:37:24Z",
       "transcription": "Recipient\nForeign.\n\nCaller\nAgain, this is the number of Americans who are classified not in the labor force, Nils that have records now, perhaps the number that we saw during COVID time. What do you take away from this, Mohamed, and what is this telling you? It's a worry because if you look at the unemployment rate, that's very low. If you look at the people who are working, active working.\n\nRecipient\nHello. Thank you for calling Black Hill Landscaping. Please hold for just a moment while we connect you with the next available team member. Hello?\n\nCaller\nYeah. Just checking to see how much he tries to come out and just kind of check on my sprinklers. There's nothing wrong, but just.\n\nRecipient\nThere's nothing wrong with it.\n\nCaller\nNo, there's nothing wrong with that. I just wanted to, like, do the what you call the yearly update and check and see everything is fin fine. I think there's a couple that doesn't work, but they still work. Is. There's not enough water.\n\nRecipient\nOkay. We charge $100 for an assessment and we provide you a report of all the issues that we identify. If you move forward with the repairs, then we credit back the hundred dollars and we just charge you $150 per hour.\n\nCaller\nOh, boy. Okay. Thank you.\n\nRecipient\nBye. Bye."
+    },
+    "248288951": {
+      "wc_lead_id": "248288951",
+      "phone": "+18177157227",
+      "value": "Google Ads",
+      "note": "WC #248288951 | Google Ads",
+      "first_seen": "2026-07-22T18:35:19.986847+00:00",
+      "attempts": 1,
+      "caller_name": "Robinson,sidney",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "20 seconds",
+      "received_at": "2026-07-22T18:31:29Z",
+      "transcription": "Recipient\nForeign. Good afternoon. Thank you for calling Black and Landscaping. This is Carlos, my director call."
     }
   },
   "round_robin_state": {
