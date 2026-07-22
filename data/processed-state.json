@@ -715,15 +715,16 @@
     "248263245",
     "248267460",
     "248270804",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfugAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfugAAAA==",
+    "248288498"
   ],
   "stats": {
-    "total_leads": 291,
+    "total_leads": 292,
     "total_spam": 299,
-    "last_lead": "2026-07-22T17:40:16.507793",
+    "last_lead": "2026-07-22T18:30:31.562130",
     "total_calls": 110
   },
-  "last_run": "2026-07-22T18:25:20.637788+00:00",
+  "last_run": "2026-07-22T18:30:31.563755+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1553,6 +1554,13 @@
       "service": "Drainage Solutions",
       "lead_type": "web_form",
       "date": "2026-07-21"
+    },
+    "248288498": {
+      "aspire_contact_id": "2739",
+      "traffic_source": "google / cpc",
+      "service": "Sprinkler Services",
+      "lead_type": "web_form",
+      "date": "2026-07-22"
     }
   },
   "dismissed_matches": [
@@ -1565,7 +1573,7 @@
       "value": "Google Business Profile",
       "note": "WC #248076974 | Google Business Profile",
       "first_seen": "2026-07-21T19:40:16.322352+00:00",
-      "attempts": 284,
+      "attempts": 285,
       "caller_name": "Jensen David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1579,7 +1587,7 @@
       "value": "Google Ads",
       "note": "WC #248270804 | Google Ads",
       "first_seen": "2026-07-22T17:40:16.507761+00:00",
-      "attempts": 11,
+      "attempts": 12,
       "caller_name": "Name Unknown",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
