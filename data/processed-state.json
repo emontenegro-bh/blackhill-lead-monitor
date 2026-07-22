@@ -717,7 +717,7 @@
     "last_lead": "2026-07-21T20:40:26.229259",
     "total_calls": 108
   },
-  "last_run": "2026-07-22T16:10:17.993279+00:00",
+  "last_run": "2026-07-22T16:15:20.903873+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1559,7 +1559,7 @@
       "value": "Google Business Profile",
       "note": "WC #248017670 | Google Business Profile",
       "first_seen": "2026-07-21T16:40:16.415276+00:00",
-      "attempts": 294,
+      "attempts": 295,
       "caller_name": "Lewisville   Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1573,7 +1573,7 @@
       "value": "Google Business Profile",
       "note": "WC #248076974 | Google Business Profile",
       "first_seen": "2026-07-21T19:40:16.322352+00:00",
-      "attempts": 256,
+      "attempts": 257,
       "caller_name": "Jensen David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
