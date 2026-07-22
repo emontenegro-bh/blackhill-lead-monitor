@@ -709,15 +709,16 @@
     "248095561",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfuAAAAA==",
     "248221620",
-    "248235825"
+    "248235825",
+    "248245924"
   ],
   "stats": {
     "total_leads": 289,
-    "total_spam": 297,
+    "total_spam": 298,
     "last_lead": "2026-07-21T20:40:26.229259",
     "total_calls": 108
   },
-  "last_run": "2026-07-22T16:15:20.903873+00:00",
+  "last_run": "2026-07-22T16:20:19.132709+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1559,7 +1560,7 @@
       "value": "Google Business Profile",
       "note": "WC #248017670 | Google Business Profile",
       "first_seen": "2026-07-21T16:40:16.415276+00:00",
-      "attempts": 295,
+      "attempts": 296,
       "caller_name": "Lewisville   Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1573,7 +1574,7 @@
       "value": "Google Business Profile",
       "note": "WC #248076974 | Google Business Profile",
       "first_seen": "2026-07-21T19:40:16.322352+00:00",
-      "attempts": 257,
+      "attempts": 258,
       "caller_name": "Jensen David",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
