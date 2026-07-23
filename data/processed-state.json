@@ -1574,6 +1574,15 @@
       "service": "Landscaping",
       "lead_type": "web_form",
       "date": "2026-07-23"
+    },
+    "248235825": {
+      "aspire_contact_id": "2700",
+      "traffic_source": "bing / cpc",
+      "service": "fuzzy-matched",
+      "lead_type": "web_form",
+      "date": "2026-07-22",
+      "match_score": 1.0,
+      "match_method": "address+multi"
     }
   },
   "dismissed_matches": [
