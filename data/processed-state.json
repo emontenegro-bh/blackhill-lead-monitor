@@ -743,7 +743,7 @@
     "last_lead": "2026-07-24T15:40:16.955146",
     "total_calls": 113
   },
-  "last_run": "2026-07-24T15:40:16.956851+00:00",
+  "last_run": "2026-07-24T15:45:18.356312+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1630,27 +1630,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "248452930": {
-      "wc_lead_id": "248452930",
-      "phone": "+13057488864",
-      "value": "Phone Call ",
-      "note": "WC #248452930 | Phone Call | Landing: /commercial-landscape-services",
-      "first_seen": "2026-07-23T15:40:41.741683+00:00",
-      "attempts": 298,
-      "caller_name": "Reed Raymond",
-      "lead_source_raw": "(direct)",
-      "lead_medium_raw": "(none)",
-      "call_duration": "3 minutes and 57 seconds",
-      "received_at": "2026-07-23T15:36:18Z",
-      "transcription": "Recipient\nGood morning. Black Hill Landscaping. This is Trinity. How may help you?\n\nCaller\nHi, attorney. How are you? My name is james jenkins.\n\nRecipient\nI'm good, thank you.\n\nCaller\nI'm calling from jlj contracting. I have a few questions. Do you guys work with the three lakes area in fort worth, texas?\n\nRecipient\nWhat area is that again?\n\nCaller\nThe three lakes area. The horace creek lake near coleman, the o.c. fisher lake near san angelo, and the proctor lake near comanche.\n\nRecipient\nI don't know that we go that far out. Let me find out. Okay. Yes.\n\nCaller\nOkay, can you let me know? I have a contract here with them right now. They're looking for a new landscape company.\n\nRecipient\nOkay. Hold on one second. Okay.\n\nCaller\nOkay, no problem.\n\nRecipient\nSa. Sam.\n\nCaller\nSa.\n\nRecipient\nSir.\n\nCaller\nYes, ma', am. I'm still here.\n\nRecipient\nYes, thank you. Thank you for holding. So we don't contract outside of the metroplex right now.\n\nCaller\nOkay, no problem. Thank you.\n\nRecipient\nTake care.\n\nCaller\nOkay."
-    },
     "248670744": {
       "wc_lead_id": "248670744",
       "phone": "+18178815000",
       "value": "Google Business Profile",
       "note": "WC #248670744 | Google Business Profile",
       "first_seen": "2026-07-24T15:40:16.955115+00:00",
-      "attempts": 1,
+      "attempts": 2,
       "caller_name": "R Velasquez",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
