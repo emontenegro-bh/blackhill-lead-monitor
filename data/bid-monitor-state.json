@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-23T14:35:11.005580+00:00",
+  "last_run": "2026-07-24T14:14:12.413385+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -16,6 +16,10 @@
     "bedford:cb151cc7-d1c4-4eac-8ab5-d207381ddde0": {
       "first_seen": "2026-06-11",
       "title": "Old Bedford School Renovations"
+    },
+    "bidnet:2711063147": {
+      "first_seen": "2026-07-24",
+      "title": "Tree Maintenance Services, Dallas - Ft. Worth National Cemetery"
     },
     "bidnet:444051322538": {
       "first_seen": "2026-06-11",
@@ -469,9 +473,17 @@
       "first_seen": "2026-07-21",
       "title": "Purchase of Park, Playground, Recreational Area and Swimming Pool Equipment - 219102"
     },
+    "bonfire-dallascityhall:245494": {
+      "first_seen": "2026-07-24",
+      "title": "Airport Paint, Materials, Equipment, Parts and Service"
+    },
     "bonfire-dallascityhall:245684": {
       "first_seen": "2026-07-23",
       "title": "Uptown McKinney/Cole Couplet (also known as the McKinney Avenue/Cole Avenue Two-way Conversion)"
+    },
+    "bonfire-dallascityhall:246143": {
+      "first_seen": "2026-07-24",
+      "title": "Temporary Stagehand and Tech Labor"
     },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
@@ -628,6 +640,10 @@
     "bonfire-dfwairport:245265": {
       "first_seen": "2026-07-18",
       "title": "Miscellaneous Industrial Items"
+    },
+    "bonfire-dfwairport:246152": {
+      "first_seen": "2026-07-24",
+      "title": "Falconry Services"
     },
     "bonfire-fortworthtexas:178620": {
       "first_seen": "2026-06-11",
@@ -824,6 +840,10 @@
     "bonfire-parkercountytx:245832": {
       "first_seen": "2026-07-23",
       "title": "Parker County Sheriff's Office Patrol Building Covered Porch"
+    },
+    "bonfire-southlake:216591": {
+      "first_seen": "2026-07-24",
+      "title": "Utility Parts and Supplies for City of Southlake"
     },
     "bonfire-southlake:233327": {
       "first_seen": "2026-06-22",
@@ -1137,6 +1157,10 @@
       "first_seen": "2026-06-22",
       "title": "Reinforcing Steel"
     },
+    "ionwave-cityofplano:2026-0351-XR": {
+      "first_seen": "2026-07-24",
+      "title": "RFP for Annual Medical Evaluations"
+    },
     "ionwave-cityofplano:2026-0412-B Addendum 1": {
       "first_seen": "2026-06-22",
       "title": "Building 059 - Fire Station No 7 Re-Roof FAC-F-00139"
@@ -1381,6 +1405,10 @@
       "first_seen": "2026-07-16",
       "title": "Annual Contract for Marketing Services"
     },
+    "ionwave-tarrantcounty:F2026148": {
+      "first_seen": "2026-07-24",
+      "title": "ERP and Related Software Implementation Services"
+    },
     "ionwave-tarrantcounty:F2026149": {
       "first_seen": "2026-07-10",
       "title": "Annual Contract for Software-Defined Network Services"
@@ -1399,6 +1427,10 @@
     },
     "ionwave-tarrantcounty:F2026154 Addendum 1": {
       "first_seen": "2026-07-18",
+      "title": "Annual Contract for Urine, Hair Follicle, Nail, and Sweat Patch Drug Testing"
+    },
+    "ionwave-tarrantcounty:F2026154 Addendum 2": {
+      "first_seen": "2026-07-24",
       "title": "Annual Contract for Urine, Hair Follicle, Nail, and Sweat Patch Drug Testing"
     },
     "ionwave-tarrantcounty:F2026155": {
@@ -1424,6 +1456,14 @@
     "ionwave-tarrantcounty:F2026159": {
       "first_seen": "2026-07-17",
       "title": "Purchase of a Collapsible Event Stage"
+    },
+    "ionwave-tarrantcounty:F2026160": {
+      "first_seen": "2026-07-24",
+      "title": "Annual Contract for Drug Testing Laboratory and Collection Services"
+    },
+    "ionwave-tarrantcounty:F2026161": {
+      "first_seen": "2026-07-24",
+      "title": "Annual Contract for Elections Printed Forms and Envelopes"
     },
     "ionwave-townofflowermound:2026-101-A": {
       "first_seen": "2026-06-22",
@@ -1484,6 +1524,10 @@
     "publicpurchase:214407": {
       "first_seen": "2026-07-20",
       "title": "Bid posting #214407 (open title on site)"
+    },
+    "publicpurchase:214438": {
+      "first_seen": "2026-07-24",
+      "title": "Bid posting #214438 (open title on site)"
     },
     "saginaw:https://www.ci.saginaw.tx.us/government/bid_detail_T10_R16.php": {
       "first_seen": "2026-06-11",
