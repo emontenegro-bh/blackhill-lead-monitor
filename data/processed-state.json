@@ -742,7 +742,7 @@
     "last_lead": "2026-07-24T02:15:26.642451",
     "total_calls": 112
   },
-  "last_run": "2026-07-24T11:00:22.695720+00:00",
+  "last_run": "2026-07-24T11:05:16.379749+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1635,7 +1635,7 @@
       "value": "Phone Call ",
       "note": "WC #248452930 | Phone Call | Landing: /commercial-landscape-services",
       "first_seen": "2026-07-23T15:40:41.741683+00:00",
-      "attempts": 241,
+      "attempts": 242,
       "caller_name": "Reed Raymond",
       "lead_source_raw": "(direct)",
       "lead_medium_raw": "(none)",
