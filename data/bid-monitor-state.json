@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-24T14:14:12.413385+00:00",
+  "last_run": "2026-07-25T14:05:18.402160+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -969,6 +969,10 @@
       "first_seen": "2026-07-20",
       "title": "Downtown Grand Prairie Construction Access Program Main Street Corridor"
     },
+    "grandprairie:144375": {
+      "first_seen": "2026-07-25",
+      "title": "Pavement Resurfacing Services"
+    },
     "ionwave-cityofcarrollton:ENG2026-07": {
       "first_seen": "2026-06-22",
       "title": "Downtown Silos Exterior East Side Painting 2026"
@@ -1235,6 +1239,10 @@
     },
     "ionwave-fortworthisd:26-087 Addendum 2": {
       "first_seen": "2026-06-29",
+      "title": "Purchase of Charles Nash Elementary School"
+    },
+    "ionwave-fortworthisd:26-087 Addendum 3": {
+      "first_seen": "2026-07-25",
       "title": "Purchase of Charles Nash Elementary School"
     },
     "ionwave-fortworthisd:27-001": {
