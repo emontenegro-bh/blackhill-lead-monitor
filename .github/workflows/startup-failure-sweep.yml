@@ -46,6 +46,11 @@ jobs:
 
       - name: Commit dedupe state
         run: |
+          # The sweep only writes this file when it alerts on something new, so on
+          # a normal quiet run it does not exist at all. `git add` on a missing
+          # path is a fatal error, so check first -- otherwise every clean sweep
+          # "fails" and notify-failure emails a false alarm.
+          [ -f data/startup-failure-seen.json ] || { echo "nothing new to record"; exit 0; }
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/startup-failure-seen.json
