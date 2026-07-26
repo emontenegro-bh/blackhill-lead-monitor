@@ -742,15 +742,16 @@
     "248885228",
     "248885745",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfxwAAAA==",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfxgAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfxgAAAA==",
+    "248914405"
   ],
   "stats": {
-    "total_leads": 303,
+    "total_leads": 304,
     "total_spam": 308,
-    "last_lead": "2026-07-25T22:30:29.415811",
+    "last_lead": "2026-07-26T12:30:27.164352",
     "total_calls": 115
   },
-  "last_run": "2026-07-26T12:25:12.123265+00:00",
+  "last_run": "2026-07-26T12:30:27.165804+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1638,6 +1639,13 @@
       "service": "Landscaping",
       "lead_type": "web_form",
       "date": "2026-07-25"
+    },
+    "248914405": {
+      "aspire_contact_id": "2752",
+      "traffic_source": "bing / cpc",
+      "service": "Sprinkler Services",
+      "lead_type": "web_form",
+      "date": "2026-07-26"
     }
   },
   "dismissed_matches": [
