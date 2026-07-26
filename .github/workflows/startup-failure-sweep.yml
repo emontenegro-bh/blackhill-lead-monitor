@@ -1,0 +1,71 @@
+name: Startup Failure Sweep
+
+# Closes the one failure class our `notify-failure` jobs structurally cannot see:
+# a run whose conclusion is `startup_failure` creates ZERO jobs, so the notifier
+# job never fires and nothing emails. See scripts/startup-failure-sweep.py.
+#
+# Hosted here on purpose: this repo is PUBLIC, so its Actions minutes are free.
+# blackhill-ap-automation is at its minutes cap and must not host polling.
+#
+# Every 30 min at :13/:43 (off-:00 -- GitHub drops exactly-:00 crons). The sweep
+# is retrospective and dedupes on run ID, so a late or skipped tick loses nothing.
+
+on:
+  schedule:
+    - cron: '13,43 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: startup-failure-sweep
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Sweep for startup failures
+        env:
+          # Optional fine-grained PAT, read-only Actions + Metadata on the private
+          # repos. Absent, the sweep still covers this public repo and names the
+          # ones it could not check instead of implying they are clean.
+          WATCHER_PAT: ${{ secrets.WATCHER_PAT }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/startup-failure-sweep.py
+
+      - name: Commit dedupe state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/startup-failure-seen.json
+          git diff --staged --quiet && { echo "no new state"; exit 0; }
+          git commit -m "Update startup-failure sweep state"
+          # This repo's state bots push every few minutes; rebase-retry so we
+          # never fail on a non-fast-forward race.
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            echo "Push attempt $i lost the race; retrying..."
+            git pull --rebase origin main || true
+            sleep 5
+          done
+          echo "ERROR: could not push sweep state after 5 attempts."
+          exit 1
+
+  notify-failure:
+    needs: [sweep]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Startup Failure Sweep"
+    secrets: inherit
