@@ -367,10 +367,18 @@
       "sales_value": 0,
       "traffic_source": "google / organic",
       "synced_at": "2026-07-23T23:40:07.873443+00:00"
+    },
+    "247910290": {
+      "last_status": "Delivered",
+      "opp_number": 3566,
+      "quote_value": 2743,
+      "sales_value": 0,
+      "traffic_source": "google / cpc",
+      "synced_at": "2026-07-26T19:57:33.635835+00:00"
     }
   },
   "stats": {
-    "total_synced": 46,
-    "last_run": "2026-07-26T18:44:46.999885+00:00"
+    "total_synced": 47,
+    "last_run": "2026-07-26T19:57:35.006372+00:00"
   }
 }
