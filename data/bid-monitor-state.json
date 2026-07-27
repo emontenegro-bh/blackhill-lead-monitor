@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-26T13:57:57.333487+00:00",
+  "last_run": "2026-07-27T15:16:04.056388+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -973,6 +973,10 @@
       "first_seen": "2026-07-25",
       "title": "Pavement Resurfacing Services"
     },
+    "grandprairie:144376": {
+      "first_seen": "2026-07-27",
+      "title": "Speed Cushions"
+    },
     "ionwave-cityofcarrollton:ENG2026-07": {
       "first_seen": "2026-06-22",
       "title": "Downtown Silos Exterior East Side Painting 2026"
@@ -999,6 +1003,10 @@
     },
     "ionwave-cityofgrapevine:38-26": {
       "first_seen": "2026-07-09",
+      "title": "SETTLERS PARK PHASE 2 PROJECT"
+    },
+    "ionwave-cityofgrapevine:38-26 Addendum 1": {
+      "first_seen": "2026-07-27",
       "title": "SETTLERS PARK PHASE 2 PROJECT"
     },
     "ionwave-cityofirving:100SB-26": {
@@ -1075,6 +1083,10 @@
     },
     "ionwave-cityofirving:117LR-26F Addendum 2": {
       "first_seen": "2026-07-17",
+      "title": "Advanced Metering Infrastructure Replacement"
+    },
+    "ionwave-cityofirving:117LR-26F Addendum 3": {
+      "first_seen": "2026-07-27",
       "title": "Advanced Metering Infrastructure Replacement"
     },
     "ionwave-cityofirving:118LR-26F": {
