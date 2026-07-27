@@ -1,0 +1,16 @@
+{
+  "processed": {
+    "1": {
+      "note": "Seeded: Evelin's local end-to-end test row. Do not reprocess in cloud.",
+      "skipped": "seeded"
+    }
+  },
+  "round_robin_state": {
+    "last_index": -1
+  },
+  "stats": {
+    "created": 0,
+    "errors": 0,
+    "total_runs": 0
+  }
+}

@@ -1,0 +1,67 @@
+name: Phone Lead Monitor
+
+on:
+  schedule:
+    # Every 5 minutes, offset off :00 (GitHub drops exactly-:00 crons)
+    - cron: '3-59/5 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: phone-lead-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install msal
+
+      - name: Poll phone-lead form and sync CRM
+        env:
+          PHONE_MS_CLIENT_ID: ${{ secrets.PHONE_MS_CLIENT_ID }}
+          PHONE_MS_TENANT_ID: ${{ secrets.PHONE_MS_TENANT_ID }}
+          PHONE_MS_CLIENT_SECRET: ${{ secrets.PHONE_MS_CLIENT_SECRET }}
+          PHONE_MS_USER_EMAIL: ${{ secrets.PHONE_MS_USER_EMAIL }}
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: python scripts/phone-lead-monitor.py
+
+      - name: Persist phone-lead state
+        if: always()
+        run: |
+          if [ -f data/phone-lead-state.json ]; then
+            git config user.name "Phone Lead Monitor Bot"
+            git config user.email "noreply@blackhilltx.com"
+            git add data/phone-lead-state.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Update phone-lead state"
+              for i in 1 2 3; do
+                git pull --rebase origin main || true
+                git push && break || sleep 2
+              done
+            fi
+          fi
+
+  notify-failure:
+    needs: [monitor]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Phone Lead Monitor"
+    secrets: inherit

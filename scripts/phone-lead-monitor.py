@@ -1,0 +1,692 @@
+#!/usr/bin/env python3
+"""Phone Lead Monitor - Turns Microsoft Forms phone-intake responses into CRM leads.
+
+Carlos / Trini answer the office phone and fill out the internal "Phone Lead Intake"
+Microsoft Form while the caller is on the line. Form responses auto-sync to an Excel
+workbook in Evelin's OneDrive. This script polls that workbook and, for each new row:
+  1. Parses the caller's details + which staffer took the call (Record-name stamp)
+  2. Auto-assigns an owner with the SAME rules as the web-form monitor
+     (irrigation -> Denisse, commercial maintenance -> Evelin, else round-robin)
+  3. Creates the contact in Aspire (tagged Lead Source "Phone Call")
+  4. Creates contact + deal in HubSpot (source phone_call)
+  5. Notifies the assigned owner by email + posts a Teams card, exactly like web leads
+
+Auth: Microsoft Graph app-only (client credentials) via the dedicated
+"Black Hill Phone Lead Reader" app registration (Files.Read.All, read-only).
+Reads ~/.config/phone-lead-reader/config.json locally, or MS_* env secrets in CI.
+
+Usage:
+    python3 phone-lead-monitor.py            # Process new phone leads
+    python3 phone-lead-monitor.py --dry-run  # Parse + assign, NO CRM writes / emails
+    python3 phone-lead-monitor.py --test     # Test Graph auth + locate the workbook
+    python3 phone-lead-monitor.py --list     # Show parsed rows (no writes)
+    python3 phone-lead-monitor.py --status   # Show processing stats
+"""
+
+import json, logging, os, signal, smtplib, subprocess, sys, urllib.request, urllib.error, urllib.parse
+from datetime import datetime, timezone, timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+signal.alarm(120) if hasattr(signal, "alarm") else None
+
+# Dedicated env names (PHONE_MS_*) so this never collides with the Booking
+# monitor's Microsoft app secrets, which use the shared MS_* names.
+CLOUD_MODE = bool(os.environ.get("PHONE_MS_CLIENT_SECRET"))
+DRY_RUN = "--dry-run" in sys.argv
+
+CONFIG_DIR = os.path.expanduser("~/.config/phone-lead-reader")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
+LOCAL_STATE_FILE = os.path.join(CONFIG_DIR, "state.json")
+CLOUD_STATE_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data", "phone-lead-state.json"
+)
+LOG_PATH = os.path.join(CONFIG_DIR, "phone-lead-monitor.log") if not CLOUD_MODE else None
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ASPIRE_SYNC = os.path.join(SCRIPT_DIR, "aspire-api-sync.py")
+HUBSPOT_SYNC = os.path.join(SCRIPT_DIR, "hubspot-sync.py")
+
+GRAPH_BASE = "https://graph.microsoft.com/v1.0"
+
+# --- Owner assignment (mirrors whatconverts-lead-monitor.py) ---
+OWNER_EVELIN_HUBSPOT_ID = "88710208"
+OWNER_DENISSE_HUBSPOT_ID = "162535167"
+HUBSPOT_TO_ASPIRE_OWNER = {"88710208": 6, "162535167": 5}
+OWNER_MAP = {
+    "88710208": ("Evelin", "evelin@blackhilltx.com", "Evelin Montenegro"),
+    "162535167": ("Denisse", "denisse@blackhilltx.com", "Denisse Montenegro"),
+}
+
+TEST_NAME_PREFIXES = ("test",)
+
+_log_handlers = [logging.StreamHandler(sys.stderr)]
+if LOG_PATH:
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    _log_handlers.append(logging.FileHandler(LOG_PATH))
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s [%(levelname)s] %(message)s",
+                    handlers=_log_handlers)
+log = logging.getLogger("phone-lead-monitor")
+
+
+# --- Config ---
+
+def load_config():
+    if CLOUD_MODE:
+        return {
+            "microsoft": {
+                "client_id": os.environ["PHONE_MS_CLIENT_ID"],
+                "tenant_id": os.environ["PHONE_MS_TENANT_ID"],
+                "client_secret": os.environ["PHONE_MS_CLIENT_SECRET"],
+                "user_email": os.environ.get("PHONE_MS_USER_EMAIL", "evelin@blackhilltx.com"),
+            },
+            "form": {
+                "file_name": os.environ.get("PHONE_FORM_FILE", "Phone Lead Intake"),
+                "worksheet": os.environ.get("PHONE_FORM_SHEET", "Sheet1"),
+            },
+        }
+    if not os.path.exists(CONFIG_FILE):
+        log.error(f"Config not found: {CONFIG_FILE}")
+        return None
+    with open(CONFIG_FILE) as f:
+        return json.load(f)
+
+
+# --- Auth (app-only client credentials) ---
+
+def get_token(config):
+    try:
+        import msal
+    except ImportError:
+        log.error("msal not installed. Run: pip3 install msal")
+        return None
+    ms = config.get("microsoft", {})
+    secret = ms.get("client_secret", "")
+    if not secret or secret == "PASTE_SECRET_VALUE_HERE":
+        log.error("No client_secret configured. Paste the app secret into "
+                  f"{CONFIG_FILE} (or set MS_CLIENT_SECRET).")
+        return None
+    app = msal.ConfidentialClientApplication(
+        ms["client_id"],
+        authority=f"https://login.microsoftonline.com/{ms['tenant_id']}",
+        client_credential=secret,
+    )
+    result = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
+    if result and "access_token" in result:
+        return result["access_token"]
+    log.error(f"Auth failed: {result.get('error_description', 'unknown') if result else 'no result'}")
+    return None
+
+
+# --- Graph API ---
+
+def graph_request(endpoint, token):
+    url = f"{GRAPH_BASE}{endpoint}"
+    req = urllib.request.Request(url, headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read()), resp.status
+    except urllib.error.HTTPError as e:
+        body = e.read().decode() if e.fp else ""
+        try:
+            return json.loads(body), e.code
+        except Exception:
+            return {"error": body or str(e)}, e.code
+    except Exception as e:
+        return {"error": str(e)}, 0
+
+
+def find_workbook(token, user_email, file_name):
+    """Locate the Forms Excel workbook in the user's OneDrive. Returns item id or None.
+
+    Forms drops the responses workbook at the OneDrive root. We list root children
+    (the /search endpoint rejects app-only tokens), paging through if needed.
+    """
+    items = []
+    endpoint = f"/users/{user_email}/drive/root/children?$select=id,name,file&$top=200"
+    while endpoint:
+        resp, status = graph_request(endpoint, token)
+        if status != 200:
+            log.error(f"Workbook listing failed: {status} - {resp}")
+            return None
+        items.extend(resp.get("value", []))
+        nxt = resp.get("@odata.nextLink", "")
+        endpoint = nxt.split("graph.microsoft.com/v1.0", 1)[-1] if nxt else None
+    # Prefer an exact .xlsx match on the configured name
+    candidates = [it for it in items
+                  if (it.get("name", "").lower().endswith(".xlsx")
+                      and file_name.lower() in it.get("name", "").lower())]
+    if not candidates:
+        candidates = [it for it in items if it.get("name", "").lower().endswith(".xlsx")]
+    if not candidates:
+        log.error(f"No .xlsx workbook matching '{file_name}' found in {user_email}'s OneDrive.")
+        return None
+    item = candidates[0]
+    log.info(f"Workbook: {item.get('name')} (id: {item['id']})")
+    return item["id"]
+
+
+def read_rows(token, user_email, item_id, worksheet):
+    """Read the used range of the worksheet. Returns list-of-lists (incl. header row)."""
+    ws = urllib.parse.quote(worksheet)
+    endpoint = (f"/users/{user_email}/drive/items/{item_id}"
+                f"/workbook/worksheets('{ws}')/usedRange(valuesOnly=true)?$select=values")
+    resp, status = graph_request(endpoint, token)
+    if status != 200:
+        # Fall back to the first worksheet if the named one isn't found
+        wl, wstatus = graph_request(
+            f"/users/{user_email}/drive/items/{item_id}/workbook/worksheets?$select=name", token)
+        if wstatus == 200 and wl.get("value"):
+            first = wl["value"][0]["name"]
+            log.warning(f"Worksheet '{worksheet}' not read ({status}); using '{first}'.")
+            ws = urllib.parse.quote(first)
+            endpoint = (f"/users/{user_email}/drive/items/{item_id}"
+                        f"/workbook/worksheets('{ws}')/usedRange(valuesOnly=true)?$select=values")
+            resp, status = graph_request(endpoint, token)
+    if status != 200:
+        log.error(f"Failed to read worksheet values: {status} - {resp}")
+        return []
+    return resp.get("values", []) or []
+
+
+# --- Row parsing ---
+
+def _find_col(headers, *keyword_sets):
+    """Return index of the first header matching ANY keyword set (all keywords present)."""
+    lowered = [str(h or "").strip().lower() for h in headers]
+    for kws in keyword_sets:
+        for i, h in enumerate(lowered):
+            if all(k in h for k in kws):
+                return i
+    return -1
+
+
+def build_column_map(headers):
+    """Map our logical fields to column indexes, tolerant of Evelin's wording."""
+    cmap = {
+        "id": _find_col(headers, ["id"]),
+        "completion": _find_col(headers, ["completion"], ["completion time"]),
+        # Record-name stamp = who submitted (Carlos / Trini). Exact single-word headers.
+        "taken_by_name": next((i for i, h in enumerate(headers)
+                               if str(h or "").strip().lower() == "name"), -1),
+        "taken_by_email": next((i for i, h in enumerate(headers)
+                                if str(h or "").strip().lower() == "email"), -1),
+        # Caller fields (multi-word, so they never collide with the stamp columns)
+        "caller_name": _find_col(headers, ["caller", "name"], ["caller", "first"]),
+        "phone": _find_col(headers, ["phone"]),
+        "caller_email": _find_col(headers, ["caller", "email"]),
+        "address": _find_col(headers, ["property"], ["address"], ["street"]),
+        "service": _find_col(headers, ["service"]),
+        "notes": _find_col(headers, ["looking"], ["provide"], ["additional"], ["notes"]),
+    }
+    return cmap
+
+
+def _cell(row, idx):
+    if idx is None or idx < 0 or idx >= len(row):
+        return ""
+    v = row[idx]
+    return "" if v is None else str(v).strip()
+
+
+def parse_name(name):
+    parts = (name or "").strip().split(None, 1)
+    return (parts[0] if parts else "", parts[1] if len(parts) > 1 else "")
+
+
+def _parse_address_string(raw):
+    """Split a free-text address into street/city/state/zip (best effort)."""
+    result = {"address": "", "city": "", "state": "", "zip": ""}
+    if not raw:
+        return result
+    import re
+    parts = [p.strip() for p in raw.split(",")]
+    if len(parts) >= 3:
+        result["address"] = parts[0]
+        result["city"] = parts[1]
+        state_zip = parts[-1].split()
+        if state_zip:
+            result["state"] = state_zip[0]
+        if len(state_zip) > 1:
+            result["zip"] = state_zip[-1]
+        return result
+    if len(parts) == 2:
+        result["address"] = parts[0]
+        state_zip = parts[1].split()
+        if state_zip:
+            result["state"] = state_zip[0]
+        if len(state_zip) > 1:
+            result["zip"] = state_zip[-1]
+        return result
+    zip_match = re.search(r'\b(\d{5}(?:-\d{4})?)\s*$', raw)
+    if zip_match:
+        result["zip"] = zip_match.group(1)
+        raw = raw[:zip_match.start()].strip().rstrip(",")
+    state_match = re.search(r'\b([A-Z]{2})\s*$', raw)
+    if state_match:
+        result["state"] = state_match.group(1)
+        raw = raw[:state_match.start()].strip().rstrip(",")
+    result["address"] = raw
+    return result
+
+
+def parse_row(row, cmap):
+    """Turn a spreadsheet row into a normalized phone-lead dict."""
+    raw_addr = _cell(row, cmap["address"])
+    addr = _parse_address_string(raw_addr)
+    caller_name = _cell(row, cmap["caller_name"])
+    first, last = parse_name(caller_name)
+    taken_by = _cell(row, cmap["taken_by_name"]) or _cell(row, cmap["taken_by_email"]) or "Office"
+    return {
+        "response_id": _cell(row, cmap["id"]),
+        "first_name": first,
+        "last_name": last,
+        "name": caller_name,
+        "phone": _cell(row, cmap["phone"]),
+        "email": _cell(row, cmap["caller_email"]),
+        "address": addr["address"] or raw_addr,
+        "city": addr["city"],
+        "state": addr["state"] or "TX",
+        "zip": addr["zip"],
+        "service_interest": _cell(row, cmap["service"]) or "General Inquiry",
+        "notes": _cell(row, cmap["notes"]),
+        "taken_by": taken_by,
+        "completion": _cell(row, cmap["completion"]),
+    }
+
+
+# --- Assignment ---
+
+def assign_lead_owner(lead, state):
+    """Irrigation -> Denisse, Commercial Maintenance -> Evelin, else round-robin."""
+    service = (lead.get("service_interest", "") or "").lower()
+    notes = (lead.get("notes", "") or "").lower()
+    if "irrigation" in service or "sprinkler" in service or "irrigation" in notes:
+        return OWNER_DENISSE_HUBSPOT_ID
+    if "commercial" in service and "maint" in service:
+        return OWNER_EVELIN_HUBSPOT_ID
+    rr = state.setdefault("round_robin_state", {"last_index": -1})
+    owners = [OWNER_EVELIN_HUBSPOT_ID, OWNER_DENISSE_HUBSPOT_ID]
+    next_index = (rr.get("last_index", -1) + 1) % len(owners)
+    rr["last_index"] = next_index
+    return owners[next_index]
+
+
+# --- CRM writes ---
+
+def _run_sync(script_path, lead):
+    try:
+        result = subprocess.run(
+            ["python3", script_path, "--lead-json", json.dumps(lead)],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.stdout.strip():
+            return json.loads(result.stdout.strip())
+        return {"success": False, "message": f"No output. stderr: {result.stderr[-300:]}"}
+    except Exception as e:
+        return {"success": False, "message": str(e)[:200]}
+
+
+def create_aspire_contact(lead, aspire_owner_id):
+    payload = {
+        "first_name": lead["first_name"],
+        "last_name": lead["last_name"],
+        "email": lead.get("email", ""),
+        "phone": lead.get("phone", ""),
+        "message": lead.get("notes", ""),
+        "source": "phone_call",
+        "address": lead.get("address", ""),
+        "city": lead.get("city", ""),
+        "state": lead.get("state", ""),
+        "zip": lead.get("zip", ""),
+        "service_interest": lead.get("service_interest", ""),
+        "_assigned_aspire_owner_id": aspire_owner_id,
+        "lead_source_aspire": "Phone Call",
+        "attribution_note": f"Phone lead taken by {lead.get('taken_by', 'Office')}. "
+                            f"Service requested: {lead.get('service_interest', 'General Inquiry')}.",
+    }
+    return _run_sync(ASPIRE_SYNC, payload)
+
+
+def create_hubspot_contact(lead, hubspot_owner_id):
+    payload = {
+        "first_name": lead["first_name"],
+        "last_name": lead["last_name"],
+        "email": lead.get("email", ""),
+        "phone": lead.get("phone", ""),
+        "message": lead.get("notes", ""),
+        "address": lead.get("address", ""),
+        "city": lead.get("city", ""),
+        "zip": lead.get("zip", ""),
+        "service_interest": lead.get("service_interest", ""),
+        "source": "phone_call",
+        "traffic_source": "phone_call",
+        "received_at": datetime.now(timezone.utc).isoformat(),
+        "_assigned_hubspot_owner_id": hubspot_owner_id,
+    }
+    return _run_sync(HUBSPOT_SYNC, payload)
+
+
+# --- Notifications ---
+
+def _send_via_gmail_smtp(to_emails, subject, html_body, from_name="Black Hill Landscaping"):
+    gmail_user = os.environ.get("GMAIL_EMAIL", "")
+    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "")
+    if not (gmail_user and gmail_pass):
+        gmail_config = os.path.expanduser("~/.config/gmail-sender/config.json")
+        if os.path.exists(gmail_config):
+            with open(gmail_config) as f:
+                creds = json.load(f)
+            gmail_user = gmail_user or creds.get("email", "")
+            gmail_pass = gmail_pass or creds.get("app_password", "")
+    if not (gmail_user and gmail_pass):
+        return False, "No Gmail SMTP credentials"
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{from_name} <{gmail_user}>"
+    msg["To"] = ", ".join(to_emails)
+    msg.attach(MIMEText(html_body, "html"))
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.starttls()
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, to_emails, msg.as_string())
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+
+def _status_line(label, result):
+    action = result.get("action", "error")
+    url = result.get("contact_url", "")
+    if action == "created" and url.startswith("http"):
+        return f'Added to {label} - <a href="{url}">View Contact</a>'
+    if action == "exists":
+        return f"Already in {label}"
+    if result.get("success"):
+        return f"Added to {label}"
+    return f"{label} ERROR: {result.get('message', 'unknown')[:120]}"
+
+
+def notify_owner(lead, owner_name, owner_email, aspire_result, hubspot_result):
+    name = lead.get("name", "").strip() or "Unknown"
+    service = lead.get("service_interest", "General Inquiry")
+    address = " ".join(p for p in [lead.get("address", ""), lead.get("city", ""),
+                                   lead.get("state", ""), lead.get("zip", "")] if p).strip() or "Not provided"
+    html = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
+<h2 style="color: #115E00; margin-bottom: 4px;">New Phone Lead Assigned to {owner_name}</h2>
+<p style="color: #666; margin-top: 0;">Black Hill Landscaping</p>
+<hr style="border: 1px solid #C8A951;">
+<table style="width: 100%; border-collapse: collapse;">
+<tr><td style="padding: 8px; font-weight: bold; width: 150px;">Assigned To</td><td style="padding: 8px; font-weight: bold; color: #115E00;">{owner_name}</td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Name</td><td style="padding: 8px;">{name}</td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Phone</td><td style="padding: 8px;"><a href="tel:{lead.get('phone', '')}">{lead.get('phone', 'Not provided')}</a></td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Email</td><td style="padding: 8px;"><a href="mailto:{lead.get('email', '')}">{lead.get('email') or 'Not provided'}</a></td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Address</td><td style="padding: 8px;">{address}</td></tr>
+<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Service</td><td style="padding: 8px;">{service}</td></tr>
+<tr><td style="padding: 8px; font-weight: bold;">Source</td><td style="padding: 8px;">Phone Call (taken by {lead.get('taken_by', 'Office')})</td></tr>
+</table>
+<div style="background: #f5f5f5; padding: 12px; margin: 16px 0; border-left: 4px solid #C8A951;">
+<strong>What they're looking for:</strong><br>{(lead.get('notes') or '(none noted)')[:400]}
+</div>
+<p style="font-size: 13px; color: #888;">{_status_line('Aspire', aspire_result)}<br>{_status_line('HubSpot', hubspot_result)}</p>
+</div>"""
+    ok, err = _send_via_gmail_smtp(owner_email, f"New Phone Lead Assigned: {name} - {service}", html)
+    if ok:
+        log.info(f"  Owner notification sent to {owner_email}")
+    else:
+        log.warning(f"  Owner email failed: {err}")
+
+
+def notify_teams(lead, owner_id, aspire_result, hubspot_result):
+    webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
+    if not webhook_url:
+        return
+    _, owner_email, owner_full = OWNER_MAP.get(str(owner_id), ("Team", "evelin@blackhilltx.com", "Team"))
+    name = lead.get("name", "").strip() or "Unknown"
+    address = " ".join(p for p in [lead.get("address", ""), lead.get("city", ""),
+                                   lead.get("state", ""), lead.get("zip", "")] if p).strip() or "Not provided"
+    mention_text = f"<at>{owner_full}</at>"
+    aspire_url = aspire_result.get("contact_url", "")
+    aspire_txt = f"[View in Aspire]({aspire_url})" if aspire_url.startswith("http") else aspire_result.get("action", "N/A")
+    hs_url = hubspot_result.get("contact_url", "")
+    hs_txt = f"[View in HubSpot]({hs_url})" if hs_url.startswith("http") else hubspot_result.get("action", "N/A")
+    card = {"type": "message", "attachments": [{
+        "contentType": "application/vnd.microsoft.card.adaptive",
+        "content": {
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "type": "AdaptiveCard", "version": "1.4",
+            "body": [
+                {"type": "Container", "style": "emphasis", "items": [
+                    {"type": "TextBlock", "text": f"New Phone Lead: {name}",
+                     "weight": "Bolder", "size": "Medium", "color": "Good"}]},
+                {"type": "TextBlock", "text": f"Assigned to: {mention_text}",
+                 "weight": "Bolder", "spacing": "Small"},
+                {"type": "FactSet", "facts": [
+                    {"title": "Phone", "value": lead.get("phone", "Not provided")},
+                    {"title": "Email", "value": lead.get("email") or "Not provided"},
+                    {"title": "Address", "value": address},
+                    {"title": "Service", "value": lead.get("service_interest", "General Inquiry")},
+                    {"title": "Taken by", "value": lead.get("taken_by", "Office")},
+                    {"title": "Source", "value": "Phone Call"},
+                ]},
+                {"type": "TextBlock",
+                 "text": f"**What they're looking for:** {(lead.get('notes') or '(none noted)')[:300]}",
+                 "wrap": True, "spacing": "Medium"},
+                {"type": "TextBlock", "text": f"Aspire: {aspire_txt} | HubSpot: {hs_txt}",
+                 "size": "Small", "isSubtle": True, "spacing": "Small"},
+            ],
+            "msteams": {"entities": [{"type": "mention", "text": mention_text,
+                                      "mentioned": {"id": owner_email, "name": owner_full}}]},
+        }}]}
+    try:
+        data = json.dumps(card).encode("utf-8")
+        req = urllib.request.Request(webhook_url, data=data,
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            log.info(f"  Teams notification sent ({resp.status})")
+    except Exception as e:
+        log.warning(f"  Teams notification failed (non-fatal): {e}")
+
+
+# --- State ---
+
+def load_state():
+    sf = CLOUD_STATE_FILE if CLOUD_MODE else LOCAL_STATE_FILE
+    if os.path.exists(sf):
+        with open(sf) as f:
+            return json.load(f)
+    return {"processed": {}, "round_robin_state": {"last_index": -1},
+            "stats": {"created": 0, "errors": 0, "total_runs": 0}}
+
+
+def save_state(state):
+    sf = CLOUD_STATE_FILE if CLOUD_MODE else LOCAL_STATE_FILE
+    os.makedirs(os.path.dirname(sf), exist_ok=True)
+    with open(sf, "w") as f:
+        json.dump(state, f, indent=2)
+
+
+# --- Main ---
+
+def _load_rows(config, token):
+    ms = config["microsoft"]
+    form = config.get("form", {})
+    user_email = ms.get("user_email", "evelin@blackhilltx.com")
+    item_id = find_workbook(token, user_email, form.get("file_name", "Phone Lead Intake"))
+    if not item_id:
+        return None, None
+    values = read_rows(token, user_email, item_id, form.get("worksheet", "Sheet1"))
+    if not values or len(values) < 2:
+        log.info("No response rows in workbook yet.")
+        return [], None
+    headers = values[0]
+    cmap = build_column_map(headers)
+    missing = [k for k in ("id", "caller_name", "service") if cmap.get(k, -1) < 0]
+    if missing:
+        log.error(f"Could not locate required columns {missing}. Headers seen: {headers}")
+        return None, None
+    log.info(f"Column map: { {k: (headers[v] if 0 <= v < len(headers) else None) for k, v in cmap.items()} }")
+    rows = [parse_row(r, cmap) for r in values[1:] if any(str(c).strip() for c in r)]
+    return rows, cmap
+
+
+def process(config, token, state):
+    rows, _ = _load_rows(config, token)
+    if rows is None:
+        sys.exit(1)
+    if not rows:
+        return
+
+    # Bulk-reprocess guard: on a fresh/empty state with many rows, only act on the
+    # last 48h so we never backfill old rows into the CRM after a state reset.
+    if not state["processed"] and len(rows) > 5:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
+        keep = []
+        for r in rows:
+            recent = True
+            try:
+                recent = datetime.fromisoformat(
+                    r["completion"].replace("Z", "+00:00")) >= cutoff
+            except Exception:
+                recent = True  # unparseable -> treat as recent
+            if recent:
+                keep.append(r)
+            else:
+                state["processed"][r["response_id"]] = {"skipped": "state_reset_guard"}
+        if len(keep) < len(rows):
+            log.warning(f"State empty and {len(rows)} rows present; only processing "
+                        f"{len(keep)} from last 48h, marking the rest processed.")
+        rows = keep
+
+    new_count = 0
+    for lead in rows:
+        rid = lead["response_id"]
+        if not rid or rid in state["processed"]:
+            continue
+        if lead["name"].strip().lower().startswith(TEST_NAME_PREFIXES) and not lead["phone"]:
+            state["processed"][rid] = {"skipped": "test"}
+            continue
+
+        hubspot_owner = assign_lead_owner(lead, state)
+        aspire_owner = HUBSPOT_TO_ASPIRE_OWNER[hubspot_owner]
+        owner_name, owner_email, _ = OWNER_MAP[hubspot_owner]
+        log.info(f"Phone lead #{rid}: {lead['name']} | {lead['service_interest']} "
+                 f"| taken by {lead['taken_by']} -> {owner_name}")
+
+        if DRY_RUN:
+            log.info(f"  DRY RUN: would create Aspire(owner={aspire_owner}) + "
+                     f"HubSpot(owner={hubspot_owner}) and notify {owner_email}")
+            new_count += 1
+            continue
+
+        try:
+            aspire_result = create_aspire_contact(lead, aspire_owner)
+            log.info(f"  Aspire: {aspire_result.get('action', aspire_result.get('message', '?'))}")
+        except Exception as e:
+            aspire_result = {"success": False, "message": str(e)[:200]}
+            log.warning(f"  Aspire failed: {e}")
+        try:
+            hubspot_result = create_hubspot_contact(lead, hubspot_owner)
+            log.info(f"  HubSpot: {hubspot_result.get('action', hubspot_result.get('message', '?'))}")
+        except Exception as e:
+            hubspot_result = {"success": False, "message": str(e)[:200]}
+            log.warning(f"  HubSpot failed: {e}")
+
+        try:
+            notify_owner(lead, owner_name, owner_email, aspire_result, hubspot_result)
+        except Exception as e:
+            log.warning(f"  Owner notification failed (non-fatal): {e}")
+        try:
+            notify_teams(lead, hubspot_owner, aspire_result, hubspot_result)
+        except Exception as e:
+            log.warning(f"  Teams notification failed (non-fatal): {e}")
+
+        state["processed"][rid] = {
+            "name": lead["name"],
+            "service": lead["service_interest"],
+            "taken_by": lead["taken_by"],
+            "assigned_to": owner_name,
+            "aspire": aspire_result.get("action", "error"),
+            "hubspot": hubspot_result.get("action", "error"),
+            "processed_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if aspire_result.get("success") or hubspot_result.get("success"):
+            state["stats"]["created"] += 1
+        else:
+            state["stats"]["errors"] += 1
+        new_count += 1
+
+    log.info(f"Processed {new_count} new phone lead(s)." if new_count else "No new phone leads.")
+
+
+def run_monitor():
+    config = load_config()
+    if not config:
+        sys.exit(1)
+    token = get_token(config)
+    if not token:
+        sys.exit(1)
+    state = load_state()
+    state["stats"]["total_runs"] = state["stats"].get("total_runs", 0) + 1
+    process(config, token, state)
+    if not DRY_RUN:
+        save_state(state)
+
+
+def test_connection():
+    config = load_config()
+    if not config:
+        print(json.dumps({"success": False, "message": "No config"})); return
+    token = get_token(config)
+    if not token:
+        print(json.dumps({"success": False, "message": "Auth failed"})); return
+    ms = config["microsoft"]; form = config.get("form", {})
+    item_id = find_workbook(token, ms.get("user_email", "evelin@blackhilltx.com"),
+                            form.get("file_name", "Phone Lead Intake"))
+    print(json.dumps({"success": bool(item_id),
+                      "message": "Found workbook" if item_id else "Workbook not found",
+                      "item_id": item_id}, indent=2))
+
+
+def list_rows():
+    config = load_config()
+    token = get_token(config) if config else None
+    if not token:
+        print("Auth failed."); return
+    rows, _ = _load_rows(config, token)
+    if not rows:
+        print("No rows."); return
+    state = load_state()
+    for lead in rows:
+        owner = OWNER_MAP[assign_lead_owner(dict(lead), dict(state))][0]
+        print(f"  #{lead['response_id']}: {lead['name']} | {lead['phone']} | "
+              f"{lead['service_interest']} | taken by {lead['taken_by']} -> {owner}")
+
+
+def show_status():
+    state = load_state()
+    stats = state.get("stats", {})
+    print("Phone Lead Monitor Status")
+    print("=" * 40)
+    print(f"Total runs:       {stats.get('total_runs', 0)}")
+    print(f"Leads created:    {stats.get('created', 0)}")
+    print(f"Errors:           {stats.get('errors', 0)}")
+    print(f"Total processed:  {len(state.get('processed', {}))}")
+
+
+if __name__ == "__main__":
+    if "--test" in sys.argv:
+        test_connection()
+    elif "--list" in sys.argv:
+        list_rows()
+    elif "--status" in sys.argv:
+        show_status()
+    else:
+        run_monitor()
