@@ -3,7 +3,7 @@
     "BH_CommercialMaint_Search": {
       "bidding": "MAXIMIZE_CONVERSIONS",
       "budget": 20.0,
-      "tcpa": 80.0
+      "tcpa": 96.0
     },
     "BH_LeadGen_Form_Search": {
       "bidding": "MAXIMIZE_CONVERSIONS",
@@ -37,5 +37,5 @@
     "local_services_message_lead": true,
     "local_services_phone_lead": true
   },
-  "updated": "2026-07-26T13:44:46.100583"
+  "updated": "2026-07-27T14:52:58.899184"
 }
