@@ -30,14 +30,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-07-28T14:30:56.539849+00:00"
+    },
+    "6": {
+      "name": "Evelin Montenegro",
+      "service": "Drainage & Erosion Solutions",
+      "taken_by": "Evelin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "exists",
+      "hubspot": "exists",
+      "processed_at": "2026-07-28T18:05:28.519611+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 0
+    "last_index": 1
   },
   "stats": {
-    "created": 3,
+    "created": 4,
     "errors": 0,
-    "total_runs": 21
+    "total_runs": 22
   }
 }
