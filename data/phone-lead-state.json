@@ -39,14 +39,32 @@
       "aspire": "exists",
       "hubspot": "exists",
       "processed_at": "2026-07-28T18:05:28.519611+00:00"
+    },
+    "7": {
+      "name": "Gerald McQuade",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "error",
+      "hubspot": "created",
+      "processed_at": "2026-07-28T20:44:38.389500+00:00"
+    },
+    "8": {
+      "name": "Vito Marcello",
+      "service": "Landscaping",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Evelin",
+      "aspire": "error",
+      "hubspot": "created",
+      "processed_at": "2026-07-28T20:44:42.463971+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 1
+    "last_index": 0
   },
   "stats": {
-    "created": 4,
+    "created": 6,
     "errors": 0,
-    "total_runs": 23
+    "total_runs": 24
   }
 }
