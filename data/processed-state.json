@@ -754,15 +754,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfzAAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABI2LfzQAAAA==",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABKBm08wAAAA==",
-    "249321093"
+    "249321093",
+    "249410677"
   ],
   "stats": {
-    "total_leads": 305,
+    "total_leads": 306,
     "total_spam": 314,
-    "last_lead": "2026-07-27T13:55:27.310861",
-    "total_calls": 115
+    "last_lead": "2026-07-28T19:55:20.666380",
+    "total_calls": 116
   },
-  "last_run": "2026-07-28T19:50:20.129097+00:00",
+  "last_run": "2026-07-28T19:55:20.667565+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1669,7 +1670,22 @@
   "dismissed_matches": [
     "222953726"
   ],
-  "pending_call_attributions": {},
+  "pending_call_attributions": {
+    "249410677": {
+      "wc_lead_id": "249410677",
+      "phone": "+16077435550",
+      "value": "Google Ads",
+      "note": "WC #249410677 | Google Ads | Keyword: sprinkler repair weatherford tx | Landing: /areas-we-serve/weatherford/sprinkler-inspection-and-repairs",
+      "first_seen": "2026-07-28T19:55:20.666348+00:00",
+      "attempts": 1,
+      "caller_name": "Gerald Mcquade",
+      "lead_source_raw": "google",
+      "lead_medium_raw": "cpc",
+      "call_duration": "3 minutes and 40 seconds",
+      "received_at": "2026-07-28T19:51:10Z",
+      "transcription": "Recipient\nForeign. Good afternoon. Thank you for calling Black Hill Landscaping. This is Carlos. Amanda at your call.\n\nCaller\nHi, Carlos. I'm looking to have someone come out and take. I have. One of my sprinkler zones is just like a trickle.\n\nRecipient\nOkay, no problem. First, let me just get your property address just to make sure it's within our service area, okay?\n\nCaller\nOkay. 209 muir, muir.\n\nRecipient\nMm.\n\nCaller\nHill Dr. In alito.\n\nRecipient\nOkay. Give me one second. So you said 209 Muir, Muir Hill Drive.\n\nCaller\nCorrect? Yes, sir.\n\nRecipient\nAnd Alito? Correct. Perfect. Is this a residence?\n\nCaller\nThis is. Yes, sir.\n\nRecipient\nAlrighty. Okay, so I'm gonna need your first. Your full name, please.\n\nCaller\nYeah, it's gerald. G e r a l d. Mcquade. Mcq u a d e.\n\nRecipient\nAll right, you said gerald, g e r a l d. Mcquaid, mcq u a d e.\n\nCaller\nCorrect. Mcq u a d e.\n\nRecipient\nCorrect. And then can I get a good cell phone number for you?\n\nCaller\n607-743-5550.\n\nRecipient\n607-743-5550.\n\nCaller\nCorrect.\n\nRecipient\nGreat. Okay. Can I get a good email address for you?\n\nCaller\nGerald. G e r a l d.com mcquaid the number 60. So60mail.com.\n\nRecipient\nAlrighty. And that is gerald, g e r a l d dot mcquaid, mcq u a d e. The number6zeromail.com.\n\nCaller\nCorrect.\n\nRecipient\nAll right, give me one minute. I'm just writing this down. And this would be. It's. You said you're having issues with your. It's a sprinkler issue.\n\nCaller\nIt's actually a zone issue. I have, I think, four or five sprinklers on one zone, and everything else is working. All other zones are working. And I don't know what's going on with this one.\n\nRecipient\nAlrighty. So no problem. Four to five sprinklers.\n\nCaller\nThe heads are not popping up. Yeah.\n\nRecipient\nSprinklers not functioning.\n\nCaller\nIn one zone. Yeah. It's kind of like you can see water kind of coming up around it, you know, and the sprinklers.\n\nRecipient\nNo problem. Okay.\n\nCaller\nIt's like the heads aren't popping up. And, man, I. I don't know what the heck happened.\n\nRecipient\nNo problem.\n\nCaller\nYeah.\n\nRecipient\nAll right. I pretty sure that heads are not popping up and that you do see water. There is one.\n\nCaller\nYeah.\n\nRecipient\nThere's visible water. Alrighty. Okay. I went ahead and wrote it down. And our sales team should be reaching back out to you. If you don't hear from them by 4:30, please give me a call back so I can send them an alert and so I can follow up with them. Okay?\n\nCaller\nAwesome. Okay. Thank you, sir.\n\nRecipient\nAll righty. Thank you. Have a good one.\n\nCaller\nYou, too."
+    }
+  },
   "round_robin_state": {
     "last_index": 1
   }
