@@ -82,7 +82,10 @@ def load_config():
                 "user_email": os.environ.get("PHONE_MS_USER_EMAIL", "evelin@blackhilltx.com"),
             },
             "form": {
-                "file_name": os.environ.get("PHONE_FORM_FILE", "Phone Lead Intake"),
+                # Power Automate writes each new Forms response into this workbook's
+                # table in real time (the Forms-linked "Open in Excel" file only
+                # sync-updates when a human opens it, so it can't be polled headless).
+                "file_name": os.environ.get("PHONE_FORM_FILE", "Phone Lead Responses"),
                 "worksheet": os.environ.get("PHONE_FORM_SHEET", "Sheet1"),
             },
         }
