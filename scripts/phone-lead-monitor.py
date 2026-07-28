@@ -673,6 +673,46 @@ def list_rows():
               f"{lead['service_interest']} | taken by {lead['taken_by']} -> {owner}")
 
 
+def reconcile():
+    """Daily safety net: email an alert if the responses table holds any row the
+    monitor never routed (or if the table can't be read at all)."""
+    alert_to = os.environ.get("ALERT_RECIPIENT", "evelin@blackhilltx.com")
+    config = load_config()
+    token = get_token(config) if config else None
+    if not token:
+        _send_via_gmail_smtp(alert_to, "Phone Lead Monitor: reconcile could not authenticate",
+                             "<p>The daily phone-lead reconcile could not authenticate to Microsoft "
+                             "Graph. Check the PHONE_MS_* secrets and the app registration.</p>")
+        print(json.dumps({"ok": False, "reason": "auth"}))
+        return
+    rows, _ = _load_rows(config, token)
+    state = load_state()
+    processed = state.get("processed", {})
+    if rows is None:
+        _send_via_gmail_smtp(alert_to, "Phone Lead Monitor: cannot read responses table",
+                             "<p>The daily reconcile could not read the Phone Lead Responses table "
+                             "(missing columns or a read error). Phone leads may not be flowing, "
+                             "check the Phone Lead Monitor logs.</p>")
+        print(json.dumps({"ok": False, "reason": "read"}))
+        return
+    unprocessed = [r for r in rows if r.get("response_id") and r["response_id"] not in processed]
+    if unprocessed:
+        items = "".join(
+            f"<li>#{r['response_id']} - {r.get('name') or 'Unknown'} "
+            f"({r.get('service_interest', '?')}), taken by {r.get('taken_by', '?')}</li>"
+            for r in unprocessed[:25])
+        html = (f'<div style="font-family:Arial,sans-serif;max-width:600px;">'
+                f'<h2 style="color:#B8860B;">Phone Lead Monitor: {len(unprocessed)} unrouted lead(s)</h2>'
+                f'<p>These phone-lead form responses are in the table but were never routed to an '
+                f'owner. Handle them manually and check the monitor.</p><ul>{items}</ul>'
+                f'<p style="font-size:12px;color:#888;">{len(rows)} rows in table, '
+                f'{len(processed)} processed.</p></div>')
+        _send_via_gmail_smtp(alert_to, f"Phone Lead Monitor: {len(unprocessed)} unrouted lead(s)", html)
+        print(json.dumps({"ok": False, "unprocessed": len(unprocessed), "total": len(rows)}))
+    else:
+        print(json.dumps({"ok": True, "total": len(rows), "processed": len(processed)}))
+
+
 def show_status():
     state = load_state()
     stats = state.get("stats", {})
@@ -691,5 +731,7 @@ if __name__ == "__main__":
         list_rows()
     elif "--status" in sys.argv:
         show_status()
+    elif "--reconcile" in sys.argv:
+        reconcile()
     else:
         run_monitor()

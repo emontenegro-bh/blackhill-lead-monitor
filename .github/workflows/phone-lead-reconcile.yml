@@ -1,0 +1,40 @@
+name: Phone Lead Reconcile
+
+on:
+  schedule:
+    # Once daily, 13:07 UTC (~8:07 AM CT). Safety net that alerts if any
+    # form response never got routed to an owner.
+    - cron: '7 13 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install msal
+      - name: Reconcile phone leads
+        env:
+          PHONE_MS_CLIENT_ID: ${{ secrets.PHONE_MS_CLIENT_ID }}
+          PHONE_MS_TENANT_ID: ${{ secrets.PHONE_MS_TENANT_ID }}
+          PHONE_MS_CLIENT_SECRET: ${{ secrets.PHONE_MS_CLIENT_SECRET }}
+          PHONE_MS_USER_EMAIL: ${{ secrets.PHONE_MS_USER_EMAIL }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/phone-lead-monitor.py --reconcile
+
+  notify-failure:
+    needs: [reconcile]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Phone Lead Reconcile"
+    secrets: inherit
