@@ -1,10 +1,5 @@
 {
   "camp_settings": {
-    "BH_CommercialMaint_Search": {
-      "bidding": "MAXIMIZE_CONVERSIONS",
-      "budget": 20.0,
-      "tcpa": 96.0
-    },
     "BH_LeadGen_Form_Search": {
       "bidding": "MAXIMIZE_CONVERSIONS",
       "budget": 55.0,
@@ -37,5 +32,5 @@
     "local_services_message_lead": true,
     "local_services_phone_lead": true
   },
-  "updated": "2026-07-27T14:52:58.899184"
+  "updated": "2026-07-28T14:27:13.243241"
 }
