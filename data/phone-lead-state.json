@@ -75,14 +75,23 @@
       "aspire": "exists",
       "hubspot": "exists",
       "processed_at": "2026-07-29T18:06:02.241988+00:00"
+    },
+    "11": {
+      "name": "Jake Vantilburg",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-07-29T20:38:08.269974+00:00"
     }
   },
   "round_robin_state": {
     "last_index": 1
   },
   "stats": {
-    "created": 8,
+    "created": 9,
     "errors": 0,
-    "total_runs": 36
+    "total_runs": 37
   }
 }
