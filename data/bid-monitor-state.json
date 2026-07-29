@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-28T14:48:55.714894+00:00",
+  "last_run": "2026-07-29T14:35:45.263298+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -493,6 +493,10 @@
       "first_seen": "2026-07-11",
       "title": "Electrical and Generator Upgrades - Phase 2"
     },
+    "bonfire-dentoncounty:244666": {
+      "first_seen": "2026-07-29",
+      "title": "Denton County Employee Wellness Clinic"
+    },
     "bonfire-dfwairport:229891": {
       "first_seen": "2026-06-22",
       "title": "Airport Wide Pest Management"
@@ -785,6 +789,14 @@
       "first_seen": "2026-06-17",
       "title": "PW Northside Drive HROM City Project No. 106170"
     },
+    "bonfire-fortworthtexas:240913": {
+      "first_seen": "2026-07-29",
+      "title": "Janitorial Services at Fort Worth City Hall"
+    },
+    "bonfire-fortworthtexas:240953": {
+      "first_seen": "2026-07-29",
+      "title": "Wastewater Siphon Cleaning"
+    },
     "bonfire-fortworthtexas:240982": {
       "first_seen": "2026-06-17",
       "title": "PW 2027 Concrete Restoration Contract 3, City Project No. 106806"
@@ -813,9 +825,17 @@
       "first_seen": "2026-07-08",
       "title": "PW - CPN 103498 - Water and Sanitary Sewer Replacement Contract 2021,WSM-A,Part1"
     },
+    "bonfire-fortworthtexas:243992": {
+      "first_seen": "2026-07-29",
+      "title": "RFP Kennel Doors"
+    },
     "bonfire-fortworthtexas:244527": {
       "first_seen": "2026-07-15",
       "title": "FWS Air Traffic Control Tower Generator Replacement"
+    },
+    "bonfire-fortworthtexas:244884": {
+      "first_seen": "2026-07-29",
+      "title": "PW 2025 Bridge Scour Mitigation Project City Project No. 106227"
     },
     "bonfire-fortworthtexas:245346": {
       "first_seen": "2026-07-22",
@@ -824,6 +844,14 @@
     "bonfire-fortworthtexas:245417": {
       "first_seen": "2026-07-28",
       "title": "Hydronic HVAC Supplies"
+    },
+    "bonfire-fortworthtexas:246361": {
+      "first_seen": "2026-07-29",
+      "title": "ITB - Athletic Field Improvements at Rockwood, Rolling Hills, Northwest Community and Gateway Parks"
+    },
+    "bonfire-fortworthtexas:246510": {
+      "first_seen": "2026-07-29",
+      "title": "PW-Comancheria Way 24 Inch Water Line (City Project Number 106854)"
     },
     "bonfire-friscotexas:236404": {
       "first_seen": "2026-06-22",
@@ -1248,6 +1276,10 @@
     "ionwave-cityofplano:2026-0503-AC": {
       "first_seen": "2026-07-15",
       "title": "Backflow Testing, Inspection and Repair Services"
+    },
+    "ionwave-cityofplano:2026-0555-AC": {
+      "first_seen": "2026-07-29",
+      "title": "Cable Installation Price Agreement"
     },
     "ionwave-fortworthisd:26-070-A": {
       "first_seen": "2026-06-11",
