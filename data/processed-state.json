@@ -767,7 +767,7 @@
     "last_lead": "2026-07-28T22:25:15.733318",
     "total_calls": 118
   },
-  "last_run": "2026-07-29T13:10:26.083378+00:00",
+  "last_run": "2026-07-29T13:15:18.461093+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1681,7 +1681,7 @@
       "value": "Google Ads",
       "note": "WC #249410677 | Google Ads | Keyword: sprinkler repair weatherford tx | Landing: /areas-we-serve/weatherford/sprinkler-inspection-and-repairs",
       "first_seen": "2026-07-28T19:55:20.666348+00:00",
-      "attempts": 216,
+      "attempts": 217,
       "caller_name": "Gerald Mcquade",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1695,7 +1695,7 @@
       "value": "Google Business Profile",
       "note": "WC #249448502 | Google Business Profile",
       "first_seen": "2026-07-28T22:25:15.423808+00:00",
-      "attempts": 184,
+      "attempts": 185,
       "caller_name": "Arlington    Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1709,7 +1709,7 @@
       "value": "Google Business Profile",
       "note": "WC #249448173 | Google Business Profile",
       "first_seen": "2026-07-28T22:25:15.733272+00:00",
-      "attempts": 184,
+      "attempts": 185,
       "caller_name": "Arlington    Tx",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
