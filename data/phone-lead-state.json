@@ -84,14 +84,32 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-07-29T20:38:08.269974+00:00"
+    },
+    "12": {
+      "name": "Lauren Getts",
+      "service": "Lawn Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Evelin",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-07-30T17:02:38.024275+00:00"
+    },
+    "13": {
+      "name": "Bill Hadley",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-07-30T17:02:43.148413+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 1
+    "last_index": 0
   },
   "stats": {
-    "created": 9,
+    "created": 11,
     "errors": 0,
-    "total_runs": 47
+    "total_runs": 48
   }
 }
