@@ -102,14 +102,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-07-30T17:02:43.148413+00:00"
+    },
+    "14": {
+      "name": "Khai Nguyen",
+      "service": "Lawn Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-07-30T18:41:31.932073+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 0
+    "last_index": 1
   },
   "stats": {
-    "created": 11,
+    "created": 12,
     "errors": 0,
-    "total_runs": 48
+    "total_runs": 49
   }
 }
