@@ -782,7 +782,7 @@
     "last_lead": "2026-07-31T13:05:24.349728",
     "total_calls": 123
   },
-  "last_run": "2026-07-31T16:00:18.652250+00:00",
+  "last_run": "2026-07-31T16:05:15.948896+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1724,7 +1724,7 @@
       "value": "Bing Ads",
       "note": "WC #249935405 | Bing Ads | Keyword: sprinkler repair near me | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
       "first_seen": "2026-07-31T12:55:16.992290+00:00",
-      "attempts": 39,
+      "attempts": 40,
       "caller_name": "Donnice Barnett",
       "lead_source_raw": "bing",
       "lead_medium_raw": "cpc",
@@ -1738,7 +1738,7 @@
       "value": "Bing Ads",
       "note": "WC #249936903 | Bing Ads | Keyword: sprinkler repair near me | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
       "first_seen": "2026-07-31T13:05:24.349700+00:00",
-      "attempts": 37,
+      "attempts": 38,
       "caller_name": "Donnice Barnett",
       "lead_source_raw": "bing",
       "lead_medium_raw": "cpc",
