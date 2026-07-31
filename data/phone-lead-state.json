@@ -129,14 +129,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-07-31T16:52:27.861445+00:00"
+    },
+    "17": {
+      "name": "Lorri Manley",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-07-31T19:58:53.959702+00:00"
     }
   },
   "round_robin_state": {
     "last_index": 0
   },
   "stats": {
-    "created": 14,
+    "created": 15,
     "errors": 0,
-    "total_runs": 61
+    "total_runs": 62
   }
 }
