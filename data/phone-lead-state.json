@@ -120,14 +120,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-07-31T15:00:44.190886+00:00"
+    },
+    "16": {
+      "name": "Arup Bhattacharjee",
+      "service": "Landscaping",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Evelin",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-07-31T16:52:27.861445+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 1
+    "last_index": 0
   },
   "stats": {
-    "created": 13,
+    "created": 14,
     "errors": 0,
-    "total_runs": 59
+    "total_runs": 60
   }
 }
