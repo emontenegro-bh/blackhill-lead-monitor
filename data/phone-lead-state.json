@@ -111,14 +111,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-07-30T18:41:31.932073+00:00"
+    },
+    "15": {
+      "name": "Gregg Barnett",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-07-31T15:00:44.190886+00:00"
     }
   },
   "round_robin_state": {
     "last_index": 1
   },
   "stats": {
-    "created": 12,
+    "created": 13,
     "errors": 0,
-    "total_runs": 58
+    "total_runs": 59
   }
 }
