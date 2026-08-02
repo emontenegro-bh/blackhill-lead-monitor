@@ -783,15 +783,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABKc8FnQAAAA==",
     "250215391",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABK4dvrwAAAA==",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABK5DcFgAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABK5DcFgAAAA==",
+    "250257413"
   ],
   "stats": {
-    "total_leads": 319,
+    "total_leads": 320,
     "total_spam": 324,
-    "last_lead": "2026-08-02T13:45:25.644773",
+    "last_lead": "2026-08-02T21:45:31.346927",
     "total_calls": 124
   },
-  "last_run": "2026-08-02T21:40:14.383430+00:00",
+  "last_run": "2026-08-02T21:45:31.348472+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1728,6 +1729,13 @@
       "service": "Lawn Services",
       "lead_type": "web_form",
       "date": "2026-08-02"
+    },
+    "250257413": {
+      "aspire_contact_id": "2771",
+      "traffic_source": "google / organic",
+      "service": "Lawn Services",
+      "lead_type": "web_form",
+      "date": "2026-08-02"
     }
   },
   "dismissed_matches": [
@@ -1735,6 +1743,6 @@
   ],
   "pending_call_attributions": {},
   "round_robin_state": {
-    "last_index": 0
+    "last_index": 1
   }
 }
