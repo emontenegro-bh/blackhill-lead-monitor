@@ -138,14 +138,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-07-31T19:58:53.959702+00:00"
+    },
+    "18": {
+      "name": "Jamie Smith",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-03T15:10:45.073786+00:00"
     }
   },
   "round_robin_state": {
     "last_index": 0
   },
   "stats": {
-    "created": 15,
+    "created": 16,
     "errors": 0,
-    "total_runs": 101
+    "total_runs": 102
   }
 }
