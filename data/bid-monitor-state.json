@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-02T13:55:57.556275+00:00",
+  "last_run": "2026-08-03T15:19:50.228331+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -1293,6 +1293,10 @@
       "first_seen": "2026-07-24",
       "title": "RFP for Annual Medical Evaluations"
     },
+    "ionwave-cityofplano:2026-0351-XR Addendum 1": {
+      "first_seen": "2026-08-03",
+      "title": "RFP for Annual Medical Evaluations"
+    },
     "ionwave-cityofplano:2026-0412-B Addendum 1": {
       "first_seen": "2026-06-22",
       "title": "Building 059 - Fire Station No 7 Re-Roof FAC-F-00139"
@@ -1607,6 +1611,10 @@
     },
     "ionwave-tarrantcounty:F2026161": {
       "first_seen": "2026-07-24",
+      "title": "Annual Contract for Elections Printed Forms and Envelopes"
+    },
+    "ionwave-tarrantcounty:F2026161 Addendum 1": {
+      "first_seen": "2026-08-03",
       "title": "Annual Contract for Elections Printed Forms and Envelopes"
     },
     "ionwave-tarrantcounty:F2027002": {
