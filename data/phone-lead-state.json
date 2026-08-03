@@ -147,14 +147,32 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-08-03T15:10:45.073786+00:00"
+    },
+    "19": {
+      "name": "Pat Cole",
+      "service": "Landscaping",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-03T17:20:35.856802+00:00"
+    },
+    "20": {
+      "name": "Scott Cummins",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "BranchAdmin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-03T17:20:41.865336+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 0
+    "last_index": 1
   },
   "stats": {
-    "created": 16,
+    "created": 18,
     "errors": 0,
-    "total_runs": 102
+    "total_runs": 103
   }
 }
