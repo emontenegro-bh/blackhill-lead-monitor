@@ -60,6 +60,12 @@ OWNER_MAP = {
 
 TEST_NAME_PREFIXES = ("test",)
 
+# Friendly names for known submitter logins (the "Record name" / Responders' Email
+# stamp), so notifications read "taken by Carlos" instead of the raw address.
+SUBMITTER_NAME_MAP = {
+    "branchadmin@blackhilltx.com": "Carlos",
+}
+
 _log_handlers = [logging.StreamHandler(sys.stderr)]
 if LOG_PATH:
     os.makedirs(CONFIG_DIR, exist_ok=True)
@@ -284,6 +290,7 @@ def parse_row(row, cmap):
     caller_name = _cell(row, cmap["caller_name"])
     first, last = parse_name(caller_name)
     taken_by = _cell(row, cmap["taken_by_name"]) or _cell(row, cmap["taken_by_email"]) or "Office"
+    taken_by = SUBMITTER_NAME_MAP.get(taken_by.strip().lower(), taken_by)
     return {
         "response_id": _cell(row, cmap["id"]),
         "first_name": first,

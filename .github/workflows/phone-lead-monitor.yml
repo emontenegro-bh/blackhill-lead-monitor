@@ -2,8 +2,10 @@ name: Phone Lead Monitor
 
 on:
   schedule:
-    # Every 5 minutes, offset off :00 (GitHub drops exactly-:00 crons)
-    - cron: '3-59/5 * * * *'
+    # Backstop only. Real-time routing is driven by Power Automate calling
+    # workflow_dispatch on each form submission; GitHub throttles frequent
+    # schedules to hours anyway, so this is just a safety net + the reconcile.
+    - cron: '17,47 * * * *'
   workflow_dispatch: {}
 
 concurrency:
