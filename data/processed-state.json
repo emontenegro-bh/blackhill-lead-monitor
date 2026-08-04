@@ -793,15 +793,16 @@
     "250458471",
     "250457578",
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABK5DcGQAAAA==",
-    "250629571"
+    "250629571",
+    "250677489"
   ],
   "stats": {
     "total_leads": 324,
-    "total_spam": 326,
+    "total_spam": 327,
     "last_lead": "2026-08-04T16:35:18.030686",
     "total_calls": 126
   },
-  "last_run": "2026-08-04T18:56:05.731666+00:00",
+  "last_run": "2026-08-04T19:00:33.661470+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1771,7 +1772,7 @@
       "value": "Google Ads",
       "note": "WC #250457578 | Google Ads",
       "first_seen": "2026-08-03T19:40:35.883506+00:00",
-      "attempts": 289,
+      "attempts": 290,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
@@ -1785,7 +1786,7 @@
       "value": "Referral",
       "note": "WC #250629571 | Referral",
       "first_seen": "2026-08-04T16:35:18.030649+00:00",
-      "attempts": 29,
+      "attempts": 30,
       "caller_name": "Victoria Campbe",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
