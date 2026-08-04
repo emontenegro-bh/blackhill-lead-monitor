@@ -795,15 +795,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABK5DcGQAAAA==",
     "250629571",
     "250677489",
-    "250722914"
+    "250722914",
+    "250727883"
   ],
   "stats": {
     "total_leads": 324,
-    "total_spam": 328,
+    "total_spam": 329,
     "last_lead": "2026-08-04T16:35:18.030686",
     "total_calls": 126
   },
-  "last_run": "2026-08-04T21:55:34.673328+00:00",
+  "last_run": "2026-08-04T22:00:22.072185+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1773,7 +1774,7 @@
       "value": "Referral",
       "note": "WC #250629571 | Referral",
       "first_seen": "2026-08-04T16:35:18.030649+00:00",
-      "attempts": 67,
+      "attempts": 68,
       "caller_name": "Victoria Campbe",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
