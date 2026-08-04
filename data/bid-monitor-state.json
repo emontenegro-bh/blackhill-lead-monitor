@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-03T15:19:50.228331+00:00",
+  "last_run": "2026-08-04T14:44:42.517345+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -669,6 +669,14 @@
       "first_seen": "2026-07-16",
       "title": "Miscellaneous Industrial Items"
     },
+    "bonfire-dfwairport:244896": {
+      "first_seen": "2026-08-04",
+      "title": "Pavement Deicing Material"
+    },
+    "bonfire-dfwairport:244905": {
+      "first_seen": "2026-08-04",
+      "title": "Runway Deicing Material"
+    },
     "bonfire-dfwairport:245089": {
       "first_seen": "2026-07-21",
       "title": "MATV Hardware for Ground Transportation Facility"
@@ -693,6 +701,10 @@
       "first_seen": "2026-07-24",
       "title": "Falconry Services"
     },
+    "bonfire-dfwairport:246175": {
+      "first_seen": "2026-08-04",
+      "title": "AI Video Creation Services"
+    },
     "bonfire-dfwairport:246543": {
       "first_seen": "2026-07-28",
       "title": "Employee Relations Case Management Platform"
@@ -700,6 +712,10 @@
     "bonfire-dfwairport:247249": {
       "first_seen": "2026-08-01",
       "title": "Miscellaneous Industrial Items"
+    },
+    "bonfire-dfwairport:247290": {
+      "first_seen": "2026-08-04",
+      "title": "Mounting System for LifePak"
     },
     "bonfire-fortworthtexas:178620": {
       "first_seen": "2026-06-11",
@@ -897,6 +913,10 @@
       "first_seen": "2026-07-29",
       "title": "PW-Comancheria Way 24 Inch Water Line (City Project Number 106854)"
     },
+    "bonfire-fortworthtexas:247494": {
+      "first_seen": "2026-08-04",
+      "title": "Pecan Valley Golf Course Bridge Replacement"
+    },
     "bonfire-friscotexas:236404": {
       "first_seen": "2026-06-22",
       "title": "Timber Ridge EST Rehabilitation"
@@ -1076,6 +1096,10 @@
     "ionwave-cityofcarrollton:BID #26-038": {
       "first_seen": "2026-07-31",
       "title": "Trinity Mills Grounds Maintenance"
+    },
+    "ionwave-cityofcarrollton:CSP #26-033": {
+      "first_seen": "2026-08-04",
+      "title": "Elm Fork Nature Preserve Renovations"
     },
     "ionwave-cityofcarrollton:ENG2026-07": {
       "first_seen": "2026-06-22",
@@ -1285,6 +1309,10 @@
       "first_seen": "2026-07-23",
       "title": "2026 Janitorial Services - The Keller Pointe"
     },
+    "ionwave-cityofkeller:26-009": {
+      "first_seen": "2026-08-04",
+      "title": "Towing & Recovery Franchise Services"
+    },
     "ionwave-cityofplano:2026-0290-OA": {
       "first_seen": "2026-06-22",
       "title": "Reinforcing Steel"
@@ -1348,6 +1376,10 @@
     "ionwave-cityofplano:2026-0555-AC": {
       "first_seen": "2026-07-29",
       "title": "Cable Installation Price Agreement"
+    },
+    "ionwave-cityofplano:2026-0572-B": {
+      "first_seen": "2026-08-04",
+      "title": "Bob Woodruff South Sidewalk Connection, Project No. PKR-P-00093"
     },
     "ionwave-fortworthisd:26-070-A": {
       "first_seen": "2026-06-11",
@@ -1561,6 +1593,10 @@
       "first_seen": "2026-07-16",
       "title": "Annual Contract for Software-Defined Network Services"
     },
+    "ionwave-tarrantcounty:F2026149 Addendum 2": {
+      "first_seen": "2026-08-04",
+      "title": "Annual Contract for Software-Defined Network Services"
+    },
     "ionwave-tarrantcounty:F2026152": {
       "first_seen": "2026-07-02",
       "title": "Annual Contract for Out-Patient Treatment Services for Juveniles with Sexual Behavior Problems"
@@ -1607,6 +1643,10 @@
     },
     "ionwave-tarrantcounty:F2026160": {
       "first_seen": "2026-07-24",
+      "title": "Annual Contract for Drug Testing Laboratory and Collection Services"
+    },
+    "ionwave-tarrantcounty:F2026160 Addendum 1": {
+      "first_seen": "2026-08-04",
       "title": "Annual Contract for Drug Testing Laboratory and Collection Services"
     },
     "ionwave-tarrantcounty:F2026161": {
