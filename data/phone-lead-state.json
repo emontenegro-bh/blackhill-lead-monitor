@@ -165,14 +165,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-08-03T17:20:41.865336+00:00"
+    },
+    "21": {
+      "name": "Karen Clements",
+      "service": "Drainage & Erosion Solutions",
+      "taken_by": "Carlos",
+      "assigned_to": "Evelin",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-04T20:44:54.566607+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 1
+    "last_index": 0
   },
   "stats": {
-    "created": 18,
+    "created": 19,
     "errors": 0,
-    "total_runs": 114
+    "total_runs": 115
   }
 }
