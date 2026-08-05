@@ -801,15 +801,16 @@
     "250851538",
     "250852595",
     "250858584",
-    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABLXCdSwAAAA=="
+    "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABLXCdSwAAAA==",
+    "250864969"
   ],
   "stats": {
     "total_leads": 327,
-    "total_spam": 331,
+    "total_spam": 332,
     "last_lead": "2026-08-05T16:55:18.398751",
     "total_calls": 128
   },
-  "last_run": "2026-08-05T17:06:57.405372+00:00",
+  "last_run": "2026-08-05T17:10:23.417094+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1786,7 +1787,7 @@
       "value": "Google Business Profile",
       "note": "WC #250820402 | Google Business Profile",
       "first_seen": "2026-08-05T15:00:28.545811+00:00",
-      "attempts": 27,
+      "attempts": 28,
       "caller_name": "Honolulu     Hi",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1800,7 +1801,7 @@
       "value": "Google Organic",
       "note": "WC #250858584 | Google Organic | Landing: /areas-we-serve/fort-worth",
       "first_seen": "2026-08-05T16:55:18.398722+00:00",
-      "attempts": 3,
+      "attempts": 4,
       "caller_name": "Brettd Heeke",
       "lead_source_raw": "google",
       "lead_medium_raw": "organic",
