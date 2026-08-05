@@ -192,14 +192,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-08-05T16:54:10.647757+00:00"
+    },
+    "24": {
+      "name": "Brett Heeke",
+      "service": "Landscaping",
+      "taken_by": "Carlos",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-05T18:54:41.477314+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 0
+    "last_index": 1
   },
   "stats": {
-    "created": 21,
+    "created": 22,
     "errors": 0,
-    "total_runs": 124
+    "total_runs": 125
   }
 }
