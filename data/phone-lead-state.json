@@ -174,14 +174,32 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-08-04T20:44:54.566607+00:00"
+    },
+    "22": {
+      "name": "Amy Paul",
+      "service": "Commercial Maintenance",
+      "taken_by": "Carlos",
+      "assigned_to": "Evelin",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-05T16:54:04.700704+00:00"
+    },
+    "23": {
+      "name": "Robert Schulko",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "Carlos",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-05T16:54:10.647757+00:00"
     }
   },
   "round_robin_state": {
     "last_index": 0
   },
   "stats": {
-    "created": 19,
+    "created": 21,
     "errors": 0,
-    "total_runs": 123
+    "total_runs": 124
   }
 }
