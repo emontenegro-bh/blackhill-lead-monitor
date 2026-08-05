@@ -805,7 +805,7 @@
     "last_lead": "2026-08-05T15:00:28.545869",
     "total_calls": 127
   },
-  "last_run": "2026-08-05T15:15:18.245422+00:00",
+  "last_run": "2026-08-05T15:20:15.955881+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1775,7 +1775,7 @@
       "value": "Referral",
       "note": "WC #250629571 | Referral",
       "first_seen": "2026-08-04T16:35:18.030649+00:00",
-      "attempts": 280,
+      "attempts": 281,
       "caller_name": "Victoria Campbe",
       "lead_source_raw": "blackhilllandscaping.com",
       "lead_medium_raw": "referral",
@@ -1789,7 +1789,7 @@
       "value": "Google Business Profile",
       "note": "WC #250820402 | Google Business Profile",
       "first_seen": "2026-08-05T15:00:28.545811+00:00",
-      "attempts": 4,
+      "attempts": 5,
       "caller_name": "Honolulu     Hi",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
