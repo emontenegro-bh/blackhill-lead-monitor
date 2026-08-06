@@ -399,10 +399,18 @@
       "sales_value": 0,
       "traffic_source": "google / cpc",
       "synced_at": "2026-08-04T21:58:00.779531+00:00"
+    },
+    "242073834": {
+      "last_status": "Delivered",
+      "opp_number": 3597,
+      "quote_value": 9507,
+      "sales_value": 0,
+      "traffic_source": "(direct) / (none)",
+      "synced_at": "2026-08-06T04:30:59.674895+00:00"
     }
   },
   "stats": {
-    "total_synced": 50,
-    "last_run": "2026-08-06T01:05:54.468505+00:00"
+    "total_synced": 51,
+    "last_run": "2026-08-06T04:31:08.087299+00:00"
   }
 }
