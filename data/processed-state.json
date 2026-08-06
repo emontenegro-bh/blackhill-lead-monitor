@@ -811,7 +811,7 @@
     "last_lead": "2026-08-06T13:55:18.153779",
     "total_calls": 129
   },
-  "last_run": "2026-08-06T15:30:21.033442+00:00",
+  "last_run": "2026-08-06T15:33:42.832978+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1788,7 +1788,7 @@
       "value": "Google Ads",
       "note": "WC #251020953 | Google Ads",
       "first_seen": "2026-08-06T13:55:18.153751+00:00",
-      "attempts": 18,
+      "attempts": 19,
       "caller_name": "Kilroy,walter",
       "lead_source_raw": "google",
       "lead_medium_raw": "cpc",
