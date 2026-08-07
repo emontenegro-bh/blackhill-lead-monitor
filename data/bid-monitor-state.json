@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-06T14:39:52.957855+00:00",
+  "last_run": "2026-08-07T13:32:35.520987+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -84,6 +84,10 @@
     "bonfire-arlingtontx:240593": {
       "first_seen": "2026-06-18",
       "title": "39-inch Water Transmission Main Improvements"
+    },
+    "bonfire-arlingtontx:240755": {
+      "first_seen": "2026-08-07",
+      "title": "Annual Requirements Contract for Grounds Maintenance for the Entertainment District"
     },
     "bonfire-arlingtontx:240963": {
       "first_seen": "2026-07-14",
@@ -473,6 +477,10 @@
       "first_seen": "2026-07-17",
       "title": "Sand Trap, Grease Trap, Septic Tank, Storm Vault & Interceptor Cleaning and Disposal Services"
     },
+    "bonfire-dallascityhall:244969": {
+      "first_seen": "2026-08-07",
+      "title": "Street Sweeping Services"
+    },
     "bonfire-dallascityhall:245037": {
       "first_seen": "2026-07-17",
       "title": "Pre-Development and Development Services for 911 Emergency Communications and Emergency Operations Center"
@@ -529,9 +537,25 @@
       "first_seen": "2026-08-05",
       "title": "Purchase of Public Opinion Surveys - *219209"
     },
+    "bonfire-dallascityhall:247639": {
+      "first_seen": "2026-08-07",
+      "title": "Fire Extinguishers and Sprinkler Systems"
+    },
+    "bonfire-dallascityhall:247787": {
+      "first_seen": "2026-08-07",
+      "title": "Fire Hydrant, Parts, Accessories and Flushing Devices and Sampling Stations"
+    },
     "bonfire-dallascityhall:247812": {
       "first_seen": "2026-08-06",
       "title": "TENTS, TARPAULINS AND SUPPLIES RENTAL OR LEASE *219391"
+    },
+    "bonfire-dallascityhall:247879": {
+      "first_seen": "2026-08-07",
+      "title": "Request for Qualifications for Engineering Services at Southwest, Northeast, and Northcentral Patrol Divisions of the Da"
+    },
+    "bonfire-dallascityhall:247954": {
+      "first_seen": "2026-08-07",
+      "title": "Barricading and Traffic Control Services"
     },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
@@ -977,6 +1001,10 @@
       "first_seen": "2026-07-30",
       "title": "GM OEM Service"
     },
+    "bonfire-friscotexas:246914": {
+      "first_seen": "2026-08-07",
+      "title": "On-Call Traffic Engineering Services"
+    },
     "bonfire-friscotexas:247072": {
       "first_seen": "2026-07-31",
       "title": "Key Management System for PD Fleet"
@@ -1409,6 +1437,10 @@
       "first_seen": "2026-07-11",
       "title": "Haggard Library Re-Roof (Building 060), Project No. FAC-F-00135"
     },
+    "ionwave-cityofplano:2026-0480-B Addendum 3": {
+      "first_seen": "2026-08-07",
+      "title": "Haggard Library Re-Roof (Building 060), Project No. FAC-F-00135"
+    },
     "ionwave-cityofplano:2026-0502-ER": {
       "first_seen": "2026-06-22",
       "title": "Residential Concrete Pavement Maintenance Requirements Contract - 2025, Project No. PW-S-00042"
@@ -1708,6 +1740,18 @@
     "ionwave-tarrantcounty:F2027002": {
       "first_seen": "2026-07-31",
       "title": "Purchase of Genetic Analysis Instrument and Maintenance"
+    },
+    "ionwave-tarrantcounty:F2027003": {
+      "first_seen": "2026-08-07",
+      "title": "Annual Contract for Maintenance of Forward Looking Infrared Video Management System"
+    },
+    "ionwave-tarrantcounty:F2027006": {
+      "first_seen": "2026-08-07",
+      "title": "Annual Contract for Oil and Lubricants"
+    },
+    "ionwave-tarrantcounty:F2027007": {
+      "first_seen": "2026-08-07",
+      "title": "Construction Manager at Risk for New Precinct 4 Maintenance Center"
     },
     "ionwave-townofflowermound:2026-101-A": {
       "first_seen": "2026-06-22",
