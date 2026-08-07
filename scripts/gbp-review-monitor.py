@@ -262,12 +262,36 @@ def main():
     known = load_known()
     templates = load_templates()
 
-    # Fetch reviews via v4 REST API
-    try:
-        reviews_response = gbp_auth.v4_get("reviews", params={"pageSize": 50, "orderBy": "updateTime desc"})
-    except Exception as e:
-        log(f"ERROR fetching reviews: {e}")
-        sys.exit(1)
+    # Fetch reviews via v4 REST API, retrying transient Google-side blips.
+    # A momentary "503 Service Unavailable" from mybusiness.googleapis.com used to
+    # sys.exit(1) on the first try, hard-failing the job and paging us twice. Now we
+    # retry transient 5xx/429/network errors; only a genuinely broken response (auth,
+    # code bug) still exits 1. If Google is still unavailable after all retries, that's
+    # not actionable on our end, so we skip this run quietly (the next hourly run catches
+    # up) rather than fire an alert.
+    TRANSIENT_STATUS = {429, 500, 502, 503, 504}
+    NET_ERRORS = {"ConnectionError", "Timeout", "ConnectTimeout", "ReadTimeout",
+                  "ChunkedEncodingError", "SSLError"}
+    MAX_ATTEMPTS = 4
+    reviews_response = None
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            reviews_response = gbp_auth.v4_get("reviews", params={"pageSize": 50, "orderBy": "updateTime desc"})
+            break
+        except Exception as e:
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            is_transient = (status in TRANSIENT_STATUS) or (type(e).__name__ in NET_ERRORS)
+            if not is_transient:
+                log(f"ERROR fetching reviews (non-transient{f', HTTP {status}' if status else ''}): {e}")
+                sys.exit(1)
+            if attempt == MAX_ATTEMPTS:
+                log(f"WARN: GBP API still unavailable after {attempt} attempts "
+                    f"({status or type(e).__name__}); skipping this run, next run will retry: {e}")
+                sys.exit(0)
+            wait = 5 * attempt + random.uniform(0, 2)
+            log(f"WARN fetching reviews ({status or type(e).__name__}), "
+                f"retry {attempt}/{MAX_ATTEMPTS - 1} in {wait:.0f}s: {e}")
+            time.sleep(wait)
 
     reviews = reviews_response.get("reviews", [])
     log(f"Fetched {len(reviews)} reviews.")
