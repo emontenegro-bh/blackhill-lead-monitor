@@ -4814,3 +4814,6 @@
 [2026-08-07 09:33:10] No new reviews.
 [2026-08-07 10:34:55] GBP Review Monitor starting...
 [2026-08-07 10:35:01] ERROR fetching reviews: 503 Server Error: Service Unavailable for url: https://mybusiness.googleapis.com/v4/accounts/114095510800550032172/locations/17947710941550043312/reviews?pageSize=50&orderBy=updateTime+desc
+[2026-08-07 11:32:06] GBP Review Monitor starting...
+[2026-08-07 11:32:07] Fetched 50 reviews.
+[2026-08-07 11:32:07] No new reviews.
