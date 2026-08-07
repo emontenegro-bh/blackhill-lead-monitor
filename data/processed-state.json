@@ -811,15 +811,17 @@
     "251276926",
     "251276697",
     "251292012",
-    "251297017"
+    "251297017",
+    "251326423",
+    "251326263"
   ],
   "stats": {
-    "total_leads": 331,
+    "total_leads": 333,
     "total_spam": 336,
-    "last_lead": "2026-08-07T14:50:21.557645",
-    "total_calls": 131
+    "last_lead": "2026-08-07T18:45:22.999565",
+    "total_calls": 133
   },
-  "last_run": "2026-08-07T18:40:22.811704+00:00",
+  "last_run": "2026-08-07T18:45:23.001884+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1803,13 +1805,41 @@
       "value": "Google Business Profile",
       "note": "WC #251155767 | Google Business Profile",
       "first_seen": "2026-08-06T21:40:33.071260+00:00",
-      "attempts": 259,
+      "attempts": 260,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
       "call_duration": "53 seconds",
       "received_at": "2026-08-06T21:00:37Z",
       "transcription": "Recipient\nForeign. Good afternoon. Thank you for calling Black and Landscaping. This is Carlos. I'm my director call.\n\nCaller\nHey, I was calling to see what y' all heard.\n\nRecipient\nI'm sorry.\n\nCaller\nI was calling to see was y' all hiring. Any positions open for landscaping?\n\nRecipient\nWell, we have a mate for a maintenance crew member we are hiring in. You can stop by the office tomorrow around 8:30 in the morning. So the process is you come in, fill out the application, you get tested with our mechanic just to make sure and see if you do have experience with the equipment and then based off of how you perform, then we'll go ahead and see if we're going to proceed.\n\nCaller\nOkay, thank you.\n\nRecipient\nYou're welcome."
+    },
+    "251326423": {
+      "wc_lead_id": "251326423",
+      "phone": "+15044759652",
+      "value": "Google Business Profile",
+      "note": "WC #251326423 | Google Business Profile",
+      "first_seen": "2026-08-07T18:45:22.475668+00:00",
+      "attempts": 1,
+      "caller_name": "Hello Gravel",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "34 seconds",
+      "received_at": "2026-08-07T18:44:22Z",
+      "transcription": "Recipient\nGood afternoon. Thank you for calling Blockchain Landscaping. This is Carlos. I may direct your call.\n\nCaller\nHi, Carlos. I wanted to double check. Do you guys have driveway gravel? Like one to two inch? Sorry. Three quarter to one inch.\n\nRecipient\nYou're calling in a. This is. This is a landscaping company. We don't sell any merchandise.\n\nCaller\nOh, okay. All right. Thank you.\n\nRecipient\nNo, you're welcome."
+    },
+    "251326263": {
+      "wc_lead_id": "251326263",
+      "phone": "+15044759652",
+      "value": "Google Business Profile",
+      "note": "WC #251326263 | Google Business Profile",
+      "first_seen": "2026-08-07T18:45:22.999532+00:00",
+      "attempts": 1,
+      "caller_name": "Hello Gravel",
+      "lead_source_raw": "gmb",
+      "lead_medium_raw": "organic",
+      "call_duration": "28 seconds",
+      "received_at": "2026-08-07T18:43:49Z",
+      "transcription": "Recipient\nForeign. Good afternoon. Thank you for calling Black Hill Landscaping. This is Carlos and my director. Call back in. Landscaping, this is Carlos and may I direct your call? Hello?"
     }
   },
   "round_robin_state": {
