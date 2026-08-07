@@ -824,7 +824,7 @@
     "last_lead": "2026-08-07T18:45:22.999565",
     "total_calls": 133
   },
-  "last_run": "2026-08-07T21:40:23.160305+00:00",
+  "last_run": "2026-08-07T21:45:20.382969+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1802,27 +1802,13 @@
     "222953726"
   ],
   "pending_call_attributions": {
-    "251155767": {
-      "wc_lead_id": "251155767",
-      "phone": "+16824701651",
-      "value": "Google Business Profile",
-      "note": "WC #251155767 | Google Business Profile",
-      "first_seen": "2026-08-06T21:40:33.071260+00:00",
-      "attempts": 298,
-      "caller_name": "Wireless Caller",
-      "lead_source_raw": "gmb",
-      "lead_medium_raw": "organic",
-      "call_duration": "53 seconds",
-      "received_at": "2026-08-06T21:00:37Z",
-      "transcription": "Recipient\nForeign. Good afternoon. Thank you for calling Black and Landscaping. This is Carlos. I'm my director call.\n\nCaller\nHey, I was calling to see what y' all heard.\n\nRecipient\nI'm sorry.\n\nCaller\nI was calling to see was y' all hiring. Any positions open for landscaping?\n\nRecipient\nWell, we have a mate for a maintenance crew member we are hiring in. You can stop by the office tomorrow around 8:30 in the morning. So the process is you come in, fill out the application, you get tested with our mechanic just to make sure and see if you do have experience with the equipment and then based off of how you perform, then we'll go ahead and see if we're going to proceed.\n\nCaller\nOkay, thank you.\n\nRecipient\nYou're welcome."
-    },
     "251326423": {
       "wc_lead_id": "251326423",
       "phone": "+15044759652",
       "value": "Google Business Profile",
       "note": "WC #251326423 | Google Business Profile",
       "first_seen": "2026-08-07T18:45:22.475668+00:00",
-      "attempts": 39,
+      "attempts": 40,
       "caller_name": "Hello Gravel",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1836,7 +1822,7 @@
       "value": "Google Business Profile",
       "note": "WC #251326263 | Google Business Profile",
       "first_seen": "2026-08-07T18:45:22.999532+00:00",
-      "attempts": 39,
+      "attempts": 40,
       "caller_name": "Hello Gravel",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
