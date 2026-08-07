@@ -814,7 +814,7 @@
     "last_lead": "2026-08-06T21:40:33.071290",
     "total_calls": 130
   },
-  "last_run": "2026-08-07T14:30:15.895050+00:00",
+  "last_run": "2026-08-07T14:35:16.861341+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1798,7 +1798,7 @@
       "value": "Google Business Profile",
       "note": "WC #251155767 | Google Business Profile",
       "first_seen": "2026-08-06T21:40:33.071260+00:00",
-      "attempts": 206,
+      "attempts": 207,
       "caller_name": "Wireless Caller",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
