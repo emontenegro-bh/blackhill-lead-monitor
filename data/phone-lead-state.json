@@ -201,14 +201,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-08-05T18:54:41.477314+00:00"
+    },
+    "25": {
+      "name": "Wade Arionus",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "Carlos",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-07T00:32:04.339991+00:00"
     }
   },
   "round_robin_state": {
     "last_index": 1
   },
   "stats": {
-    "created": 22,
+    "created": 23,
     "errors": 0,
-    "total_runs": 134
+    "total_runs": 135
   }
 }
