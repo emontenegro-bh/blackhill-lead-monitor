@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-07T13:32:35.520987+00:00",
+  "last_run": "2026-08-08T13:15:03.415002+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -1745,9 +1745,17 @@
       "first_seen": "2026-08-07",
       "title": "Annual Contract for Maintenance of Forward Looking Infrared Video Management System"
     },
+    "ionwave-tarrantcounty:F2027003 Addendum 1": {
+      "first_seen": "2026-08-08",
+      "title": "Annual Purchase for Maintenance of Forward Looking Infrared Video Management System"
+    },
     "ionwave-tarrantcounty:F2027006": {
       "first_seen": "2026-08-07",
       "title": "Annual Contract for Oil and Lubricants"
+    },
+    "ionwave-tarrantcounty:F2027006 Addendum 1": {
+      "first_seen": "2026-08-08",
+      "title": "Annual Purchase for Oil and Lubricants"
     },
     "ionwave-tarrantcounty:F2027007": {
       "first_seen": "2026-08-07",
