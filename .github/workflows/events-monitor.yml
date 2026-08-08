@@ -1,0 +1,81 @@
+name: Networking Events Monitor
+
+on:
+  schedule:
+    # Monthly digest, 1st of the month, 7:13 AM CDT / 6:13 AM CST
+    - cron: '13 12 1 * *'
+    # New-event check, Mondays and Thursdays. Event announcements are not
+    # hour-sensitive, and twice a week keeps the inbox quiet.
+    - cron: '13 12 * * 1,4'
+  workflow_dispatch:
+    inputs:
+      monthly:
+        description: 'Send the full monthly digest instead of new-events-only'
+        type: boolean
+        default: false
+
+concurrency:
+  group: events-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Decide mode
+        id: mode
+        run: |
+          if [ "${{ github.event.inputs.monthly }}" = "true" ] || [ "$(date -u +%d)" = "01" ]; then
+            echo "flag=--monthly" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Scan for events
+        env:
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EVENTS_MAILBOX: ${{ vars.EVENTS_MAILBOX || 'evelin@blackhilltx.com' }}
+          EVENTS_RECIPIENTS: ${{ vars.EVENTS_RECIPIENTS || 'evelin@blackhilltx.com' }}
+        run: python scripts/events-monitor.py ${{ steps.mode.outputs.flag }}
+
+      - name: Persist events state
+        if: always()
+        run: |
+          if [ -f data/events-monitor-state.json ]; then
+            git config user.name "Events Monitor Bot"
+            git config user.email "noreply@blackhilltx.com"
+            git add data/events-monitor-state.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Update events monitor state"
+              for i in 1 2 3; do
+                git pull --rebase origin main || true
+                git push && break || sleep 2
+              done
+            fi
+          fi
+
+  notify-failure:
+    needs: [scan]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Networking Events Monitor"
+    secrets: inherit
