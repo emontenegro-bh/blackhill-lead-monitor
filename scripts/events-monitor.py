@@ -60,9 +60,10 @@ RECIPIENTS = [e.strip() for e in os.environ.get(
 LOOKAHEAD_DAYS = int(os.environ.get("EVENTS_LOOKAHEAD_DAYS", "75"))
 INBOX_LOOKBACK_DAYS = int(os.environ.get("EVENTS_INBOX_LOOKBACK_DAYS", "45"))
 MAX_SEEN = 2000
-# 10 pages x 200 = 2,000 messages, comfortably covering the lookback window at
-# ~33 messages/day. The cap is a runaway guard; hitting it is reported, not silent.
-MAX_INBOX_PAGES = 10
+# The first live run hit a 10-page cap at 2,000 messages without clearing the
+# 45-day window, so actual volume is ~44/day. 20 pages covers it with headroom.
+# The cap is a runaway guard; hitting it is reported in the digest, not silent.
+MAX_INBOX_PAGES = 20
 
 # CivicPlus/Akamai-style WAFs return a silent zero for bot user-agents, so send
 # the complete Chrome header set. A source returning nothing means blocked, not empty.
@@ -304,17 +305,50 @@ VENUE_PATTERN = re.compile(
     r"\s*(?:Club|Center|Centre|Hotel|Ballroom|Hall|Resort|Ranch|Course|Lanes|Park|Museum|Convention Center))")
 
 
+# A real invitation asks you to do something. Newsletters from the same senders
+# discuss topics and happen to contain dates, addresses, and dollar figures, which
+# is how IREM's "what insurance underwriters want to see" became an "event" at
+# IREM's Chicago HQ costing $55 (scraped from a headline about a $55.7M loan).
+INVITE_RE = re.compile(
+    r"\b(register|registration|rsvp|join us|you'?re invited|save the date|"
+    r"tickets?|doors open|agenda|reserve your|secure your (?:spot|seat)|"
+    r"seating|attendees?|luncheon|mixer|happy hour|trade show|golf tournament|"
+    r"clay shoot|networking event|will be held|hosted at|meet us at)\b", re.I)
+
+# Date-stamped digest subjects ("... and more | August 5 2026"), and generic
+# newsletter titles. These are publications, never invitations.
+NEWSLETTER_RE = re.compile(
+    r"(\band more\s*\|)|(\|\s*(January|February|March|April|May|June|July|August|"
+    r"September|October|November|December)\s+\d{1,2},?\s*\d{4}\s*$)|"
+    r"(\bthe latest news\b)|(\bnewsletter\b)|(\bweekly (?:digest|roundup|recap)\b)",
+    re.I)
+
+
 def looks_like_event(text):
     low = text.lower()
     return sum(1 for k in EVENT_KEYWORDS if k in low) >= 2
 
 
+def is_invitation(subject, text):
+    """Known senders skip the keyword-count bar, but nothing skips this. Without
+    it, every trade-association newsletter becomes an event."""
+    if NEWSLETTER_RE.search(subject or ""):
+        return False
+    return bool(INVITE_RE.search(text or ""))
+
+
 def classify_travel(text, address):
     """near / far / unknown. Checks the address first since it is the most reliable
     signal, then falls back to any city named in the body."""
+    # Word-boundary matched: a substring check finds "allen" inside "challenges"
+    # and mislabelled a Fairfax, Virginia address as a long drive to Allen, TX.
     hay = f"{address or ''} {text}".lower()
-    near = next((c for c in NEAR_CITIES if c in hay), None)
-    far = next((c for c in FAR_CITIES if c in hay), None)
+
+    def _find(cities):
+        return next((c for c in cities
+                     if re.search(rf"\b{re.escape(c)}\b", hay)), None)
+
+    near, far = _find(NEAR_CITIES), _find(FAR_CITIES)
     if near and not far:
         return "near", near.title()
     if far and not near:
@@ -491,9 +525,9 @@ def scan_inbox(today):
         hay = f"{addr} {text}".lower()
         src = next((s for s in SOURCES if any(m in hay for m in s["match"])), None)
 
-        # A known association gets the benefit of the doubt: bodyPreview is only
-        # ~255 chars, so requiring two event keywords silently dropped real events
-        # (CCC's Aug 12 announcement was missed this way on the first live run).
+        # A known association gets the benefit of the doubt on keyword COUNT:
+        # bodyPreview is only ~255 chars, so requiring two event keywords silently
+        # dropped real events (CCC's Aug 12 announcement was missed this way).
         # Unlisted senders still have to clear the keyword bar.
         if not src and not looks_like_event(text):
             continue
@@ -503,6 +537,12 @@ def scan_inbox(today):
             full = fetch_full_body(token, msg.get("id"))
             if full:
                 text = f"{subject}\n{full}"
+
+        # Nobody skips this. Trade associations send far more newsletters than
+        # invitations, and a newsletter has dates, a footer address, and dollar
+        # figures - everything the parser needs to fabricate a plausible event.
+        if not is_invitation(subject, text):
+            continue
         elif any(h in text.lower() for h in LOCAL_HINTS):
             # Unlisted sender, but it reads like a local event. Surface it rather
             # than silently drop it, flagged so Evelin can decide if it's worth adding.
