@@ -824,7 +824,7 @@
     "last_lead": "2026-08-07T18:45:22.999565",
     "total_calls": 133
   },
-  "last_run": "2026-08-08T07:40:17.313081+00:00",
+  "last_run": "2026-08-08T07:45:21.898416+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1808,7 +1808,7 @@
       "value": "Google Business Profile",
       "note": "WC #251326423 | Google Business Profile",
       "first_seen": "2026-08-07T18:45:22.475668+00:00",
-      "attempts": 169,
+      "attempts": 170,
       "caller_name": "Hello Gravel",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
@@ -1822,7 +1822,7 @@
       "value": "Google Business Profile",
       "note": "WC #251326263 | Google Business Profile",
       "first_seen": "2026-08-07T18:45:22.999532+00:00",
-      "attempts": 169,
+      "attempts": 170,
       "caller_name": "Hello Gravel",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
