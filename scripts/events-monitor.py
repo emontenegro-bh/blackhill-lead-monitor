@@ -60,6 +60,9 @@ RECIPIENTS = [e.strip() for e in os.environ.get(
 LOOKAHEAD_DAYS = int(os.environ.get("EVENTS_LOOKAHEAD_DAYS", "75"))
 INBOX_LOOKBACK_DAYS = int(os.environ.get("EVENTS_INBOX_LOOKBACK_DAYS", "45"))
 MAX_SEEN = 2000
+# 10 pages x 200 = 2,000 messages, comfortably covering the lookback window at
+# ~33 messages/day. The cap is a runaway guard; hitting it is reported, not silent.
+MAX_INBOX_PAGES = 10
 
 # CivicPlus/Akamai-style WAFs return a silent zero for bot user-agents, so send
 # the complete Chrome header set. A source returning nothing means blocked, not empty.
@@ -434,24 +437,38 @@ def scan_inbox(today):
 
     since = (today - timedelta(days=INBOX_LOOKBACK_DAYS)).strftime("%Y-%m-%dT00:00:00Z")
 
-    try:
-        r = requests.get(
-            f"{GRAPH_BASE}/users/{MAILBOX}/messages",
-            headers={"Authorization": f"Bearer {token}"},
-            params={"$select": "subject,bodyPreview,from,receivedDateTime,webLink",
-                    "$filter": f"receivedDateTime ge {since}",
-                    "$top": "200", "$orderby": "receivedDateTime desc"},
-            timeout=45)
-        if r.status_code == 403:
-            errors.append("Inbox: 403 from Graph - the app registration cannot read "
-                          f"{MAILBOX}. Check for an ApplicationAccessPolicy limiting it "
-                          "to the shared mailbox.")
-            return events, errors
-        r.raise_for_status()
-        messages = r.json().get("value", [])
-    except requests.RequestException as e:
-        errors.append(f"Inbox: {e}")
-        return events, errors
+    # Paginate. Evelin receives roughly 33 messages a day, so a single 200-message
+    # page reaches back only ~6 days and the 45-day lookback is fiction. That is
+    # exactly how CCC Fort Worth's Aug 12 announcement was missed on the first
+    # live runs: the email existed, the parser handled it, the fetch never saw it.
+    messages = []
+    url = f"{GRAPH_BASE}/users/{MAILBOX}/messages"
+    params = {"$select": "id,subject,bodyPreview,from,receivedDateTime,webLink",
+              "$filter": f"receivedDateTime ge {since}",
+              "$top": "200", "$orderby": "receivedDateTime desc"}
+    for page in range(MAX_INBOX_PAGES):
+        try:
+            r = requests.get(url, headers={"Authorization": f"Bearer {token}"},
+                             params=params if page == 0 else None, timeout=45)
+            if r.status_code == 403:
+                errors.append("Inbox: 403 from Graph - the app registration cannot read "
+                              f"{MAILBOX}. Check for an ApplicationAccessPolicy limiting "
+                              "it to the shared mailbox.")
+                return events, errors
+            r.raise_for_status()
+            payload = r.json()
+        except requests.RequestException as e:
+            # Keep whatever pages already succeeded rather than losing the run.
+            errors.append(f"Inbox (page {page + 1}): {e}")
+            break
+        messages.extend(payload.get("value", []))
+        url = payload.get("@odata.nextLink")
+        if not url:
+            break
+    else:
+        errors.append(f"Inbox: hit the {MAX_INBOX_PAGES}-page cap "
+                      f"({len(messages)} messages); older mail in the "
+                      f"{INBOX_LOOKBACK_DAYS}-day window was not scanned.")
 
     # This monitor's own digest lands in the same inbox, names every org it
     # reports on, and is full of dates. Without this guard it re-ingests itself
