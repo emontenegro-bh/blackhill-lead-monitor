@@ -453,9 +453,18 @@ def scan_inbox(today):
         errors.append(f"Inbox: {e}")
         return events, errors
 
+    # This monitor's own digest lands in the same inbox, names every org it
+    # reports on, and is full of dates. Without this guard it re-ingests itself
+    # and compounds every run - which it did on the second live run, emitting an
+    # "event" titled "Industry Events - August 2026 (4 upcoming)".
+    self_addr = os.environ.get("GMAIL_EMAIL", "").strip().lower()
+    SELF_SUBJECTS = ("industry events -", "new industry event", "new industry events")
+
     for msg in messages:
         addr = ((msg.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
         subject = msg.get("subject") or "(no subject)"
+        if (self_addr and self_addr in addr) or subject.lower().startswith(SELF_SUBJECTS):
+            continue
         preview = msg.get("bodyPreview") or ""
         text = f"{subject}\n{preview}"
 
