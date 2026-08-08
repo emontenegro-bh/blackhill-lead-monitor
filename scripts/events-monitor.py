@@ -402,6 +402,27 @@ def graph_token():
         return None
 
 
+def fetch_full_body(token, msg_id):
+    """bodyPreview truncates at ~255 chars, which loses the address, cost, and
+    often the date. Pull the full body, but only for messages already matched to a
+    known association so this stays a handful of calls per run."""
+    if not msg_id:
+        return None
+    try:
+        r = requests.get(
+            f"{GRAPH_BASE}/users/{MAILBOX}/messages/{msg_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"$select": "body"}, timeout=30)
+        r.raise_for_status()
+        html = (r.json().get("body") or {}).get("content") or ""
+    except requests.RequestException:
+        return None
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+    return " ".join(soup.get_text(" ", strip=True).split())[:6000]
+
+
 def scan_inbox(today):
     """Association email is the richest source - it catches events that never
     get a public listing. Read-only against Evelin's mailbox."""
@@ -435,17 +456,27 @@ def scan_inbox(today):
     for msg in messages:
         addr = ((msg.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
         subject = msg.get("subject") or "(no subject)"
-        text = f"{subject}\n{msg.get('bodyPreview') or ''}"
-        if not looks_like_event(text):
-            continue
+        preview = msg.get("bodyPreview") or ""
+        text = f"{subject}\n{preview}"
 
         # Match sender + subject + body together. Sender alone is not enough:
         # CCC Fort Worth comes from info@11459012.brevosend.com, which identifies
         # nothing. The org name is in the subject and body instead.
         hay = f"{addr} {text}".lower()
         src = next((s for s in SOURCES if any(m in hay for m in s["match"])), None)
+
+        # A known association gets the benefit of the doubt: bodyPreview is only
+        # ~255 chars, so requiring two event keywords silently dropped real events
+        # (CCC's Aug 12 announcement was missed this way on the first live run).
+        # Unlisted senders still have to clear the keyword bar.
+        if not src and not looks_like_event(text):
+            continue
+
         if src:
             org, tier = src["org"], src["tier"]
+            full = fetch_full_body(token, msg.get("id"))
+            if full:
+                text = f"{subject}\n{full}"
         elif any(h in text.lower() for h in LOCAL_HINTS):
             # Unlisted sender, but it reads like a local event. Surface it rather
             # than silently drop it, flagged so Evelin can decide if it's worth adding.
@@ -460,18 +491,41 @@ def scan_inbox(today):
     return events, errors
 
 
+def fetch_via_firecrawl(url):
+    """Some association sites serve 403 to datacenter IPs. The page loads fine from
+    a laptop and fails from a GitHub runner, which is how DFW CAI behaved on the
+    first live run. Firecrawl is already used for the same reason in bid-monitor."""
+    key = os.environ.get("FIRECRAWL_API_KEY", "").strip()
+    if not key:
+        return None
+    try:
+        r = requests.post(
+            "https://api.firecrawl.dev/v1/scrape",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={"url": url, "formats": ["html"]}, timeout=60)
+        r.raise_for_status()
+        return (r.json().get("data") or {}).get("html")
+    except requests.RequestException:
+        return None
+
+
 def scan_sites(today):
     events, errors = [], []
     for src in SOURCES:
         for url in src["urls"]:
+            html = None
             try:
                 r = requests.get(url, headers=HEADERS, timeout=30)
                 r.raise_for_status()
+                html = r.text
             except requests.RequestException as e:
-                errors.append(f"{src['org']} ({url}): {e}")
-                continue
+                html = fetch_via_firecrawl(url)
+                if not html:
+                    errors.append(f"{src['org']} ({url}): {e}"
+                                  f"{' [Firecrawl fallback also failed]' if os.environ.get('FIRECRAWL_API_KEY') else ' [no FIRECRAWL_API_KEY set]'}")
+                    continue
             try:
-                soup = BeautifulSoup(r.text, "html.parser")
+                soup = BeautifulSoup(html, "html.parser")
                 for tag in soup(["script", "style", "nav", "footer"]):
                     tag.decompose()
                 # Blocks likely to hold one event each; fall back to whole page.
@@ -575,7 +629,7 @@ def render(events, errors, monthly):
         <tr><td style="padding:14px 12px;border-bottom:1px solid #e8e4dd;vertical-align:top">
           <div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8a6d3b;font-weight:700">{html_mod.escape(ev['org'])}
             <span style="color:#aaa;font-weight:400;text-transform:none;letter-spacing:0">&middot; {TIER_LABEL.get(ev.get('tier', 2), '')}</span></div>
-          <div style="font-size:16px;font-weight:700;color:#1a1a1a;margin:3px 0 6px">{html_mod.escape(ev['title'])}{badges}</div>
+          <div style="font-size:16px;font-weight:700;color:#1a1a1a;margin:3px 0 6px">{html_mod.escape(ev['title'])} {badges}</div>
           <div style="font-size:14px;color:#333"><b>{when}</b> &nbsp;<span style="color:#777">({days_out} days out)</span></div>
           <div style="font-size:14px;color:#333;margin-top:3px">{html_mod.escape(addr)} {maps}</div>
           <div style="font-size:14px;color:#333;margin-top:3px">Cost: {cost}</div>

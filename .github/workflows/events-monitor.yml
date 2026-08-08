@@ -52,6 +52,7 @@ jobs:
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           EVENTS_MAILBOX: ${{ vars.EVENTS_MAILBOX || 'evelin@blackhilltx.com' }}
           EVENTS_RECIPIENTS: ${{ vars.EVENTS_RECIPIENTS || 'evelin@blackhilltx.com' }}
         run: python scripts/events-monitor.py ${{ steps.mode.outputs.flag }}
