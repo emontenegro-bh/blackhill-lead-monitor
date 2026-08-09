@@ -821,15 +821,16 @@
     "AQMkAGMxM2YzYmYxLTFmNWMtNDczZC05YjYyLTM0YjQzY2IyNDE0ZABGAAADrBXLwZprR0mSpy5sEGAogwcAELYPAZopWUKT_Vx1yB6S7QAAAgEMAAAAELYPAZopWUKT_Vx1yB6S7QABLnXHcwAAAA==",
     "251407254",
     "251424617",
-    "251447106"
+    "251447106",
+    "251507247"
   ],
   "stats": {
-    "total_leads": 335,
+    "total_leads": 336,
     "total_spam": 342,
-    "last_lead": "2026-08-08T17:25:17.062867",
+    "last_lead": "2026-08-09T13:00:30.384821",
     "total_calls": 135
   },
-  "last_run": "2026-08-09T12:55:15.759969+00:00",
+  "last_run": "2026-08-09T13:00:30.386698+00:00",
   "lead_mappings": {
     "227449721": {
       "aspire_contact_id": "2534",
@@ -1801,6 +1802,13 @@
       "service": "Sprinkler Services",
       "lead_type": "web_form",
       "date": "2026-08-06"
+    },
+    "251507247": {
+      "aspire_contact_id": "2787",
+      "traffic_source": "bing / cpc",
+      "service": "Sprinkler Services",
+      "lead_type": "web_form",
+      "date": "2026-08-09"
     }
   },
   "dismissed_matches": [
@@ -1813,7 +1821,7 @@
       "value": "Bing Ads",
       "note": "WC #251424617 | Bing Ads | Keyword: sprinkler service companies near me | Landing: /areas-we-serve/fort-worth/sprinkler-inspection-and-repairs",
       "first_seen": "2026-08-08T14:25:22.362278+00:00",
-      "attempts": 299,
+      "attempts": 300,
       "caller_name": "Brijin Goheen",
       "lead_source_raw": "bing",
       "lead_medium_raw": "cpc",
@@ -1827,7 +1835,7 @@
       "value": "Google Business Profile",
       "note": "WC #251447106 | Google Business Profile",
       "first_seen": "2026-08-08T17:25:17.062837+00:00",
-      "attempts": 259,
+      "attempts": 260,
       "caller_name": "Private",
       "lead_source_raw": "gmb",
       "lead_medium_raw": "organic",
