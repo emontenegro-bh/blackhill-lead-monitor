@@ -21,12 +21,14 @@ Usage:
 import json, os, sys, time, urllib.request, urllib.error, urllib.parse, base64
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 DRY_RUN = "--dry-run" in sys.argv
 BACKFILL = "--backfill" in sys.argv
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-STATE_FILE = os.path.join(SCRIPT_DIR, "..", "data", "processed-state.json")
-SYNC_STATE_FILE = os.path.join(SCRIPT_DIR, "..", "data", "roi-sync-state.json")
+# State moved to Supabase; see the State Management section below.
 
 # Aspire opportunity stages that mean "quotable" (proposal sent or beyond)
 QUOTABLE_STATUSES = {"Delivered", "Won"}
@@ -197,31 +199,34 @@ def wc_get_lead(wc_config, lead_id):
 
 
 # --- State Management ---
+#
+# Mappings come from the shared lead_mappings table, and this script's own sync
+# state from its own Supabase document. Previously both lived in JSON files in
+# the repo, and this script was the worst of the four concurrent writers: it
+# loaded all of data/processed-state.json, replaced lead_mappings, and wrote the
+# whole document back, erasing whatever the two */5 lead monitors had recorded
+# in between. See docs/architecture/data-platform-plan.md.
+
+SYNC_STATE_NAME = "whatconverts-roi-sync"
+
 
 def load_lead_mappings():
-    """Load WC lead ID → Aspire contact ID mappings from lead monitor state."""
-    if not os.path.exists(STATE_FILE):
-        log(f"State file not found: {STATE_FILE}")
-        return {}
-    with open(STATE_FILE) as f:
-        state = json.load(f)
-    return state.get("lead_mappings", {})
+    """Load WC lead ID → Aspire contact ID mappings from the shared table."""
+    return db.load_lead_mappings()
 
 
 def load_sync_state():
     """Load sync state (tracks which leads have been synced and their last known status)."""
-    if os.path.exists(SYNC_STATE_FILE):
-        with open(SYNC_STATE_FILE) as f:
-            return json.load(f)
-    return {"synced_leads": {}, "stats": {"total_synced": 0, "last_run": None}}
+    return db.load_state(
+        SYNC_STATE_NAME,
+        default={"synced_leads": {}, "stats": {"total_synced": 0, "last_run": None}},
+    )
 
 
 def save_sync_state(sync_state):
     """Save sync state."""
     sync_state["stats"]["last_run"] = datetime.now(timezone.utc).isoformat()
-    os.makedirs(os.path.dirname(SYNC_STATE_FILE), exist_ok=True)
-    with open(SYNC_STATE_FILE, "w") as f:
-        json.dump(sync_state, f, indent=2)
+    db.save_state(SYNC_STATE_NAME, sync_state)
 
 
 # --- Backfill: Match existing Aspire contacts to WhatConverts leads ---
@@ -310,16 +315,12 @@ def backfill_mappings(wc_config, aspire_config, aspire_token):
             break
         page += 1
 
-    # Save mappings back to state
+    # Upsert mappings row by row. This used to read the whole shared state
+    # document, overwrite its lead_mappings field, and write the document back,
+    # which discarded anything the two */5 lead monitors had written since the
+    # read. Per-row upserts touch only the rows that changed.
     if new_mappings > 0:
-        if os.path.exists(STATE_FILE):
-            with open(STATE_FILE) as f:
-                state = json.load(f)
-        else:
-            state = {"processed_ids": [], "stats": {}}
-        state["lead_mappings"] = mappings
-        with open(STATE_FILE, "w") as f:
-            json.dump(state, f, indent=2)
+        db.save_lead_mappings(mappings)
         log(f"Backfill complete: {new_mappings} new mappings added (total: {len(mappings)})")
     else:
         log("Backfill complete: no new matches found")

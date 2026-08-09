@@ -35,6 +35,9 @@ signal.alarm(TIMEOUT_SECONDS)
 
 import msal
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 # --- Mode Detection ---
 CLOUD_MODE = bool(os.environ.get("MS_CLIENT_SECRET"))
 
@@ -126,23 +129,25 @@ def load_config_from_env():
 
 
 # --- State ---
+#
+# State lives in Supabase, not in data/processed-state.json. That file was
+# rewritten in full and committed every 5 minutes, which produced ~8,900 of the
+# repo's ~11,000 commits per month, and it put lead data in a public repo.
+#
+# The shape of the state dict is unchanged, so nothing downstream of these two
+# functions had to change. See docs/architecture/data-platform-plan.md.
 
-CLOUD_STATE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "processed-state.json")
+STATE_NAME = "lead-monitor"
+DEFAULT_STATE = {"processed_ids": [], "stats": {"total_leads": 0, "total_spam": 0}}
 
 
 def load_state():
-    # Cloud mode: persist state in repo's data/ directory
-    if CLOUD_MODE:
-        if os.path.exists(CLOUD_STATE_FILE):
-            try:
-                with open(CLOUD_STATE_FILE) as f:
-                    return json.load(f)
-            except (json.JSONDecodeError, IOError):
-                pass
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE) as f:
-            return json.load(f)
-    return {"processed_ids": [], "stats": {"total_leads": 0, "total_spam": 0}}
+    # Fails closed. If Supabase is unreachable we let the exception surface so
+    # the workflow fails and notify-failure alerts: a skipped 5-minute cycle is
+    # harmless because the next run picks the mail up, but falling back to an
+    # empty or stale state would re-send auto-replies and owner notifications
+    # for mail already handled.
+    return db.load_state(STATE_NAME, default=dict(DEFAULT_STATE))
 
 
 def save_state(state):
@@ -150,13 +155,7 @@ def save_state(state):
     # Cap processed_ids at 5000 entries (FIFO)
     if len(state["processed_ids"]) > 5000:
         state["processed_ids"] = state["processed_ids"][-5000:]
-    if CLOUD_MODE:
-        os.makedirs(os.path.dirname(CLOUD_STATE_FILE), exist_ok=True)
-        with open(CLOUD_STATE_FILE, "w") as f:
-            json.dump(state, f, indent=2)
-    else:
-        with open(STATE_FILE, "w") as f:
-            json.dump(state, f, indent=2)
+    db.save_state(STATE_NAME, state)
 
 
 # --- Microsoft Graph API ---
