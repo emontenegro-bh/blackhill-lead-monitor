@@ -53,6 +53,12 @@ SHARED_SPLIT = {
     "lead-fuzzy-match": ["dismissed_matches"],
 }
 
+# Scripts that keep a processed_ids list inside their own document, and so need
+# the full history copied in. Getting this wrong is the expensive mistake: a
+# script that starts with an empty list treats every recent lead as new and
+# sends a second auto-reply to customers who already got one.
+NEEDS_PROCESSED_IDS = ["lead-monitor", "whatconverts-lead-monitor"]
+
 # Files with a single owning script carry over unchanged.
 SIMPLE_SOURCES = [
     ("data/roi-sync-state.json",         "whatconverts-roi-sync", ("synced_leads", "dict")),
@@ -96,6 +102,12 @@ def plan():
 
         for script, fields in SHARED_SPLIT.items():
             doc = {k: shared[k] for k in fields if k in shared}
+            if script in NEEDS_PROCESSED_IDS:
+                # Both lead scripts get the whole list rather than the subset
+                # matching their id format. Over-inclusion costs nothing (a
+                # script never looks up an id it does not produce); under-
+                # inclusion re-notifies real customers.
+                doc["processed_ids"] = list(ids)
             # Counters restart per script. The old totals were a single set of
             # numbers incremented by two scripts at once, so they cannot be
             # attributed; keeping them for reference beats inventing a split.
@@ -176,6 +188,23 @@ def _verify(documents, key_writes, mappings):
         if not ok:
             problems.append(f"{name}: stored document differs")
         print(f"  {'OK' if ok else 'MISMATCH':9} state    {name}")
+
+    # Explicit guard. A migrated lead script that loads an empty processed_ids
+    # re-sends auto-replies to real customers, and it fails silently: the run
+    # succeeds and simply reports "0 processed". Check the count directly
+    # rather than relying on the whole-document comparison above.
+    for name in NEEDS_PROCESSED_IDS:
+        stored = db.load_state(name)
+        n = len(stored.get("processed_ids") or [])
+        expected = next((len(d.get("processed_ids") or [])
+                         for nm, d, _ in documents if nm == name), 0)
+        ok = n == expected and n > 0
+        if not ok:
+            problems.append(
+                f"{name}: processed_ids has {n} entries, expected {expected} "
+                "- migrating now would re-notify customers"
+            )
+        print(f"  {'OK' if ok else 'DANGER':9} ids      {name} ({n} processed ids)")
 
     for script, keys, _ in key_writes:
         missing = db.filter_unprocessed(script, keys)
