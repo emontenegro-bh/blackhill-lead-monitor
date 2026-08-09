@@ -1,0 +1,55 @@
+name: Phone Lead Staleness Alert
+
+# Insurance: emails Evelin if the phone-lead monitor hasn't processed a new
+# lead in >= 2 business days (weekends skipped). Reads only the committed state
+# file, so it fires even if the monitor's Graph read is failing.
+
+on:
+  schedule:
+    - cron: '23 13 * * 1-5'   # 08:23 CT, weekdays (off-:00 so GitHub doesn't drop it)
+  workflow_dispatch: {}
+
+concurrency:
+  group: phone-lead-staleness
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Check phone-lead staleness
+        env:
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ALERT_RECIPIENT: evelin@blackhilltx.com
+        run: python scripts/phone-lead-staleness-check.py
+
+      - name: Commit alert state (dedupe tracking)
+        run: |
+          git config user.name "blackhill-bot"
+          git config user.email "bot@blackhilltx.com"
+          git add data/phone-lead-staleness-state.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            for i in 1 2 3 4 5; do
+              git commit -m "chore: phone-lead staleness alert state" && \
+              git pull --rebase && git push && break || sleep 3
+            done
+          fi
+
+  notify-failure:
+    needs: check
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: Phone Lead Staleness Alert
+    secrets: inherit
