@@ -175,10 +175,13 @@ def filter_unprocessed(script, keys):
         # PostgREST in.() needs each value double-quoted, with any embedded
         # quote doubled; ids routinely contain , = / and +
         joined = ",".join('"' + k.replace('"', '""') + '"' for k in batch)
+        # Keep the quoting out of the f-string: CI runs Python 3.11, where a
+        # backslash inside an f-string expression is a SyntaxError (allowed
+        # from 3.12 / PEP 701, which is why this compiled fine locally).
+        encoded = urllib.parse.quote(joined, safe='(),"')
         rows = _request(
             "GET",
-            f"processed_keys?script=eq.{_q(script)}"
-            f"&key=in.({urllib.parse.quote(joined, safe='(),\"')})&select=key",
+            f"processed_keys?script=eq.{_q(script)}&key=in.({encoded})&select=key",
         ) or []
         seen.update(r["key"] for r in rows)
 
