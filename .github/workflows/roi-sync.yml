@@ -31,22 +31,10 @@ jobs:
           WC_PROFILE_ID: ${{ secrets.WC_PROFILE_ID }}
           ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
           ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/whatconverts-roi-sync.py
 
-      - name: Persist sync state
-        if: always()
-        run: |
-          git config user.name "ROI Sync Bot"
-          git config user.email "noreply@blackhilltx.com"
-          git add data/processed-state.json 2>/dev/null || true
-          git add data/roi-sync-state.json 2>/dev/null || true
-          if ! git diff --cached --quiet; then
-            git commit -m "Update ROI sync state"
-            for i in 1 2 3; do
-              git pull --rebase origin main || true
-              git push && break || sleep 2
-            done
-          fi
 
   notify-failure:
     needs: [sync]

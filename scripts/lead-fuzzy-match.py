@@ -18,11 +18,14 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 DRY_RUN = "--dry-run" in sys.argv
 AUTO_LINK = "--auto-link" in sys.argv
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "data")
-STATE_FILE = os.path.join(DATA_DIR, "processed-state.json")
+# State moved to Supabase (shared lead_mappings table + this script's own document).
 
 # Aspire config
 ASPIRE_CONFIG_FILE = os.path.expanduser("~/.config/aspire/config.json")
@@ -297,11 +300,13 @@ def run():
     print("Lead Fuzzy Matcher")
     print("=" * 50)
 
-    # Load state
-    with open(STATE_FILE) as f:
-        state = json.load(f)
-
-    mappings = state.get("lead_mappings", {})
+    # Mappings come from the shared lead_mappings table; this script's own
+    # fields (dismissed_matches) from its own Supabase document. Both used to
+    # live in data/processed-state.json, which this script rewrote wholesale
+    # and so could erase concurrent writes from the two */5 lead monitors.
+    state = db.load_state("lead-fuzzy-match", default={"dismissed_matches": []})
+    mappings = db.load_lead_mappings()
+    state["lead_mappings"] = mappings
     mapped_wc_ids = set(mappings.keys())
     print(f"Currently mapped: {len(mapped_wc_ids)} leads")
 
@@ -465,8 +470,13 @@ def run():
             print(f"  Linked: {lead_name} -> {aspire_name} ({match['score']:.0%})")
 
         if linked and not DRY_RUN:
-            with open(STATE_FILE, "w") as f:
-                json.dump(state, f, indent=2)
+            # Upsert only the rows this run added, rather than rewriting the
+            # whole collection and clobbering concurrent writers.
+            new_rows = {
+                m["lead"]["wc_id"]: state["lead_mappings"][m["lead"]["wc_id"]]
+                for m in results["high"]
+            }
+            db.save_lead_mappings(new_rows)
             print(f"Saved {linked} new mappings to state.")
 
     # Build email digest

@@ -17,6 +17,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta, date
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 # --- Global timeout: kill the process if it runs longer than 10 minutes ---
 SCRIPT_TIMEOUT = 600  # seconds
 
@@ -425,13 +428,16 @@ hour_blocks = bucket_hours(hour_data)
 # --- 10. Aspire won revenue from WhatConverts leads only ---
 def _load_wc_contact_map():
     """Load WhatConverts lead mappings → {aspire_contact_id: {source, lead_type}}."""
-    state_path = os.path.join(REPO_ROOT, "data", "processed-state.json")
-    if not os.path.exists(state_path):
+    # Reads the shared lead_mappings table. Was data/processed-state.json.
+    try:
+        mappings = db.load_lead_mappings()
+    except Exception as e:
+        # Read-only enrichment for one section of the report. Losing it should
+        # degrade the report, not kill the weekly send.
+        print(f"[WARN] lead_mappings unavailable, won-revenue section will be empty: {e}")
         return {}
-    with open(state_path) as f:
-        state = json.load(f)
     contact_map = {}
-    for _wc_id, info in state.get("lead_mappings", {}).items():
+    for _wc_id, info in mappings.items():
         cid = info.get("aspire_contact_id")
         if cid:
             contact_map[int(cid)] = {

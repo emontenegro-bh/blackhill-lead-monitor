@@ -21,6 +21,9 @@ from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 # --- Timeout guard (120s) ---
 TIMEOUT_SECONDS = 120
 
@@ -36,7 +39,7 @@ CLOUD_MODE = bool(os.environ.get("WC_API_TOKEN"))
 DRY_RUN = "--dry-run" in sys.argv
 
 # --- State ---
-STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "processed-state.json")
+# State moved to Supabase; see load_state() below.
 
 # --- Logging ---
 
@@ -136,19 +139,35 @@ def load_config_from_env():
 
 
 # --- State Management ---
+#
+# State lives in Supabase under this script's own name, not in the shared
+# data/processed-state.json. That file had four writers across four
+# concurrency groups, two of them on this same */5 cron, each doing
+# read-modify-write on the whole document. Whoever saved last erased the
+# others' processed ids, and an erased id looks unprocessed next run, which
+# sends a second auto-reply to a customer who already got one.
+#
+# One document per script means one writer per document, so that cannot happen.
+# lead_mappings was genuinely shared, so it moved to its own table instead.
+# See docs/architecture/data-platform-plan.md.
+
+STATE_NAME = "whatconverts-lead-monitor"
+
 
 def load_state():
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE) as f:
-            return json.load(f)
-    return {"processed_ids": [], "stats": {"total_leads": 0, "total_spam": 0}}
+    # Fails closed: if Supabase is unreachable the exception surfaces, the
+    # workflow fails, and notify-failure alerts. A skipped 5-minute cycle is
+    # harmless because the next run picks the leads up. Falling back to empty
+    # state would re-notify and re-reply.
+    return db.load_state(
+        STATE_NAME,
+        default={"processed_ids": [], "stats": {"total_leads": 0, "total_spam": 0}},
+    )
 
 
 def save_state(state):
     state["last_run"] = datetime.now(timezone.utc).isoformat()
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
+    db.save_state(STATE_NAME, state)
 
 
 # --- WhatConverts API ---

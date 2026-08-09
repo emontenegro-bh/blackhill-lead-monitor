@@ -33,21 +33,10 @@ jobs:
           WC_API_SECRET: ${{ secrets.WC_API_SECRET }}
           WC_PROFILE_ID: ${{ secrets.WC_PROFILE_ID }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/lead-fuzzy-match.py --auto-link
 
-      - name: Persist updated mappings
-        if: always()
-        run: |
-          git config user.name "Lead Matcher Bot"
-          git config user.email "noreply@blackhilltx.com"
-          git add data/processed-state.json 2>/dev/null || true
-          if ! git diff --cached --quiet; then
-            git commit -m "Update lead mappings (fuzzy match)"
-            for i in 1 2 3; do
-              git pull --rebase origin main || true
-              git push && break || sleep 2
-            done
-          fi
 
   notify-failure:
     needs: [match]

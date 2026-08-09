@@ -28,6 +28,9 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 # --- Constants ---
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -443,20 +446,20 @@ def test_wc_write_persist(config):
                 test_lead_id = list(synced.keys())[-1]
         except Exception:
             pass
-    # Fallback to processed-state
+    # Fallback to the shared lead_mappings table, then to this script's record
+    # of what the WC monitor last processed. Was data/processed-state.json.
     if not test_lead_id:
-        state_path = os.path.join(DATA_DIR, "processed-state.json")
-        if os.path.exists(state_path):
-            try:
-                with open(state_path) as f:
-                    state = json.load(f)
-                mappings = state.get("lead_mappings", {})
-                if mappings:
-                    test_lead_id = list(mappings.keys())[-1]
-                elif state.get("processed_ids"):
-                    test_lead_id = state["processed_ids"][-1]
-            except Exception:
-                pass
+        try:
+            mappings = db.load_lead_mappings()
+            if mappings:
+                test_lead_id = list(mappings.keys())[-1]
+            else:
+                wc_state = db.load_state("whatconverts-lead-monitor")
+                ids = wc_state.get("processed_ids") or []
+                if ids:
+                    test_lead_id = ids[-1]
+        except Exception:
+            pass
 
     if not test_lead_id:
         return TestResult("whatconverts", "write persistence", True,
