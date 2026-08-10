@@ -548,7 +548,137 @@ def get_aspire_revenue(start_date, end_date):
         print(f"Aspire revenue query skipped: {e}", file=sys.stderr)
         return None
 
-aspire_revenue = get_aspire_revenue(this_week_start, this_week_end)
+# --- 10b. Aspire won revenue by Lead Source custom field (def 34) ---
+# Customer-origin, property-level: a customer belongs to one origin source and ALL
+# their won opps roll up to it. Replaces the WhatConverts billing-contact map (which
+# missed commercial deals where the billing contact != the lead contact, e.g. Restore Church).
+_PAID_SRC = {"Google Ads", "Bing Ads"}
+_ORGANIC_SRC = {"Google Organic", "Bing Organic", "Google Business Profile"}
+_SRC_COLOR = {"Google Ads": "#27ae60", "Bing Ads": "#16a085", "Google Organic": "#3498db",
+              "Bing Organic": "#2980b9", "Google Business Profile": "#9b59b6",
+              "Postcard Mania": "#e91e63", "Referral": "#f39c12", "Website": "#95a5a6",
+              "Phone Call": "#e67e22"}
+
+
+def get_aspire_revenue_v2(start_date, end_date):
+    try:
+        client_id = (os.environ.get("ASPIRE_REPORTING_CLIENT_ID") or os.environ.get("ASPIRE_CLIENT_ID"))
+        secret = (os.environ.get("ASPIRE_REPORTING_SECRET") or os.environ.get("ASPIRE_SECRET"))
+        if not client_id or not secret:
+            cfg_path = os.path.expanduser("~/.config/aspire/config.json")
+            if not os.path.exists(cfg_path):
+                return None
+            with open(cfg_path) as f:
+                cfg = json.load(f)
+            client_id = cfg.get("reporting_client_id", cfg.get("client_id"))
+            secret = cfg.get("reporting_secret", cfg.get("secret"))
+        base = os.environ.get("ASPIRE_API_URL", "https://cloud-api.youraspire.com")
+        auth = json.dumps({"ClientId": client_id, "Secret": secret}).encode()
+        areq = urllib.request.Request(f"{base}/Authorization", data=auth,
+                                      headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(areq, timeout=15) as resp:
+            token = json.loads(resp.read().decode()).get("Token", "")
+        if not token:
+            return None
+
+        def paged(entity, params, ps=500):
+            out = []
+            skip = 0
+            while True:
+                url = f"{base}/{entity}?" + urllib.parse.quote(params + f"&$top={ps}&$skip={skip}", safe="=&$,()/%:@")
+                req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}", "Accept": "application/json"})
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    d = json.loads(r.read().decode())
+                d = d if isinstance(d, list) else [d]
+                out += d
+                if len(d) < ps:
+                    break
+                skip += ps
+            return out
+
+        # Lead Source per contact (custom field def 34) + created date for first-touch tiebreak
+        cf = paged("ContactCustomFields", "$filter=ContactCustomFieldDefinitionID eq 34")
+        src = {int(x["ContactID"]): (x.get("ColumnValue") or "").strip()
+               for x in cf if (x.get("ColumnValue") or "").strip()}
+        created = {c["ContactID"]: str(c.get("CreatedDateTime") or "")
+                   for c in paged("Contacts", "$select=ContactID,CreatedDateTime")}
+        prop_contacts = {}
+        ids = list(src)
+        for i in range(0, len(ids), 25):
+            filt = "ContactID in (" + ",".join(str(x) for x in ids[i:i + 25]) + ")"
+            for pc in paged("PropertyContacts", f"$filter={filt}&$select=PropertyID,ContactID"):
+                pid, cid = pc.get("PropertyID"), pc.get("ContactID")
+                if pid and cid and int(cid) in src:
+                    prop_contacts.setdefault(int(pid), set()).add(int(cid))
+
+        def origin(billing_id, property_id):
+            cands = set()
+            if billing_id and int(billing_id) in src:
+                cands.add(int(billing_id))
+            if property_id:
+                cands |= prop_contacts.get(int(property_id), set())
+            if not cands:
+                return None
+            best = min(cands, key=lambda c: created.get(c, "9999"))
+            return src[best]
+
+        WON = "OpportunityStatusName eq 'Won'"
+        sel = "$select=WonDollars,OpportunityName,OpportunityNumber,OpportunityID,BillingContactID,PropertyID"
+
+        def attribute(params, want_opps=False):
+            by = {}
+            opp_list = []
+            for o in paged("Opportunities", params):
+                s = origin(o.get("BillingContactID"), o.get("PropertyID"))
+                dollars = float(o.get("WonDollars", 0) or 0)
+                b = by.setdefault(s or "(no source)", [0, 0.0])
+                b[0] += 1
+                b[1] += dollars
+                if want_opps and s:
+                    oid = o.get("OpportunityID")
+                    opp_list.append({"name": o.get("OpportunityName") or "Unnamed opportunity",
+                                     "dollars": dollars, "number": o.get("OpportunityNumber"),
+                                     "source_label": s,
+                                     "url": f"https://cloud.youraspire.com/app/opportunities/{oid}" if oid else None})
+            return by, opp_list
+
+        week_by, week_opps = attribute(
+            f"$filter={WON} and WonDate ge {start_date}T00:00:00Z and WonDate le {end_date}T23:59:59Z&{sel}",
+            want_opps=True)
+        grand_by, _ = attribute(
+            f"$filter={WON} and WonDate ge 2026-02-19T00:00:00Z and WonDate le {end_date}T23:59:59Z"
+            "&$select=WonDollars,BillingContactID,PropertyID")
+
+        cpc = [0, 0.0]
+        org = [0, 0.0]
+        oth = [0, 0.0]
+        for s, (c, d) in week_by.items():
+            if s in _PAID_SRC:
+                cpc[0] += c
+                cpc[1] += d
+            elif s in _ORGANIC_SRC:
+                org[0] += c
+                org[1] += d
+            elif s != "(no source)":
+                oth[0] += c
+                oth[1] += d
+        week_opps.sort(key=lambda x: -x["dollars"])
+        return {
+            "cpc_won": cpc[1], "cpc_count": cpc[0],
+            "organic_won": org[1], "organic_count": org[0],
+            "other_won": oth[1], "other_count": oth[0],
+            "total_won": cpc[1] + org[1] + oth[1],
+            "count": cpc[0] + org[0] + oth[0],
+            "won_opps": week_opps,
+            "week_by_source": week_by,
+            "grand_by_source": grand_by,
+        }
+    except Exception as e:
+        print(f"Aspire revenue v2 query skipped: {e}", file=sys.stderr)
+        return None
+
+
+aspire_revenue = get_aspire_revenue_v2(this_week_start, this_week_end)
 
 
 # ============================================================
@@ -913,7 +1043,7 @@ if acct_this:
 # ============================================================
 if aspire_revenue and acct_this:
     h('<div class="section">')
-    h('<h2>Revenue from Website Leads</h2>')
+    h('<h2>Revenue by Lead Source</h2>')
     h('<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>')
     h(f'<td width="33%" style="padding:0 4px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
     h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Ad Spend</div>')
@@ -934,32 +1064,45 @@ if aspire_revenue and acct_this:
     h('</tr></table>')
     if aspire_revenue["other_won"] > 0:
         h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#666;">+ ${aspire_revenue["other_won"]:,.0f} from other sources ({aspire_revenue["other_count"]} opps)</div>')
+    grand = aspire_revenue.get("grand_by_source") or {}
+    if grand:
+        h('<div style="margin-top:14px;">')
+        h('<div style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Grand Total by Lead Source '
+          '(since Feb 19 &bull; all of each customer\'s won work rolls up to their origin channel)</div>')
+        h('<table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size:12px;">')
+        for s in sorted(grand, key=lambda k: -grand[k][1]):
+            if s == "(no source)":
+                continue
+            c, d = grand[s]
+            color = _SRC_COLOR.get(s, "#aaa")
+            h(f'<tr><td style="padding:3px 8px;color:{color};font-weight:700;">{s}</td>'
+              f'<td style="padding:3px 8px;color:#888;">{c} opp{"s" if c != 1 else ""}</td>'
+              f'<td style="padding:3px 8px;color:#27ae60;font-weight:600;text-align:right;">${d:,.0f}</td></tr>')
+        nos = grand.get("(no source)")
+        if nos:
+            h(f'<tr><td style="padding:3px 8px;color:#666;">Existing / no tracked source</td>'
+              f'<td style="padding:3px 8px;color:#666;">{nos[0]} opps</td>'
+              f'<td style="padding:3px 8px;color:#666;text-align:right;">${nos[1]:,.0f}</td></tr>')
+        h('</table></div>')
+
     won_opps = aspire_revenue.get("won_opps") or []
     if won_opps:
-        source_labels = {"cpc": ("Ads", "#27ae60"), "organic": ("Organic", "#3498db"), "other": ("Other", "#888")}
         h('<div style="margin-top:12px;">')
-        h('<div style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Closed Leads This Week</div>')
+        h('<div style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Closed This Week (credited to each customer\'s origin source)</div>')
         for opp in won_opps:
-            label, lcolor = source_labels[opp["source"]]
+            s = opp.get("source_label", "?")
+            lcolor = _SRC_COLOR.get(s, "#aaa")
             num = f" #{opp['number']}" if opp.get("number") else ""
-            name_html = opp["name"]
             if opp.get("url"):
                 name_html = f'<a href="{opp["url"]}" style="color:#fff;text-decoration:underline;">{opp["name"]}{num}</a>'
             else:
                 name_html = f'{opp["name"]}{num}'
             h(f'<div style="margin-bottom:4px;padding:8px 12px;background:#1a1a1a;border-radius:4px;font-size:12px;">')
-            h(f'<span style="color:{lcolor};font-weight:700;">[{label}]</span> {name_html} '
+            h(f'<span style="color:{lcolor};font-weight:700;">[{s}]</span> {name_html} '
               f'<span style="color:#27ae60;font-weight:600;">${opp["dollars"]:,.0f}</span></div>')
         h('</div>')
-    lt90 = aspire_revenue.get("lead_type_90d")
-    if lt90:
-        f90 = lt90["web_form"]
-        c90 = lt90["phone_call"]
-        h(f'<div style="text-align:center;margin-top:10px;font-size:12px;color:#aaa;">')
-        h(f'Last 90 days won: web forms <span style="color:#27ae60;font-weight:600;">${f90["dollars"]:,.0f}</span> ({f90["won"]} opps) '
-          f'&bull; phone calls <span style="color:#f39c12;font-weight:600;">${c90["dollars"]:,.0f}</span> ({c90["won"]} opps)')
-        h(f'</div>')
-    h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">Only counting revenue from leads tracked in WhatConverts</div>')
+    h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">Attribution from Aspire Lead Source '
+      f'(customer-origin, first-touch). Won = status Won only.</div>')
     h('</div>')
 
 # ============================================================
@@ -1390,10 +1533,27 @@ if aspire_revenue and acct_this:
     md.append(f"| Won from Ads | ${aspire_revenue['cpc_won']:,.0f} ({aspire_revenue['cpc_count']} opps) |")
     md.append(f"| Won from Organic | ${aspire_revenue['organic_won']:,.0f} ({aspire_revenue['organic_count']} opps) |")
     md.append("")
+    grand = aspire_revenue.get("grand_by_source") or {}
+    if grand:
+        md.append("**Grand Total by Lead Source** (since Feb 19; all of each customer's won work rolls up to their origin channel):")
+        md.append("")
+        md.append("| Lead Source | Opps | Revenue |")
+        md.append("|-------------|------|---------|")
+        for s in sorted(grand, key=lambda k: -grand[k][1]):
+            if s == "(no source)":
+                continue
+            c, d = grand[s]
+            md.append(f"| {s} | {c} | ${d:,.0f} |")
+        nos = grand.get("(no source)")
+        if nos:
+            md.append(f"| Existing / no tracked source | {nos[0]} | ${nos[1]:,.0f} |")
+        md.append("")
+    if aspire_revenue.get("won_opps"):
+        md.append("**Closed this week** (credited to each customer's origin source):")
     for opp in aspire_revenue.get("won_opps") or []:
         num = f" #{opp['number']}" if opp.get("number") else ""
         link = f"[{opp['name']}{num}]({opp['url']})" if opp.get("url") else f"{opp['name']}{num}"
-        md.append(f"- **[{opp['source'].upper()}]** {link} -- ${opp['dollars']:,.0f}")
+        md.append(f"- **[{opp['source_label']}]** {link} -- ${opp['dollars']:,.0f}")
     if aspire_revenue.get("won_opps"):
         md.append("")
     lt90 = aspire_revenue.get("lead_type_90d")
