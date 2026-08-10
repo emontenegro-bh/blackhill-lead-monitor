@@ -308,6 +308,67 @@ def save_lead_mappings(mappings):
         )
 
 
+# ---------------------------------------------------------------------------
+# GBP review reply queue
+#
+# Replaces data/gbp/pending-responses/*.json and data/gbp/responded/*.json.
+# `payload` is the same dict the GBP scripts already build, so callers keep
+# working with the shape they had.
+# ---------------------------------------------------------------------------
+
+def gbp_queue_add(review_id, payload):
+    """Insert or refresh a queued review. Idempotent on review_id."""
+    _request(
+        "POST",
+        "gbp_review_queue",
+        body={
+            "review_id": review_id,
+            "short_id": payload.get("short_id"),
+            "status": payload.get("status", "pending"),
+            "payload": payload,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+        prefer="resolution=merge-duplicates,return=minimal",
+    )
+
+
+def gbp_queue_pending():
+    """Every review still awaiting a reply, oldest first. Returns payload dicts."""
+    rows = _request(
+        "GET",
+        "gbp_review_queue?status=eq.pending&select=payload&order=created_at.asc",
+    ) or []
+    return [r["payload"] for r in rows]
+
+
+def gbp_queue_by_short_id(short_id):
+    """Find a pending review by the [REV-XXXX] tag. Returns (review_id, payload)."""
+    if not short_id:
+        return None, None
+    rows = _request(
+        "GET",
+        f"gbp_review_queue?short_id=eq.{_q(short_id.upper())}"
+        "&status=eq.pending&select=review_id,payload",
+    ) or []
+    if not rows:
+        return None, None
+    return rows[0]["review_id"], rows[0]["payload"]
+
+
+def gbp_queue_mark_responded(review_id, payload):
+    """Archive a review in place. Replaces the write-copy-then-delete move."""
+    _request(
+        "PATCH",
+        f"gbp_review_queue?review_id=eq.{_q(review_id)}",
+        body={
+            "status": "responded",
+            "payload": payload,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+        prefer="return=minimal",
+    )
+
+
 def is_processed(script, key):
     """True if this script already handled `key`."""
     return not filter_unprocessed(script, [key])
