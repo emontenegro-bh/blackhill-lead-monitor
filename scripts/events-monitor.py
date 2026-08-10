@@ -634,10 +634,24 @@ def make_ics(ev):
     if ev["url"]:
         desc += f"\n\n{ev['url']}"
 
+    # METHOD:REQUEST, not PUBLISH. A PUBLISH .ics is a valid calendar file but
+    # Outlook and Superhuman render it as a plain file attachment with no
+    # "add to calendar" affordance, so the events sat there unusable. REQUEST
+    # with the recipient as ATTENDEE renders as a real invitation with
+    # Accept/Decline. The organizer is our own sending address, so any responses
+    # go to the automation mailbox and reach nobody else.
+    organizer = os.environ.get("GMAIL_EMAIL", "noreply@blackhilltx.com").strip()
+    attendee_lines = [
+        f"ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;"
+        f"RSVP=TRUE:mailto:{r}" for r in RECIPIENTS
+    ]
     return "\r\n".join([
         "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Black Hill//Events Monitor//EN",
-        "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
-        f"UID:{uid}", f"DTSTAMP:{stamp}", dt_start, dt_end,
+        "CALSCALE:GREGORIAN", "METHOD:REQUEST", "BEGIN:VEVENT",
+        f"UID:{uid}", f"DTSTAMP:{stamp}", "SEQUENCE:0", "STATUS:CONFIRMED",
+        dt_start, dt_end,
+        f"ORGANIZER;CN=Black Hill Events Monitor:mailto:{organizer}",
+        *attendee_lines,
         f"SUMMARY:{esc(ev['org'] + ' - ' + ev['title'])}",
         f"LOCATION:{esc(ev['address'] or 'See registration link')}",
         f"DESCRIPTION:{esc(desc)}",
@@ -741,7 +755,7 @@ def send(subject, plain, html, events):
     msg.attach(alt)
 
     for ev in events[:20]:
-        part = MIMEBase("text", "calendar", method="PUBLISH", name="event.ics")
+        part = MIMEBase("text", "calendar", method="REQUEST", name="event.ics")
         part.set_payload(make_ics(ev))
         encoders.encode_base64(part)
         safe = re.sub(r"[^A-Za-z0-9]+", "-", f"{ev['org']}-{ev['date_iso']}").strip("-")[:60]
