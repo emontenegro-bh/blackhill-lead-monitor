@@ -435,17 +435,14 @@ def test_wc_write_persist(config):
     """Idempotent write test: read quotable, write same value back, verify."""
     # Find a lead ID that has been synced (will have quotable set)
     test_lead_id = None
-    sync_path = os.path.join(DATA_DIR, "roi-sync-state.json")
-    if os.path.exists(sync_path):
-        try:
-            with open(sync_path) as f:
-                sync_state = json.load(f)
-            synced = sync_state.get("synced_leads", {})
-            if synced:
-                # Pick a lead that was synced (should have quotable=yes/no)
-                test_lead_id = list(synced.keys())[-1]
-        except Exception:
-            pass
+    try:
+        # Was data/roi-sync-state.json; the ROI sync now keeps this in Supabase.
+        synced = db.load_state("whatconverts-roi-sync").get("synced_leads", {})
+        if synced:
+            # Pick a lead that was synced (should have quotable=yes/no)
+            test_lead_id = list(synced.keys())[-1]
+    except Exception:
+        pass
     # Fallback to the shared lead_mappings table, then to this script's record
     # of what the WC monitor last processed. Was data/processed-state.json.
     if not test_lead_id:

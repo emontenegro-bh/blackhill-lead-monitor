@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fuzzy-match unmapped WhatConverts leads to Aspire CRM contacts.
 
-Finds leads in processed-state.json that have no aspire_contact_id mapping,
+Finds leads in the shared lead_mappings table that have no aspire_contact_id,
 then searches Aspire contacts using fuzzy name/phone/email matching.
 Emails a digest of proposed matches for review.
 

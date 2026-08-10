@@ -22,6 +22,13 @@ Safe to re-run: documents are upserted, keys are inserted ignore-duplicates.
     python3 scripts/db_migrate_state.py --verify
 
 Phase 0 of docs/architecture/data-platform-plan.md.
+
+HISTORICAL as of 2026-08-09: the migration is complete and the source
+files data/processed-state.json and data/roi-sync-state.json have been
+deleted. Kept for the record and because the remaining file-based
+scripts (GBP pollers, bid-monitor, phone-lead-monitor and friends) reuse
+this same shape when their turn comes. Sources that no longer exist are
+skipped, so a re-run is harmless but will cover less than it once did.
 """
 
 import json

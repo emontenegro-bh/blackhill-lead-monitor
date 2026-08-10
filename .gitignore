@@ -12,3 +12,7 @@ __pycache__/
 
 # Data output
 new-venture/fcc-data/
+
+# Migrated to Supabase 2026-08-09; must not come back as tracked files.
+data/processed-state.json
+data/roi-sync-state.json

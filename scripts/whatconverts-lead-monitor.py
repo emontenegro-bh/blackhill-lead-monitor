@@ -1577,7 +1577,7 @@ def get_owner_info(owner_id):
 def assign_lead_owner(lead, state):
     """Assign lead owner using service-based rules + round-robin for the rest.
 
-    State persists in processed-state.json so round-robin actually rotates across
+    State persists in Supabase so round-robin actually rotates across
     GitHub Actions runs (the prior `~/.config/hubspot/round-robin.json` reset every run).
 
     Rules:
