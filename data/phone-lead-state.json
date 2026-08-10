@@ -219,14 +219,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-08-10T16:34:17.357446+00:00"
+    },
+    "27": {
+      "name": "Janet Fawcett",
+      "service": "Irrigation & Sprinkler Services",
+      "taken_by": "Evelin@blackhilltx.com",
+      "assigned_to": "Denisse",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-10T23:19:24.143386+00:00"
     }
   },
   "round_robin_state": {
     "last_index": 0
   },
   "stats": {
-    "created": 24,
+    "created": 25,
     "errors": 0,
-    "total_runs": 221
+    "total_runs": 222
   }
 }
