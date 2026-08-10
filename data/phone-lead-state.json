@@ -210,14 +210,23 @@
       "aspire": "created",
       "hubspot": "created",
       "processed_at": "2026-08-07T00:32:04.339991+00:00"
+    },
+    "26": {
+      "name": "Timothy Nichols",
+      "service": "Landscaping",
+      "taken_by": "Carlos",
+      "assigned_to": "Evelin",
+      "aspire": "created",
+      "hubspot": "created",
+      "processed_at": "2026-08-10T16:34:17.357446+00:00"
     }
   },
   "round_robin_state": {
-    "last_index": 1
+    "last_index": 0
   },
   "stats": {
-    "created": 23,
+    "created": 24,
     "errors": 0,
-    "total_runs": 214
+    "total_runs": 215
   }
 }
