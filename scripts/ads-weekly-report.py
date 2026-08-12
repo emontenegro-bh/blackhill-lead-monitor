@@ -17,8 +17,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta, date
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import db
 
 # --- Global timeout: kill the process if it runs longer than 10 minutes ---
 SCRIPT_TIMEOUT = 600  # seconds
@@ -425,128 +423,11 @@ def bucket_hours(hdata):
 
 hour_blocks = bucket_hours(hour_data)
 
-# --- 10. Aspire won revenue from WhatConverts leads only ---
-def _load_wc_contact_map():
-    """Load WhatConverts lead mappings → {aspire_contact_id: {source, lead_type}}."""
-    # Reads the shared lead_mappings table. Was data/processed-state.json.
-    try:
-        mappings = db.load_lead_mappings()
-    except Exception as e:
-        # Read-only enrichment for one section of the report. Losing it should
-        # degrade the report, not kill the weekly send.
-        print(f"[WARN] lead_mappings unavailable, won-revenue section will be empty: {e}")
-        return {}
-    contact_map = {}
-    for _wc_id, info in mappings.items():
-        cid = info.get("aspire_contact_id")
-        if cid:
-            contact_map[int(cid)] = {
-                "source": info.get("traffic_source", "unknown"),
-                "lead_type": info.get("lead_type", ""),
-            }
-    return contact_map
-
-
-def get_aspire_revenue(start_date, end_date):
-    try:
-        client_id = (os.environ.get("ASPIRE_REPORTING_CLIENT_ID")
-                     or os.environ.get("ASPIRE_CLIENT_ID"))
-        secret = (os.environ.get("ASPIRE_REPORTING_SECRET")
-                  or os.environ.get("ASPIRE_SECRET"))
-        if not client_id or not secret:
-            cfg_path = os.path.expanduser("~/.config/aspire/config.json")
-            if not os.path.exists(cfg_path):
-                return None
-            with open(cfg_path) as f:
-                cfg = json.load(f)
-            client_id = cfg.get("reporting_client_id", cfg.get("client_id"))
-            secret = cfg.get("reporting_secret", cfg.get("secret"))
-        base_url = os.environ.get("ASPIRE_API_URL", "https://cloud-api.youraspire.com")
-        auth_data = json.dumps({"ClientId": client_id, "Secret": secret}).encode()
-        auth_req = urllib.request.Request(
-            f"{base_url}/Authorization",
-            data=auth_data, headers={"Content-Type": "application/json"}, method="POST",
-        )
-        with urllib.request.urlopen(auth_req, timeout=15) as resp:
-            token = json.loads(resp.read().decode()).get("Token", "")
-        if not token:
-            return None
-        odata_filter = (f"OpportunityStatusName eq 'Won' "
-                        f"and WonDate ge {start_date}T00:00:00Z "
-                        f"and WonDate le {end_date}T23:59:59Z")
-        params = (f"$filter={odata_filter}"
-                  f"&$select=WonDollars,OpportunityName,BillingContactID,OpportunityID,OpportunityNumber")
-        url = f"{base_url}/Opportunities?{urllib.parse.quote(params, safe='=&$,()/%:@')}"
-        req = urllib.request.Request(url, headers={
-            "Authorization": f"Bearer {token}", "Accept": "application/json",
-        })
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode())
-            opps = data if isinstance(data, list) else [data]
-
-        # Cross-reference with WhatConverts lead mappings
-        wc_map = _load_wc_contact_map()
-        buckets = {"cpc": [], "organic": [], "other": []}
-        for o in opps:
-            dollars = float(o.get("WonDollars", 0) or 0)
-            cid = o.get("BillingContactID")
-            if not cid or int(cid) not in wc_map:
-                continue
-            source = wc_map[int(cid)]["source"].lower()
-            key = "cpc" if "cpc" in source else "organic" if "organic" in source else "other"
-            opp_id = o.get("OpportunityID")
-            buckets[key].append({
-                "name": o.get("OpportunityName") or "Unnamed opportunity",
-                "dollars": dollars,
-                "number": o.get("OpportunityNumber"),
-                "url": f"https://cloud.youraspire.com/app/opportunities/{opp_id}" if opp_id else None,
-                "source": key,
-            })
-
-        # Trailing-90-day won revenue by lead type (calls vs web forms)
-        lead_type_90d = None
-        try:
-            d90 = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
-            filt90 = f"OpportunityStatusName eq 'Won' and WonDate ge {d90}T00:00:00Z"
-            params90 = f"$filter={filt90}&$select=WonDollars,BillingContactID"
-            url90 = f"{base_url}/Opportunities?{urllib.parse.quote(params90, safe='=&$,()/%:@')}"
-            req90 = urllib.request.Request(url90, headers={
-                "Authorization": f"Bearer {token}", "Accept": "application/json",
-            })
-            with urllib.request.urlopen(req90, timeout=30) as resp:
-                d = json.loads(resp.read().decode())
-                opps90 = d if isinstance(d, list) else [d]
-            lt = {"phone_call": {"won": 0, "dollars": 0.0}, "web_form": {"won": 0, "dollars": 0.0}}
-            for o in opps90:
-                cid = o.get("BillingContactID")
-                if not cid or int(cid) not in wc_map:
-                    continue
-                ltype = wc_map[int(cid)]["lead_type"]
-                if ltype in lt:
-                    lt[ltype]["won"] += 1
-                    lt[ltype]["dollars"] += float(o.get("WonDollars", 0) or 0)
-            lead_type_90d = lt
-        except Exception as e:
-            print(f"Lead-type rollup skipped: {e}", file=sys.stderr)
-
-        cpc_won = sum(x["dollars"] for x in buckets["cpc"])
-        organic_won = sum(x["dollars"] for x in buckets["organic"])
-        other_won = sum(x["dollars"] for x in buckets["other"])
-        return {
-            "total_won": cpc_won + organic_won + other_won,
-            "count": sum(len(b) for b in buckets.values()),
-            "cpc_won": cpc_won,
-            "cpc_count": len(buckets["cpc"]),
-            "organic_won": organic_won,
-            "organic_count": len(buckets["organic"]),
-            "other_won": other_won,
-            "other_count": len(buckets["other"]),
-            "won_opps": buckets["cpc"] + buckets["organic"] + buckets["other"],
-            "lead_type_90d": lead_type_90d,
-        }
-    except Exception as e:
-        print(f"Aspire revenue query skipped: {e}", file=sys.stderr)
-        return None
+# Section 10 removed 2026-08-12: get_aspire_revenue() and its WhatConverts
+# contact map were superseded by get_aspire_revenue_v2() below, which reads
+# Lead Source from Aspire contact custom field 34 and so catches commercial
+# deals where the billing contact differs from the lead contact. The old
+# function had already stopped being called.
 
 # --- 10b. Aspire won revenue by Lead Source custom field (def 34) ---
 # Customer-origin, property-level: a customer belongs to one origin source and ALL
