@@ -52,14 +52,22 @@ ALERT_TO = "evelin@blackhilltx.com"
 
 # Senders we expect to send as blackhilltx.com. A failure from one of these is
 # our own misconfiguration and needs fixing before p= moves off none.
+#
+# Kept deliberately tight, matching the live SPF record:
+#   v=spf1 include:spf.protection.outlook.com include:servers.mcsv.net -all
+# Nothing else is authorised, so nothing else belongs here. SendGrid is
+# configured as a secret but no script actually sends through it, and adding it
+# would misfile a spoofer as "our own mail". Confirmed 2026-08-12.
+#
+# Note blackhillassistant@gmail.com sends via Gmail SMTP, but as gmail.com, so
+# it never appears in a blackhilltx.com report. If a script ever sends FROM an
+# @blackhilltx.com address through Gmail, it will show up here as a genuine
+# finding, which is exactly what we want.
 KNOWN_SENDING_DOMAINS = {
     "blackhilltx.com",
     "meangreenlawncare.com",
-    "outlook.com", "protection.outlook.com",       # Microsoft 365
-    "sendgrid.net",                                 # transactional
-    "mcsv.net", "mcdlv.net", "rsgsv.net",           # Mailchimp
-    "google.com", "gmail.com",                      # blackhillassistant@
-    "zoom.us",
+    "protection.outlook.com", "outlook.com",       # Microsoft 365
+    "mcsv.net", "mcdlv.net", "rsgsv.net",          # Mailchimp
 }
 
 
