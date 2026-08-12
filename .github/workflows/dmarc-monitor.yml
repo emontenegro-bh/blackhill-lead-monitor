@@ -1,0 +1,54 @@
+name: DMARC Monitor
+
+# Providers deliver aggregate reports once a day. Runs mid-morning UTC so a
+# full previous day is in the mailbox. Off-:00 because GitHub drops crons
+# scheduled exactly on the hour.
+on:
+  schedule:
+    - cron: '23 14 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'normal | dry-run | summary'
+        required: false
+        default: 'normal'
+
+concurrency:
+  group: dmarc-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Check DMARC aggregate reports
+        env:
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          FLAG=""
+          case "${{ github.event.inputs.mode }}" in
+            dry-run) FLAG="--dry-run" ;;
+            summary) FLAG="--summary" ;;
+          esac
+          python scripts/dmarc-monitor.py $FLAG
+
+  notify-failure:
+    needs: [monitor]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "DMARC Monitor"
+    secrets: inherit
