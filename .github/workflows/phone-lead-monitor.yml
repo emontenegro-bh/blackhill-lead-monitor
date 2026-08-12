@@ -42,23 +42,10 @@ jobs:
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/phone-lead-monitor.py
 
-      - name: Persist phone-lead state
-        if: always()
-        run: |
-          if [ -f data/phone-lead-state.json ]; then
-            git config user.name "Phone Lead Monitor Bot"
-            git config user.email "noreply@blackhilltx.com"
-            git add data/phone-lead-state.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Update phone-lead state"
-              for i in 1 2 3; do
-                git pull --rebase origin main || true
-                git push && break || sleep 2
-              done
-            fi
-          fi
 
   notify-failure:
     needs: [monitor]
