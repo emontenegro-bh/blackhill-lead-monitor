@@ -2022,6 +2022,17 @@ with open(report_file, "w") as f:
     f.write(report_text)
 print(f"Report saved: {report_file}")
 
+# --dry-run builds the whole report, including every Google Ads and Aspire
+# query, then stops instead of emailing. Added 2026-08-12 so the revenue
+# attribution rewrite could be proved before its first scheduled send, since
+# dispatching the workflow otherwise mails the real report to all recipients.
+if "--dry-run" in sys.argv:
+    print("=" * 70)
+    print("DRY RUN - report built successfully, email NOT sent")
+    print("=" * 70)
+    print(report_text)
+    sys.exit(0)
+
 # Send email via Gmail
 gmail_email = os.environ.get("GMAIL_EMAIL", "")
 gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")

@@ -4,7 +4,12 @@ on:
   schedule:
     # Sunday 9:07 AM CST = 15:07 UTC (off-:00 to avoid GH Actions cron drops)
     - cron: '7 15 * * 0'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'normal | dry-run (build the report, send no email)'
+        required: false
+        default: 'normal'
 
 concurrency:
   group: ads-weekly-report
@@ -43,9 +48,13 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: python scripts/ads-weekly-report.py
+        run: |
+          FLAG=""
+          [ "${{ github.event.inputs.mode }}" = "dry-run" ] && FLAG="--dry-run"
+          python scripts/ads-weekly-report.py $FLAG
 
       - name: Commit weekly report archive
+        if: github.event.inputs.mode != 'dry-run'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
