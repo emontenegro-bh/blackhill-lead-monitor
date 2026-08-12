@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-11T13:34:59.444522+00:00",
+  "last_run": "2026-08-12T13:46:04.982015+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -561,6 +561,10 @@
       "first_seen": "2026-08-11",
       "title": "Purchase of Pumping Equipment and Accessories *219366"
     },
+    "bonfire-dallascityhall:248845": {
+      "first_seen": "2026-08-12",
+      "title": "Purchase of - SIGNS, SIGN MATERIALS, SIGN MAKING EQUIPMENT, AND RELATED SUPPLIES *219337"
+    },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
       "title": "Alton Bridge Bank Stabilization & Bridge Scour"
@@ -937,6 +941,10 @@
       "first_seen": "2026-07-08",
       "title": "PW - CPN 103498 - Water and Sanitary Sewer Replacement Contract 2021,WSM-A,Part1"
     },
+    "bonfire-fortworthtexas:243943": {
+      "first_seen": "2026-08-12",
+      "title": "RFP Electrician Services"
+    },
     "bonfire-fortworthtexas:243992": {
       "first_seen": "2026-07-29",
       "title": "RFP Kennel Doors"
@@ -949,6 +957,10 @@
       "first_seen": "2026-07-29",
       "title": "PW 2025 Bridge Scour Mitigation Project City Project No. 106227"
     },
+    "bonfire-fortworthtexas:244933": {
+      "first_seen": "2026-08-12",
+      "title": "HVAC Filters"
+    },
     "bonfire-fortworthtexas:245346": {
       "first_seen": "2026-07-22",
       "title": "PW - CPN 103434 - Water and Sanitary Sewer Contract 2020, WSM-O"
@@ -960,6 +972,10 @@
     "bonfire-fortworthtexas:245468": {
       "first_seen": "2026-08-05",
       "title": "RFP Art Gallery Retrofitting and Installation"
+    },
+    "bonfire-fortworthtexas:245524": {
+      "first_seen": "2026-08-12",
+      "title": "RFP Ice Machine Rental and Maintenance"
     },
     "bonfire-fortworthtexas:246069": {
       "first_seen": "2026-08-11",
@@ -992,6 +1008,14 @@
     "bonfire-fortworthtexas:247502": {
       "first_seen": "2026-08-05",
       "title": "PW Rosedale Corridor DMS, CPN 100022"
+    },
+    "bonfire-fortworthtexas:248130": {
+      "first_seen": "2026-08-12",
+      "title": "PW 2027 Asphalt Resurfacing Contract 5 City Project No. 106796"
+    },
+    "bonfire-fortworthtexas:248282": {
+      "first_seen": "2026-08-12",
+      "title": "RFQ 2027 Transportation Impact Fees Financial Audit"
     },
     "bonfire-friscotexas:236404": {
       "first_seen": "2026-06-22",
@@ -1333,6 +1357,10 @@
       "first_seen": "2026-08-11",
       "title": "Maintenance Services of Mustang Fountains at William Square Plaza"
     },
+    "ionwave-cityofirving:124SB-26F Addendum 1": {
+      "first_seen": "2026-08-12",
+      "title": "Maintenance Services of Mustang Fountains at William Square Plaza"
+    },
     "ionwave-cityofirving:125LR-26F": {
       "first_seen": "2026-07-06",
       "title": "Colwell Blvd. At Hackberry Creek Bridge Concrete Riprap and RCP Repairs"
@@ -1365,6 +1393,10 @@
       "first_seen": "2026-07-21",
       "title": "Book Vending Kiosks (Holds Pickup Lockers)"
     },
+    "ionwave-cityofirving:128C-26F Addendum 1": {
+      "first_seen": "2026-08-12",
+      "title": "Book Vending Kiosks (Holds Pickup Lockers)"
+    },
     "ionwave-cityofirving:130D-26F": {
       "first_seen": "2026-07-08",
       "title": "Stop Loss Insurance for City of Irving"
@@ -1392,6 +1424,10 @@
     "ionwave-cityofirving:138LR-26F": {
       "first_seen": "2026-08-11",
       "title": "Trinity View Maintenance Facility Expansion"
+    },
+    "ionwave-cityofirving:140LR-26F": {
+      "first_seen": "2026-08-12",
+      "title": "Demolition of Various Properties"
     },
     "ionwave-cityofirving:3B012-26JA": {
       "first_seen": "2026-07-08",
@@ -1527,6 +1563,10 @@
     },
     "ionwave-grapevine-colleyvilleisd:27-05-5-RFP Addendum 1": {
       "first_seen": "2026-08-11",
+      "title": "Landscape, Mowing & Maintenance"
+    },
+    "ionwave-grapevine-colleyvilleisd:27-05-5-RFP Addendum 2": {
+      "first_seen": "2026-08-12",
       "title": "Landscape, Mowing & Maintenance"
     },
     "ionwave-tarrantcounty:F2026097": {
@@ -1857,6 +1897,10 @@
       "first_seen": "2026-07-24",
       "title": "Bid posting #214438 (open title on site)"
     },
+    "saginaw:https://www.ci.saginaw.tx.us/government/RFP-- Security Cameras and Access Controls Packet 8-12-2026.pdf?t=202608120838560": {
+      "first_seen": "2026-08-12",
+      "title": "RFP--Security Cameras and Access Controls"
+    },
     "saginaw:https://www.ci.saginaw.tx.us/government/bid_detail_T10_R16.php": {
       "first_seen": "2026-06-11",
       "title": "CANCELED -Valve Replacement Bid Proposal"
@@ -1908,6 +1952,10 @@
     "weatherford-notices:28566": {
       "first_seen": "2026-08-05",
       "title": "RFP-2026-016-Pad-Mounted-Equipment-Inspection-Coating-and-Repair"
+    },
+    "weatherford-notices:28642": {
+      "first_seen": "2026-08-12",
+      "title": "RFP-2026-017 - 2026-2027-Line-Construction-Labor-Package"
     },
     "willowpark:498": {
       "first_seen": "2026-06-11",
