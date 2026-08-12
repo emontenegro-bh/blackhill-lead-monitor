@@ -28,6 +28,9 @@ from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 signal.alarm(120) if hasattr(signal, "alarm") else None
 
 # Dedicated env names (PHONE_MS_*) so this never collides with the Booking
@@ -37,11 +40,7 @@ DRY_RUN = "--dry-run" in sys.argv
 
 CONFIG_DIR = os.path.expanduser("~/.config/phone-lead-reader")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
-LOCAL_STATE_FILE = os.path.join(CONFIG_DIR, "state.json")
-CLOUD_STATE_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "data", "phone-lead-state.json"
-)
+# State moved to Supabase; see the State section below.
 LOG_PATH = os.path.join(CONFIG_DIR, "phone-lead-monitor.log") if not CLOUD_MODE else None
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ASPIRE_SYNC = os.path.join(SCRIPT_DIR, "aspire-api-sync.py")
@@ -506,21 +505,32 @@ def notify_teams(lead, owner_id, aspire_result, hubspot_result):
 
 
 # --- State ---
+#
+# State lives in Supabase. It used to be data/phone-lead-state.json, committed
+# to a public repo on every run, and its `processed` map carries the caller's
+# NAME along with who took the call and who it was assigned to. That was the
+# last real customer data left in the public repo.
+#
+# This script is the sole writer of its own document, so there is no
+# concurrent-write hazard here. See docs/architecture/data-platform-plan.md.
+
+STATE_NAME = "phone-lead-monitor"
+DEFAULT_STATE = {
+    "processed": {},
+    "round_robin_state": {"last_index": -1},
+    "stats": {"created": 0, "errors": 0, "total_runs": 0},
+}
+
 
 def load_state():
-    sf = CLOUD_STATE_FILE if CLOUD_MODE else LOCAL_STATE_FILE
-    if os.path.exists(sf):
-        with open(sf) as f:
-            return json.load(f)
-    return {"processed": {}, "round_robin_state": {"last_index": -1},
-            "stats": {"created": 0, "errors": 0, "total_runs": 0}}
+    # Fails closed. An empty `processed` map would re-create Aspire and HubSpot
+    # contacts for every lead already handled, so a failed read must stop the
+    # run and let notify-failure alert rather than silently start from scratch.
+    return db.load_state(STATE_NAME, default=json.loads(json.dumps(DEFAULT_STATE)))
 
 
 def save_state(state):
-    sf = CLOUD_STATE_FILE if CLOUD_MODE else LOCAL_STATE_FILE
-    os.makedirs(os.path.dirname(sf), exist_ok=True)
-    with open(sf, "w") as f:
-        json.dump(state, f, indent=2)
+    db.save_state(STATE_NAME, state)
 
 
 # --- Main ---
