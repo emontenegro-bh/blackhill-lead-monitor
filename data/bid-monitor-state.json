@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-13T13:47:51.247148+00:00",
+  "last_run": "2026-08-14T13:34:57.125255+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -545,6 +545,10 @@
       "first_seen": "2026-08-05",
       "title": "Purchase of Arts and Craft Supplies *219327"
     },
+    "bonfire-dallascityhall:247568": {
+      "first_seen": "2026-08-14",
+      "title": "Flags - USA, State of Texas, City of Dallas, and Others"
+    },
     "bonfire-dallascityhall:247620": {
       "first_seen": "2026-08-05",
       "title": "Purchase of Public Opinion Surveys - *219209"
@@ -573,6 +577,14 @@
       "first_seen": "2026-08-11",
       "title": "Purchase of Pumping Equipment and Accessories *219366"
     },
+    "bonfire-dallascityhall:248455": {
+      "first_seen": "2026-08-14",
+      "title": "Street Reconstruction Group 17-4006"
+    },
+    "bonfire-dallascityhall:248461": {
+      "first_seen": "2026-08-14",
+      "title": "Workday RFI"
+    },
     "bonfire-dallascityhall:248499": {
       "first_seen": "2026-08-13",
       "title": "DART Group 6 \u2013 Arapaho Road at Dallas Parkway Frankford Road at Campbell Road"
@@ -592,6 +604,10 @@
     "bonfire-dallascityhall:248913": {
       "first_seen": "2026-08-13",
       "title": "Purchase of - RADAR INSTRUMENTS, TRAFFIC ENFORCEMENT TYPE (INCLUDING LASER *219611"
+    },
+    "bonfire-dallascityhall:248961": {
+      "first_seen": "2026-08-14",
+      "title": "Vendor Compliance Monitoring and Site Management - Ronald Kirk Pedestrian Bridge & Felix H. Lozada Sr. Gateway"
     },
     "bonfire-dallascityhall:249048": {
       "first_seen": "2026-08-13",
@@ -1049,6 +1065,10 @@
       "first_seen": "2026-08-12",
       "title": "RFQ 2027 Transportation Impact Fees Financial Audit"
     },
+    "bonfire-fortworthtexas:248299": {
+      "first_seen": "2026-08-14",
+      "title": "RFQt 9-1-1 Dispatch Chairs"
+    },
     "bonfire-friscotexas:236404": {
       "first_seen": "2026-06-22",
       "title": "Timber Ridge EST Rehabilitation"
@@ -1207,6 +1227,10 @@
     },
     "firecrawl-cityofeuless:https://www.eulesstx.gov/home/showpublisheddocument/1030/637044039316500000": {
       "first_seen": "2026-06-11",
+      "title": "Bidding Instructions"
+    },
+    "firecrawl-cityofeuless:https://www.eulesstx.gov/home/showpublisheddocument/1030/639222262049012673": {
+      "first_seen": "2026-08-14",
       "title": "Bidding Instructions"
     },
     "grandprairie:141951": {
@@ -1565,6 +1589,10 @@
       "first_seen": "2026-07-15",
       "title": "Backflow Testing, Inspection and Repair Services"
     },
+    "ionwave-cityofplano:2026-0545-AC": {
+      "first_seen": "2026-08-14",
+      "title": "Health Benefits TPA - Step 1"
+    },
     "ionwave-cityofplano:2026-0555-AC": {
       "first_seen": "2026-07-29",
       "title": "Cable Installation Price Agreement"
@@ -1889,6 +1917,10 @@
       "first_seen": "2026-08-07",
       "title": "Construction Manager at Risk for New Precinct 4 Maintenance Center"
     },
+    "ionwave-tarrantcounty:F2027008": {
+      "first_seen": "2026-08-14",
+      "title": "Annual Purchase of Commercial and High-Security Locksmith Services and Supplies"
+    },
     "ionwave-townofflowermound:2026-101-A": {
       "first_seen": "2026-06-22",
       "title": "Request for Statement of Qualifications for Professional Engineering Services for Various Projects"
@@ -2026,7 +2058,5 @@
       "title": "Notice of Public Hearing - Haney Property Annexation"
     }
   },
-  "source_failures": {
-    "City of Euless": 1
-  }
+  "source_failures": {}
 }
