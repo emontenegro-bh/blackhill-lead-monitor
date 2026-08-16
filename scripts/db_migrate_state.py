@@ -78,6 +78,45 @@ SIMPLE_SOURCES = [
 ]
 
 
+def plan_gbp_queue():
+    """Rows for gbp_review_queue, from the pending-responses/ and responded/ files.
+
+    Returns (rows, conflicts). A review present in BOTH directories takes its
+    responded version: those records carry final_response, responded_at and
+    response_method, so they are the terminal state and the pending copy is a
+    leftover from a copy-then-delete that only did the copy.
+
+    This is not hypothetical. Five reviews answered on 2026-04-19 were still
+    sitting in the pending queue, so replying to one of those notification
+    emails would have posted a second public reply on Google.
+    """
+    by_id, conflicts = {}, []
+    for subdir, status in (("pending-responses", "pending"), ("responded", "responded")):
+        for path in sorted(glob.glob(os.path.join(REPO, "data", "gbp", subdir, "*.json"))):
+            with open(path) as f:
+                payload = json.load(f)
+            rid = payload.get("review_id")
+            if not rid:
+                continue
+            if rid in by_id:
+                keep = "responded" if status == "responded" else by_id[rid][1]
+                conflicts.append((rid, keep))
+                if status != "responded":
+                    continue  # already hold the responded version
+            by_id[rid] = (payload, status)
+
+    rows = [
+        {
+            "review_id": rid,
+            "short_id": payload.get("short_id"),
+            "status": status,
+            "payload": payload,
+        }
+        for rid, (payload, status) in by_id.items()
+    ]
+    return rows, conflicts
+
+
 def _load(rel_path):
     path = os.path.join(REPO, rel_path)
     if not os.path.exists(path):

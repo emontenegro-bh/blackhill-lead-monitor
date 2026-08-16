@@ -2,7 +2,7 @@
 """GBP Review Monitor - polls for new reviews, drafts responses, emails Evelin.
 
 Runs every 15 minutes via launchd. Detects new reviews, selects a response
-template based on star rating, stores draft in pending-responses/, and sends
+template based on star rating, queues the draft in Supabase, and sends
 an email notification.
 
 Usage:
@@ -16,6 +16,9 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 # Add scripts dir to path for gbp_auth import
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
@@ -25,8 +28,7 @@ if _CLOUD_MODE:
     CONFIG_DIR = _DATA_DIR
 else:
     CONFIG_DIR = os.path.expanduser("~/.config/gbp")
-KNOWN_FILE = os.path.join(CONFIG_DIR, "known-reviews.json")
-PENDING_DIR = os.path.join(CONFIG_DIR, "pending-responses")
+# Seen-review state and the reply queue moved to Supabase.
 TEMPLATE_FILE = os.path.join(os.path.dirname(__file__), "gbp-review-templates.json")
 EMAIL_ADDRESS = "evelin@blackhilltx.com"
 REPLY_TO_ADDRESS = "monte24negro+gbp@gmail.com"
@@ -37,9 +39,6 @@ GMAIL_PORT = 587
 
 DRY_RUN = "--dry-run" in sys.argv
 
-os.makedirs(PENDING_DIR, exist_ok=True)
-
-
 def log(msg):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"[{ts}] {msg}"
@@ -48,17 +47,21 @@ def log(msg):
         f.write(line + "\n")
 
 
+# Seen reviews and the queue both live in Supabase now. They used to be
+# data/gbp/known-reviews.json plus a file per review under pending-responses/,
+# all committed to a public repo on every */15 run, reviewer names and review
+# text included. See docs/architecture/data-platform-plan.md.
+
+STATE_NAME = "gbp-review-monitor"
+
+
 def load_known():
-    if os.path.exists(KNOWN_FILE):
-        with open(KNOWN_FILE) as f:
-            return json.load(f)
-    return {"review_ids": [], "last_check": None}
+    return db.load_state(STATE_NAME, default={"review_ids": [], "last_check": None})
 
 
 def save_known(data):
     data["last_check"] = datetime.now().isoformat()
-    with open(KNOWN_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    db.save_state(STATE_NAME, data)
 
 
 def load_templates():
@@ -341,13 +344,10 @@ def main():
         short_id = uuid.uuid4().hex[:8].upper()
         pending["short_id"] = short_id
 
-        safe_id = review_id.replace("/", "_").replace(" ", "_")[-40:]
-        pending_file = os.path.join(PENDING_DIR, f"{safe_id}.json")
-        with open(pending_file, "w") as f:
-            json.dump(pending, f, indent=2)
+        db.gbp_queue_add(review_id, pending)
 
         star_num = {"ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4, "FIVE": 5}.get(stars, "?")
-        log(f"New {star_num}-star review from {reviewer}. Draft saved: {pending_file}")
+        log(f"New {star_num}-star review from {reviewer}. Draft queued as REV-{short_id}")
 
         # Email notification with Reply-To and REV-ID
         subject = f"[REV-{short_id}] New {star_num}-star GBP Review from {reviewer}"
