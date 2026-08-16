@@ -5,7 +5,10 @@ name: DMARC Monitor
 # scheduled exactly on the hour.
 on:
   schedule:
-    - cron: '23 14 * * *'
+    # Every 2 hours. An Outlook rule files reports on arrival; this is the
+    # safety net for anything the rule misses, so it must be frequent enough
+    # that a stray report is not sitting in the inbox all day.
+    - cron: '23 */2 * * *'
   workflow_dispatch:
     inputs:
       mode:

@@ -130,15 +130,33 @@ def ensure_report_folder(token, mailbox):
     return created["id"]
 
 
-def find_reports(token, mailbox):
-    """DMARC report messages sitting in the Inbox."""
-    # Providers vary the subject, but every one carries "Report domain" or
-    # "Report-ID". Filtering server-side keeps this cheap.
-    res = graph(token, "GET",
-                f"/users/{mailbox}/mailFolders/Inbox/messages"
-                "?$top=50&$select=id,subject,receivedDateTime,hasAttachments"
-                "&$search=%22dmarc%22")
-    return [m for m in res.get("value", []) if m.get("hasAttachments")]
+def find_reports(token, mailbox, folder_id=None):
+    """Unparsed DMARC report messages, from the Inbox and the report folder.
+
+    Both locations are scanned deliberately. If an Outlook rule files reports
+    on arrival they never touch the Inbox, and a monitor that only looked there
+    would silently find nothing and report all-clear forever. Scanning both
+    means the rule is an optimisation rather than a dependency.
+    """
+    # Providers vary the subject, but every report carries "DMARC" somewhere.
+    # Filtering server-side keeps this cheap.
+    query = ("?$top=50&$select=id,subject,receivedDateTime,hasAttachments,parentFolderId"
+             "&$search=%22dmarc%22")
+    seen, out = set(), []
+    locations = [f"/users/{mailbox}/mailFolders/Inbox/messages"]
+    if folder_id:
+        locations.append(f"/users/{mailbox}/mailFolders/{folder_id}/messages")
+    for loc in locations:
+        try:
+            res = graph(token, "GET", loc + query)
+        except RuntimeError as e:
+            log(f"  Could not search {loc.rsplit('/', 2)[1]}: {e}")
+            continue
+        for m in res.get("value", []):
+            if m.get("hasAttachments") and m["id"] not in seen:
+                seen.add(m["id"])
+                out.append(m)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -272,7 +290,7 @@ def main():
     seen = set(state.get("seen_report_ids") or [])
 
     folder_id = ensure_report_folder(token, mailbox)
-    messages = find_reports(token, mailbox)
+    messages = find_reports(token, mailbox, folder_id)
     log(f"Found {len(messages)} candidate report message(s) in Inbox")
 
     passed_total = 0
@@ -317,7 +335,11 @@ def main():
 
     # File the reports away so the inbox stays clean whether or not we alert.
     if not DRY_RUN and folder_id:
-        for mid in processed:
+        # Only move what is not already filed. Reports found in the report
+        # folder (put there by the Outlook rule) still get parsed, but moving
+        # them into the folder they already occupy is a pointless API call.
+        already = {m["id"] for m in messages if m.get("parentFolderId") == folder_id}
+        for mid in [m for m in processed if m not in already]:
             try:
                 graph(token, "POST", f"/users/{mailbox}/messages/{mid}/move",
                       {"destinationId": folder_id})
