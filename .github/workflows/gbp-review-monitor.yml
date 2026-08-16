@@ -41,21 +41,10 @@ jobs:
           MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
           MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/gbp-review-monitor.py
 
-      - name: Persist GBP state
-        if: always()
-        run: |
-          git config user.name "GBP Monitor Bot"
-          git config user.email "noreply@blackhilltx.com"
-          git add data/gbp/ 2>/dev/null || true
-          if ! git diff --cached --quiet; then
-            git commit -m "Update GBP review state"
-            for i in 1 2 3; do
-              git pull --rebase origin main || true
-              git push && break || sleep 2
-            done
-          fi
 
   notify-failure:
     needs: [monitor]

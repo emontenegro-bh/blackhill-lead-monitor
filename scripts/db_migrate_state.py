@@ -31,6 +31,7 @@ this same shape when their turn comes. Sources that no longer exist are
 skipped, so a re-run is harmless but will cover less than it once did.
 """
 
+import glob
 import json
 import os
 import sys
@@ -182,6 +183,7 @@ def main():
 
     print(f"{'DRY RUN - ' if dry else ''}state backfill from {REPO}\n")
     documents, key_writes, mappings = plan()
+    queue_rows, queue_conflicts = plan_gbp_queue()
 
     print("  state documents")
     for name, doc, source in documents:
@@ -194,12 +196,18 @@ def main():
         print(f"      {script:28} {len(keys):5} keys  <- {source}")
 
     print(f"\n  lead_mappings table          {len(mappings):5} rows")
+    pend = sum(1 for r in queue_rows if r["status"] == "pending")
+    print(f"  gbp_review_queue             {len(queue_rows):5} rows "
+          f"({pend} pending, {len(queue_rows) - pend} responded)")
+    if queue_conflicts:
+        print(f"      {len(queue_conflicts)} review(s) existed in BOTH directories; "
+              "kept the responded copy")
 
     if dry:
         print("\nDry run only. Nothing written.")
         return 0
     if verify:
-        return _verify(documents, key_writes, mappings)
+        return _verify(documents, key_writes, mappings, queue_rows)
 
     if not db.is_configured():
         print("\nFAILED: no Supabase credentials. See db.py for setup.")
@@ -215,12 +223,16 @@ def main():
     if mappings:
         db.save_lead_mappings(mappings)
         print(f"  mappings   {len(mappings)} rows")
+    for r in queue_rows:
+        db.gbp_queue_add(r["review_id"], r["payload"])
+    if queue_rows:
+        print(f"  gbp queue  {len(queue_rows)} rows")
 
     print("\nBackfill complete. Run --verify before migrating scripts.")
     return 0
 
 
-def _verify(documents, key_writes, mappings):
+def _verify(documents, key_writes, mappings, queue_rows=()):
     if not db.is_configured():
         print("\nFAILED: no Supabase credentials.")
         return 1
@@ -264,6 +276,19 @@ def _verify(documents, key_writes, mappings):
         if missing:
             problems.append(f"lead_mappings: {len(missing)} of {len(mappings)} rows missing")
         print(f"  {'OK' if not missing else 'MISSING':9} mappings ({len(stored)} rows in table)")
+
+    if queue_rows:
+        pending_now = {p.get("review_id") for p in db.gbp_queue_pending()}
+        want_pending = {r["review_id"] for r in queue_rows if r["status"] == "pending"}
+        missing = want_pending - pending_now
+        extra = pending_now - want_pending
+        if missing:
+            problems.append(f"gbp_review_queue: {len(missing)} pending review(s) missing")
+        if extra:
+            problems.append(f"gbp_review_queue: {len(extra)} unexpected pending review(s)")
+        ok = not missing and not extra
+        print(f"  {'OK' if ok else 'MISMATCH':9} gbp queue ({len(pending_now)} pending "
+              f"of {len(queue_rows)} total)")
 
     if problems:
         print("\nFAILED:")
