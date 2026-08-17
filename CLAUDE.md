@@ -568,6 +568,8 @@ Inter-skill communication documents at `~/.claude/handoffs/` that pass context b
 - Aspire OData API: Phone fields are `MobilePhone`, `HomePhone`, `OfficePhone` (NOT `Phone` or `PhoneCell`). Both api and reporting clients can read Opportunities. API URLs do NOT include `/api/` prefix.
 - CompanyCam API: `created_after` filter behaves like `updated_after` — use client-side filtering for accurate date ranges.
 - WhatConverts API: Updates may return success but not persist — always verify writes with a follow-up read.
+- Microsoft Graph mail: `$search` **silently ignores the folder segment** and searches the whole mailbox. `/mailFolders/Inbox/messages?$search=...` returns hits from every folder, including archives the script itself created. Use `$filter` for anything folder-scoped; `$filter` has no substring operator for subject, so match subjects client-side. This bug made dmarc-monitor.py re-read its own archive daily and would have made it go silently blind as the archive grew (fixed 2026-08-17, `d53ed22a7`).
+- Microsoft Graph inbox rules (`/mailFolders/inbox/messageRules`) need the application permission `MailboxSettings.ReadWrite`, which is a **separate grant** from the `Mail.*` scopes the monitors use. Without it Graph returns `ErrorAccessDenied` (403). Not currently granted on the app registration.
 
 ## Model IDs
 - Use `claude-sonnet-4-6` for Anthropic API calls. Do NOT guess model IDs — this is the verified working ID. (Previously `claude-sonnet-4-20250514`; retired June 15, 2026 — migrated 2026-06-11.) For weekly ads analyst commentary use `claude-fable-5`.
