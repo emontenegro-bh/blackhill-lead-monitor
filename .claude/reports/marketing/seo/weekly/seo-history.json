@@ -185,5 +185,22 @@
     "title_issues": 83,
     "h1_issues": 0,
     "meta_issues": 23
+  },
+  "2026-08-17": {
+    "score": 77,
+    "pages_live": 219,
+    "pages_missing": 0,
+    "total_issues": 329,
+    "alt_text_pct": 28.3,
+    "images_total": 8886,
+    "images_good": 2519,
+    "images_poor": 219,
+    "images_missing": 6148,
+    "schema_local_business": 186,
+    "schema_faq": 184,
+    "schema_aggregate_rating": 184,
+    "title_issues": 82,
+    "h1_issues": 0,
+    "meta_issues": 22
   }
 }

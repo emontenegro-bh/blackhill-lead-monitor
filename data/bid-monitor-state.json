@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-16T13:05:04.882633+00:00",
+  "last_run": "2026-08-17T13:10:13.084876+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -1537,6 +1537,10 @@
       "first_seen": "2026-08-04",
       "title": "Towing & Recovery Franchise Services"
     },
+    "ionwave-cityofkeller:26-010": {
+      "first_seen": "2026-08-17",
+      "title": "Rehabilitation of the 1.0 MG Keller Smithfield Elevated Storage Tank"
+    },
     "ionwave-cityofplano:2026-0290-OA": {
       "first_seen": "2026-06-22",
       "title": "Reinforcing Steel"
@@ -2064,6 +2068,14 @@
     "weatherford-notices:28642": {
       "first_seen": "2026-08-12",
       "title": "RFP-2026-017 - 2026-2027-Line-Construction-Labor-Package"
+    },
+    "weatherford-notices:28659": {
+      "first_seen": "2026-08-17",
+      "title": "Overhead-Unit-Price-Sheet"
+    },
+    "weatherford-notices:28660": {
+      "first_seen": "2026-08-17",
+      "title": "Underground-Unit-Price-Sheet"
     },
     "willowpark:498": {
       "first_seen": "2026-06-11",
