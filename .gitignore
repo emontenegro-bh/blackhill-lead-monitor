@@ -19,3 +19,9 @@ data/roi-sync-state.json
 
 # Migrated to Supabase 2026-08-12; must not return as a tracked file.
 data/phone-lead-state.json
+
+# GBP review queue migrated to Supabase 2026-08-17; must not return as tracked files.
+data/gbp/pending-responses/
+data/gbp/responded/
+data/gbp/known-reviews.json
+data/gbp/*.log
