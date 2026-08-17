@@ -251,7 +251,18 @@ def _verify(documents, key_writes, mappings, queue_rows=()):
     # re-sends auto-replies to real customers, and it fails silently: the run
     # succeeds and simply reports "0 processed". Check the count directly
     # rather than relying on the whole-document comparison above.
+    planned = {nm for nm, _, _ in documents}
     for name in NEEDS_PROCESSED_IDS:
+        # Only meaningful while the source file still exists. Once a script is
+        # cut over the file is deleted, so there is nothing to compare against
+        # and the database is authoritative. Without this the check reports
+        # "expected 0" forever and screams DANGER at a perfectly healthy
+        # migration, which is worse than not checking: an alarm that always
+        # fires gets ignored on the day it is real.
+        if name not in planned:
+            n = len(db.load_state(name).get("processed_ids") or [])
+            print(f"  {'OK':9} ids      {name} ({n} processed ids, already cut over)")
+            continue
         stored = db.load_state(name)
         n = len(stored.get("processed_ids") or [])
         expected = next((len(d.get("processed_ids") or [])
