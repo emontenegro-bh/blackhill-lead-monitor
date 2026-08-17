@@ -1,0 +1,49 @@
+name: Setup DMARC Inbox Rule
+
+# Manual only. This creates a server-side Outlook rule that files DMARC
+# aggregate reports into 'DMARC Reports' the moment they arrive, so they never
+# appear in the Inbox. It is a one-time setup job, not something to schedule.
+#
+# The rule is an optimisation, not a dependency: dmarc-monitor.py scans the
+# Inbox as well as the report folder, so removing the rule costs tidiness only.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'create | dry-run | remove'
+        required: false
+        default: 'dry-run'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Configure DMARC inbox rule
+        env:
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+        run: |
+          FLAG=""
+          case "${{ github.event.inputs.mode }}" in
+            dry-run) FLAG="--dry-run" ;;
+            remove)  FLAG="--remove" ;;
+          esac
+          python scripts/setup-dmarc-inbox-rule.py $FLAG
+
+  notify-failure:
+    needs: [setup]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Setup DMARC Inbox Rule"
+    secrets: inherit
