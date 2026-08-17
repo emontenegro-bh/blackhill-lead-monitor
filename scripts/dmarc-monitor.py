@@ -130,18 +130,41 @@ def ensure_report_folder(token, mailbox):
     return created["id"]
 
 
+# Providers vary the subject wildly, but every aggregate report carries one of
+# these. Matched client-side because $filter has no substring operator for
+# subject, and $search is not an option here (see find_reports).
+SUBJECT_HINTS = ("report domain", "report-id", "dmarc")
+
+
+def looks_like_report(msg):
+    subject = (msg.get("subject") or "").lower()
+    return any(hint in subject for hint in SUBJECT_HINTS)
+
+
 def find_reports(token, mailbox, folder_id=None):
-    """Unparsed DMARC report messages, from the Inbox and the report folder.
+    """Unread DMARC report messages, from the Inbox and the report folder.
 
     Both locations are scanned deliberately. If an Outlook rule files reports
     on arrival they never touch the Inbox, and a monitor that only looked there
     would silently find nothing and report all-clear forever. Scanning both
     means the rule is an optimisation rather than a dependency.
+
+    Unread is the work queue, selected with a folder-scoped $filter. $search
+    cannot be used: Graph ignores the mailFolders segment whenever $search is
+    present and searches the entire mailbox, so both "locations" above returned
+    the same mailbox-wide hits and the monitor kept re-reading its own archive.
+    The 2026-08-17 14:47 run shows it exactly -- 13 already-filed reports found,
+    every one matched against the seen-list, "Parsed 0 new", then all 13 re-filed.
+    The quiet half was worse: a growing archive crowds genuinely new reports out
+    of the $top window, so this would go permanently silent while still logging
+    a clean run.
     """
-    # Providers vary the subject, but every report carries "DMARC" somewhere.
-    # Filtering server-side keeps this cheap.
-    query = ("?$top=50&$select=id,subject,receivedDateTime,hasAttachments,parentFolderId"
-             "&$search=%22dmarc%22")
+    query = "?" + urllib.parse.urlencode({
+        "$top": "50",
+        "$filter": "isRead eq false",
+        "$orderby": "receivedDateTime desc",
+        "$select": "id,subject,receivedDateTime,hasAttachments,parentFolderId",
+    }, quote_via=urllib.parse.quote)
     seen, out = set(), []
     locations = [f"/users/{mailbox}/mailFolders/Inbox/messages"]
     if folder_id:
@@ -150,10 +173,12 @@ def find_reports(token, mailbox, folder_id=None):
         try:
             res = graph(token, "GET", loc + query)
         except RuntimeError as e:
-            log(f"  Could not search {loc.rsplit('/', 2)[1]}: {e}")
+            log(f"  Could not read {loc.rsplit('/', 2)[1]}: {e}")
             continue
         for m in res.get("value", []):
-            if m.get("hasAttachments") and m["id"] not in seen:
+            if not (m.get("hasAttachments") and looks_like_report(m)):
+                continue
+            if m["id"] not in seen:
                 seen.add(m["id"])
                 out.append(m)
     return out
@@ -333,19 +358,31 @@ def main():
         if got_one:
             processed.append(msg["id"])
 
-    # File the reports away so the inbox stays clean whether or not we alert.
-    if not DRY_RUN and folder_id:
+    # Clear the queue, and file away anything the Outlook rule did not catch.
+    if not DRY_RUN:
         # Only move what is not already filed. Reports found in the report
         # folder (put there by the Outlook rule) still get parsed, but moving
         # them into the folder they already occupy is a pointless API call.
         already = {m["id"] for m in messages if m.get("parentFolderId") == folder_id}
-        for mid in [m for m in processed if m not in already]:
+        filed = 0
+        for mid in processed:
             try:
-                graph(token, "POST", f"/users/{mailbox}/messages/{mid}/move",
-                      {"destinationId": folder_id})
+                # Marking read is what takes a report off the queue, and it has
+                # to happen before any move: a move rewrites the message id, so
+                # doing it the other way round would patch an id that no longer
+                # exists. Leaving filed reports in place is also what keeps the
+                # seen-list meaningful, since ids are stable while a message
+                # stays put.
+                graph(token, "PATCH", f"/users/{mailbox}/messages/{mid}",
+                      {"isRead": True})
+                if folder_id and mid not in already:
+                    graph(token, "POST", f"/users/{mailbox}/messages/{mid}/move",
+                          {"destinationId": folder_id})
+                    filed += 1
             except Exception as e:
-                log(f"  Could not file message {mid[:12]}: {e}")
-        log(f"Filed {len(processed)} report(s) into '{REPORT_FOLDER}'")
+                log(f"  Could not clear message {mid[:12]}: {e}")
+        log(f"Marked {len(processed)} report(s) processed, "
+            f"filed {filed} into '{REPORT_FOLDER}'")
 
     total_fail = sum(breaks.values()) + sum(unauth.values())
     log(f"Parsed {len(windows)} new report(s): {passed_total:,} passed, "
