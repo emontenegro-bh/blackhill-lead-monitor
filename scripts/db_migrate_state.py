@@ -31,6 +31,7 @@ this same shape when their turn comes. Sources that no longer exist are
 skipped, so a re-run is harmless but will cover less than it once did.
 """
 
+import glob
 import json
 import os
 import sys
@@ -76,6 +77,45 @@ SIMPLE_SOURCES = [
     ("data/post-launch-checkins.json",   "post-launch-checkins",  None),
     (".claude/states/ads-guard-state.json", "ads-daily-guard",    None),
 ]
+
+
+def plan_gbp_queue():
+    """Rows for gbp_review_queue, from the pending-responses/ and responded/ files.
+
+    Returns (rows, conflicts). A review present in BOTH directories takes its
+    responded version: those records carry final_response, responded_at and
+    response_method, so they are the terminal state and the pending copy is a
+    leftover from a copy-then-delete that only did the copy.
+
+    This is not hypothetical. Five reviews answered on 2026-04-19 were still
+    sitting in the pending queue, so replying to one of those notification
+    emails would have posted a second public reply on Google.
+    """
+    by_id, conflicts = {}, []
+    for subdir, status in (("pending-responses", "pending"), ("responded", "responded")):
+        for path in sorted(glob.glob(os.path.join(REPO, "data", "gbp", subdir, "*.json"))):
+            with open(path) as f:
+                payload = json.load(f)
+            rid = payload.get("review_id")
+            if not rid:
+                continue
+            if rid in by_id:
+                keep = "responded" if status == "responded" else by_id[rid][1]
+                conflicts.append((rid, keep))
+                if status != "responded":
+                    continue  # already hold the responded version
+            by_id[rid] = (payload, status)
+
+    rows = [
+        {
+            "review_id": rid,
+            "short_id": payload.get("short_id"),
+            "status": status,
+            "payload": payload,
+        }
+        for rid, (payload, status) in by_id.items()
+    ]
+    return rows, conflicts
 
 
 def _load(rel_path):
@@ -143,6 +183,7 @@ def main():
 
     print(f"{'DRY RUN - ' if dry else ''}state backfill from {REPO}\n")
     documents, key_writes, mappings = plan()
+    queue_rows, queue_conflicts = plan_gbp_queue()
 
     print("  state documents")
     for name, doc, source in documents:
@@ -155,12 +196,18 @@ def main():
         print(f"      {script:28} {len(keys):5} keys  <- {source}")
 
     print(f"\n  lead_mappings table          {len(mappings):5} rows")
+    pend = sum(1 for r in queue_rows if r["status"] == "pending")
+    print(f"  gbp_review_queue             {len(queue_rows):5} rows "
+          f"({pend} pending, {len(queue_rows) - pend} responded)")
+    if queue_conflicts:
+        print(f"      {len(queue_conflicts)} review(s) existed in BOTH directories; "
+              "kept the responded copy")
 
     if dry:
         print("\nDry run only. Nothing written.")
         return 0
     if verify:
-        return _verify(documents, key_writes, mappings)
+        return _verify(documents, key_writes, mappings, queue_rows)
 
     if not db.is_configured():
         print("\nFAILED: no Supabase credentials. See db.py for setup.")
@@ -176,12 +223,16 @@ def main():
     if mappings:
         db.save_lead_mappings(mappings)
         print(f"  mappings   {len(mappings)} rows")
+    for r in queue_rows:
+        db.gbp_queue_add(r["review_id"], r["payload"])
+    if queue_rows:
+        print(f"  gbp queue  {len(queue_rows)} rows")
 
     print("\nBackfill complete. Run --verify before migrating scripts.")
     return 0
 
 
-def _verify(documents, key_writes, mappings):
+def _verify(documents, key_writes, mappings, queue_rows=()):
     if not db.is_configured():
         print("\nFAILED: no Supabase credentials.")
         return 1
@@ -200,7 +251,18 @@ def _verify(documents, key_writes, mappings):
     # re-sends auto-replies to real customers, and it fails silently: the run
     # succeeds and simply reports "0 processed". Check the count directly
     # rather than relying on the whole-document comparison above.
+    planned = {nm for nm, _, _ in documents}
     for name in NEEDS_PROCESSED_IDS:
+        # Only meaningful while the source file still exists. Once a script is
+        # cut over the file is deleted, so there is nothing to compare against
+        # and the database is authoritative. Without this the check reports
+        # "expected 0" forever and screams DANGER at a perfectly healthy
+        # migration, which is worse than not checking: an alarm that always
+        # fires gets ignored on the day it is real.
+        if name not in planned:
+            n = len(db.load_state(name).get("processed_ids") or [])
+            print(f"  {'OK':9} ids      {name} ({n} processed ids, already cut over)")
+            continue
         stored = db.load_state(name)
         n = len(stored.get("processed_ids") or [])
         expected = next((len(d.get("processed_ids") or [])
@@ -225,6 +287,19 @@ def _verify(documents, key_writes, mappings):
         if missing:
             problems.append(f"lead_mappings: {len(missing)} of {len(mappings)} rows missing")
         print(f"  {'OK' if not missing else 'MISSING':9} mappings ({len(stored)} rows in table)")
+
+    if queue_rows:
+        pending_now = {p.get("review_id") for p in db.gbp_queue_pending()}
+        want_pending = {r["review_id"] for r in queue_rows if r["status"] == "pending"}
+        missing = want_pending - pending_now
+        extra = pending_now - want_pending
+        if missing:
+            problems.append(f"gbp_review_queue: {len(missing)} pending review(s) missing")
+        if extra:
+            problems.append(f"gbp_review_queue: {len(extra)} unexpected pending review(s)")
+        ok = not missing and not extra
+        print(f"  {'OK' if ok else 'MISMATCH':9} gbp queue ({len(pending_now)} pending "
+              f"of {len(queue_rows)} total)")
 
     if problems:
         print("\nFAILED:")

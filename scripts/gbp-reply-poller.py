@@ -23,6 +23,9 @@ Usage:
 """
 
 import json, os, sys, re, glob, base64, shutil, smtplib
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -35,8 +38,7 @@ if _CLOUD_MODE:
     CONFIG_DIR = _DATA_DIR
 else:
     CONFIG_DIR = os.path.expanduser("~/.config/gbp")
-PENDING_DIR = os.path.join(CONFIG_DIR, "pending-responses")
-RESPONDED_DIR = os.path.join(CONFIG_DIR, "responded")
+# Pending/responded queue moved to Supabase (gbp_review_queue).
 LOG_FILE = os.path.join(CONFIG_DIR, "reply-poller.log")
 EMAIL_ADDRESS = "evelin@blackhilltx.com"
 GMAIL_SMTP = "smtp.gmail.com"
@@ -45,7 +47,6 @@ GMAIL_SENDER_CONFIG = os.path.expanduser("~/.config/gmail-sender/config.json")
 
 DRY_RUN = "--dry-run" in sys.argv
 
-os.makedirs(RESPONDED_DIR, exist_ok=True)
 
 
 def log(msg):
@@ -72,13 +73,12 @@ def extract_short_id(subject):
 
 
 def find_pending_by_short_id(short_id):
-    """Find pending response file matching a short_id."""
-    for filepath in glob.glob(os.path.join(PENDING_DIR, "*.json")):
-        with open(filepath) as f:
-            data = json.load(f)
-        if data.get("short_id", "").upper() == short_id.upper():
-            return filepath, data
-    return None, None
+    """Find the queued review matching a short_id. Returns (review_id, payload).
+
+    Was a scan of every file in pending-responses/; short_id is now an indexed
+    unique column, so this is a single lookup.
+    """
+    return db.gbp_queue_by_short_id(short_id)
 
 
 def strip_quoted_text(body):
@@ -263,7 +263,7 @@ def process_reply(gbp_auth, message):
 
     log(f"Processing reply for REV-{short_id} from {from_addr}")
 
-    filepath, pending = find_pending_by_short_id(short_id)
+    review_id, pending = find_pending_by_short_id(short_id)
     if not pending:
         log(f"No pending response found for REV-{short_id}. May be already responded.")
         return False
@@ -315,12 +315,11 @@ def process_reply(gbp_auth, message):
     pending["final_response"] = response_text
     pending["response_method"] = "email_custom" if was_custom else "email_approved"
 
-    dest = os.path.join(RESPONDED_DIR, os.path.basename(filepath))
     if not DRY_RUN:
-        with open(dest, "w") as f:
-            json.dump(pending, f, indent=2)
-        os.remove(filepath)
-        log(f"Archived to {dest}")
+        # One status change, so there is no window where the review sits in
+        # both directories or neither, as the copy-then-delete move allowed.
+        db.gbp_queue_mark_responded(review_id, pending)
+        log(f"Archived review {review_id} as responded")
 
     # Send confirmation
     send_confirmation(
@@ -391,13 +390,9 @@ def test_connection():
     print(f"  Found {len(rev_msgs)} REV- reply message(s) total.")
 
     # Check pending files
-    pending_files = glob.glob(os.path.join(PENDING_DIR, "*.json"))
-    with_short_id = 0
-    for pf in pending_files:
-        with open(pf) as f:
-            if json.load(f).get("short_id"):
-                with_short_id += 1
-    print(f"  Pending responses: {len(pending_files)} total, {with_short_id} with short_id")
+    queued = db.gbp_queue_pending()
+    with_short_id = sum(1 for p in queued if p.get("short_id"))
+    print(f"  Pending responses: {len(queued)} total, {with_short_id} with short_id")
     print("\nReply poller test passed.")
 
 
