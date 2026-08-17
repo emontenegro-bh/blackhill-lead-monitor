@@ -316,7 +316,11 @@ def main():
 
     folder_id = ensure_report_folder(token, mailbox)
     messages = find_reports(token, mailbox, folder_id)
-    log(f"Found {len(messages)} candidate report message(s) in Inbox")
+    # Split the count by location: an Inbox hit means the Outlook rule missed
+    # one, which is worth noticing rather than burying in a single total.
+    in_inbox = sum(1 for m in messages if m.get("parentFolderId") != folder_id)
+    log(f"Found {len(messages)} unread report message(s): {in_inbox} in Inbox, "
+        f"{len(messages) - in_inbox} in '{REPORT_FOLDER}'")
 
     passed_total = 0
     breaks, unauth = defaultdict(int), defaultdict(int)
