@@ -379,6 +379,67 @@ SPAM_NAMES = [
 ]
 
 
+# --- Web dev team test submissions -----------------------------------------
+#
+# Umair and Afaq (the sanctioned web dev team, see CLAUDE.md) post the live
+# contact form repeatedly while testing Meta and Google tag firing. These are
+# genuine form posts from a real browser, so the spam classifier correctly
+# lets them through -- and they were reaching Aspire, HubSpot and Mailchimp as
+# prospects, inflating lead counts and polluting the marketing audience.
+#
+# Matched on identity, never on the word "test" appearing in a message. Real
+# customers write things like "just testing if this form works", and treating
+# that as internal would silently drop paying work.
+INTERNAL_TEST_EMAILS = {
+    "umairmg3417@gmail.com",   # sanctioned web dev account
+    "afaq@fbtest.com",
+    "umair@test.com",
+    "test@umair.com",
+    "test@gmail.com",          # throwaway reused across their tag tests
+}
+INTERNAL_TEST_DOMAINS = {"test.com", "fbtest.com", "umair.com"}
+INTERNAL_TEST_NAMES = ("umair", "afaq")
+
+
+def is_internal_test_lead(lead_data):
+    """Web dev team test submission? Returns (bool, reason).
+
+    Checked separately from spam so these never reach a CRM, never trigger an
+    auto-reply to the dev team, and never land in the Mailchimp audience.
+    """
+    fields = lead_data.get("additional_fields", {})
+    if isinstance(fields, list):
+        fields = {}
+
+    # Only submission-level addresses. contact_email_address is deliberately
+    # NOT used: it is WhatConverts' merged CONTACT record, and its merging is
+    # not trustworthy. Every dev-team test reports it as afaq@fbtest.com
+    # regardless of what was submitted, but so did a genuine 38-second call
+    # from Deborah Crowe (+1-814-279-5636, Somerset PA) on 2026-07-10, which
+    # WhatConverts had collapsed onto the same contact. Blocking on it would
+    # have silently dropped a real lead. Checked 2026-08-17: every known test
+    # submission is caught by the submitted address alone, so the contact
+    # record buys nothing and costs real leads.
+    candidates = {
+        (lead_data.get("email_address") or "").strip().lower(),
+        (fields.get("Email", "") or "").strip().lower(),
+    } - {""}
+    for email in candidates:
+        if email in INTERNAL_TEST_EMAILS:
+            return True, f"Web dev test submission ({email})"
+        if email.rsplit("@", 1)[-1] in INTERNAL_TEST_DOMAINS:
+            return True, f"Web dev test domain ({email})"
+
+    # contact_name comes back empty on these; the real value is in the form's
+    # own "Name" field, so check both.
+    name = (fields.get("Name", "") or lead_data.get("contact_name", "")
+            or lead_data.get("caller_name", "") or "").strip().lower()
+    if name and any(hint in name for hint in INTERNAL_TEST_NAMES):
+        return True, f"Web dev team name ({name})"
+
+    return False, ""
+
+
 def is_spam_lead(lead_data):
     """Check if a WhatConverts lead is spam using multiple signals."""
     # WhatConverts built-in spam flag
@@ -1781,6 +1842,22 @@ def process_leads(config, state):
                 send_spam_notification(config, lead_data, spam_reason)
             processed_ids.append(lead_id)
             state["stats"]["total_spam"] = state["stats"].get("total_spam", 0) + 1
+            continue
+
+        # Web dev team test submissions. Deliberately placed after the spam
+        # check and before everything else: these are real form posts, so
+        # nothing downstream would stop them reaching Aspire, HubSpot and
+        # Mailchimp. Dropped silently rather than through the spam path, which
+        # would email a "SPAM Lead Filtered" notice for every tag test.
+        is_internal, internal_reason = is_internal_test_lead(lead_data)
+        if is_internal:
+            log(f"  SKIP: {internal_reason}")
+            processed_ids.append(lead_id)
+            state["stats"]["total_internal_test"] = (
+                state["stats"].get("total_internal_test", 0) + 1)
+            state["processed_ids"] = processed_ids
+            if not DRY_RUN:
+                save_state(state)
             continue
 
         # WhatConverts duplicate flag (repeat visitor)
