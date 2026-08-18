@@ -33,7 +33,7 @@ from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
 # --- Config ---
-TO_EMAILS = ["evelin@blackhilltx.com", "Umair@blackhilltx.com"]
+TO_EMAILS = ["evelin@blackhilltx.com", "Umair@blackhilltx.com", "afaq@blackhilltx.com"]
 TO_EMAIL = ", ".join(TO_EMAILS)  # comma-joined for the "To" header
 TARGET_CPA = 80.0
 TARGET_IMPR_SHARE = 50.0
