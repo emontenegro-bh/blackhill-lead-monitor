@@ -396,9 +396,17 @@ INTERNAL_TEST_EMAILS = {
     "umair@test.com",
     "test@umair.com",
     "test@gmail.com",          # throwaway reused across their tag tests
+    # Recovered from the HubSpot records their earlier tests created, so the
+    # same addresses cannot quietly re-enter the CRMs.
+    "testumair@gmail.com",
+    "testdmrc@gmail.com",
+    "test@mobile.com",         # mobile.com is a real domain, so exact match only
 }
 INTERNAL_TEST_DOMAINS = {"test.com", "fbtest.com", "umair.com"}
 INTERNAL_TEST_NAMES = ("umair", "afaq")
+# Exact match only. "test" as the entire submitted name is never a customer,
+# but it appears inside real surnames, so substring matching is not safe here.
+INTERNAL_TEST_EXACT_NAMES = {"test", "test test"}
 
 
 def is_internal_test_lead(lead_data):
@@ -436,6 +444,8 @@ def is_internal_test_lead(lead_data):
             or lead_data.get("caller_name", "") or "").strip().lower()
     if name and any(hint in name for hint in INTERNAL_TEST_NAMES):
         return True, f"Web dev team name ({name})"
+    if name in INTERNAL_TEST_EXACT_NAMES:
+        return True, f"Placeholder name ({name})"
 
     return False, ""
 
