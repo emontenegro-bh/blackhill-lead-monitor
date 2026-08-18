@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-17T13:10:13.084876+00:00",
+  "last_run": "2026-08-18T13:12:00.437529+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -617,6 +617,18 @@
       "first_seen": "2026-08-13",
       "title": "Engineering Services for the Union Pacific Railroad (UPRR) Cadiz St. Underpass (CSJ 0918-47-469) (Step One of Two-Step R"
     },
+    "bonfire-dallascityhall:249533": {
+      "first_seen": "2026-08-18",
+      "title": "Purchase of Pillow Block - 00000219162"
+    },
+    "bonfire-dallascityhall:249536": {
+      "first_seen": "2026-08-18",
+      "title": "Purcase of Hard Drives - 00000219538"
+    },
+    "bonfire-dallascityhall:249674": {
+      "first_seen": "2026-08-18",
+      "title": "Purchase of SOUVENIRS: PROMOTIONAL, ADVERTISING, ETC."
+    },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
       "title": "Alton Bridge Bank Stabilization & Bridge Scour"
@@ -825,9 +837,17 @@
       "first_seen": "2026-08-06",
       "title": "Schedule Analysis Platform"
     },
+    "bonfire-dfwairport:249393": {
+      "first_seen": "2026-08-18",
+      "title": "Drone Subscription"
+    },
     "bonfire-dfwairport:249446": {
       "first_seen": "2026-08-15",
       "title": "Miscellaneous Industrial Items"
+    },
+    "bonfire-dfwairport:249552": {
+      "first_seen": "2026-08-18",
+      "title": "Mobile Access Platform"
     },
     "bonfire-fortworthtexas:178620": {
       "first_seen": "2026-06-11",
@@ -1048,6 +1068,10 @@
     "bonfire-fortworthtexas:246510": {
       "first_seen": "2026-07-29",
       "title": "PW-Comancheria Way 24 Inch Water Line (City Project Number 106854)"
+    },
+    "bonfire-fortworthtexas:246709": {
+      "first_seen": "2026-08-18",
+      "title": "RFQt Stationary Compactor and Related Equipment Maintenance"
     },
     "bonfire-fortworthtexas:247283": {
       "first_seen": "2026-08-05",
@@ -1489,6 +1513,10 @@
       "first_seen": "2026-07-21",
       "title": "Hilburn Ct, Irving Heights, and Shady Grove Rd Water & Wastewater Improvement Project"
     },
+    "ionwave-cityofirving:133LR-26F Addendum 1": {
+      "first_seen": "2026-08-18",
+      "title": "Hilburn Ct, Irving Heights, and Shady Grove Rd Water & Wastewater Improvement Project"
+    },
     "ionwave-cityofirving:135LR-26F": {
       "first_seen": "2026-08-10",
       "title": "Ice Control Sand"
@@ -1513,8 +1541,20 @@
       "first_seen": "2026-08-15",
       "title": "Demolition of Various Properties"
     },
+    "ionwave-cityofirving:142LR-26F Addendum 1": {
+      "first_seen": "2026-08-18",
+      "title": "Freeway and Street Lighting Callout Services"
+    },
+    "ionwave-cityofirving:144LR-26F": {
+      "first_seen": "2026-08-18",
+      "title": "Architectural Design Services for Fire Station No. 9 Project"
+    },
     "ionwave-cityofirving:146T-26": {
       "first_seen": "2026-08-13",
+      "title": "Broadcast Equipment"
+    },
+    "ionwave-cityofirving:146T-26 Addendum 1": {
+      "first_seen": "2026-08-18",
       "title": "Broadcast Equipment"
     },
     "ionwave-cityofirving:3B012-26JA": {
@@ -1621,6 +1661,10 @@
       "first_seen": "2026-08-04",
       "title": "Bob Woodruff South Sidewalk Connection, Project No. PKR-P-00093"
     },
+    "ionwave-cityofplano:2026-0572-B Addendum 1": {
+      "first_seen": "2026-08-18",
+      "title": "Bob Woodruff South Sidewalk Connection, Project No. PKR-P-00093"
+    },
     "ionwave-fortworthisd:26-070-A": {
       "first_seen": "2026-06-11",
       "title": "General Retail Merchandise,Groceries,Supplies,Equipment and Services"
@@ -1667,6 +1711,10 @@
     },
     "ionwave-grapevine-colleyvilleisd:27-05-5-RFP Addendum 2": {
       "first_seen": "2026-08-12",
+      "title": "Landscape, Mowing & Maintenance"
+    },
+    "ionwave-grapevine-colleyvilleisd:27-05-5-RFP Addendum 3": {
+      "first_seen": "2026-08-18",
       "title": "Landscape, Mowing & Maintenance"
     },
     "ionwave-grapevine-colleyvilleisd:27-06-5-RFP": {
