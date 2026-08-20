@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-19T13:12:56.359716+00:00",
+  "last_run": "2026-08-20T13:14:30.211074+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -133,6 +133,10 @@
       "first_seen": "2026-08-13",
       "title": "Purchase of a Cyanide Flow Analyzer"
     },
+    "bonfire-arlingtontx:248864": {
+      "first_seen": "2026-08-20",
+      "title": "Roof Replacement at the Arlington Expo Center"
+    },
     "bonfire-arlingtontx:248902": {
       "first_seen": "2026-08-13",
       "title": "Annual Requirements Contract for Hot Mix Asphaltic Concrete"
@@ -140,6 +144,10 @@
     "bonfire-arlingtontx:248914": {
       "first_seen": "2026-08-13",
       "title": "Annual Requirements Contract for Traffic Control Signs and Materials"
+    },
+    "bonfire-arlingtontx:249764": {
+      "first_seen": "2026-08-20",
+      "title": "Annual Requirements Contract for Laboratory Supplies"
     },
     "bonfire-burlesontx:235806": {
       "first_seen": "2026-06-11",
@@ -849,6 +857,10 @@
       "first_seen": "2026-08-18",
       "title": "Drone Subscription"
     },
+    "bonfire-dfwairport:249406": {
+      "first_seen": "2026-08-20",
+      "title": "Trigg Lake Dam Reclassification"
+    },
     "bonfire-dfwairport:249446": {
       "first_seen": "2026-08-15",
       "title": "Miscellaneous Industrial Items"
@@ -1347,6 +1359,10 @@
     },
     "ionwave-cityofcarrollton:RFP #26-028": {
       "first_seen": "2026-08-13",
+      "title": "Merchant Card Processing Services"
+    },
+    "ionwave-cityofcarrollton:RFP #26-028 Addendum 1": {
+      "first_seen": "2026-08-20",
       "title": "Merchant Card Processing Services"
     },
     "ionwave-cityofgrapevine:36-26": {
@@ -2052,6 +2068,10 @@
     "ionwave-townofflowermound:2026-118-B Addendum 1": {
       "first_seen": "2026-08-19",
       "title": "CMAR for Expansion and Renovation of the Community Activity Center"
+    },
+    "ionwave-townofflowermound:2026-63-B": {
+      "first_seen": "2026-08-20",
+      "title": "Trotter Park Improvements"
     },
     "ionwave-townofflowermound:2026-95-A Addendum 1": {
       "first_seen": "2026-06-22",
