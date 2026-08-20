@@ -131,46 +131,6 @@ COMMENT ON TABLE lead_mappings IS
     'shared state document, where whole-document writes clobbered concurrent updates.';
 
 -- ---------------------------------------------------------------------------
--- gbp_review_queue
---
--- Replaces data/gbp/pending-responses/*.json and data/gbp/responded/*.json,
--- a producer/consumer queue built out of files and directory moves:
--- gbp-review-monitor.py (*/15) wrote one file per new review, and
--- gbp-reply-poller.py (*/5) found it by short_id, then wrote a copy into
--- responded/ and deleted the original. Every step of that was committed to a
--- public repo, including reviewer names and full review text.
---
--- Archiving is now a status change on one row, so there is no window where a
--- review exists in both directories or neither.
---
--- payload keeps the same dict the scripts already pass around, so their
--- working shape is unchanged. review_id and short_id are promoted to columns
--- because they are the two lookup paths.
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS gbp_review_queue (
-    review_id  text PRIMARY KEY,
-    short_id   text,
-    status     text NOT NULL DEFAULT 'pending'
-               CHECK (status IN ('pending', 'responded')),
-    payload    jsonb NOT NULL DEFAULT '{}'::jsonb,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS gbp_review_queue_status_idx
-    ON gbp_review_queue (status, created_at DESC);
-
--- short_id is what an email reply carries in its [REV-XXXXXXXX] subject tag.
--- Unique so a collision from the 8-hex-char generator fails loudly at write
--- time rather than routing a reply to the wrong review.
-CREATE UNIQUE INDEX IF NOT EXISTS gbp_review_queue_short_id_idx
-    ON gbp_review_queue (short_id)
-    WHERE short_id IS NOT NULL;
-
-COMMENT ON TABLE gbp_review_queue IS
-    'Review reply queue. Replaces the pending-responses/ and responded/ file dance.';
-
--- ---------------------------------------------------------------------------
 -- Security
 --
 -- Every table is written by server-side scripts using the service_role key,
@@ -182,4 +142,3 @@ ALTER TABLE automation_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE automation_runs  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE processed_keys   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lead_mappings    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gbp_review_queue ENABLE ROW LEVEL SECURITY;
