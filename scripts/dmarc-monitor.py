@@ -50,6 +50,11 @@ GRAPH = "https://graph.microsoft.com/v1.0"
 REPORT_FOLDER = "DMARC Reports"
 ALERT_TO = "evelin@blackhilltx.com"
 
+# Days a failing source stays quiet after it has been alerted on once. Long
+# enough that a daily forwarder does not mail every morning, short enough that
+# a real misconfiguration nobody fixed comes back and says so again.
+SUPPRESS_DAYS = 7
+
 # Senders we expect to send as blackhilltx.com. A failure from one of these is
 # our own misconfiguration and needs fixing before p= moves off none.
 #
@@ -73,6 +78,19 @@ KNOWN_SENDING_DOMAINS = {
 
 def log(msg):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
+
+
+def _iso_ts(value):
+    """Epoch seconds for a stored ISO timestamp, or 0 if it is unparseable.
+
+    Returning 0 rather than raising means a corrupt entry is pruned on the next
+    run instead of crashing the monitor, which would take the alerting down
+    with it.
+    """
+    try:
+        return datetime.fromisoformat(value).timestamp()
+    except (TypeError, ValueError):
+        return 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -285,9 +303,23 @@ def build_body(window, passed, breaks, unauth, policy, domain):
         "",
     ]
     if breaks:
+        # The consequence depends on the policy that is actually published, so
+        # read it rather than assuming. This line used to say "will start
+        # bouncing if the policy moves off p=none" unconditionally, which was
+        # wrong in both directions once the domains moved to p=quarantine on
+        # 2026-08-20: the move had already happened, and quarantine sends mail
+        # to junk rather than bouncing it.
+        consequence = {
+            "none": "Nothing is being blocked yet. These are what would break "
+                    "if the policy moves to quarantine or reject.",
+            "quarantine": "THIS IS LIVE. Mail from these sources is being "
+                          "delivered to the recipient's junk folder right now.",
+            "reject": "THIS IS LIVE. Mail from these sources is being rejected "
+                      "outright right now.",
+        }.get(policy, f"Published policy is p={policy}.")
         lines += [
             "NEEDS FIXING - our own mail failing authentication",
-            "These will start bouncing if the policy moves off p=none.",
+            consequence,
             "",
         ]
         for (ip, doms), n in sorted(breaks.items(), key=lambda kv: -kv[1]):
@@ -392,11 +424,39 @@ def main():
     log(f"Parsed {len(windows)} new report(s): {passed_total:,} passed, "
         f"{sum(breaks.values()):,} failing (ours), {sum(unauth.values()):,} failing (unknown)")
 
-    if breaks or (SUMMARY and total_fail):
+    # Suppress repeats of a source already reported recently.
+    #
+    # Most recurring "failures" are forwarding: a recipient auto-forwards our
+    # mail, the forwarder re-sends it from its own IP, and SPF alignment breaks
+    # on the way through. That is not fixable from our side and it reports
+    # every single day. An alert that arrives daily for a source already known
+    # stops being read, which costs us the one that matters. A source goes
+    # quiet for SUPPRESS_DAYS and then speaks up again, so nothing is lost
+    # permanently, only repeated less.
+    alerted = dict(state.get("alerted_sources") or {})
+    now = datetime.now(timezone.utc)
+    fresh = {}
+    for key, n in breaks.items():
+        fp = f"{key[0]}|{key[1]}"
+        prev = alerted.get(fp)
+        age = None
+        if prev:
+            try:
+                age = (now - datetime.fromisoformat(prev)).days
+            except ValueError:
+                age = None
+        if age is not None and age < SUPPRESS_DAYS:
+            log(f"  Suppressing known source {key[0]} "
+                f"({n} msg, last alerted {age}d ago)")
+            continue
+        fresh[key] = n
+
+    if fresh or (SUMMARY and total_fail):
         window = ", ".join(sorted(set(windows))) or "latest"
         subject = ("DMARC: our mail is failing authentication"
-                   if breaks else "DMARC summary")
-        body = build_body(window, passed_total, breaks, unauth, policy, domain)
+                   if fresh else "DMARC summary")
+        body = build_body(window, passed_total, fresh or breaks, unauth,
+                          policy, domain)
         if DRY_RUN:
             log("DRY RUN - would have sent:\n" + body)
         else:
@@ -407,6 +467,15 @@ def main():
 
     if not DRY_RUN:
         state["seen_report_ids"] = sorted(seen)[-500:]
+        # Stamp only what was actually alerted on. Stamping a suppressed source
+        # would keep pushing its window forward and silence it forever.
+        for key in fresh:
+            alerted[f"{key[0]}|{key[1]}"] = now.isoformat()
+        cutoff = now.timestamp() - SUPPRESS_DAYS * 2 * 86400
+        state["alerted_sources"] = {
+            k: v for k, v in alerted.items()
+            if _iso_ts(v) >= cutoff
+        }
         state["stats"] = {
             "last_run": datetime.now(timezone.utc).isoformat(),
             "last_passed": passed_total,
