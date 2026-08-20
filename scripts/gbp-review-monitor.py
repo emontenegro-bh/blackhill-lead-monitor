@@ -349,7 +349,20 @@ def main():
         star_num = {"ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4, "FIVE": 5}.get(stars, "?")
         log(f"New {star_num}-star review from {reviewer}. Draft queued as REV-{short_id}")
 
-        # Email notification with Reply-To and REV-ID
+        # Email notification with Reply-To and REV-ID.
+        #
+        # Replying to this email is the only approval path. The body used to
+        # also offer a CLI fallback, ~/projects/scripts/gbp-review-respond.py,
+        # interpolating a safe_id built from the review_id and the old
+        # pending-responses/ filename. The Supabase migration deleted that
+        # variable and left the two references behind, so the first review to
+        # arrive afterwards crashed here with NameError -- after the row was
+        # queued, before send_email, and before save_known. The review stayed
+        # unseen, so every run rediscovered it and failed again.
+        #
+        # Do not restore those lines. gbp-review-respond.py still globs
+        # ~/.config/gbp/pending-responses/*.json, which the migration emptied,
+        # so it cannot find a queued review even when handed the right id.
         subject = f"[REV-{short_id}] New {star_num}-star GBP Review from {reviewer}"
         body = f"""New Google Business Profile Review
 {'=' * 40}
@@ -374,11 +387,6 @@ HOW TO RESPOND (just reply to this email):
 
 Your reply goes to {REPLY_TO_ADDRESS} and will be
 automatically picked up and posted to Google.
-
-{'=' * 40}
-CLI fallback (optional):
-  python3 ~/projects/scripts/gbp-review-respond.py --approve {safe_id}
-  python3 ~/projects/scripts/gbp-review-respond.py --edit {safe_id}
 """
         send_email(subject, body, reply_to=REPLY_TO_ADDRESS)
 
