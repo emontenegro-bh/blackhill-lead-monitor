@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-20T13:14:30.211074+00:00",
+  "last_run": "2026-08-21T13:13:53.432168+00:00",
   "seen": {
     "bedford:5b09a961-a83e-4451-b741-c08bb4e3dfe0": {
       "first_seen": "2026-06-11",
@@ -188,6 +188,10 @@
     "bonfire-cityoflewisville:246518": {
       "first_seen": "2026-08-01",
       "title": "Lewisville Nature Center"
+    },
+    "bonfire-dallascityhall:217865": {
+      "first_seen": "2026-08-21",
+      "title": "Crawford Memorial Park Phase I Improvements"
     },
     "bonfire-dallascityhall:229821": {
       "first_seen": "2026-06-11",
@@ -601,6 +605,10 @@
       "first_seen": "2026-08-13",
       "title": "DART Group 6 \u2013 Arapaho Road at Dallas Parkway Frankford Road at Campbell Road"
     },
+    "bonfire-dallascityhall:248626": {
+      "first_seen": "2026-08-21",
+      "title": "WATER AND WASTEWATER MAIN REPLACEMENTS AT VARIOUS LOCATIONS"
+    },
     "bonfire-dallascityhall:248845": {
       "first_seen": "2026-08-12",
       "title": "Purchase of - SIGNS, SIGN MATERIALS, SIGN MAKING EQUIPMENT, AND RELATED SUPPLIES *219337"
@@ -636,6 +644,18 @@
     "bonfire-dallascityhall:249674": {
       "first_seen": "2026-08-18",
       "title": "Purchase of SOUVENIRS: PROMOTIONAL, ADVERTISING, ETC."
+    },
+    "bonfire-dallascityhall:249752": {
+      "first_seen": "2026-08-21",
+      "title": "Dallas Park and Recreation Department - Audelia Road Gateway Signage"
+    },
+    "bonfire-dallascityhall:250177": {
+      "first_seen": "2026-08-21",
+      "title": "Electrical Switchgear Repair Services"
+    },
+    "bonfire-dallascityhall:250296": {
+      "first_seen": "2026-08-21",
+      "title": "*219536 Purchase of Currency Scanner"
     },
     "bonfire-dentoncounty:232332": {
       "first_seen": "2026-06-22",
@@ -2049,6 +2069,10 @@
       "first_seen": "2026-08-14",
       "title": "Annual Purchase of Commercial and High-Security Locksmith Services and Supplies"
     },
+    "ionwave-tarrantcounty:F2027009": {
+      "first_seen": "2026-08-21",
+      "title": "Annual Purchase for Inmate Hygiene Supplies"
+    },
     "ionwave-townofflowermound:2026-101-A": {
       "first_seen": "2026-06-22",
       "title": "Request for Statement of Qualifications for Professional Engineering Services for Various Projects"
@@ -2124,6 +2148,10 @@
     "publicpurchase:214438": {
       "first_seen": "2026-07-24",
       "title": "Bid posting #214438 (open title on site)"
+    },
+    "publicpurchase:215276": {
+      "first_seen": "2026-08-21",
+      "title": "Bid posting #215276 (open title on site)"
     },
     "saginaw:https://www.ci.saginaw.tx.us/government/RFP-- Security Cameras and Access Controls Packet 8-12-2026.pdf?t=202608120838560": {
       "first_seen": "2026-08-12",
