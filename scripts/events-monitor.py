@@ -50,7 +50,10 @@ from bs4 import BeautifulSoup
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
-STATE_FILE = os.path.join(REPO_ROOT, "data", "events-monitor-state.json")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
+STATE_NAME = "events-monitor"
 
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 MAILBOX = os.environ.get("EVENTS_MAILBOX", "evelin@blackhilltx.com")
@@ -198,20 +201,22 @@ DRY_RUN = False
 # ---------------------------------------------------------------- state
 
 def load_state():
-    try:
-        with open(STATE_FILE) as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return {"seen": [], "source_failures": {}, "last_monthly": None}
+    # No try/except. The file version fell back to an empty `seen` list on any
+    # read error, which re-reports every event still on every source page as
+    # brand new. The whole point of this monitor is that a luncheon announced
+    # twice reports once; a wiped seen-list turns one bad read into a digest
+    # full of events Evelin has already seen and probably already declined.
+    # db.load_state() raises and notify-failure.yml says so.
+    return db.load_state(STATE_NAME, default={
+        "seen": [], "source_failures": {}, "last_monthly": None,
+    })
 
 
 def save_state(state):
     if DRY_RUN:
         return
     state["seen"] = state["seen"][-MAX_SEEN:]
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
+    db.save_state(STATE_NAME, state)
 
 
 def event_key(ev):
@@ -841,4 +846,5 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    with db.track("events-monitor"):
+        sys.exit(main())
