@@ -23,9 +23,9 @@ AUTH
 
 DEDUPE
     GitHub's scheduler can run this hours late, so the lookback window is wide
-    (LOOKBACK_HOURS) and already-reported run IDs are remembered in STATE_FILE.
-    The state file is only rewritten when something new is found, so the usual
-    quiet sweep produces no commit at all.
+    (LOOKBACK_HOURS) and already-reported run IDs are remembered in Supabase
+    (automation_state, 'startup-failure-sweep'). State is only written when
+    something new is found, so the usual quiet sweep writes nothing at all.
 """
 import json
 import os
@@ -39,11 +39,14 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 TO_EMAIL = "evelin@blackhilltx.com"
 OWNER = "emontenegro-bh"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
-STATE_FILE = os.path.join(REPO_ROOT, "data", "startup-failure-seen.json")
+STATE_NAME = "startup-failure-sweep"
 
 # Wide enough that GitHub scheduler lag (observed 1.5-2.5h on these repos)
 # cannot slide a failure out of the window before the sweep looks.
@@ -89,18 +92,17 @@ def _api(url, token):
 
 
 def load_state():
-    try:
-        with open(STATE_FILE) as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return {"reported": {}}
+    # No try/except. The file version returned an empty reported-map on any
+    # read error, which silently disarms the dedupe: every startup failure
+    # still inside the 8-hour window gets re-reported as if it were new. That
+    # turns a storage problem into a stream of duplicate alarms, which is the
+    # fastest way to teach someone to ignore this mailbox. db.load_state()
+    # raises instead, and notify-failure.yml reports it.
+    return db.load_state(STATE_NAME, default={"reported": {}})
 
 
 def save_state(state):
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2, sort_keys=True)
-        f.write("\n")
+    db.save_state(STATE_NAME, state)
 
 
 def sweep_repo(repo, since_iso, token):
@@ -238,4 +240,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("startup-failure-sweep"):
+        main()

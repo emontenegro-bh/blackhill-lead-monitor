@@ -42,30 +42,15 @@ jobs:
           WATCHER_PAT: ${{ secrets.WATCHER_PAT }}
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/startup-failure-sweep.py
 
-      - name: Commit dedupe state
-        run: |
-          # The sweep only writes this file when it alerts on something new, so on
-          # a normal quiet run it does not exist at all. `git add` on a missing
-          # path is a fatal error, so check first -- otherwise every clean sweep
-          # "fails" and notify-failure emails a false alarm.
-          [ -f data/startup-failure-seen.json ] || { echo "nothing new to record"; exit 0; }
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/startup-failure-seen.json
-          git diff --staged --quiet && { echo "no new state"; exit 0; }
-          git commit -m "Update startup-failure sweep state"
-          # This repo's state bots push every few minutes; rebase-retry so we
-          # never fail on a non-fast-forward race.
-          for i in 1 2 3 4 5; do
-            git push && exit 0
-            echo "Push attempt $i lost the race; retrying..."
-            git pull --rebase origin main || true
-            sleep 5
-          done
-          echo "ERROR: could not push sweep state after 5 attempts."
-          exit 1
+      # The "Commit dedupe state" step is gone: the reported-id map lives in
+      # Supabase (automation_state, 'startup-failure-sweep'). That deletes the
+      # whole `[ -f ... ] || exit 0` guard too, which existed only because
+      # `git add` on a missing path is fatal and the sweep writes nothing on a
+      # quiet run. Nothing to add, nothing to guard against.
 
   notify-failure:
     needs: [sweep]
