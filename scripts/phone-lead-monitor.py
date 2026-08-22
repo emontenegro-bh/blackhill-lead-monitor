@@ -751,4 +751,7 @@ if __name__ == "__main__":
     elif "--reconcile" in sys.argv:
         reconcile()
     else:
-        run_monitor()
+        # Only the unattended path is tracked. --test/--list/--status are
+        # interactive debugging and would bury real runs in the history.
+        with db.track("phone-lead-monitor"):
+            run_monitor()

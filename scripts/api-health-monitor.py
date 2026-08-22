@@ -1261,4 +1261,5 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    with db.track("api-health-monitor"):
+        sys.exit(main())
