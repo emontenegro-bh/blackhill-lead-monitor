@@ -7,12 +7,16 @@ Checks (all read-only, no AI):
 3. Keyword hygiene - typos from known list, UNSPECIFIED match, enabled duplicates
 4. Yesterday's keyword deletes+recreates (performance history loss)
 
-Emails evelin only when something is found. State snapshot committed to repo.
+Emails evelin only when something is found. The snapshot lives in Supabase
+(automation_state, 'ads-daily-guard'), not in the repo.
 """
 import json, os, sys, signal, smtplib, urllib.request
 from email.mime.text import MIMEText
 from email.utils import formataddr
 from datetime import datetime, timedelta
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
 
 SCRIPT_TIMEOUT = 300
 signal.signal(signal.SIGALRM, lambda s, f: sys.exit("ERROR: guard timed out"))
@@ -23,7 +27,7 @@ from google.ads.googleads.client import GoogleAdsClient
 TO_EMAIL = "evelin@blackhilltx.com"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
-STATE_FILE = os.path.join(REPO_ROOT, ".claude", "states", "ads-guard-state.json")
+STATE_NAME = "ads-daily-guard"
 KNOWN_TYPOS = ("istallation", "instalation", "sprinler", "irigation", "landscapping")
 
 if os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN"):
@@ -72,13 +76,14 @@ for r in rows("""SELECT campaign.name, campaign.bidding_strategy_type,
     }
 
 # --- 1+2. Diff vs prior snapshot ---
-prior = {}
-if os.path.exists(STATE_FILE):
-    try:
-        with open(STATE_FILE) as f:
-            prior = json.load(f)
-    except Exception:
-        prior = {}
+#
+# Deliberately no try/except. The file version swallowed read errors and fell
+# back to an empty snapshot, which makes every diff below compare against
+# nothing and report "no risky changes" -- the guard would go silently blind
+# exactly when it could not read its own history. db.load_state() raises, the
+# workflow fails, and notify-failure.yml says so. A missed day is recoverable;
+# a false all-clear on the day someone changes a budget is not.
+prior = db.load_state(STATE_NAME, default={})
 
 for name, is_primary in conv_goals.items():
     old = prior.get("conv_goals", {}).get(name)
@@ -149,10 +154,14 @@ for text in sorted(removed & set(created)):
     )
 
 # --- Save snapshot (always) ---
-os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-with open(STATE_FILE, "w") as f:
-    json.dump({"conv_goals": conv_goals, "camp_settings": camp_settings,
-               "updated": datetime.now().isoformat()}, f, indent=2, sort_keys=True)
+# Written before the findings check below, which can sys.exit(0) early. Today's
+# reading has to become tomorrow's baseline whether or not anything was found,
+# or a clean day would leave the guard comparing against stale settings.
+db.save_state(STATE_NAME, {
+    "conv_goals": conv_goals,
+    "camp_settings": camp_settings,
+    "updated": datetime.now().isoformat(),
+})
 
 if not findings:
     print("Guard clean: no risky changes detected.")
