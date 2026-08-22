@@ -48,7 +48,10 @@ def service_tag_from_notes(notes):
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return slug or None
 
-STATE_FILE = "data/aspire-mailchimp-state.json"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
+STATE_NAME = "aspire-mailchimp-backfill"
 ASPIRE_API_URL = os.environ.get("ASPIRE_API_URL", "https://cloud-api.youraspire.com")
 CONTACT_TYPE_PROSPECT = 8
 DRY_RUN = "--dry-run" in sys.argv
@@ -149,17 +152,28 @@ def mailchimp_upsert(email, first_name, last_name, phone, service_tag=None):
 # --- State ---
 
 def load_state():
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE) as f:
-            return json.load(f)
-    # Initial state: 2644 is the highest ContactID synced in the 2026-05-29 catch-up.
-    return {"last_contact_id": 2644, "last_run": None, "last_synced_count": 0}
+    """Resume point for the Aspire -> Mailchimp sync.
+
+    The default here is a loaded gun and deserves an explanation. 2644 was the
+    highest ContactID synced in the 2026-05-29 catch-up; it is only correct as
+    a cold start. If it were ever returned while the real cursor sits far
+    ahead -- 2820 as of 2026-08-22 -- the next run would re-sync every contact
+    in between, re-tagging them in Mailchimp and potentially re-enrolling real
+    customers into the sprinkler and irrigation-plan journeys. Duplicate
+    marketing email to customers is the failure mode, not a duplicate row.
+
+    That is survivable precisely because db.load_state() raises rather than
+    returning the default when Supabase is unreachable. The default is reached
+    only when the row genuinely does not exist, which after the 2026-08-22
+    migration means someone deleted it.
+    """
+    return db.load_state(STATE_NAME, default={
+        "last_contact_id": 2644, "last_run": None, "last_synced_count": 0,
+    })
 
 
 def save_state(state):
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
+    db.save_state(STATE_NAME, state)
 
 
 # --- Main ---
@@ -231,4 +245,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("aspire-mailchimp-backfill"):
+        main()
