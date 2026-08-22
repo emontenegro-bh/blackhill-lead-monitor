@@ -3,7 +3,12 @@ name: City Bid Monitor
 on:
   schedule:
     - cron: '7 12 * * *'  # 7:07 AM CDT / 6:07 AM CST daily
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Scan and print, send no email and write no state'
+        type: boolean
+        default: false
 
 concurrency:
   group: bid-monitor
@@ -34,23 +39,16 @@ jobs:
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-        run: python scripts/bid-monitor.py
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/bid-monitor.py ${{ inputs.dry_run == true && '--dry-run' || '' }}
 
-      - name: Persist bid state
-        if: always()
-        run: |
-          if [ -f data/bid-monitor-state.json ]; then
-            git config user.name "Bid Monitor Bot"
-            git config user.email "noreply@blackhilltx.com"
-            git add data/bid-monitor-state.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Update bid monitor state"
-              for i in 1 2 3; do
-                git pull --rebase origin main || true
-                git push && break || sleep 2
-              done
-            fi
-          fi
+      # The "Persist bid state" step is gone: the 560-entry seen-map lives in
+      # Supabase (automation_state, 'bid-monitor'). Same swallow-the-failure
+      # push loop as the others -- `git push && break || sleep 2` exits the
+      # loop successfully after three failures -- and here that bug was the
+      # most expensive of the set: an unpushed seen-map means the next 7:07am
+      # run treats every open posting across 48 sources as new.
 
   notify-failure:
     needs: [scan]
