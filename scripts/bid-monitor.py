@@ -31,7 +31,10 @@ from bs4 import BeautifulSoup
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
-STATE_FILE = os.path.join(REPO_ROOT, "data", "bid-monitor-state.json")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
+STATE_NAME = "bid-monitor"
 
 RECIPIENTS = [e.strip() for e in os.environ.get("BID_RECIPIENTS", "evelin@blackhilltx.com").split(",") if e.strip()]
 FIRECRAWL_KEY = os.environ.get("FIRECRAWL_API_KEY", "").strip()
@@ -611,11 +614,14 @@ def is_relevant(item):
 
 
 def load_state():
-    try:
-        with open(STATE_FILE) as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"seen": {}, "source_failures": {}, "last_run": None}
+    # No try/except, unlike the file version. This is the most dangerous state
+    # in the repo to lose: `seen` is the only thing standing between Evelin and
+    # a 7:07am email containing every open posting across 48 DFW sources at
+    # once. An empty dict here does not fail loudly, it floods. db.load_state()
+    # raises, the workflow fails, and notify-failure.yml reports it.
+    return db.load_state(STATE_NAME, default={
+        "seen": {}, "source_failures": {}, "last_run": None,
+    })
 
 
 def save_state(state):
@@ -625,9 +631,10 @@ def save_state(state):
         for k, _ in oldest[: len(seen) - MAX_SEEN_IDS]:
             del seen[k]
     state["last_run"] = now_utc().isoformat()
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2, sort_keys=True)
+    # ~73 KB at 560 entries, and the FIFO cap of MAX_SEEN_IDS bounds it near
+    # 800 KB worst case. Comfortable for a jsonb column; it was the daily git
+    # commit of this same blob that was the actual problem.
+    db.save_state(STATE_NAME, state)
 
 
 def esc(s):
@@ -760,4 +767,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("bid-monitor"):
+        main()
