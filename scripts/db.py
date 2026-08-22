@@ -23,6 +23,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 CONFIG_PATH = os.path.expanduser("~/.config/supabase/config.json")
@@ -356,6 +357,59 @@ def run_finish(run_id, status="ok", records=None, error=None):
         )
     except DatabaseError:
         pass
+
+
+class _Run:
+    """Handle yielded by track(). Set .records to record a count."""
+    __slots__ = ("id", "records")
+
+    def __init__(self, run_id):
+        self.id = run_id
+        self.records = None
+
+
+@contextmanager
+def track(script):
+    """Record one execution in automation_runs. Wrap a script's entry point:
+
+        if __name__ == "__main__":
+            with db.track("lead-monitor"):
+                main()
+
+    Why this exists: notify-failure.yml cannot see a startup_failure, so a run
+    that never starts produces no alert at all. That is how the 2026-07-25
+    GitHub outage passed unnoticed. A row here with started_at and no
+    finished_at is a crash; no row at all for a scheduled script is an outage.
+    Neither is visible from workflow status alone.
+
+    SystemExit is handled separately and deliberately. Several scripts here end
+    in sys.exit(main()), and SystemExit inherits from BaseException, not
+    Exception. Catching only Exception would let a sys.exit(1) unwind straight
+    past this and close the run as 'ok' -- a failure recorded as a success,
+    which is worse than no tracking at all.
+
+    Never raises on its own account. If Supabase is unreachable, run_start and
+    run_finish swallow it and the wrapped code runs untouched: observability
+    must not take down the thing it observes.
+    """
+    run = _Run(run_start(script))
+    try:
+        yield run
+    except SystemExit as exc:
+        code = exc.code
+        # sys.exit() and sys.exit(None) both mean success; a string means
+        # failure with a message, which argparse and friends do use.
+        if code is None or code == 0:
+            run_finish(run.id, "ok", records=run.records)
+        else:
+            run_finish(run.id, "error", records=run.records,
+                       error=f"exited with {code!r}")
+        raise
+    except BaseException as exc:
+        run_finish(run.id, "error", records=run.records, error=exc)
+        raise
+    else:
+        run_finish(run.id, "ok", records=run.records)
 
 
 # ---------------------------------------------------------------------------

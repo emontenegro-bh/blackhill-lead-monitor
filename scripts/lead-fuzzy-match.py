@@ -544,4 +544,5 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    with db.track("lead-fuzzy-match"):
+        run()

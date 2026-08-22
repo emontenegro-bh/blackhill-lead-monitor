@@ -486,4 +486,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("dmarc-monitor"):
+        main()
