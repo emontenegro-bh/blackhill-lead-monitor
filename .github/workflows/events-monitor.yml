@@ -13,6 +13,10 @@ on:
         description: 'Send the full monthly digest instead of new-events-only'
         type: boolean
         default: false
+      dry_run:
+        description: 'Scan and print, send no email and write no state'
+        type: boolean
+        default: false
 
 concurrency:
   group: events-monitor
@@ -39,7 +43,12 @@ jobs:
       - name: Decide mode
         id: mode
         run: |
-          if [ "${{ github.event.inputs.monthly }}" = "true" ] || [ "$(date -u +%d)" = "01" ]; then
+          # --dry-run wins outright. Without this precedence a dispatch with
+          # both boxes ticked would send the full monthly digest for real,
+          # which is the loudest possible way to test a change.
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "flag=--dry-run" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.inputs.monthly }}" = "true" ] || [ "$(date -u +%d)" = "01" ]; then
             echo "flag=--monthly" >> "$GITHUB_OUTPUT"
           else
             echo "flag=" >> "$GITHUB_OUTPUT"
@@ -55,23 +64,16 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           EVENTS_MAILBOX: ${{ vars.EVENTS_MAILBOX || 'evelin@blackhilltx.com' }}
           EVENTS_RECIPIENTS: ${{ vars.EVENTS_RECIPIENTS || 'evelin@blackhilltx.com' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/events-monitor.py ${{ steps.mode.outputs.flag }}
 
-      - name: Persist events state
-        if: always()
-        run: |
-          if [ -f data/events-monitor-state.json ]; then
-            git config user.name "Events Monitor Bot"
-            git config user.email "noreply@blackhilltx.com"
-            git add data/events-monitor-state.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Update events monitor state"
-              for i in 1 2 3; do
-                git pull --rebase origin main || true
-                git push && break || sleep 2
-              done
-            fi
-          fi
+      # The "Persist events state" step is gone: seen-keys, source_failures and
+      # last_monthly live in Supabase (automation_state, 'events-monitor').
+      # Its push loop had the same swallow-the-failure shape as the Mailchimp
+      # one -- `git push && break || sleep 2` retries three times then exits
+      # the loop successfully -- so a seen-list that never got pushed looked
+      # like a clean run, and the next digest re-reported events already sent.
 
   notify-failure:
     needs: [scan]
