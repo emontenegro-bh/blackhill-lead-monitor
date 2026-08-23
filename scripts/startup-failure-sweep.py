@@ -99,46 +99,55 @@ EXPECTED_CADENCE_HOURS = {
     # 26 catches one missed weekday report rather than waiting out the 72-hour
     # Friday-to-Monday gap a wall-clock threshold would have to tolerate.
     "crew-location": 26,
+    # cron 23 13 * * 1-5 -- weekdays. Business hours for the same reason.
+    "phone-lead-staleness-check": 26,
+    # cron 0 16 * * 1,3,5 -- Mon/Wed/Fri. Worst gap is Fri -> Mon, 72h.
+    "gbp-scheduled-poster": 76,
+    # weekly Monday.
+    "seo-health-weekly": 176,
+    "aspire-material-audit": 176,
 }
 
 # Scripts that only run Mon-Fri. Their silence is measured in business hours,
 # so the weekend does not count against them and a single missed weekday still
 # alerts the next day.
-WEEKDAY_ONLY = {"crew-location"}
+WEEKDAY_ONLY = {"crew-location", "phone-lead-staleness-check"}
 
 # Scripts wrapped in db.track() but NOT expected on a schedule go here, so the
 # liveness check stays silent about them instead of reporting a permanent
 # overdue. Empty today; kept as the documented place to put one.
 ON_DEMAND_SCRIPTS = set()
 
-# KNOWN BLIND SPOTS -- scheduled work this check cannot see, because the script
-# is not wrapped in db.track(). Listed rather than silently omitted, so the
-# heartbeat's "all clear" is honest about its own coverage. Audited 2026-08-22.
+# KNOWN BLIND SPOTS -- scheduled work this check still cannot see, because the
+# script is not wrapped in db.track(). Listed rather than silently omitted, so
+# the heartbeat's "all clear" is honest about its own coverage.
+# Audited 2026-08-22, reduced from 10 to 4 on 2026-08-23.
 #
+# All four are the same shape: flat top-level scripts with no main() to wrap,
+# or a branch sitting outside an existing wrapper. Each needs a small refactor
+# rather than two lines, which is why they were not done in the same pass.
+#
+#   ads-daily-guard.py            daily 12:07 -- flat script, no main(). Also
+#                                 has legitimate early sys.exit(0) paths, so a
+#                                 naive atexit wrapper would record a clean
+#                                 guard run as an error.
+#   seo-audit.py                  Mon 14:00 -- flat script. Concluded
+#                                 `cancelled` on 6 of its last 12 scheduled
+#                                 runs; `cancelled` does not trigger
+#                                 if: failure(), so those silent no-ops
+#                                 notified nobody. Tracking it would catch
+#                                 exactly this.
+#   ads-weekly-report.py          Sun 15:07 -- flat script.
 #   phone-lead-monitor --reconcile  daily 13:07 -- the reconcile branch sits
 #                                 outside the db.track() wrapper, and a check
 #                                 keyed on the script name is satisfied by the
 #                                 30-minute monitor runs even if reconcile has
-#                                 stopped entirely.
-#   ads-daily-guard.py            daily 12:07 -- flat script, no main().
-#   phone-lead-staleness-check.py weekdays 13:23 -- itself an alerter, so its
-#                                 silence is doubly invisible.
-#   gbp-scheduled-poster.py       Mon/Wed/Fri 16:00
-#   aspire-material-audit.py      Mon 13:00 + 14:00
-#   seo-health-weekly.py          Mon 13:30
-#   seo-audit.py                  Mon 14:00 -- concluded `cancelled` on 6 of
-#                                 its last 12 scheduled runs. `cancelled` does
-#                                 not trigger if: failure(), so those silent
-#                                 no-ops never notified anyone.
-#   ads-weekly-report.py          Sun 15:07
-#   qs-recheck.py                 annual, Apr 1 -- not worth a threshold.
-UNTRACKED_SCHEDULED = 9
+#                                 stopped entirely. Needs its own tracked name.
+UNTRACKED_SCHEDULED = 4
 #
-# crew-location.py was the tenth and the worst of them, fixed 2026-08-23: it is
-# now tracked, checked in business hours, and carries a late backstop schedule.
-# It stays the template for the rest -- an external trigger with no safety net
-# fails completely silently, because no workflow ever starts and if: failure()
-# has nothing to fire on.
+# qs-recheck.py is tracked but deliberately has no cadence entry: it runs once
+# a year on 1 April, and a 8760-hour threshold would be a threshold in name
+# only.
 
 HEARTBEAT_DAYS = 7
 

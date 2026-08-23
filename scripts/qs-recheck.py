@@ -10,6 +10,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from google.ads.googleads.client import GoogleAdsClient
 
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 CUSTOMER_ID = "9637062915"
 CAMPAIGN_ID = 22815919817
 
@@ -226,4 +230,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("qs-recheck"):
+        main()

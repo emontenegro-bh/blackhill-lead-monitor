@@ -40,6 +40,8 @@ jobs:
           GBP_LOCATION_ID: ${{ secrets.GBP_LOCATION_ID }}
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/seo-health-weekly.py
 
       - name: Commit report and history
