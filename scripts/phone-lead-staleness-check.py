@@ -13,6 +13,11 @@ import json, os, sys, smtplib
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 THRESHOLD_BUSINESS_DAYS = 2
 DRY = "--dry-run" in sys.argv
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -103,4 +108,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("phone-lead-staleness-check"):
+        main()

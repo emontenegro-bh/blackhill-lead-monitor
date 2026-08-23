@@ -35,6 +35,11 @@ import openpyxl
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
@@ -747,4 +752,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("aspire-material-audit"):
+        main()

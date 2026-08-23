@@ -14,6 +14,11 @@ Usage:
 import json, os, sys, argparse
 from datetime import datetime
 
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 QUEUE_FILE = os.path.join(
     os.path.dirname(os.path.dirname(__file__)),
     "data", "gbp", "scheduled-posts", "queue.json"
@@ -143,4 +148,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("gbp-scheduled-poster"):
+        main()

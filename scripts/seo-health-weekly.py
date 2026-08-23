@@ -19,6 +19,11 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
 from datetime import datetime, timedelta, date
 
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 # --- Global timeout ---
 SCRIPT_TIMEOUT = 300
 
@@ -677,4 +682,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("seo-health-weekly"):
+        main()
