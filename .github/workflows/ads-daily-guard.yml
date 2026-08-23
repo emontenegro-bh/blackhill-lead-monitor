@@ -49,7 +49,7 @@ jobs:
 
   notify-failure:
     needs: [guard]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Google Ads Daily Guard"

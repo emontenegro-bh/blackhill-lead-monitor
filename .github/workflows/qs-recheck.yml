@@ -36,7 +36,7 @@ jobs:
 
   notify-failure:
     needs: [recheck]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "QS Recheck"

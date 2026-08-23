@@ -35,7 +35,7 @@ jobs:
 
   notify-failure:
     needs: [reconcile]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Phone Lead Reconcile"

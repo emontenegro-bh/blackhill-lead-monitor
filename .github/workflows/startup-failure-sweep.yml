@@ -54,7 +54,7 @@ jobs:
 
   notify-failure:
     needs: [sweep]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Startup Failure Sweep"

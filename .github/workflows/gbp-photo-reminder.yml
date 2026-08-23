@@ -21,7 +21,7 @@ jobs:
 
   notify-failure:
     needs: [reminder]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "GBP Photo Reminder"

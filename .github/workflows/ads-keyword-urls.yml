@@ -46,7 +46,7 @@ jobs:
 
   notify-failure:
     needs: [update-urls]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Google Ads Keyword URL Update"
