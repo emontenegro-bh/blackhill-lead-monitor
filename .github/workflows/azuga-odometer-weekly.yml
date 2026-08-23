@@ -1,0 +1,75 @@
+name: Weekly Azuga Odometer Report
+
+on:
+  schedule:
+    # Monday 7:10 AM CST = 13:10 UTC (off-:00 minute; GitHub drops exactly-:00 crons)
+    - cron: '10 13 * * 1'
+  workflow_dispatch: {}
+
+concurrency:
+  group: azuga-odometer-weekly
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Generate and send weekly odometer report
+        env:
+          AZUGA_API_KEY: ${{ secrets.AZUGA_API_KEY }}
+          # Preferred delivery: Graph files the report straight into the
+          # "Fleet Reports" folder, so it never hits the inbox and no Outlook
+          # rule is involved. Folder create + message create need only
+          # Mail.ReadWrite, which is already granted (dmarc-monitor.py uses
+          # it). Deliberately NOT an inbox rule: those need
+          # MailboxSettings.ReadWrite, which is withheld tenant-wide on
+          # purpose. See API Reference Notes in this repo's CLAUDE.md.
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+          # Fallback only, if Graph is unavailable.
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/azuga-odometer-weekly.py
+
+      - name: Commit report and history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .claude/reports/fleet/odometer/weekly/*.md .claude/reports/fleet/odometer/weekly/odometer-history.json || true
+          if git diff --staged --quiet; then
+            echo "No report changes to commit."
+            exit 0
+          fi
+          git commit -m "Weekly Azuga Odometer Report - $(date +%Y-%m-%d)"
+          # main races with state-file bots; retry rebase+push before failing
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push; then
+              echo "Pushed on attempt $i."
+              exit 0
+            fi
+            echo "Push attempt $i lost the race; retrying..."
+            sleep 5
+          done
+          echo "ERROR: could not push after 5 attempts."
+          exit 1
+
+  notify-failure:
+    needs: [report]
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Weekly Azuga Odometer Report"
+    secrets: inherit
