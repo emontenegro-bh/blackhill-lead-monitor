@@ -22,7 +22,7 @@ THRESHOLD_BUSINESS_DAYS = 2
 DRY = "--dry-run" in sys.argv
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE_FILE = os.path.join(REPO_ROOT, "data", "phone-lead-state.json")
-ALERT_STATE_FILE = os.path.join(REPO_ROOT, "data", "phone-lead-staleness-state.json")
+STATE_NAME = "phone-lead-staleness-check"
 ALERT_TO = os.environ.get("ALERT_RECIPIENT", "evelin@blackhilltx.com")
 
 
@@ -81,9 +81,7 @@ def main():
         return
 
     # De-dupe: only one alert per calendar day per stale lead.
-    astate = {}
-    if os.path.exists(ALERT_STATE_FILE):
-        astate = json.load(open(ALERT_STATE_FILE))
+    astate = db.load_state(STATE_NAME, default={})
     if astate.get("last_alert_for") == latest and astate.get("last_alert_date") == str(today):
         print("Already alerted today for this lead; skipping duplicate.")
         return
@@ -103,8 +101,8 @@ def main():
     ok, info = send_email(subject, html)
     print("email:", ok, info)
     if ok:
-        json.dump({"last_alert_for": latest, "last_alert_date": str(today)},
-                  open(ALERT_STATE_FILE, "w"))
+        db.save_state(STATE_NAME,
+                      {"last_alert_for": latest, "last_alert_date": str(today)})
 
 
 if __name__ == "__main__":
