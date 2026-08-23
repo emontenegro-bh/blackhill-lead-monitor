@@ -16,7 +16,11 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 268 URLs in the sitemap as of 2026-08-23, walked serially. At 10 minutes
+    # this hit the wall and GitHub marked the run `cancelled` -- which does NOT
+    # trigger `if: failure()`, so six silent no-ops between June and August
+    # notified nobody. The page count only grows; 30 leaves real headroom.
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6
@@ -56,7 +60,10 @@ jobs:
 
   notify-failure:
     needs: [audit]
-    if: failure()
+    # `|| cancelled()` is the point of this change. A job killed by
+    # timeout-minutes concludes `cancelled`, not `failure`, so plain
+    # `if: failure()` cannot see the exact failure this workflow kept having.
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Weekly SEO Audit"
