@@ -383,19 +383,39 @@ def latest_run_times(scripts):
     return out
 
 
-def table_age_hours():
-    """Hours since the oldest row in automation_runs, or None if empty.
+def succeeded_since(script, since_iso):
+    """True if `script` has a run with status 'ok' at or after since_iso.
+
+    Written for backstop schedules: a fallback trigger that fires whether or
+    not the primary worked would just send a duplicate every day, which costs
+    more trust than the outage it guards against. Checks status='ok'
+    specifically -- the caller's own in-flight run is status='running', so it
+    cannot see itself and skip.
+    """
+    rows = _request(
+        "GET",
+        f"automation_runs?script=eq.{_q(script)}&status=eq.ok"
+        f"&started_at=gte.{_q(since_iso)}&select=id&limit=1",
+    )
+    return bool(rows)
+
+
+def table_started_at():
+    """Timestamp of the oldest row in automation_runs, or None if empty.
 
     Lets a caller tell "this script has never run" apart from "tracking has
     not been switched on long enough to have seen it run yet". Those look
     identical in the data and mean opposite things.
+
+    Returns the instant rather than an age so the caller can measure it in
+    whatever units its own threshold uses. Returning wall hours here caused a
+    real false alarm: a weekday-only job's allowance is in business hours, and
+    comparing 27 wall hours against a 26-business-hour threshold un-suppressed
+    a script that had not had a single working day to run in.
     """
     rows = _request(
         "GET", "automation_runs?select=started_at&order=started_at.asc&limit=1")
-    if not rows:
-        return None
-    oldest = datetime.fromisoformat(rows[0]["started_at"])
-    return (datetime.now(timezone.utc) - oldest).total_seconds() / 3600
+    return datetime.fromisoformat(rows[0]["started_at"]) if rows else None
 
 
 def unfinished_runs(older_than_minutes=90):

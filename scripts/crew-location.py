@@ -37,6 +37,9 @@ from email.mime.text import MIMEText
 from email.utils import formataddr
 from zoneinfo import ZoneInfo
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 CENTRAL = ZoneInfo("America/Chicago")
 BASE_URL = "https://api.azuga.com/azuga-ws"
 CONFIG_FILE = os.path.expanduser("~/.config/azuga/config.json")
@@ -216,4 +219,17 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with db.track("crew-location"):
+        # --backstop is passed only by the weekday schedule, which exists in
+        # case the cron-job.org dispatch stops firing. If the real trigger
+        # already produced a report today, this run must do nothing: a
+        # fallback that sends regardless would mail a duplicate every single
+        # weekday, and habitual duplicates are how people learn to skim.
+        if "--backstop" in sys.argv:
+            start_of_day = datetime.now(CENTRAL).replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            if db.succeeded_since("crew-location", start_of_day.isoformat()):
+                print("Backstop: today's report already went out. Nothing to do.")
+                sys.exit(0)
+            print("Backstop: no successful run today, sending the report late.")
+        main()

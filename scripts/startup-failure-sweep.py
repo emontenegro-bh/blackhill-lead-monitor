@@ -95,7 +95,16 @@ EXPECTED_CADENCE_HOURS = {
     "bid-monitor": 30,
     # cron 13 12 * * 1,4 -- Monday and Thursday. Thu -> Mon is 96h.
     "events-monitor": 100,
+    # Weekdays ~20:55Z. Counted in BUSINESS hours (see WEEKDAY_ONLY), so this
+    # 26 catches one missed weekday report rather than waiting out the 72-hour
+    # Friday-to-Monday gap a wall-clock threshold would have to tolerate.
+    "crew-location": 26,
 }
+
+# Scripts that only run Mon-Fri. Their silence is measured in business hours,
+# so the weekend does not count against them and a single missed weekday still
+# alerts the next day.
+WEEKDAY_ONLY = {"crew-location"}
 
 # Scripts wrapped in db.track() but NOT expected on a schedule go here, so the
 # liveness check stays silent about them instead of reporting a permanent
@@ -106,11 +115,6 @@ ON_DEMAND_SCRIPTS = set()
 # is not wrapped in db.track(). Listed rather than silently omitted, so the
 # heartbeat's "all clear" is honest about its own coverage. Audited 2026-08-22.
 #
-#   crew-location.py              weekdays ~20:55Z -- HIGHEST RISK. Its only
-#                                 trigger is a repository_dispatch POST from
-#                                 cron-job.org. If that external service stops,
-#                                 the workflow never starts, if: failure()
-#                                 never fires, and nothing anywhere notices.
 #   phone-lead-monitor --reconcile  daily 13:07 -- the reconcile branch sits
 #                                 outside the db.track() wrapper, and a check
 #                                 keyed on the script name is satisfied by the
@@ -128,7 +132,13 @@ ON_DEMAND_SCRIPTS = set()
 #                                 no-ops never notified anyone.
 #   ads-weekly-report.py          Sun 15:07
 #   qs-recheck.py                 annual, Apr 1 -- not worth a threshold.
-UNTRACKED_SCHEDULED = 10
+UNTRACKED_SCHEDULED = 9
+#
+# crew-location.py was the tenth and the worst of them, fixed 2026-08-23: it is
+# now tracked, checked in business hours, and carries a late backstop schedule.
+# It stays the template for the rest -- an external trigger with no safety net
+# fails completely silently, because no workflow ever starts and if: failure()
+# has nothing to fire on.
 
 HEARTBEAT_DAYS = 7
 
@@ -233,6 +243,30 @@ def send_html(subject, html):
     return True
 
 
+def business_hours_between(start, end):
+    """Hours between two instants, ignoring Saturday and Sunday.
+
+    Exists so a weekday-only job can use one honest threshold. Measured in wall
+    time, crew-location's Friday-to-Monday gap is 72h while its Monday-to-
+    Tuesday gap is 24h, so a flat threshold has to be set above 72 -- and then
+    a report that dies on Tuesday goes unreported until Friday. Counting only
+    weekdays makes both gaps 24h, so 26h catches a single missed weekday
+    without ever firing over a weekend.
+    """
+    if end <= start:
+        return 0.0
+    total = 0.0
+    cur = start
+    while cur < end:
+        midnight = (cur + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        chunk_end = min(end, midnight)
+        if cur.weekday() < 5:          # Mon-Fri
+            total += (chunk_end - cur).total_seconds() / 3600
+        cur = chunk_end
+    return total
+
+
 def check_liveness(now):
     """Scripts that should have checked in by now and have not.
 
@@ -249,22 +283,39 @@ def check_liveness(now):
     # script here. Alerting on "never" before the table is older than the
     # script's own cadence would fire a guaranteed false alarm on deploy day,
     # which is the fastest way to teach someone to ignore this email.
-    table_age_h = db.table_age_hours()
+    #
+    # Measured per script in the SAME units as that script's threshold. Mixing
+    # them is not hypothetical: comparing 27 wall hours against crew-location's
+    # 26-business-hour allowance un-suppressed it on a Sunday, when it had not
+    # yet had a single working day in which to run.
+    table_start = db.table_started_at()
 
     overdue = []
     for script in watched:
         allowed = EXPECTED_CADENCE_HOURS[script]
         stamp = latest.get(script)
         if stamp is None:
-            if table_age_h is not None and table_age_h < allowed:
-                print(f"  {script}: no rows yet, but tracking is only "
-                      f"{table_age_h:.1f}h old vs {allowed}h cadence -- not yet a fault")
-                continue
+            if table_start is not None:
+                age = (business_hours_between(table_start, now)
+                       if script in WEEKDAY_ONLY
+                       else (now - table_start).total_seconds() / 3600)
+                unit = " business h" if script in WEEKDAY_ONLY else "h"
+                if age < allowed:
+                    print(f"  {script}: no rows yet, but tracking is only "
+                          f"{age:.1f}{unit} old vs {allowed}h cadence "
+                          f"-- not yet a fault")
+                    continue
             overdue.append({"script": script, "silent_h": None, "allowed_h": allowed})
             continue
-        silent = (now - datetime.fromisoformat(stamp)).total_seconds() / 3600
+        last = datetime.fromisoformat(stamp)
+        if script in WEEKDAY_ONLY:
+            silent = business_hours_between(last, now)
+        else:
+            silent = (now - last).total_seconds() / 3600
         if silent > allowed:
-            overdue.append({"script": script, "silent_h": silent, "allowed_h": allowed})
+            overdue.append({"script": script, "silent_h": silent,
+                            "allowed_h": allowed,
+                            "weekday_only": script in WEEKDAY_ONLY})
     return overdue, len(latest)
 
 
@@ -338,10 +389,10 @@ def maybe_send_heartbeat(state, now):
     <p><b>Coverage:</b> {len(watched)} scripts are checked here.
     {UNTRACKED_SCHEDULED} other scheduled scripts are <i>not</i> -- they do not
     write to <code>automation_runs</code>, so this all-clear says nothing about
-    them. The riskiest is <code>crew-location.py</code>, whose only trigger is
-    an external cron-job.org POST: if that service stops, no GitHub workflow
-    ever starts and no failure alert can fire. See UNTRACKED_SCHEDULED in
-    <code>startup-failure-sweep.py</code> for the full list.</p>"""
+    them. See UNTRACKED_SCHEDULED in <code>startup-failure-sweep.py</code> for
+    the list. Of those still uncovered, <code>phone-lead-staleness-check.py</code>
+    is the one to do next: it is itself an alerter, so its silence is doubly
+    invisible.</p>"""
 
     if send_html(f"Automation heartbeat: {total:,} runs, {errs} errors", html):
         state["last_heartbeat"] = now.isoformat()

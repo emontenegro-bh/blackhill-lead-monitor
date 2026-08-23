@@ -7,6 +7,15 @@ on:
   # was delaying / dropping the 4pm email. See repo README for the cron-job setup.
   repository_dispatch:
     types: [crew-location-report]
+  # Late backstop, weekdays. NOT a replacement for the dispatch above: GitHub's
+  # scheduled queue is why that exists, and measurements on 2026-08-22 put the
+  # lag at 20-60 minutes with heavy throttling of frequent crons. This fires an
+  # hour after the real trigger should have, so if cron-job.org is down the
+  # report still goes out late rather than not at all. The script is idempotent
+  # -- it reads Azuga and emails -- so a duplicate on a day both fire is a
+  # second copy of the same email, which is a far cheaper failure than silence.
+  schedule:
+    - cron: '52 21 * * 1-5'
   workflow_dispatch:
     inputs:
       to:
@@ -43,7 +52,9 @@ jobs:
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           CREW_LOC_TO: ${{ github.event.inputs.to }}
-        run: python scripts/crew-location.py
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/crew-location.py ${{ github.event_name == 'schedule' && '--backstop' || '' }}
 
   notify-failure:
     needs: [report]
