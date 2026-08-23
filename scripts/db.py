@@ -24,7 +24,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 CONFIG_PATH = os.path.expanduser("~/.config/supabase/config.json")
 TIMEOUT = 30
@@ -357,6 +357,77 @@ def run_finish(run_id, status="ok", records=None, error=None):
         )
     except DatabaseError:
         pass
+
+
+def latest_run_times(scripts):
+    """{script: started_at ISO string} for the most recent run of each.
+
+    One small query per script rather than one big one. Fetching N recent rows
+    and reducing in Python looks cheaper but silently breaks as volume grows:
+    whatconverts-lead-monitor alone writes ~290 rows a day, so a daily script
+    would fall off the end of any fixed limit and read as "never ran" -- a
+    false alarm that arrives precisely when the table is healthiest.
+
+    A script with no rows at all is omitted from the result rather than given
+    a null, so callers must decide explicitly what "never seen" means.
+    """
+    out = {}
+    for name in scripts:
+        rows = _request(
+            "GET",
+            f"automation_runs?script=eq.{_q(name)}"
+            "&select=started_at&order=started_at.desc&limit=1",
+        )
+        if rows:
+            out[name] = rows[0]["started_at"]
+    return out
+
+
+def table_age_hours():
+    """Hours since the oldest row in automation_runs, or None if empty.
+
+    Lets a caller tell "this script has never run" apart from "tracking has
+    not been switched on long enough to have seen it run yet". Those look
+    identical in the data and mean opposite things.
+    """
+    rows = _request(
+        "GET", "automation_runs?select=started_at&order=started_at.asc&limit=1")
+    if not rows:
+        return None
+    oldest = datetime.fromisoformat(rows[0]["started_at"])
+    return (datetime.now(timezone.utc) - oldest).total_seconds() / 3600
+
+
+def unfinished_runs(older_than_minutes=90):
+    """Runs that opened a row and never closed it.
+
+    A crash usually fails the workflow too, so notify-failure.yml already
+    covers most of these. The gap this catches is the process that dies
+    without the workflow registering failure: runner eviction, cancellation,
+    OOM. The age floor exists so runs still legitimately in flight are not
+    reported -- the longest job here is bid-monitor at a 20-minute timeout.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=older_than_minutes)
+    return _request(
+        "GET",
+        "automation_runs?finished_at=is.null"
+        f"&started_at=lt.{_q(cutoff.isoformat())}"
+        "&select=id,script,started_at,run_env&order=started_at.desc&limit=50",
+    )
+
+
+def run_counts_since(since_iso):
+    """[{script, n}] run totals since a timestamp. Used by the heartbeat."""
+    rows = _request(
+        "GET",
+        f"automation_runs?started_at=gte.{_q(since_iso)}"
+        "&select=script,status&limit=10000",
+    )
+    tally = {}
+    for r in rows:
+        d = tally.setdefault(r["script"], {"ok": 0, "error": 0, "running": 0})
+        d[r["status"]] = d.get(r["status"], 0) + 1
+    return tally
 
 
 class _Run:

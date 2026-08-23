@@ -54,6 +54,84 @@ LOOKBACK_HOURS = 8
 KEEP_DAYS = 7            # prune remembered run IDs older than this
 MAX_PAGES = 5            # backstop; a window this wide never holds 500 failures
 
+# ---------------------------------------------------------------------------
+# Liveness: which scripts must check in, and how long silence is allowed.
+#
+# The GitHub sweep above answers "did a run fail to start". This answers a
+# question GitHub cannot: "did a run simply never happen". notify-failure.yml
+# only fires when a workflow runs and fails, so a dropped cron, a
+# startup_failure, or a workflow auto-disabled for repo inactivity is
+# invisible to it. That is how the 2026-07-25 outage passed unnoticed.
+#
+# Written out rather than parsed from the cron on purpose. A derived threshold
+# that derives wrong disables an alarm silently; a wrong number here shows up
+# in a diff. Day-of-week crons are the trap: events-monitor runs Mon and Thu,
+# so its real worst case is the Thursday-to-Monday gap, not 24h.
+#
+# Thresholds are deliberately loose. This repo's own sweep docstring records
+# GitHub scheduler lag of 1.5-2.5h, so a tight bound would alarm on lateness
+# rather than absence, and an alert that cries wolf is worse than none.
+EXPECTED_CADENCE_HOURS = {
+    # Both of these are cron */5, and they do NOT behave the same. Measured
+    # 2026-08-22 over ~10h: whatconverts-lead-monitor held a 5-minute median
+    # with a 5-minute max, while lead-monitor ran a 26-minute median and a
+    # 43-minute max. GitHub throttles scheduled workflows under load and does
+    # not say so. 3h leaves ~4x headroom over the worst gap actually seen;
+    # revisit once a full week of automation_runs exists, because ten hours
+    # is not enough to have seen the real tail.
+    "lead-monitor": 3,
+    "whatconverts-lead-monitor": 2,
+    # cron at :15/:45 and :17/:47 -- twice hourly.
+    "whatconverts-roi-sync": 3,
+    "phone-lead-monitor": 3,
+    "startup-failure-sweep": 3,
+    # cron 23 */2 -- every two hours.
+    "dmarc-monitor": 6,
+    # cron 0 0,6,12,18 -- four times daily.
+    "api-health-monitor": 14,
+    # daily.
+    "lead-fuzzy-match": 30,
+    "aspire-mailchimp-backfill": 30,
+    "bid-monitor": 30,
+    # cron 13 12 * * 1,4 -- Monday and Thursday. Thu -> Mon is 96h.
+    "events-monitor": 100,
+}
+
+# Scripts wrapped in db.track() but NOT expected on a schedule go here, so the
+# liveness check stays silent about them instead of reporting a permanent
+# overdue. Empty today; kept as the documented place to put one.
+ON_DEMAND_SCRIPTS = set()
+
+# KNOWN BLIND SPOTS -- scheduled work this check cannot see, because the script
+# is not wrapped in db.track(). Listed rather than silently omitted, so the
+# heartbeat's "all clear" is honest about its own coverage. Audited 2026-08-22.
+#
+#   crew-location.py              weekdays ~20:55Z -- HIGHEST RISK. Its only
+#                                 trigger is a repository_dispatch POST from
+#                                 cron-job.org. If that external service stops,
+#                                 the workflow never starts, if: failure()
+#                                 never fires, and nothing anywhere notices.
+#   phone-lead-monitor --reconcile  daily 13:07 -- the reconcile branch sits
+#                                 outside the db.track() wrapper, and a check
+#                                 keyed on the script name is satisfied by the
+#                                 30-minute monitor runs even if reconcile has
+#                                 stopped entirely.
+#   ads-daily-guard.py            daily 12:07 -- flat script, no main().
+#   phone-lead-staleness-check.py weekdays 13:23 -- itself an alerter, so its
+#                                 silence is doubly invisible.
+#   gbp-scheduled-poster.py       Mon/Wed/Fri 16:00
+#   aspire-material-audit.py      Mon 13:00 + 14:00
+#   seo-health-weekly.py          Mon 13:30
+#   seo-audit.py                  Mon 14:00 -- concluded `cancelled` on 6 of
+#                                 its last 12 scheduled runs. `cancelled` does
+#                                 not trigger if: failure(), so those silent
+#                                 no-ops never notified anyone.
+#   ads-weekly-report.py          Sun 15:07
+#   qs-recheck.py                 annual, Apr 1 -- not worth a threshold.
+UNTRACKED_SCHEDULED = 10
+
+HEARTBEAT_DAYS = 7
+
 # `public` repos need no token; `private` ones are skipped (loudly) without one.
 REPOS = [
     ("blackhill-lead-monitor", "public"),
@@ -136,6 +214,141 @@ def sweep_repo(repo, since_iso, token):
     return out
 
 
+def send_html(subject, html):
+    """Send one HTML mail. Returns True if it went out."""
+    sender = os.environ.get("GMAIL_EMAIL")
+    password = os.environ.get("GMAIL_APP_PASSWORD")
+    if not (sender and password):
+        print("WARNING: Gmail creds unset; skipping email.")
+        return False
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = formataddr(("Black Hill Assistant", sender))
+    msg["To"] = TO_EMAIL
+    msg.attach(MIMEText(html, "html"))
+    with smtplib.SMTP("smtp.gmail.com", 587, timeout=30) as s:
+        s.starttls()
+        s.login(sender, password)
+        s.sendmail(sender, [TO_EMAIL], msg.as_string())
+    return True
+
+
+def check_liveness(now):
+    """Scripts that should have checked in by now and have not.
+
+    Returns (overdue, seen_count). `overdue` entries carry the script, hours
+    of silence, and its allowance, so the email can show the margin rather
+    than just asserting lateness.
+    """
+    watched = [s for s in EXPECTED_CADENCE_HOURS if s not in ON_DEMAND_SCRIPTS]
+    latest = db.latest_run_times(watched)
+
+    # How long has the table been collecting at all? A script with no rows is
+    # indistinguishable from one whose wrapper shipped after its last run, and
+    # on the day tracking went live that describes every daily and weekly
+    # script here. Alerting on "never" before the table is older than the
+    # script's own cadence would fire a guaranteed false alarm on deploy day,
+    # which is the fastest way to teach someone to ignore this email.
+    table_age_h = db.table_age_hours()
+
+    overdue = []
+    for script in watched:
+        allowed = EXPECTED_CADENCE_HOURS[script]
+        stamp = latest.get(script)
+        if stamp is None:
+            if table_age_h is not None and table_age_h < allowed:
+                print(f"  {script}: no rows yet, but tracking is only "
+                      f"{table_age_h:.1f}h old vs {allowed}h cadence -- not yet a fault")
+                continue
+            overdue.append({"script": script, "silent_h": None, "allowed_h": allowed})
+            continue
+        silent = (now - datetime.fromisoformat(stamp)).total_seconds() / 3600
+        if silent > allowed:
+            overdue.append({"script": script, "silent_h": silent, "allowed_h": allowed})
+    return overdue, len(latest)
+
+
+def send_liveness_alert(overdue):
+    rows = ""
+    for o in sorted(overdue, key=lambda x: -(x["silent_h"] or 1e9)):
+        silent = "never recorded a run" if o["silent_h"] is None \
+            else f'{o["silent_h"]:.1f}h ago'
+        rows += (f'<tr><td><code>{o["script"]}</code></td><td>{silent}</td>'
+                 f'<td>{o["allowed_h"]}h</td></tr>')
+    n = len(overdue)
+    html = f"""<h3>{n} script{"s" if n != 1 else ""} did not check in</h3>
+    <p>These wrote no row to <code>automation_runs</code> inside their expected
+    window. This is the failure <code>notify-failure.yml</code> cannot see: it
+    only fires when a workflow <i>runs and fails</i>, so a dropped cron, a
+    <code>startup_failure</code>, or a workflow auto-disabled for repo
+    inactivity produces no alert at all.</p>
+    <table border="1" cellpadding="6" cellspacing="0">
+    <tr><th>Script</th><th>Last check-in</th><th>Allowed silence</th></tr>
+    {rows}</table>
+    <p>Check the workflow is still <b>active</b> first
+    (<code>gh api repos/emontenegro-bh/blackhill-lead-monitor/actions/workflows</code>)
+    -- GitHub disables scheduled workflows in repos with no recent commits, and
+    it does so quietly.</p>"""
+    return send_html(f"[ALERT] {n} script(s) stopped checking in", html)
+
+
+def maybe_send_heartbeat(state, now):
+    """Weekly proof of life. Mutates and returns True if sent.
+
+    A silent monitor and a dead monitor look identical, which is the whole
+    problem automation_runs was built to fix -- one level up. Without this,
+    the absence of alerts cannot be distinguished from the absence of a sweep.
+    """
+    last = state.get("last_heartbeat")
+    if last:
+        try:
+            if (now - datetime.fromisoformat(last)).days < HEARTBEAT_DAYS:
+                return False
+        except ValueError:
+            pass  # unparseable stamp: send, and overwrite it with a good one
+
+    since = (now - timedelta(days=HEARTBEAT_DAYS)).isoformat()
+    tally = db.run_counts_since(since)
+    watched = [s for s in EXPECTED_CADENCE_HOURS if s not in ON_DEMAND_SCRIPTS]
+    latest = db.latest_run_times(watched)
+
+    rows = ""
+    for script in sorted(watched):
+        t = tally.get(script, {})
+        ok, err = t.get("ok", 0), t.get("error", 0)
+        stamp = latest.get(script)
+        age = "never" if not stamp else \
+            f'{(now - datetime.fromisoformat(stamp)).total_seconds()/3600:.1f}h ago'
+        flag = "" if stamp and ok else ' style="background:#fde8e8"'
+        rows += (f'<tr{flag}><td><code>{script}</code></td><td>{ok}</td>'
+                 f'<td>{err}</td><td>{age}</td></tr>')
+
+    total = sum(v.get("ok", 0) + v.get("error", 0) for v in tally.values())
+    errs = sum(v.get("error", 0) for v in tally.values())
+    html = f"""<h3>Automation heartbeat, last {HEARTBEAT_DAYS} days</h3>
+    <p><b>{total:,} runs recorded, {errs} error{"s" if errs != 1 else ""}</b>
+    across {len(tally)} scripts.</p>
+    <table border="1" cellpadding="6" cellspacing="0">
+    <tr><th>Script</th><th>OK</th><th>Errors</th><th>Last run</th></tr>
+    {rows}</table>
+    <p>This email exists so silence means something. Every other alert here is
+    silent-unless-broken, which cannot distinguish "nothing is wrong" from
+    "the thing that checks is itself dead". If a week passes with no
+    heartbeat, the monitoring stopped, not the problems.</p>
+    <p><b>Coverage:</b> {len(watched)} scripts are checked here.
+    {UNTRACKED_SCHEDULED} other scheduled scripts are <i>not</i> -- they do not
+    write to <code>automation_runs</code>, so this all-clear says nothing about
+    them. The riskiest is <code>crew-location.py</code>, whose only trigger is
+    an external cron-job.org POST: if that service stops, no GitHub workflow
+    ever starts and no failure alert can fire. See UNTRACKED_SCHEDULED in
+    <code>startup-failure-sweep.py</code> for the full list.</p>"""
+
+    if send_html(f"Automation heartbeat: {total:,} runs, {errs} errors", html):
+        state["last_heartbeat"] = now.isoformat()
+        return True
+    return False
+
+
 def send_email(found, unchecked):
     sender = os.environ.get("GMAIL_EMAIL")
     password = os.environ.get("GMAIL_APP_PASSWORD")
@@ -197,6 +410,56 @@ def main():
 
     state = load_state()
     reported = state.get("reported", {})
+
+    # --- Liveness and heartbeat -------------------------------------------
+    # Run before the GitHub sweep, because that sweep has early returns and a
+    # sys.exit() path. Putting these after them means a GitHub API outage also
+    # silences the check that watches for scripts going quiet, which is the
+    # one failure the two are least likely to share a cause with.
+    dirty = False
+    try:
+        overdue, checked_in = check_liveness(now)
+        print(f"Liveness: {checked_in}/{len(EXPECTED_CADENCE_HOURS)} scripts "
+              f"checked in, {len(overdue)} overdue.")
+
+        # Re-alert at most daily per script. Overdue is a standing condition,
+        # not an event: this sweep runs twice an hour, so alerting on every
+        # pass would send 48 identical emails a day about one dead cron and
+        # guarantee the next real one gets filtered.
+        alerted = state.get("liveness_alerted", {})
+        fresh = []
+        for o in overdue:
+            prev = alerted.get(o["script"])
+            if prev:
+                try:
+                    if (now - datetime.fromisoformat(prev)).total_seconds() < 86400:
+                        continue
+                except ValueError:
+                    pass
+            fresh.append(o)
+
+        if fresh and send_liveness_alert(fresh):
+            for o in fresh:
+                alerted[o["script"]] = now.isoformat()
+            dirty = True
+        # Clear the flag once a script starts reporting again, so its next
+        # outage alerts immediately instead of waiting out a stale 24h window.
+        still = {o["script"] for o in overdue}
+        for name in [k for k in alerted if k not in still]:
+            del alerted[name]
+            dirty = True
+        state["liveness_alerted"] = alerted
+
+        if maybe_send_heartbeat(state, now):
+            print("Heartbeat sent.")
+            dirty = True
+    except Exception as e:
+        # Never let the liveness extras take down the startup-failure sweep,
+        # which is the older and more load-bearing job of the two.
+        print(f"WARNING: liveness/heartbeat step failed: {e}")
+
+    if dirty:
+        save_state(state)
 
     found, unchecked, errors = [], [], []
     for repo, visibility in REPOS:
