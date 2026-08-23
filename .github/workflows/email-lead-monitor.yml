@@ -53,7 +53,7 @@ jobs:
 
   notify-failure:
     needs: [monitor]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Email Lead Monitor"

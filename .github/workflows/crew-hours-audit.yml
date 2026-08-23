@@ -42,7 +42,7 @@ jobs:
 
   notify-failure:
     needs: [audit]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Crew Hours Audit"

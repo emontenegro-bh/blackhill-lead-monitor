@@ -40,7 +40,7 @@ jobs:
 
   notify-failure:
     needs: [match]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Lead Fuzzy Match"

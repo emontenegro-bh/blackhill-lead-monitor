@@ -69,7 +69,7 @@ jobs:
 
   notify-failure:
     needs: [report]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Weekly Local SEO Health Check"

@@ -52,7 +52,7 @@ jobs:
 
   notify-failure:
     needs: [scan]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "City Bid Monitor"

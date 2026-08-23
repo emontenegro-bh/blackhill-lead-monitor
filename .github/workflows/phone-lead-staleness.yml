@@ -50,7 +50,7 @@ jobs:
 
   notify-failure:
     needs: check
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: Phone Lead Staleness Alert

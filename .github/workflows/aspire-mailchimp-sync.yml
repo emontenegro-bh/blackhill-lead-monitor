@@ -45,7 +45,7 @@ jobs:
 
   notify-failure:
     needs: [sync]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Aspire to Mailchimp Sync"

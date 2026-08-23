@@ -55,7 +55,7 @@ jobs:
 
   notify-failure:
     needs: [briefing]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Morning Briefing"

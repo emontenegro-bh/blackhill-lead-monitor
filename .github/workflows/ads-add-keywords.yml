@@ -48,7 +48,7 @@ jobs:
 
   notify-failure:
     needs: [add-keywords]
-    if: failure()
+    if: failure() || cancelled()
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Google Ads Add Keywords"
