@@ -1,0 +1,73 @@
+name: Lint - no state written into the repo
+
+# Runs on every push and PR. This is the rule that makes Supabase the default
+# rather than a convention 16 scripts happen to follow.
+#
+# Phase 0 moved all automation state out of the repo, which removed ~78 bot
+# commits a day from main and fixed a read-modify-write race that was
+# double-emailing customers. Nothing enforced it, though: a new script writing
+# a JSON file into data/ would work perfectly and go unnoticed for months,
+# which is exactly how the repo got that way the first time.
+#
+# The check earned its place immediately. On its first run it found two
+# scripts still writing state that a manual audit had missed:
+# gbp-scheduled-poster (the post queue) and phone-lead-staleness-check (its
+# alert dedupe).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**.py'
+      - '.github/workflows/lint-no-repo-state.yml'
+  pull_request:
+    paths:
+      - 'scripts/**.py'
+  workflow_dispatch: {}
+
+concurrency:
+  group: lint-no-repo-state-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      # No dependencies: the checker is stdlib ast only, so this stays fast
+      # enough that nobody is tempted to skip it.
+      - name: Check for state written into the repo
+        run: python scripts/check-no-repo-state.py --list
+
+      # Compiling against 3.11 specifically. Local machines here run 3.14, and
+      # a backslash inside an f-string expression is legal there and a
+      # SyntaxError in CI (PEP 701). That exact difference has already shipped
+      # a broken script to main once.
+      - name: Compile every script on CI's Python
+        run: |
+          fail=0
+          for f in scripts/*.py; do
+            python -m py_compile "$f" || { echo "FAILED: $f"; fail=1; }
+          done
+          exit $fail
+
+  notify-failure:
+    needs: [lint]
+    # `|| cancelled()` because a job killed by timeout-minutes concludes
+    # `cancelled`, not `failure`, and plain `if: failure()` cannot see it.
+    # That blind spot hid six silent seo-audit timeouts between June and
+    # August 2026.
+    if: failure() || cancelled()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Lint - no state written into the repo"
+    secrets: inherit

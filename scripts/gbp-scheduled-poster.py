@@ -19,20 +19,22 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db
 
-QUEUE_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)),
-    "data", "gbp", "scheduled-posts", "queue.json"
-)
+STATE_NAME = "gbp-scheduled-poster"
+
+# Photos still live on disk under data/gbp/scheduled-posts/photos/ -- those are
+# assets, not state, and are meant to be in the repo. Only the queue moved.
 
 
 def load_queue():
-    with open(QUEUE_FILE) as f:
-        return json.load(f)
+    # No try/except. An empty queue is not a safe default: the poster would
+    # find nothing to publish, print a cheerful "nothing scheduled", and exit
+    # 0, so a database problem would look exactly like a quiet week. Missing a
+    # GBP post is minor; not knowing you missed it is the part that compounds.
+    return db.load_state(STATE_NAME, default={"queue": []})["queue"]
 
 
 def save_queue(queue):
-    with open(QUEUE_FILE, "w") as f:
-        json.dump(queue, f, indent=2)
+    db.save_state(STATE_NAME, {"queue": queue})
 
 
 def list_queue(queue):
