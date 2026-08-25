@@ -443,6 +443,36 @@ def lead_id_by_source(source_system, source_ids):
     return out
 
 
+def leads_with_aspire_contact(limit=5000):
+    """Leads linked to an Aspire contact, with their Lead Source baseline."""
+    return _request(
+        "GET",
+        "leads?aspire_contact_id=not.is.null"
+        "&select=id,aspire_contact_id,aspire_lead_source,aspire_lead_source_first_seen"
+        f"&order=id.asc&limit={int(limit)}",
+    )
+
+
+def set_lead_source_baseline(pairs):
+    """Stamp first-observed Lead Source on leads that have none yet.
+
+    The ONLY write this module makes to an existing `leads` row, and it is
+    still not a rewrite of history: it fills a column that was empty because
+    nothing had looked yet. Once stamped it is never touched again -- later
+    values go to lead_source_history, so the pair reads as "what it was first
+    seen as" plus "every time it changed since".
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    for lead_id, value in pairs:
+        _request(
+            "PATCH",
+            f"leads?id=eq.{_q(lead_id)}&aspire_lead_source_first_seen=is.null",
+            body={"aspire_lead_source": value,
+                  "aspire_lead_source_first_seen": now},
+            prefer="return=minimal",
+        )
+
+
 def record_lead_source_change(lead_id, old_value, new_value, note=None):
     """Append a change row. Caller decides what counts as a change."""
     _request("POST", "lead_source_history", body=[{
