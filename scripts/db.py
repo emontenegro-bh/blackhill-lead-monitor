@@ -383,6 +383,76 @@ def latest_run_times(scripts):
     return out
 
 
+LEAD_COLUMNS = (
+    "source_system", "source_id", "captured_at", "name", "email", "phone",
+    "lead_type", "traffic_source", "campaign", "landing_page",
+    "aspire_contact_id", "aspire_lead_source", "aspire_lead_source_first_seen",
+    "raw",
+)
+
+
+def upsert_leads(rows, chunk=200):
+    """Insert leads, ignoring any whose (source_system, source_id) already exists.
+
+    Deliberately ignore-on-conflict rather than merge-duplicates. `leads` is
+    append-only: a row records what was true when the lead arrived, so a later
+    run must never overwrite it with today's version of the same fields. If
+    something genuinely changed, that belongs in lead_source_history.
+
+    Rows are normalised to the full column set because PostgREST rejects a
+    batch whose objects have different keys ("All object keys must match"),
+    and a ragged batch is easy to build by accident from optional fields.
+    """
+    if not rows:
+        return 0
+    written = 0
+    for i in range(0, len(rows), chunk):
+        batch = []
+        for r in rows[i:i + chunk]:
+            batch.append({c: r.get(c) for c in LEAD_COLUMNS})
+        got = _request(
+            "POST",
+            "leads?on_conflict=source_system,source_id",
+            body=batch,
+            prefer="resolution=ignore-duplicates,return=representation",
+        )
+        written += len(got or [])
+    return written
+
+
+def lead_id_by_source(source_system, source_ids):
+    """{source_id: leads.id} for ids already present. Used to attach history."""
+    out = {}
+    ids = list(source_ids)
+    for i in range(0, len(ids), 100):
+        chunk = ids[i:i + 100]
+        joined = ",".join('"' + s + '"' for s in chunk)
+        # Quote outside the f-string. CI runs 3.11, where a backslash inside
+        # an f-string expression is a SyntaxError; it is legal from 3.12
+        # (PEP 701), which is why this compiles fine on a 3.14 laptop. Same
+        # trap as _read_batches above -- it has now bitten twice.
+        encoded = urllib.parse.quote(joined, safe='(),"')
+        rows = _request(
+            "GET",
+            f"leads?source_system=eq.{_q(source_system)}"
+            f"&source_id=in.({encoded})"
+            "&select=id,source_id&limit=1000",
+        )
+        for r in rows:
+            out[r["source_id"]] = r["id"]
+    return out
+
+
+def record_lead_source_change(lead_id, old_value, new_value, note=None):
+    """Append a change row. Caller decides what counts as a change."""
+    _request("POST", "lead_source_history", body=[{
+        "lead_id": lead_id,
+        "old_value": old_value,
+        "new_value": new_value,
+        "note": note,
+    }], prefer="return=minimal")
+
+
 def succeeded_since(script, since_iso):
     """True if `script` has a run with status 'ok' at or after since_iso.
 
