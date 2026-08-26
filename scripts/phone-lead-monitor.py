@@ -393,9 +393,10 @@ def wc_attribution(lead):
 
     The reverse arrangement raced and lost data. whatconverts-lead-monitor.py learns
     the source seconds after the call ends and tries to stamp it on an Aspire contact
-    that does not exist yet, because Carlos creates that contact whenever he gets to
-    the form. Attribution that could not land was queued and then discarded after
-    24h: contacts 2788, 2815 and 2798 lost real Google Organic / GBP / Google Ads
+    that does not exist yet. That contact is created from THIS form, so it does not
+    appear until Carlos submits a row and the poll picks it up, which can be hours or
+    days after the call -- longer than the 24h the attribution used to survive.
+    Contacts 2788, 2815 and 2798 lost real Google Organic / GBP / Google Ads
     attribution that way in Aug 2026.
 
     Here both facts already exist. The call is in WhatConverts and the contact is

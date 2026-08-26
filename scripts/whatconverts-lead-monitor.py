@@ -1512,7 +1512,8 @@ def stamp_aspire_lead_source(config, phone, value, note):
 
     Returns one of:
       ("updated", contact_url)  — found and stamped
-      ("not_found", None)       — admin hasn't created the contact yet; caller should defer
+      ("not_found", None)       — no contact yet (the intake form row has not been
+                                 processed); caller should defer
       (None, None)              — call failed / Aspire disabled
     """
     aspire_cfg = config.get("aspire", {})
@@ -1547,7 +1548,7 @@ def stamp_aspire_lead_source(config, phone, value, note):
                 log(f"  Aspire: Lead Source '{value}' stamped on {url}")
                 return "updated", url
             if action == "not_found":
-                log(f"  Aspire: No contact yet for {phone} (admin hasn't entered it)")
+                log(f"  Aspire: No contact yet for {phone} (intake form not submitted/polled yet)")
                 return "not_found", None
             log(f"  Aspire: {response.get('message') or response}")
             return None, None
@@ -1687,7 +1688,7 @@ def send_unattributed_call_notification(config, entry):
 
     html = f"""<html><body style="font-family: Arial, sans-serif; font-size: 11pt; color: #333;">
 <h2 style="color: #C9700B;">Unattributed Phone Call — No Aspire Contact After {PENDING_ATTRIBUTION_NOTIFY_HOURS}h</h2>
-<p>A WhatConverts phone call has been waiting {PENDING_ATTRIBUTION_NOTIFY_HOURS} hours for the branch admin to create the Aspire contact. Lead source attribution could not be recorded.</p>
+<p>A WhatConverts phone call has been waiting {PENDING_ATTRIBUTION_NOTIFY_HOURS} hours for a matching Aspire contact. The contact is created from the phone intake form, so this usually means no form was submitted for this call. Lead source attribution is being held, not discarded.</p>
 <table style="font-size: 10pt; margin-bottom: 12px;">
 <tr><td style="padding: 4px 12px 4px 0;"><strong>WC Lead</strong></td><td><a href="{wc_link}">#{wc_id}</a></td></tr>
 <tr><td style="padding: 4px 12px 4px 0;"><strong>Caller</strong></td><td>{caller}</td></tr>
@@ -1903,7 +1904,8 @@ def process_leads(config, state):
                 note=lead["attribution_note"],
             )
             if action == "not_found":
-                # Admin hasn't entered the contact in Aspire yet — queue for retry next run.
+                # No Aspire contact yet: the intake form creates it, and that row may not
+                # be submitted or polled for hours. Queue for retry.
                 pending = state.setdefault("pending_call_attributions", {})
                 existing = pending.get(lead_id, {})
                 pending[lead_id] = {
