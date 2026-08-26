@@ -17,6 +17,9 @@ Returns JSON to stdout:
 
 import json, os, sys, urllib.request, urllib.error, urllib.parse, re
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lead_source_map
+
 CONFIG_FILE = os.path.expanduser("~/.config/aspire/config.json")
 TOKEN_CACHE = os.path.expanduser("~/.config/aspire/api-token.json")
 DRY_RUN = "--dry-run" in sys.argv
@@ -27,8 +30,12 @@ OWNER_EVELIN_CONTACT_ID = 6
 OWNER_DENISSE_CONTACT_ID = 5
 BRANCH_MAIN_ID = 2
 
-# ContactCustomFieldDefinitionID for the "Lead Source" picklist (looked up 2026-05-13)
-LEAD_SOURCE_DEFINITION_ID = 34
+# Picklist values and the WhatConverts mapping live in lead_source_map.py -- read
+# the note there before touching any Lead Source string. Short version: Aspire
+# accepts an off-picklist value, returns 200, and silently stores "", and the
+# "Phone Call " option carries a trailing space.
+LEAD_SOURCE_DEFINITION_ID = lead_source_map.DEFINITION_ID
+LEAD_SOURCE_PHONE_CALL = lead_source_map.PHONE_CALL
 
 ASPIRE_PORTAL = "https://cloud.youraspire.com"
 
@@ -266,8 +273,20 @@ def _stamp_attribution(contact_id, lead, config, token):
     out = {}
     value = lead.get("lead_source_aspire")
     if value:
-        ok, msg = set_lead_source(contact_id, value, config, token)
-        out["lead_source"] = msg if ok else f"FAILED: {msg}"
+        # WhatConverts owns attribution: it is the only caller that knows whether a
+        # call came from GBP, Google Ads, Bing, a referral, etc. A caller that only
+        # knows the channel (the phone intake form, which can offer nothing better
+        # than "Phone Call ") sets lead_source_only_if_empty and defers to whatever
+        # WhatConverts already resolved, rather than overwriting a real source with
+        # a catch-all.
+        if lead.get("lead_source_only_if_empty"):
+            current = (get_lead_source_row(contact_id, config, token) or {}).get("ColumnValue") or ""
+            if current.strip():
+                out["lead_source"] = f"kept existing '{current}' (deferred to WhatConverts)"
+                value = None
+        if value:
+            ok, msg = set_lead_source(contact_id, value, config, token)
+            out["lead_source"] = msg if ok else f"FAILED: {msg}"
     note = lead.get("attribution_note")
     if note:
         ok, msg = append_contact_note(contact_id, note, config, token)
@@ -371,9 +390,18 @@ def set_lead_source(contact_id, value, config, token):
         resp, status = api_request("PUT", "/ContactCustomFields", config, token, body)
     else:
         resp, status = api_request("POST", "/ContactCustomFields", config, token, body)
-    if status in (200, 201):
-        return True, f"Lead Source set to '{value}'"
-    return False, f"Lead Source write failed ({status}): {resp}"
+    if status not in (200, 201):
+        return False, f"Lead Source write failed ({status}): {resp}"
+
+    # Read back. A 200 proves nothing here: an off-picklist value is accepted and
+    # stored as "". This check is the only thing that distinguishes a real write
+    # from a silent coercion, and its absence is why the blank fields went
+    # unnoticed for three months.
+    stored = (get_lead_source_row(contact_id, config, token) or {}).get("ColumnValue")
+    if stored != value:
+        return False, (f"Lead Source silently rejected: sent {value!r}, Aspire stored "
+                       f"{stored!r}. Value must match a picklist option verbatim.")
+    return True, f"Lead Source set to '{value}'"
 
 
 def append_contact_note(contact_id, note_line, config, token):

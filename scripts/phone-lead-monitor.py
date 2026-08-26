@@ -7,7 +7,8 @@ workbook in Evelin's OneDrive. This script polls that workbook and, for each new
   1. Parses the caller's details + which staffer took the call (Record-name stamp)
   2. Auto-assigns an owner with the SAME rules as the web-form monitor
      (irrigation -> Denisse, commercial maintenance -> Evelin, else round-robin)
-  3. Creates the contact in Aspire (tagged Lead Source "Phone Call")
+  3. Creates the contact in Aspire (Lead Source "Phone Call " only as a fallback;
+     WhatConverts is authoritative and its attribution is never overwritten)
   4. Creates contact + deal in HubSpot (source phone_call)
   5. Notifies the assigned owner by email + posts a Teams card, exactly like web leads
 
@@ -23,13 +24,14 @@ Usage:
     python3 phone-lead-monitor.py --status   # Show processing stats
 """
 
-import json, logging, os, signal, smtplib, subprocess, sys, urllib.request, urllib.error, urllib.parse
+import base64, json, logging, os, re, signal, smtplib, subprocess, sys, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db
+import lead_source_map
 
 signal.alarm(120) if hasattr(signal, "alarm") else None
 
@@ -47,6 +49,20 @@ ASPIRE_SYNC = os.path.join(SCRIPT_DIR, "aspire-api-sync.py")
 HUBSPOT_SYNC = os.path.join(SCRIPT_DIR, "hubspot-sync.py")
 
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
+
+# --- WhatConverts attribution ---
+# WhatConverts is the only system that knows where a call actually came from: it
+# sees which tracking number was dialled. The intake form never asks the caller.
+WC_CONFIG_FILE = os.path.expanduser("~/.config/whatconverts/config.json")
+WC_API_BASE = "https://app.whatconverts.com/api/v1"
+
+# How far before the form submission to look for the matching call. Wide enough to
+# absorb Carlos filling the form after hanging up plus the Power Automate -> Excel
+# -> poll lag; tight enough that a repeat caller months later cannot inherit an old
+# call's attribution. The forward allowance covers a form submitted mid-call, before
+# WhatConverts has closed out the call record.
+WC_MATCH_WINDOW_HOURS = 48
+WC_MATCH_FORWARD_HOURS = 2
 
 # --- Owner assignment (mirrors whatconverts-lead-monitor.py) ---
 OWNER_EVELIN_HUBSPOT_ID = "88710208"
@@ -325,6 +341,122 @@ def assign_lead_owner(lead, state):
     return owners[next_index]
 
 
+# --- WhatConverts attribution lookup ---
+
+def _wc_credentials():
+    """(token, secret) from CI env or the local config, or (None, None)."""
+    token, secret = os.environ.get("WC_API_TOKEN"), os.environ.get("WC_API_SECRET")
+    if token and secret:
+        return token, secret
+    try:
+        with open(WC_CONFIG_FILE) as f:
+            cfg = json.load(f)
+        return cfg.get("api_token"), cfg.get("api_secret")
+    except Exception:
+        return None, None
+
+
+def _wc_get(token, secret, endpoint, params):
+    url = f"{WC_API_BASE}{endpoint}?" + urllib.parse.urlencode(params)
+    cred = base64.b64encode(f"{token}:{secret}".encode()).decode()
+    req = urllib.request.Request(url, headers={
+        "Authorization": f"Basic {cred}", "Accept": "application/json"})
+    # Deliberately shorter than the WhatConverts monitor's 45s. This whole script
+    # runs under signal.alarm(120), and a slow WhatConverts must not eat the budget
+    # the Aspire/HubSpot writes and notifications still need. Timing out here costs
+    # attribution on one lead; timing out the run loses the lead.
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read().decode())
+
+
+def _phone_digits(value):
+    """Last 10 digits, so '+18179362560' and '817-936-2560' compare equal."""
+    return re.sub(r"\D", "", value or "")[-10:]
+
+
+def _parse_ts(value):
+    try:
+        ts = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+    return ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
+
+
+def wc_attribution(lead):
+    """Resolve this call's real Lead Source from WhatConverts. Returns (value, note).
+
+    Returns (None, "") when there is no matching call, when the match is
+    direct/unknown traffic, or when WhatConverts cannot be reached -- the caller
+    then falls back to the "Phone Call " catch-all.
+
+    WHY THIS IS A PULL, NOT A PUSH
+
+    The reverse arrangement raced and lost data. whatconverts-lead-monitor.py learns
+    the source seconds after the call ends and tries to stamp it on an Aspire contact
+    that does not exist yet, because Carlos creates that contact whenever he gets to
+    the form. Attribution that could not land was queued and then discarded after
+    24h: contacts 2788, 2815 and 2798 lost real Google Organic / GBP / Google Ads
+    attribution that way in Aug 2026.
+
+    Here both facts already exist. The call is in WhatConverts and the contact is
+    being written right now, so there is nothing to wait for and nothing to expire.
+    """
+    token, secret = _wc_credentials()
+    if not (token and secret):
+        log.warning("  WhatConverts credentials unavailable; using Phone Call fallback")
+        return None, ""
+    digits = _phone_digits(lead.get("phone"))
+    if not digits:
+        return None, ""
+
+    when = _parse_ts(lead.get("completion")) or datetime.now(timezone.utc)
+    earliest = when - timedelta(hours=WC_MATCH_WINDOW_HOURS)
+    latest = when + timedelta(hours=WC_MATCH_FORWARD_HOURS)
+
+    # The API filters by calendar date, so ask for whole days and apply the real
+    # window below.
+    leads, page = [], 1
+    try:
+        while True:
+            data = _wc_get(token, secret, "/leads", {
+                "start_date": earliest.date().isoformat(),
+                "end_date": latest.date().isoformat(),
+                "leads_per_page": 250,
+                "page_number": page,
+            })
+            batch = data.get("leads", []) if isinstance(data, dict) else []
+            leads.extend(batch)
+            if page >= (data or {}).get("total_pages", 1) or not batch:
+                break
+            page += 1
+    except Exception as e:
+        log.warning(f"  WhatConverts lookup failed ({e}); using Phone Call fallback")
+        return None, ""
+
+    matches = []
+    for wc in leads:
+        if _phone_digits(wc.get("phone_number") or wc.get("caller_number")) != digits:
+            continue
+        ts = _parse_ts(wc.get("date_created"))
+        if ts and earliest <= ts <= latest:
+            matches.append((ts, wc))
+    if not matches:
+        log.info(f"  WhatConverts: no call matching {lead.get('phone')} in the "
+                 f"{WC_MATCH_WINDOW_HOURS}h before this form; using Phone Call fallback")
+        return None, ""
+
+    # Nearest call at or before the form submission -- the one Carlos just took.
+    ts, wc = max(matches, key=lambda m: m[0])
+    value = lead_source_map.from_whatconverts(wc.get("lead_source"), wc.get("lead_medium"))
+    if not value:
+        log.info(f"  WhatConverts: WC #{wc.get('lead_id')} is direct/unknown "
+                 f"({wc.get('lead_source')!r}/{wc.get('lead_medium')!r}); "
+                 f"using Phone Call fallback")
+        return None, ""
+    log.info(f"  WhatConverts: WC #{wc.get('lead_id')} -> Lead Source '{value}'")
+    return value, f"WC #{wc.get('lead_id')} | {value}"
+
+
 # --- CRM writes ---
 
 def _run_sync(script_path, lead):
@@ -341,6 +473,14 @@ def _run_sync(script_path, lead):
 
 
 def create_aspire_contact(lead, aspire_owner_id):
+    # WhatConverts decides. Only when it has no attributable call for this number do
+    # we fall back to naming the channel.
+    resolved, wc_note = wc_attribution(lead)
+    note = (f"Phone lead taken by {lead.get('taken_by', 'Office')}. "
+            f"Service requested: {lead.get('service_interest', 'General Inquiry')}.")
+    if wc_note:
+        note += f" {wc_note}"
+
     payload = {
         "first_name": lead["first_name"],
         "last_name": lead["last_name"],
@@ -354,9 +494,13 @@ def create_aspire_contact(lead, aspire_owner_id):
         "zip": lead.get("zip", ""),
         "service_interest": lead.get("service_interest", ""),
         "_assigned_aspire_owner_id": aspire_owner_id,
-        "lead_source_aspire": "Phone Call",
-        "attribution_note": f"Phone lead taken by {lead.get('taken_by', 'Office')}. "
-                            f"Service requested: {lead.get('service_interest', 'General Inquiry')}.",
+        # A source WhatConverts actually resolved is authoritative and should
+        # correct whatever is on the contact. The "Phone Call " catch-all is only a
+        # guess about a call we could not attribute, so it defers to any real value
+        # already there rather than overwriting it.
+        "lead_source_aspire": resolved or lead_source_map.PHONE_CALL,
+        "lead_source_only_if_empty": resolved is None,
+        "attribution_note": note,
     }
     return _run_sync(ASPIRE_SYNC, payload)
 

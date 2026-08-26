@@ -23,6 +23,7 @@ from email.mime.multipart import MIMEMultipart
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db
+import lead_source_map
 
 # --- Timeout guard (120s) ---
 TIMEOUT_SECONDS = 120
@@ -1212,31 +1213,20 @@ def send_auto_reply(config, lead):
 def _aspire_lead_source(lead):
     """Map WC (lead_source, lead_medium) to the exact Aspire LeadSource picklist value.
 
-    Picklist values (verbatim, including the trailing space on 'Phone Call '):
-    'Phone Call ', 'Website', 'Referral', 'Bing Organic', 'Bing Ads',
-    'Google Organic', 'Google Ads', 'Google Business Profile'.
+    The values and the mapping live in lead_source_map.py. They used to be spelled
+    out here, and the trailing space on 'Phone Call ' was fixed here only -- which
+    is exactly how phone-lead-monitor.py went on writing 'Phone Call' and blanking
+    six contacts. Import, do not copy.
     """
-    is_call = lead.get("source") == "phone_call"
-    src = (lead.get("lead_source_raw") or "").lower().strip()
-    med = (lead.get("lead_medium_raw") or "").lower().strip()
-
-    # GBP — WC tags map-pack calls/clicks with lead_source='gmb'
-    if src == "gmb":
-        return "Google Business Profile"
-    if src == "google" and med == "cpc":
-        return "Google Ads"
-    if src == "google" and med == "organic":
-        return "Google Organic"
-    if src == "bing" and med == "cpc":
-        return "Bing Ads"
-    if src == "bing" and med == "organic":
-        return "Bing Organic"
-    if med == "referral":
-        return "Referral"
-    # Direct/unknown: phone calls bucket into the catch-all 'Phone Call '
-    if is_call:
-        return "Phone Call "  # NOTE: trailing space matches Aspire picklist exactly
-    return "Website"
+    resolved = lead_source_map.from_whatconverts(
+        lead.get("lead_source_raw"), lead.get("lead_medium_raw"))
+    if resolved:
+        return resolved
+    # Direct/unknown is the absence of a source. A call is at least a call;
+    # anything else arrived through the site.
+    if lead.get("source") == "phone_call":
+        return lead_source_map.PHONE_CALL
+    return lead_source_map.WEBSITE
 
 
 def _attribution_note(lead):
@@ -1677,6 +1667,10 @@ def assign_lead_owner(lead, state):
 # --- Main Processing ---
 
 PENDING_ATTRIBUTION_NOTIFY_HOURS = 24
+# Once Evelin has been told, the entry stops being an active retry and becomes a
+# long-tail watch. Back off to hourly so a call that never becomes an Aspire
+# contact does not re-query Aspire on every 5-minute run for the rest of its life.
+PENDING_ATTRIBUTION_BACKOFF_MINUTES = 60
 
 
 def send_unattributed_call_notification(config, entry):
@@ -1723,7 +1717,15 @@ def send_unattributed_call_notification(config, entry):
 def retry_pending_call_attributions(config, state):
     """Re-attempt stamping Lead Source for phone calls the admin hadn't entered yet on previous runs.
 
-    After PENDING_ATTRIBUTION_NOTIFY_HOURS, email Evelin once (`notified=true`) and remove from queue.
+    After PENDING_ATTRIBUTION_NOTIFY_HOURS, email Evelin once (`notified=true`) and
+    then keep retrying on a slower cadence. The entry is never dropped: deleting it
+    discards the only record of where the call came from, which is how contacts
+    2788, 2815 and 2798 lost real Google Organic / GBP / Google Ads attribution in
+    Aug 2026 and had to be repaired by hand.
+
+    This queue is now a safety net rather than the main path -- phone-lead-monitor.py
+    resolves attribution itself when it creates the contact -- and it catches the
+    case that pull cannot: a tracked call that never became an Aspire contact at all.
     """
     pending = state.get("pending_call_attributions") or {}
     if not pending:
@@ -1736,6 +1738,17 @@ def retry_pending_call_attributions(config, state):
         except Exception:
             first_seen = now
         age_h = (now - first_seen).total_seconds() / 3600.0
+
+        if entry.get("notified"):
+            try:
+                last = datetime.fromisoformat(entry["last_attempt"])
+            except Exception:
+                last = None
+            if last and (now - last).total_seconds() < PENDING_ATTRIBUTION_BACKOFF_MINUTES * 60:
+                keep[wc_id] = entry
+                continue
+
+        entry["last_attempt"] = now.isoformat()
         action, _ = stamp_aspire_lead_source(config, entry["phone"], entry["value"], entry.get("note", ""))
         if action == "updated":
             log(f"  Pending: WC #{wc_id} stamped on retry (age {age_h:.1f}h)")
@@ -1743,8 +1756,8 @@ def retry_pending_call_attributions(config, state):
         if age_h >= PENDING_ATTRIBUTION_NOTIFY_HOURS and not entry.get("notified"):
             send_unattributed_call_notification(config, entry)
             entry["notified"] = True
-            # Notification sent — stop retrying and drop from queue.
-            continue
+            log(f"  Pending: WC #{wc_id} notified at {age_h:.1f}h; keeping and "
+                f"retrying hourly")
         entry["attempts"] = entry.get("attempts", 0) + 1
         keep[wc_id] = entry
     state["pending_call_attributions"] = keep
