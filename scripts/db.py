@@ -443,6 +443,23 @@ def lead_id_by_source(source_system, source_ids):
     return out
 
 
+def link_leads_to_contacts(pairs):
+    """Fill aspire_contact_id on leads that have none. Never overwrites.
+
+    Same discipline as set_lead_source_baseline: this fills a column that was
+    empty because nothing had looked yet, and the is.null guard in the URL
+    means a concurrent writer cannot be clobbered. A lead's capture-time facts
+    are still never touched.
+    """
+    for lead_id, contact_id in pairs:
+        _request(
+            "PATCH",
+            f"leads?id=eq.{_q(lead_id)}&aspire_contact_id=is.null",
+            body={"aspire_contact_id": str(contact_id)},
+            prefer="return=minimal",
+        )
+
+
 def leads_with_aspire_contact(limit=5000):
     """Leads linked to an Aspire contact, with their Lead Source baseline."""
     return _request(
