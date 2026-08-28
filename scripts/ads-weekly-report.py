@@ -32,6 +32,16 @@ warnings.filterwarnings("ignore")
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
+# No main() to wrap, so the run is opened here and closed at each
+# successful exit below. Anything that leaves without calling done()
+# is recorded as an error by db.track_flat's atexit hook.
+_run = db.track_flat("ads-weekly-report")
+
 # --- Config ---
 TO_EMAILS = ["evelin@blackhilltx.com", "Umair@blackhilltx.com", "afaq@blackhilltx.com"]
 TO_EMAIL = ", ".join(TO_EMAILS)  # comma-joined for the "To" header
@@ -1912,6 +1922,7 @@ if "--dry-run" in sys.argv:
     print("DRY RUN - report built successfully, email NOT sent")
     print("=" * 70)
     print(report_text)
+    _run.done()
     sys.exit(0)
 
 # Send email via Gmail
@@ -1919,6 +1930,7 @@ gmail_email = os.environ.get("GMAIL_EMAIL", "")
 gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
 if not gmail_email or not gmail_password:
     print("No GMAIL_EMAIL / GMAIL_APP_PASSWORD configured. Report saved but email not sent.")
+    _run.done()
     sys.exit(0)
 
 from email.utils import formataddr
@@ -1939,3 +1951,5 @@ try:
 except Exception as e:
     print(f"Email send failed: {e}")
     print("Report was saved to file but email delivery failed.")
+
+_run.done()

@@ -17,6 +17,7 @@ notifications to Evelin and Denisse.
 Phase 0 of docs/architecture/data-platform-plan.md.
 """
 
+import atexit
 import json
 import os
 import time
@@ -565,6 +566,52 @@ def run_counts_since(since_iso):
         d = tally.setdefault(r["script"], {"ok": 0, "error": 0, "running": 0})
         d[r["status"]] = d.get(r["status"], 0) + 1
     return tally
+
+
+class _FlatRun:
+    """Run handle for a script that has no main() to wrap.
+
+    track() needs a block to wrap. Several scripts here are flat top-level
+    code -- seo-audit is 947 lines of it -- and reindenting them into a
+    function just to get a run row is a large, risky diff for an observability
+    change.
+
+    So: open the row at import, and close it explicitly at each point the
+    script legitimately finishes. Anything that exits WITHOUT calling done()
+    is closed as an error by the atexit hook, which is the right default --
+    a crash, an unhandled exception, or a signal all leave via that path.
+
+    The failure mode this avoids is the opposite one: a naive atexit hook that
+    always records 'ok' would mark a crashed run successful, and a failure
+    written down as a success is worse than no record at all.
+    """
+
+    __slots__ = ("id", "_closed")
+
+    def __init__(self, run_id):
+        self.id = run_id
+        self._closed = False
+
+    def done(self, records=None):
+        """Call at each successful exit, including before sys.exit(0)."""
+        if self._closed:
+            return
+        self._closed = True
+        run_finish(self.id, "ok", records=records)
+
+    def _on_exit(self):
+        if self._closed:
+            return
+        self._closed = True
+        run_finish(self.id, "error",
+                   error="exited without reaching a successful end")
+
+
+def track_flat(script):
+    """Start a tracked run for a script with no main(). See _FlatRun."""
+    handle = _FlatRun(run_start(script))
+    atexit.register(handle._on_exit)
+    return handle
 
 
 class _Run:

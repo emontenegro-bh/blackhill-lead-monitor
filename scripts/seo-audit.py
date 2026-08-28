@@ -24,6 +24,16 @@ from email.utils import formataddr
 from datetime import datetime, date
 from html.parser import HTMLParser
 
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
+# No main() to wrap, so the run is opened here and closed at each
+# successful exit below. Anything that leaves without calling done()
+# is recorded as an error by db.track_flat's atexit hook.
+_run = db.track_flat("seo-audit")
+
 # --- Global timeout ---
 SCRIPT_TIMEOUT = 600
 def _timeout_handler(signum, frame):
@@ -926,6 +936,7 @@ gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
 
 if not gmail_email or not gmail_password:
     print("No GMAIL credentials configured. Report saved but email not sent.")
+    _run.done()
     sys.exit(0)
 
 msg = MIMEMultipart("alternative")
@@ -945,3 +956,5 @@ try:
 except Exception as e:
     print(f"Email send failed: {e}")
     print("Report was saved to file but email delivery failed.")
+
+_run.done()
