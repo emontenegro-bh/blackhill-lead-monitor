@@ -359,10 +359,35 @@ def send_liveness_alert(overdue):
     <table border="1" cellpadding="6" cellspacing="0">
     <tr><th>Script</th><th>Last check-in</th><th>Allowed silence</th></tr>
     {rows}</table>
-    <p>Check the workflow is still <b>active</b> first
-    (<code>gh api repos/emontenegro-bh/blackhill-lead-monitor/actions/workflows</code>)
-    -- GitHub disables scheduled workflows in repos with no recent commits, and
-    it does so quietly.</p>"""
+    <p><b>Check these in order.</b> The first is by far the most common cause
+    here, and the original version of this email did not mention it at all --
+    it led with auto-disabling, which is real but rare, and sent someone
+    looking in the wrong place.</p>
+    <ol>
+      <li><b>Is GitHub actually starting the workflow?</b> The runs may all be
+      succeeding and simply not happening often enough. GitHub delivers
+      scheduled workflows on a best-effort basis and drops them under load.
+      Measured on this repo 2026-08-27: dmarc-monitor ran 3 times against a
+      2-hourly schedule, and whatconverts-roi-sync and phone-lead-monitor both
+      ran at about 4% of their configured cadence. Compare the API's
+      <code>total_count</code> for the last day against what the cron asks for
+      -- and do not use <code>gh run list</code> for this, it caps at the
+      fetched page and undercounts.</li>
+      <li><b>Do two workflows share a cron minute?</b> They compete, and the
+      same one loses every time. email-lead-monitor sat on
+      <code>*/5</code> alongside lead-monitor and took 35 runs a day to its
+      twin's 325 for a week.</li>
+      <li><b>Is the workflow still active?</b>
+      <code>gh api repos/emontenegro-bh/blackhill-lead-monitor/actions/workflows</code>
+      -- GitHub disables scheduled workflows in repos with no recent commits,
+      quietly.</li>
+      <li><b>Did the script itself break?</b> Least likely, because a script
+      that runs and fails already emails via notify-failure. Silence here
+      usually means it never started.</li>
+    </ol>
+    <p>If the cause is throttling and the cadence genuinely cannot be met, the
+    honest fix is to change the cron to something GitHub will actually deliver,
+    not to widen this threshold until the alert stops.</p>"""
     return send_html(f"[ALERT] {n} script(s) stopped checking in", html)
 
 
