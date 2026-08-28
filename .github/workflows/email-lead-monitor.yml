@@ -2,7 +2,12 @@ name: Email Lead Monitor
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    # Offset by 2 minutes from lead-monitor.yml, which uses '*/5'.
+    # Both fired on the same minute and GitHub delivered one of them:
+    # over 2026-08-20..27 lead-monitor took ~325 runs/day while this one
+    # took ~35, decaying to 3. Scheduled workflows are best-effort and
+    # dropped under load, so two on the same minute compete and one loses.
+    - cron: '2-57/5 * * * *'
   workflow_dispatch: {}
 
 concurrency:

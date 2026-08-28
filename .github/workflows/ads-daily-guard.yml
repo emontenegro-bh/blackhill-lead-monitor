@@ -3,7 +3,9 @@ name: Google Ads Daily Guard
 on:
   schedule:
     # Daily 7:07 AM CDT = 12:07 UTC (off-:00 to avoid GH Actions cron drops)
-    - cron: '7 12 * * *'
+    # Moved off 12:07, which bid-monitor.yml also used. Same collision as
+    # email-lead-monitor: sharing a minute means one of them may be dropped.
+    - cron: '27 12 * * *'
   workflow_dispatch: {}
 
 concurrency:
