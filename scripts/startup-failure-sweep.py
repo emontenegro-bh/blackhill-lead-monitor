@@ -91,6 +91,10 @@ EXPECTED_CADENCE_HOURS = {
     "api-health-monitor": 14,
     # daily.
     "lead-fuzzy-match": 30,
+    "ads-daily-guard": 30,
+    "ads-weekly-report": 176,      # Sun 15:07
+    "seo-audit": 176,              # Mon 14:00
+    "phone-lead-reconcile": 30,    # daily 13:07, own name -- see the script
     "aspire-mailchimp-backfill": 30,
     "bid-monitor": 30,
     # cron 13 12 * * 1,4 -- Monday and Thursday. Thu -> Mon is 96h.
@@ -118,32 +122,19 @@ WEEKDAY_ONLY = {"crew-location", "phone-lead-staleness-check"}
 # overdue. Empty today; kept as the documented place to put one.
 ON_DEMAND_SCRIPTS = set()
 
-# KNOWN BLIND SPOTS -- scheduled work this check still cannot see, because the
-# script is not wrapped in db.track(). Listed rather than silently omitted, so
-# the heartbeat's "all clear" is honest about its own coverage.
-# Audited 2026-08-22, reduced from 10 to 4 on 2026-08-23.
+# KNOWN BLIND SPOTS -- none left among scheduled scripts as of 2026-08-27.
 #
-# All four are the same shape: flat top-level scripts with no main() to wrap,
-# or a branch sitting outside an existing wrapper. Each needs a small refactor
-# rather than two lines, which is why they were not done in the same pass.
+# All 20 scheduled scripts now write to automation_runs. The last four were
+# flat top-level code with no main() to wrap (seo-audit alone is 947 lines),
+# plus the --reconcile branch of phone-lead-monitor, which shared a tracked
+# name with the 30-minute monitor and so could have stopped entirely without
+# anyone noticing. They use db.track_flat(), which opens the run at import and
+# closes it at each successful exit; anything leaving by another path is
+# recorded as an error rather than silently as ok.
 #
-#   ads-daily-guard.py            daily 12:07 -- flat script, no main(). Also
-#                                 has legitimate early sys.exit(0) paths, so a
-#                                 naive atexit wrapper would record a clean
-#                                 guard run as an error.
-#   seo-audit.py                  Mon 14:00 -- flat script. Concluded
-#                                 `cancelled` on 6 of its last 12 scheduled
-#                                 runs; `cancelled` does not trigger
-#                                 if: failure(), so those silent no-ops
-#                                 notified nobody. Tracking it would catch
-#                                 exactly this.
-#   ads-weekly-report.py          Sun 15:07 -- flat script.
-#   phone-lead-monitor --reconcile  daily 13:07 -- the reconcile branch sits
-#                                 outside the db.track() wrapper, and a check
-#                                 keyed on the script name is satisfied by the
-#                                 30-minute monitor runs even if reconcile has
-#                                 stopped entirely. Needs its own tracked name.
-UNTRACKED_SCHEDULED = 4
+# qs-recheck is tracked but deliberately has no cadence entry: it runs once a
+# year on 1 April, and an 8760-hour threshold is a threshold in name only.
+UNTRACKED_SCHEDULED = 0
 #
 # qs-recheck.py is tracked but deliberately has no cadence entry: it runs once
 # a year on 1 April, and a 8760-hour threshold would be a threshold in name
@@ -276,7 +267,7 @@ def business_hours_between(start, end):
     return total
 
 
-def check_liveness(now):
+def check_liveness(now, state=None):
     """Scripts that should have checked in by now and have not.
 
     Returns (overdue, seen_count). `overdue` entries carry the script, hours
@@ -299,19 +290,40 @@ def check_liveness(now):
     # yet had a single working day in which to run.
     table_start = db.table_started_at()
 
+    # Per-script grace, not per-table.
+    #
+    # The table can be old while a script name is brand new -- adding
+    # ads-daily-guard to the cadence map on 2026-08-27 gave it zero rows
+    # against a 128h-old table, so the table-age guard let it straight
+    # through and it read as a dead daily job. Wrong, and exactly the kind
+    # of false alarm that teaches someone to ignore this email.
+    #
+    # So each script gets its own clock, started the first time it is seen
+    # here. Falls back to the table's age for scripts already established
+    # before this existed.
+    first_expected = dict((state or {}).get("first_expected") or {})
+
     overdue = []
     for script in watched:
         allowed = EXPECTED_CADENCE_HOURS[script]
         stamp = latest.get(script)
         if stamp is None:
-            if table_start is not None:
-                age = (business_hours_between(table_start, now)
+            if script not in first_expected:
+                first_expected[script] = now.isoformat()
+            try:
+                since = datetime.fromisoformat(first_expected[script])
+            except (TypeError, ValueError):
+                since = table_start
+            if since is None:
+                since = table_start
+            if since is not None:
+                age = (business_hours_between(since, now)
                        if script in WEEKDAY_ONLY
-                       else (now - table_start).total_seconds() / 3600)
+                       else (now - since).total_seconds() / 3600)
                 unit = " business h" if script in WEEKDAY_ONLY else "h"
                 if age < allowed:
-                    print(f"  {script}: no rows yet, but tracking is only "
-                          f"{age:.1f}{unit} old vs {allowed}h cadence "
+                    print(f"  {script}: no rows yet, but has only been watched "
+                          f"for {age:.1f}{unit} vs {allowed}h cadence "
                           f"-- not yet a fault")
                     continue
             overdue.append({"script": script, "silent_h": None, "allowed_h": allowed})
@@ -325,6 +337,8 @@ def check_liveness(now):
             overdue.append({"script": script, "silent_h": silent,
                             "allowed_h": allowed,
                             "weekday_only": script in WEEKDAY_ONLY})
+    if state is not None:
+        state["first_expected"] = first_expected
     return overdue, len(latest)
 
 
@@ -478,7 +492,8 @@ def main():
     # one failure the two are least likely to share a cause with.
     dirty = False
     try:
-        overdue, checked_in = check_liveness(now)
+        overdue, checked_in = check_liveness(now, state)
+        dirty = True   # first_expected may have gained an entry
         print(f"Liveness: {checked_in}/{len(EXPECTED_CADENCE_HOURS)} scripts "
               f"checked in, {len(overdue)} overdue.")
 

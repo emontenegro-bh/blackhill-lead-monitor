@@ -18,6 +18,11 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db
 
+# No main() to wrap, so the run is opened here and closed at each
+# successful exit below. Anything that leaves without calling done()
+# is recorded as an error by db.track_flat's atexit hook.
+_run = db.track_flat("ads-daily-guard")
+
 SCRIPT_TIMEOUT = 300
 signal.signal(signal.SIGALRM, lambda s, f: sys.exit("ERROR: guard timed out"))
 signal.alarm(SCRIPT_TIMEOUT)
@@ -165,6 +170,7 @@ db.save_state(STATE_NAME, {
 
 if not findings:
     print("Guard clean: no risky changes detected.")
+    _run.done()
     sys.exit(0)
 
 print(f"{len(findings)} finding(s):")
@@ -175,6 +181,7 @@ gmail_email = os.environ.get("GMAIL_EMAIL", "")
 gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
 if not gmail_email or not gmail_password:
     print("No Gmail credentials; findings printed only.")
+    _run.done()
     sys.exit(0)
 
 body_lines = ["The daily Google Ads guard found account changes that need your attention:\n"]
@@ -189,3 +196,5 @@ with smtplib.SMTP("smtp.gmail.com", 587, timeout=30) as server:
     server.login(gmail_email, gmail_password)
     server.sendmail(gmail_email, TO_EMAIL, msg.as_string())
 print("Alert email sent.")
+
+_run.done()
