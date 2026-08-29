@@ -88,16 +88,18 @@ EXPECTED_CADENCE_HOURS = {
     # catch a dead dispatcher within one working morning.
     "whatconverts-lead-monitor": 2,
     #
-    # lead-monitor (the sales@ mailbox pipeline) has NO dispatcher as of
-    # 2026-08-29 and survives on 1-3 scheduled runs a day, so a tight
-    # threshold here would alert every few hours about a known gap. 30h
-    # tolerates today's reality without going silent entirely.
+    # lead-monitor (the sales@ mailbox pipeline) got its own cron-job.org
+    # job "Email Lead Monitor 5min" on 2026-08-29, so it is now a 5-minute
+    # pipeline like its twin and the 30h placeholder is retired as planned.
     #
-    # WHEN THE cron-job.org JOB FOR email-lead-monitor.yml GOES LIVE,
-    # CHANGE THIS TO 2. It will then be a 5-minute pipeline like its twin,
-    # and 30h would let a dead dispatcher hide for more than a day -- on the
-    # pipeline that sends the "we will contact you before 5pm" auto-reply.
-    "lead-monitor": 30,
+    # 2h matters more here than anywhere else in this table. This is the
+    # pipeline that sends the "we will contact you before 5pm" auto-reply,
+    # and it is the ONLY thing reading sales@meangreenlawncare.com -- it
+    # caught 50 leads in the 20 days to 2026-08-29 that WhatConverts never
+    # saw, zero overlap. If the dispatcher dies, no workflow starts, the
+    # if: failure() notifier has nothing to fire on, and this check is the
+    # only thing anywhere that would notice.
+    "lead-monitor": 2,
     # cron at :15/:45 and :17/:47 -- twice hourly.
     "whatconverts-roi-sync": 3,
     "phone-lead-monitor": 3,
