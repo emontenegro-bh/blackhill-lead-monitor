@@ -127,6 +127,14 @@ EXPECTED_CADENCE_HOURS = {
     "phone-lead-reconcile": 30,    # daily 13:07, own name -- see the script
     "aspire-mailchimp-backfill": 30,
     "bid-monitor": 30,
+    # The leads-refresh workflow, three scripts in sequence, daily 14:17.
+    # Tracked separately so a failure in one is visible rather than hidden
+    # behind whichever ran last.
+    "backfill-leads": 30,
+    "link-phone-leads": 30,
+    "lead-source-observer": 30,
+    # Daily 13:47.
+    "sync-opportunities": 30,
     # cron 13 12 * * 1,4 -- Monday and Thursday. Thu -> Mon is 96h.
     "events-monitor": 100,
     # Weekdays ~20:55Z. Counted in BUSINESS hours (see WEEKDAY_ONLY), so this
