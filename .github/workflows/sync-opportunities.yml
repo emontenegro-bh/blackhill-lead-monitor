@@ -1,0 +1,61 @@
+name: Sync Opportunities (Aspire -> Supabase)
+
+on:
+  # Daily. Opportunities move over days, not minutes, so a 5-minute poll would
+  # be 288 API calls a day to notice a handful of status changes.
+  #
+  # 13:47 is chosen because no other workflow here uses it. Two workflows on
+  # the same minute compete for GitHub's scheduler and one loses -- measured
+  # 2026-08-20..27, email-lead-monitor took 35 runs a day to lead-monitor's
+  # 325 on an identical cron.
+  schedule:
+    - cron: '47 13 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Read Aspire and print, write nothing'
+        type: boolean
+        default: false
+
+concurrency:
+  group: sync-opportunities
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # 3,031 opportunities over 4 paged requests takes ~30s. 15 leaves room for
+    # the table to grow without the run being killed as a `cancelled`, which
+    # would be invisible to a plain `if: failure()`.
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Sync opportunities
+        env:
+          ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
+          ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/sync-opportunities.py ${{ inputs.dry_run == true && '--dry-run' || '' }}
+
+  notify-failure:
+    needs: [sync]
+    # `|| cancelled()` because a job killed by timeout-minutes concludes
+    # `cancelled`, not `failure`, and a plain `if: failure()` cannot see it.
+    # That blind spot hid six silent seo-audit timeouts between June and August.
+    if: failure() || cancelled()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Sync Opportunities"
+    secrets: inherit
