@@ -90,7 +90,13 @@ def load_config_from_env():
             "scopes": ["https://graph.microsoft.com/.default"],
         },
         "polling": {
-            "max_messages_per_run": int(os.environ.get("MAX_MESSAGES", "20")),
+            # 150, not 20. This key is what actually applies -- the .get()
+            # fallbacks further down never fire because this always sets it.
+            # The fetch window is 24h so a recovery run after an outage can
+            # legitimately see a day's mail, and a newest-first query capped
+            # at 20 would silently drop the OLDEST, which is exactly the
+            # backlog the recovery exists to clear.
+            "max_messages_per_run": int(os.environ.get("MAX_MESSAGES", "150")),
         },
         "notifications": {
             "lead_recipients": os.environ.get("LEAD_RECIPIENTS", "evelin@blackhilltx.com,denisse@blackhilltx.com").split(","),
@@ -257,14 +263,32 @@ def fetch_unread_messages(token, config):
     return result.get("value", [])
 
 
-def fetch_recent_messages(token, config, lookback_minutes=120):
+def fetch_recent_messages(token, config, lookback_minutes=1440):
     """Fetch messages received in the last N minutes, regardless of read status.
 
     This prevents missed leads when someone reads the email before the monitor
     checks (the isRead filter caused leads to be missed).
+
+    WHY THE WINDOW IS 24 HOURS, NOT 2
+
+    It was 120 minutes, which meant any outage longer than two hours lost leads
+    PERMANENTLY -- not delayed, never seen. That is not hypothetical: this
+    pipeline's external dispatcher was missing on 2026-08-27/28 and coverage
+    fell to 25% and then 8% of the day, so roughly 40 hours of mail arriving in
+    sales@meangreenlawncare.com went unread with no auto-reply, no Aspire
+    contact and no Teams card.
+
+    A long window costs nothing because dedup is by Outlook message id in
+    processed_ids: re-reading a message that was already handled is a set
+    lookup, not a second auto-reply. So the window should be sized against the
+    worst outage worth surviving, not against the polling interval. 24 hours
+    makes the pipeline self-healing across an overnight failure.
     """
     mailbox = config["microsoft"]["shared_mailbox"]
-    max_msgs = config["polling"].get("max_messages_per_run", 20)
+    # 20 was fine for a 2-hour window and is not fine for a 24-hour one: the
+    # query orders newest-first, so a backlog larger than this silently drops
+    # the OLDEST messages -- the very ones a recovery run needs most.
+    max_msgs = config["polling"].get("max_messages_per_run", 150)
     since = (datetime.now(timezone.utc) - timedelta(minutes=lookback_minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
     # Query only the Inbox folder to avoid picking up our own Sent Items
     # (auto-replies saved to Sent Items were being re-processed as leads)
@@ -1734,7 +1758,12 @@ def process_messages(token, config, state):
     skips any already in processed_ids. This prevents missed leads when someone
     reads the email in Outlook before the 5-minute monitor cycle.
     """
-    messages = fetch_recent_messages(token, config, lookback_minutes=120)
+    # 24h window, self-healing across an overnight outage. Only UNPROCESSED
+    # messages do any work, so a normal run still handles 0-3 even though it
+    # fetched a day's worth. A large backlog may hit the 120s script timeout
+    # part-way through; that is acceptable because each message is marked as
+    # it completes, so the next run resumes rather than restarting.
+    messages = fetch_recent_messages(token, config, lookback_minutes=1440)
     if not messages:
         log("No recent messages found.")
         return
