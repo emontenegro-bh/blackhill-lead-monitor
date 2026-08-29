@@ -72,19 +72,47 @@ MAX_PAGES = 5            # backstop; a window this wide never holds 500 failures
 # GitHub scheduler lag of 1.5-2.5h, so a tight bound would alarm on lateness
 # rather than absence, and an alert that cries wolf is worse than none.
 EXPECTED_CADENCE_HOURS = {
-    # Both of these are cron */5, and they do NOT behave the same. Measured
-    # 2026-08-22 over ~10h: whatconverts-lead-monitor held a 5-minute median
-    # with a 5-minute max, while lead-monitor ran a 26-minute median and a
-    # 43-minute max. GitHub throttles scheduled workflows under load and does
-    # not say so. 3h leaves ~4x headroom over the worst gap actually seen;
-    # revisit once a full week of automation_runs exists, because ten hours
-    # is not enough to have seen the real tail.
-    "lead-monitor": 3,
+    # Both are cron */5 and neither is really driven by its cron. An external
+    # cron-job.org job POSTs a workflow_dispatch to lead-monitor.yml every 5
+    # minutes; GitHub's own scheduled queue delivers only a handful a day to
+    # either. Measured 2026-08-24..29: lead-monitor.yml took 98 dispatches to
+    # 2 scheduled runs, email-lead-monitor.yml took 0 dispatches to 61.
+    #
+    # So these thresholds are really watching the DISPATCHER, not the cron.
+    # That is the point: if cron-job.org stops, no workflow starts, the
+    # if: failure() notifier has nothing to fire on, and nothing else would
+    # ever notice. This check is the only thing that would.
+    #
+    # 2h on whatconverts-lead-monitor, which has a working dispatcher and
+    # holds a 5-minute median -- 2h is ~24x its real gap, tight enough to
+    # catch a dead dispatcher within one working morning.
     "whatconverts-lead-monitor": 2,
+    #
+    # lead-monitor (the sales@ mailbox pipeline) has NO dispatcher as of
+    # 2026-08-29 and survives on 1-3 scheduled runs a day, so a tight
+    # threshold here would alert every few hours about a known gap. 30h
+    # tolerates today's reality without going silent entirely.
+    #
+    # WHEN THE cron-job.org JOB FOR email-lead-monitor.yml GOES LIVE,
+    # CHANGE THIS TO 2. It will then be a 5-minute pipeline like its twin,
+    # and 30h would let a dead dispatcher hide for more than a day -- on the
+    # pipeline that sends the "we will contact you before 5pm" auto-reply.
+    "lead-monitor": 30,
     # cron at :15/:45 and :17/:47 -- twice hourly.
     "whatconverts-roi-sync": 3,
     "phone-lead-monitor": 3,
-    "startup-failure-sweep": 3,
+    #
+    # This sweep watching itself. Measured over 48h to 2026-08-29: 6 runs
+    # against a cron asking for 96, median gap 7.5h, max 12.4h. It has no
+    # cron-job.org dispatcher either, so 3h would fire on almost every run
+    # and it was already doing so.
+    #
+    # 16h is chosen to sit above the observed 12.4h max rather than to make
+    # the alert stop. Note this threshold is the weaker of the two guards on
+    # this script: a sweep that dies entirely cannot alert about itself, so
+    # the real backstop is the weekly heartbeat -- if a Monday passes with no
+    # heartbeat, this stopped.
+    "startup-failure-sweep": 16,
     # cron 23 */2 -- every two hours.
     "dmarc-monitor": 6,
     # cron 0 0,6,12,18 -- four times daily.
