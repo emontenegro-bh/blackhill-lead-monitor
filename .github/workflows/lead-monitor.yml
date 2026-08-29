@@ -1,6 +1,16 @@
-name: Lead Monitor
+name: Lead Monitor (WhatConverts)
 
 on:
+  # THE CRON IS NOT WHAT ACTUALLY RUNS THIS. Measured 2026-08-24..29: 2
+  # scheduled runs against 98 workflow_dispatch. An external scheduler POSTs
+  # a workflow_dispatch here every 5 minutes on the dot, the same workaround
+  # crew-location.yml documents for the same reason -- GitHub's scheduled
+  # queue drops runs under load and delivers a fraction of what is asked for.
+  #
+  # DO NOT RENAME THIS FILE. The dispatcher targets it by filename; renaming
+  # gives the workflow a new id, the POST 404s, and the lead pipeline stops
+  # with no error anywhere. The cron below is a weak fallback, not the
+  # primary trigger.
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch: {}
