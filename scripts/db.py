@@ -461,6 +461,68 @@ def link_leads_to_contacts(pairs):
         )
 
 
+OPPORTUNITY_COLUMNS = (
+    "opportunity_id", "opportunity_number", "name", "property_id",
+    "property_name", "billing_contact_id", "status", "stage",
+    "opportunity_type", "sales_type", "division", "estimated_dollars",
+    "won_dollars", "actual_revenue", "estimated_margin", "actual_margin",
+    "created_at_aspire", "proposed_date", "won_date", "lost_date",
+    "complete_date", "start_date", "end_date", "lost_reason",
+    "aspire_lead_source", "sales_rep", "raw", "synced_at",
+)
+
+
+def opportunities_current():
+    """{opportunity_id: {status, estimated_dollars}} for change detection.
+
+    Deliberately NOT the whole row. This is compared on every sync against
+    thousands of records, and pulling raw jsonb for all of them to check two
+    scalars would move megabytes to decide nothing changed.
+    """
+    out, offset = {}, 0
+    while True:
+        rows = _request(
+            "GET",
+            "opportunities?select=opportunity_id,status,estimated_dollars"
+            f"&order=opportunity_id.asc&limit=1000&offset={offset}")
+        for r in rows:
+            out[r["opportunity_id"]] = {
+                "status": r["status"],
+                "estimated_dollars": r["estimated_dollars"],
+            }
+        if len(rows) < 1000:
+            break
+        offset += 1000
+    return out
+
+
+def upsert_opportunities(rows, chunk=200):
+    """Insert or UPDATE opportunities. Unlike leads, this table mirrors.
+
+    leads is append-only because a lead is an event -- it happened once and
+    nothing later changes what it was. An opportunity is a process that
+    legitimately moves Delivered -> Won -> Complete, so freezing it would be a
+    lie. The history of those moves lives in opportunity_snapshots instead.
+    """
+    if not rows:
+        return 0
+    written = 0
+    for i in range(0, len(rows), chunk):
+        batch = [{c: r.get(c) for c in OPPORTUNITY_COLUMNS} for r in rows[i:i + chunk]]
+        got = _request(
+            "POST", "opportunities?on_conflict=opportunity_id", body=batch,
+            prefer="resolution=merge-duplicates,return=representation")
+        written += len(got or [])
+    return written
+
+
+def record_opportunity_changes(changes, chunk=200):
+    """Append change rows. `changes` are dicts already shaped for the table."""
+    for i in range(0, len(changes), chunk):
+        _request("POST", "opportunity_snapshots",
+                 body=changes[i:i + chunk], prefer="return=minimal")
+
+
 def leads_with_aspire_contact(limit=5000):
     """Leads linked to an Aspire contact, with their Lead Source baseline."""
     return _request(
