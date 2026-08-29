@@ -60,7 +60,7 @@ SCRIPT_TARGETS = {
     "companycam": ["companycam-query.py"],
     "hubspot": ["hubspot-sync.py", "hubspot-builder-pipeline.py",
                 "whatconverts-lead-monitor.py"],
-    "google_ads": ["morning-briefing.py", "ads-smoke-test.py",
+    "google_ads": ["ads-smoke-test.py",
                    "ads-weekly-report.py", "ads-budget-and-negatives.py"],
 }
 
