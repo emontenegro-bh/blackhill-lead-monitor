@@ -523,14 +523,50 @@ def record_opportunity_changes(changes, chunk=200):
                  body=changes[i:i + chunk], prefer="return=minimal")
 
 
-def leads_with_aspire_contact(limit=5000):
-    """Leads linked to an Aspire contact, with their Lead Source baseline."""
-    return _request(
-        "GET",
+PAGE_MAX = 1000   # PostgREST db-max-rows. Asking for more is silently capped.
+
+
+def _paged(path, order, page=PAGE_MAX, cap=200000):
+    """Fetch every row of a query, not just the first page.
+
+    PostgREST enforces a server-side max-rows (1000 here) and `limit=10000`
+    does NOT override it -- it returns 1000 rows with a 200 and no warning, so
+    a truncated read is indistinguishable from a complete one. That is how the
+    weekly heartbeat came to report "1,000 runs, 0 errors across 17 scripts"
+    when the true figures were 2,986 runs, 24 scripts and 1 error. An all-clear
+    computed from a truncated read is worse than no all-clear at all.
+
+    `order` must be on a unique, stable column. Ordering by something with
+    ties (started_at) lets rows shuffle between pages, so offset paging can
+    skip and repeat rows -- use the primary key.
+    """
+    out, off = [], 0
+    sep = "&" if "?" in path else "?"
+    while off < cap:
+        rows = _request(
+            "GET", f"{path}{sep}order={order}&limit={page}&offset={off}")
+        if not rows:
+            break
+        out.extend(rows)
+        if len(rows) < page:
+            break
+        off += page
+    return out
+
+
+def leads_with_aspire_contact(limit=None):
+    """Leads linked to an Aspire contact, with their Lead Source baseline.
+
+    Pages rather than taking a limit. The old 5000 default was capped to 1000
+    by the server, which would have silently stopped linking leads once the
+    table passed 1000 rows -- it was at 861 when this was found.
+    """
+    rows = _paged(
         "leads?aspire_contact_id=not.is.null"
-        "&select=id,aspire_contact_id,aspire_lead_source,aspire_lead_source_first_seen"
-        f"&order=id.asc&limit={int(limit)}",
+        "&select=id,aspire_contact_id,aspire_lead_source,aspire_lead_source_first_seen",
+        order="id.asc",
     )
+    return rows[:limit] if limit else rows
 
 
 def set_lead_source_baseline(pairs):
@@ -617,11 +653,16 @@ def unfinished_runs(older_than_minutes=90):
 
 
 def run_counts_since(since_iso):
-    """[{script, n}] run totals since a timestamp. Used by the heartbeat."""
-    rows = _request(
-        "GET",
+    """{script: {ok, error, running}} run totals since a timestamp.
+
+    Pages: a week is ~3,000 rows and whatconverts-lead-monitor alone is 2,100
+    of them, so a single-page read shows only the noisiest handful of scripts
+    and silently zeroes the rest. See _paged.
+    """
+    rows = _paged(
         f"automation_runs?started_at=gte.{_q(since_iso)}"
-        "&select=script,status&limit=10000",
+        "&select=script,status",
+        order="id.asc",
     )
     tally = {}
     for r in rows:
