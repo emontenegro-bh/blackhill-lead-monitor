@@ -100,8 +100,29 @@ EXPECTED_CADENCE_HOURS = {
     # if: failure() notifier has nothing to fire on, and this check is the
     # only thing anywhere that would notice.
     "lead-monitor": 2,
-    # cron at :15/:45 and :17/:47 -- twice hourly.
-    "whatconverts-roi-sync": 3,
+    # Both cron twice hourly (:15/:45 and :17/:47) and NEITHER gets it.
+    # Measured 2026-08-23..30: 13.7 and 13.3 runs a day against 48 asked for,
+    # median gap 0.9h but max gap 11.8h on both. Every other scheduled script
+    # here maxes out at 11.8-14.8h too, on unrelated crons -- so this is one
+    # repo-wide blackout in GitHub's scheduled queue, not two sick scripts.
+    #
+    # The two get DIFFERENT treatment on purpose, because widening a threshold
+    # is honest only when the business can genuinely tolerate the gap.
+    #
+    # roi-sync pushes Aspire won-revenue back to WhatConverts so ROI reporting
+    # is right. Nothing downstream reads it inside a day, so a 12h gap costs
+    # nothing real and 3h was alerting on a non-problem. 14h sits just above
+    # the observed max.
+    "whatconverts-roi-sync": 14,
+    #
+    # phone-lead-monitor STAYS at 3h even though it will keep firing, because
+    # here the gap is the damage: this is Carlos's phone-form intake into
+    # Aspire and HubSpot, and an 11.8h blackout is a lead sitting untouched
+    # overnight. Raising this to 14h would silence the alert without making a
+    # single lead arrive sooner. The fix is a cron-job.org dispatcher like the
+    # three that already drive lead-monitor, whatconverts-lead-monitor and
+    # crew-location; until that exists the alert is telling the truth and
+    # should be left alone to say so.
     "phone-lead-monitor": 3,
     #
     # This sweep watching itself. Measured over 48h to 2026-08-29: 6 runs
