@@ -390,6 +390,7 @@ def get_aspire_bing_revenue(start_date, end_date):
         opps = paged("Opportunities", f"$filter={WON} and WonDate ge {LAUNCH_DATE}T00:00:00Z&{sel}")
 
         week, life = [], [0, 0.0]
+        by_customer = {}
         for o in opps:
             if origin(o.get("BillingContactID"), o.get("PropertyID")) != ASPIRE_SOURCE:
                 continue
@@ -397,17 +398,24 @@ def get_aspire_bing_revenue(start_date, end_date):
             won_on = str(o.get("WonDate") or "")[:10]
             life[0] += 1
             life[1] += dollars
+            pid = o.get("PropertyID")
+            if pid is not None:
+                by_customer[pid] = by_customer.get(pid, 0.0) + dollars
             if start_date <= won_on <= end_date:
                 oid = o.get("OpportunityID")
                 week.append({"name": o.get("OpportunityName") or "Unnamed opportunity",
                              "dollars": dollars, "won_on": won_on,
                              "url": f"https://cloud.youraspire.com/app/opportunities/{oid}" if oid else None})
         week.sort(key=lambda x: -x["dollars"])
+        top_dollars = max(by_customer.values()) if by_customer else 0.0
         return {"week_opps": week,
                 "week_count": len(week),
                 "week_dollars": sum(w["dollars"] for w in week),
                 "life_count": life[0],
-                "life_dollars": life[1]}
+                "life_dollars": life[1],
+                "customers": len(by_customer),
+                "top_customer_dollars": top_dollars,
+                "ex_top_dollars": life[1] - top_dollars}
     except Exception as e:
         print(f"Aspire revenue warning: {e}", file=sys.stderr)
         return None
@@ -591,6 +599,21 @@ if aspire_rev:
         h(f'<tr><td>{label}</td><td class="right"{colour}>{a}</td><td class="right"{colour}>{b}</td></tr>')
         m(f"| {label} | {a} | {b} |")
     h("</table>")
+
+    # A single customer can carry the whole ratio, so say so next to the ratio.
+    if aspire_rev["life_dollars"] > 0 and aspire_rev.get("customers"):
+        share = aspire_rev["top_customer_dollars"] / aspire_rev["life_dollars"] * 100
+        ex_roas = (aspire_rev["ex_top_dollars"] / life_spend) if life_spend else 0
+        conc = (f"Concentration: {aspire_rev['life_count']} jobs across "
+                f"{aspire_rev['customers']} customers. The largest is "
+                f"${aspire_rev['top_customer_dollars']:,.2f} of ${aspire_rev['life_dollars']:,.2f} "
+                f"({share:.0f}%). Excluding them, ${aspire_rev['ex_top_dollars']:,.2f} on "
+                f"${life_spend:,.2f} spend is {ex_roas:,.1f}x.")
+        warn = share >= 50
+        h(f'<div style="margin-top:10px;padding:10px 14px;background:{"#1a1212" if warn else "#1a1a1a"};'
+          f'border-left:3px solid {"#e74c3c" if warn else "#666"};border-radius:4px;font-size:12px;'
+          f'color:{"#e08" if warn else "#999"};">{conc}</div>')
+        m(f"\n**{conc}**\n")
 
     if aspire_rev["week_opps"]:
         h('<div style="margin-top:14px;font-size:12px;color:#c8963e;text-transform:uppercase;'
