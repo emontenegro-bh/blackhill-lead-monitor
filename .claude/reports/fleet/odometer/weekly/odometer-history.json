@@ -181,5 +181,66 @@
         "trackeeId": "69d1d1ac-47bb-11f0-baf0-7574c75df4ff"
       }
     }
+  },
+  {
+    "date": "2026-08-31",
+    "generated_at_ms": 1788204578256,
+    "readings": {
+      "2309963086": {
+        "raw": 479605.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "5dfe81f4-23b1-11f1-9535-f9471b824397"
+      },
+      "Flatbed": {
+        "raw": 229553.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "4cf26823-e8a4-11ef-840e-318ae4ed7b66"
+      },
+      "Irrigation": {
+        "raw": 196199.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "494bce0a-e8a4-11ef-840e-770ad2b24d1e"
+      },
+      "Land 1": {
+        "raw": 123972.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "6aaf1263-47bb-11f0-baf0-3bf389c20f73"
+      },
+      "Land 2": {
+        "raw": 201632.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "4e182384-e8a4-11ef-840e-71a83b048b75"
+      },
+      "Maint 1": {
+        "raw": 89637.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "4bb9e801-e8a4-11ef-840e-ad6751fb5b34"
+      },
+      "Maint 2": {
+        "raw": 263991.1361,
+        "odo_source": "User input",
+        "trackeeId": "46f13d07-e8a4-11ef-840e-c75c7d134b96"
+      },
+      "Maint 3": {
+        "raw": 208798.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "4eb15655-e8a4-11ef-840e-2ffe48c8cf0f"
+      },
+      "Maint 4": {
+        "raw": 89423.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "478bf678-e8a4-11ef-840e-2524b88e9472"
+      },
+      "Sales 1": {
+        "raw": 180025.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "45c5b501-e8a4-11ef-840e-f331af2188aa"
+      },
+      "Sales 2": {
+        "raw": 396717.0,
+        "odo_source": "Vehicle",
+        "trackeeId": "69d1d1ac-47bb-11f0-baf0-7574c75df4ff"
+      }
+    }
   }
 ]
