@@ -550,9 +550,12 @@ m(f"# Black Hill Landscaping - Weekly Bing Ads Report\n\n{week_ago_fmt} - {today
 if CHANGE_FREEZE_UNTIL and now.strftime("%Y-%m-%d") <= CHANGE_FREEZE_UNTIL:
     _fz = datetime.strptime(CHANGE_FREEZE_UNTIL, "%Y-%m-%d")
     _fz_label = _fz.strftime("%A, %B %d, %Y")
-    _days = (_fz - now).days
+    # Date arithmetic, not datetime: the run happens mid-afternoon and the freeze
+    # date is midnight, so subtracting datetimes truncates a partial day and the
+    # banner would say "lifts today" a day early.
+    _days = (_fz.date() - now.date()).days
     _hdr = (f"Change freeze in effect until {_fz_label}"
-            + (f" ({_days} days away)" if _days > 0 else " (lifts today)"))
+            + (f" ({_days} day{'s' if _days != 1 else ''} away)" if _days > 0 else " (lifts today)"))
     h('<div class="section" style="border-bottom:1px solid #2a2a2a;">')
     h(f'<div style="padding:12px 16px;background:#1a1a12;border-left:4px solid #c8963e;border-radius:6px;">')
     h(f'<div style="font-size:14px;font-weight:700;color:#c8963e;margin-bottom:8px;">{_hdr}</div>')
