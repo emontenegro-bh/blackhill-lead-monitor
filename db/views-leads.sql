@@ -40,6 +40,11 @@ ORDER BY leads DESC;
 --
 -- Read the earliest month with care: tracking was installed part-way through
 -- February 2026, so that month is short rather than quiet.
+--
+-- `other` exists so the split reconciles. lead_type is not the two values you
+-- would expect: there is a third, 'Text Message' (1 lead as of 2026-08-30).
+-- Without this column phone + web quietly fails to equal leads, and a reader
+-- checking the arithmetic would distrust the whole view over one row.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE VIEW v_leads_monthly AS
 SELECT
@@ -47,6 +52,8 @@ SELECT
     count(*)                                                          AS leads,
     count(*) FILTER (WHERE lead_type = 'Phone Call')                  AS phone,
     count(*) FILTER (WHERE lead_type = 'Web Form')                    AS web,
+    count(*) FILTER (WHERE lead_type NOT IN ('Phone Call','Web Form')
+                        OR lead_type IS NULL)                         AS other,
     count(aspire_contact_id)                                          AS linked,
     round(100.0 * count(aspire_contact_id) / count(*))                AS linked_pct
 FROM leads
