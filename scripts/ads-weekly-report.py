@@ -37,10 +37,22 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db
 
+# Parsed early (before any state is touched) so --dry-run can guard the
+# Supabase run-tracking call immediately below, not just the email send.
+DRY_RUN = "--dry-run" in sys.argv
+
 # No main() to wrap, so the run is opened here and closed at each
 # successful exit below. Anything that leaves without calling done()
 # is recorded as an error by db.track_flat's atexit hook.
-_run = db.track_flat("ads-weekly-report")
+# Under --dry-run this must not touch Supabase at all, so it gets a
+# no-op stand-in instead of a real tracked run.
+if DRY_RUN:
+    class _NoOpRun:
+        def done(self, records=None):
+            pass
+    _run = _NoOpRun()
+else:
+    _run = db.track_flat("ads-weekly-report")
 
 # --- Config ---
 TO_EMAILS = ["evelin@blackhilltx.com", "Umair@blackhilltx.com", "afaq@blackhilltx.com"]
@@ -219,6 +231,15 @@ rows = safe_query(f"""
 # Exclude own/sister brand variants -- never recommend these as negatives.
 BRAND_SAFE = ("black hill", "blackhill", "mean green", "meangreen")
 
+# Exclude core money terms -- a 0-conversion 28-day window on a service phrase
+# like "sprinkler repair" is noise, not evidence the term is bad; blocking it
+# would cut off the account's own bread-and-butter searches.
+CORE_SAFE = (
+    "sprinkler repair", "irrigation repair", "sprinkler service", "irrigation service",
+    "sprinkler system repair", "irrigation system repair", "drainage", "standing water", "french drain",
+    "yard drainage", "sod install", "sod installation", "landscape design", "landscaping",
+)
+
 # Pull existing negatives (shared lists + campaign-level) so we never
 # re-recommend a term that is already blocked. 28-day spend on a term can
 # predate the negative that now blocks it.
@@ -255,6 +276,8 @@ already_blocked_terms = []
 for row in rows:
     term = row.search_term_view.search_term
     if any(b in term.lower() for b in BRAND_SAFE):
+        continue
+    if any(c in term.lower() for c in CORE_SAFE):
         continue
     entry = {
         "term": term,
@@ -313,15 +336,17 @@ sorted_dates = sorted(d for d in qs_history.keys() if d != today_key)
 if sorted_dates:
     prior_qs = qs_history[sorted_dates[-1]]
 
-# Save current QS
-current_qs = {kw["keyword"]: kw["qs"] for kw in qs_keywords}
-qs_history[today_key] = current_qs
-if len(qs_history) > 12:
-    for old in sorted(qs_history.keys())[:-12]:
-        del qs_history[old]
-os.makedirs(os.path.dirname(QS_HISTORY_FILE), exist_ok=True)
-with open(QS_HISTORY_FILE, "w") as f:
-    json.dump(qs_history, f, indent=2)
+# Save current QS. Skipped under --dry-run: this is persisted state (used as
+# next week's "prior_qs" comparison), and a test run must not leave a trace.
+if not DRY_RUN:
+    current_qs = {kw["keyword"]: kw["qs"] for kw in qs_keywords}
+    qs_history[today_key] = current_qs
+    if len(qs_history) > 12:
+        for old in sorted(qs_history.keys())[:-12]:
+            del qs_history[old]
+    os.makedirs(os.path.dirname(QS_HISTORY_FILE), exist_ok=True)
+    with open(QS_HISTORY_FILE, "w") as f:
+        json.dump(qs_history, f, indent=2)
 
 # --- 6. Converting search terms (winners) ---
 converting_terms = []
@@ -514,8 +539,8 @@ def get_aspire_revenue_v2(start_date, end_date):
             return src[best]
 
         WON = "OpportunityStatusName eq 'Won'"
-        sel = ("$select=WonDollars,ActualEarnedRevenue,OpportunityType,OpportunityName,"
-               "OpportunityNumber,OpportunityID,BillingContactID,PropertyID")
+        sel = ("$select=WonDollars,ActualEarnedRevenue,OpportunityType,CompleteDate,"
+               "OpportunityName,OpportunityNumber,OpportunityID,BillingContactID,PropertyID")
 
         def opp_revenue(o):
             """The honest dollar figure for one won opportunity.
@@ -539,8 +564,18 @@ def get_aspire_revenue_v2(start_date, end_date):
             """
             if (o.get("OpportunityType") or "") == "Contract":
                 return float(o.get("WonDollars", 0) or 0)
+            # ActualEarnedRevenue is only the finished number once the job IS
+            # finished. On work still in progress it is whatever has been
+            # earned so far, which is the same "elapsed, not sized" trap that
+            # makes it wrong for contracts. Opportunity #3250, "Spiraling
+            # Junipers": won $1,100, earned $57.84, no completion date -- the
+            # crew has barely started. 148 of 1,680 won work orders are open,
+            # 57 of them showing less earned than won, and valuing those at
+            # their partial earnings understates by $258,702.
             actual = float(o.get("ActualEarnedRevenue", 0) or 0)
-            return actual if actual > 0 else float(o.get("WonDollars", 0) or 0)
+            if o.get("CompleteDate") and actual > 0:
+                return actual
+            return float(o.get("WonDollars", 0) or 0)
 
         def attribute(params, want_opps=False):
             # Buckets are [count, one-time cash, annual contract value]. The
@@ -1010,39 +1045,32 @@ if aspire_revenue and acct_this:
           f'Other ${aspire_revenue["other_acv"]:,.0f}</div>')
         h('<div style="font-size:10px;color:#777;margin-top:3px;">Recurring yearly, not one-time cash. Not added to the figures above.</div>')
         h('</div>')
+    # Grand Total by Lead Source, condensed to one line: the full per-source
+    # table duplicated the weekly cadence of this report for numbers that only
+    # move meaningfully over months. Rank + total is what "where do we stand"
+    # actually needs.
     grand = aspire_revenue.get("grand_by_source") or {}
     if grand:
-        h('<div style="margin-top:14px;">')
-        h('<div style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Grand Total by Lead Source '
-          '(since Feb 19 &bull; all of each customer\'s won work rolls up to their origin channel)</div>')
-        h('<table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size:12px;">')
-        h('<tr><td></td><td></td>'
-          '<td style="padding:3px 8px;color:#777;font-size:10px;text-align:right;">one-time</td>'
-          '<td style="padding:3px 8px;color:#777;font-size:10px;text-align:right;">annual contract</td></tr>')
-        # Ranked on one-time cash. Ranking on the two added together is exactly
-        # the distortion this split exists to remove.
-        for s in sorted(grand, key=lambda k: -grand[k][1]):
-            if s == "(no source)":
-                continue
-            c, d, k = grand[s]
-            color = _SRC_COLOR.get(s, "#aaa")
-            h(f'<tr><td style="padding:3px 8px;color:{color};font-weight:700;">{s}</td>'
-              f'<td style="padding:3px 8px;color:#888;">{c} opp{"s" if c != 1 else ""}</td>'
-              f'<td style="padding:3px 8px;color:#27ae60;font-weight:600;text-align:right;">${d:,.0f}</td>'
-              f'<td style="padding:3px 8px;color:#C9700B;font-weight:600;text-align:right;">${k:,.0f}</td></tr>')
-        nos = grand.get("(no source)")
-        if nos:
-            h(f'<tr><td style="padding:3px 8px;color:#666;">Existing / no tracked source</td>'
-              f'<td style="padding:3px 8px;color:#666;">{nos[0]} opps</td>'
-              f'<td style="padding:3px 8px;color:#666;text-align:right;">${nos[1]:,.0f}</td>'
-              f'<td style="padding:3px 8px;color:#666;text-align:right;">${nos[2]:,.0f}</td></tr>')
-        h('</table></div>')
+        _ranked_srcs = sorted(
+            ((s, v[1]) for s, v in grand.items() if s != "(no source)"), key=lambda x: -x[1])
+        _grand_opps = sum(v[0] for v in grand.values())
+        _grand_onetime = sum(v[1] for v in grand.values())
+        _ads_rank = next((i + 1 for i, (s, _) in enumerate(_ranked_srcs) if s == "Google Ads"), None)
+        _ads_rank_str = (f"Google Ads ranks #{_ads_rank} of {len(_ranked_srcs)} sources by one-time cash"
+                          if _ads_rank else "Google Ads has no won revenue yet")
+        h(f'<div style="margin-top:14px;font-size:12px;color:#888;">'
+          f'Since Feb 19: <span style="color:#fff;font-weight:600;">{_grand_opps} opps, '
+          f'${_grand_onetime:,.0f}</span> one-time revenue across all lead sources &bull; {_ads_rank_str}.</div>')
 
+    # Closed This Week, filtered to paid search -- an ads report only needs its
+    # own wins, plus one trivial organic line for context.
     won_opps = aspire_revenue.get("won_opps") or []
-    if won_opps:
+    ads_opps = [o for o in won_opps if o.get("source_label") in _PAID_SRC]
+    organic_opps = [o for o in won_opps if o.get("source_label") in _ORGANIC_SRC]
+    if ads_opps:
         h('<div style="margin-top:12px;">')
-        h('<div style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Closed This Week (credited to each customer\'s origin source)</div>')
-        for opp in won_opps:
+        h('<div style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Closed This Week (Google/Bing Ads)</div>')
+        for opp in ads_opps:
             s = opp.get("source_label", "?")
             lcolor = _SRC_COLOR.get(s, "#aaa")
             num = f" #{opp['number']}" if opp.get("number") else ""
@@ -1054,28 +1082,12 @@ if aspire_revenue and acct_this:
             h(f'<span style="color:{lcolor};font-weight:700;">[{s}]</span> {name_html} '
               f'<span style="color:#27ae60;font-weight:600;">${opp["dollars"]:,.0f}</span></div>')
         h('</div>')
+    if organic_opps:
+        _organic_total = sum(o["dollars"] for o in organic_opps)
+        h(f'<div style="margin-top:6px;font-size:11px;color:#666;">For comparison: {len(organic_opps)} organic '
+          f'win{"s" if len(organic_opps) != 1 else ""} this week, ${_organic_total:,.0f}.</div>')
     h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">Attribution from Aspire Lead Source '
       f'(customer-origin, first-touch). Won = status Won only.</div>')
-    h('</div>')
-
-# ============================================================
-# SECTION 3: WHAT TO DO THIS WEEK
-# ============================================================
-if recommendations:
-    h('<div class="section">')
-    h('<h2>What to Do This Week</h2>')
-    h(f'<div style="font-size:12px;color:#888;margin-bottom:12px;">{len(recommendations)} action items from this week\'s data</div>')
-    for rec in recommendations:
-        border_color = "#e74c3c" if rec["priority"] == "high" else "#f39c12"
-        h(f'<div style="margin-bottom:8px;padding:10px 14px;background:#222;border-radius:6px;border-left:3px solid {border_color};">')
-        h(f'<div style="font-size:13px;color:#fff;font-weight:600;">{rec["action"]}</div>')
-        h(f'<div style="font-size:12px;color:#aaa;margin-top:4px;">{rec["detail"]}</div>')
-        h(f'</div>')
-    h('</div>')
-else:
-    h('<div class="section">')
-    h('<h2>What to Do This Week</h2>')
-    h('<div style="padding:16px;background:#1a2a1a;border-radius:8px;text-align:center;color:#27ae60;font-size:14px;">No urgent actions this week. Everything looks healthy.</div>')
     h('</div>')
 
 # ============================================================
@@ -1181,27 +1193,32 @@ if waste_terms:
         h(f'</div>')
     h('</div>')
 
-# --- Ad copy performance ---
+# --- Ad copy performance: best and worst only (by impressions, the existing sort) ---
+def _best_worst(assets):
+    return [("Best", assets[0])] if len(assets) == 1 else [("Best", assets[0]), ("Worst", assets[-1])]
+
 if headlines or descriptions:
     h('<div class="section">')
     h('<h2>Ad Copy Performance</h2>')
-    h('<div style="font-size:12px;color:#888;margin-bottom:12px;">RSA asset performance this week</div>')
+    h('<div style="font-size:12px;color:#888;margin-bottom:12px;">RSA asset performance this week -- best and worst by impressions</div>')
     if headlines:
-        h('<div style="font-size:13px;color:#c8963e;font-weight:600;margin-bottom:8px;">Top Headlines</div>')
-        h('<table><tr><th>Headline</th><th class="right">Impr</th><th class="right">Clicks</th><th class="right">CTR</th><th class="right">Conv</th></tr>')
-        for hl in headlines[:5]:
+        h('<div style="font-size:13px;color:#c8963e;font-weight:600;margin-bottom:8px;">Headlines</div>')
+        h('<table><tr><th></th><th>Headline</th><th class="right">Impr</th><th class="right">Clicks</th><th class="right">CTR</th><th class="right">Conv</th></tr>')
+        for label, hl in _best_worst(headlines):
             ctr_color = "#27ae60" if hl["ctr"] >= 5 else "#f39c12" if hl["ctr"] >= 3 else "#ccc"
-            h(f'<tr><td style="font-weight:500;color:#fff;max-width:250px;overflow:hidden;text-overflow:ellipsis;">{hl["text"]}</td>')
+            h(f'<tr><td style="font-size:11px;color:#888;">{label}</td>'
+              f'<td style="font-weight:500;color:#fff;max-width:250px;overflow:hidden;text-overflow:ellipsis;">{hl["text"]}</td>')
             h(f'<td class="right">{hl["impressions"]:,}</td><td class="right">{hl["clicks"]}</td>')
             h(f'<td class="right"><span style="color:{ctr_color};">{hl["ctr"]:.1f}%</span></td>')
             h(f'<td class="right"><span style="color:#27ae60;font-weight:600;">{hl["conversions"]:.0f}</span></td></tr>')
         h('</table>')
     if descriptions:
-        h(f'<div style="font-size:13px;color:#c8963e;font-weight:600;margin:{"16px" if headlines else "0"} 0 8px;">Top Descriptions</div>')
-        h('<table><tr><th>Description</th><th class="right">Impr</th><th class="right">Clicks</th><th class="right">CTR</th><th class="right">Conv</th></tr>')
-        for desc in descriptions[:5]:
+        h(f'<div style="font-size:13px;color:#c8963e;font-weight:600;margin:{"16px" if headlines else "0"} 0 8px;">Descriptions</div>')
+        h('<table><tr><th></th><th>Description</th><th class="right">Impr</th><th class="right">Clicks</th><th class="right">CTR</th><th class="right">Conv</th></tr>')
+        for label, desc in _best_worst(descriptions):
             ctr_color = "#27ae60" if desc["ctr"] >= 5 else "#f39c12" if desc["ctr"] >= 3 else "#ccc"
-            h(f'<tr><td style="font-weight:500;color:#fff;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-size:12px;">{desc["text"]}</td>')
+            h(f'<tr><td style="font-size:11px;color:#888;">{label}</td>'
+              f'<td style="font-weight:500;color:#fff;max-width:300px;overflow:hidden;text-overflow:ellipsis;font-size:12px;">{desc["text"]}</td>')
             h(f'<td class="right">{desc["impressions"]:,}</td><td class="right">{desc["clicks"]}</td>')
             h(f'<td class="right"><span style="color:{ctr_color};">{desc["ctr"]:.1f}%</span></td>')
             h(f'<td class="right"><span style="color:#27ae60;font-weight:600;">{desc["conversions"]:.0f}</span></td></tr>')
@@ -1277,9 +1294,13 @@ if qs_keywords:
         h(f'<div style="font-size:11px;color:#666;margin-top:4px;">Average QS: {avg_qs:.1f} (no prior week for comparison)</div>')
         h(f'</div>')
 
+    # Only QS 1-6 gets a row -- QS 7-10 keywords are healthy and don't need
+    # a weekly line item; they still count in the summary/distribution above.
+    qs_keywords_low = [kw for kw in qs_keywords if kw["qs"] <= 6]
+
     h('<table><tr><th>Keyword</th><th class="right">QS</th><th class="right">Trend</th><th class="right">Exp CTR</th><th class="right">Ad Rel</th><th class="right">Land Page</th></tr>')
 
-    for kw in qs_keywords:
+    for kw in qs_keywords_low:
         qs = kw["qs"]
         qs_color = "#e74c3c" if qs <= 4 else "#f39c12" if qs <= 6 else "#27ae60"
 
@@ -1329,84 +1350,6 @@ if qs_keywords:
         h(f'<span style="color:#27ae60;">&#9632;</span> {good} keywords QS 7-10 (strong)')
     h('</div>')
 
-    # --- Headline changes to watch (auto-expires after 3 weeks) ---
-    headline_watch = [
-        {
-            "date": "2026-04-23",
-            "keywords": ["all 11 Low CTR keywords"],
-            "ad_group": "Irrigation Repair",
-            "changes": "Replaced 11 process/brand headlines with keyword-match + CTAs across 2 RSAs. Control (Ad 791498112705) unchanged.",
-        },
-        {
-            "date": "2026-04-23",
-            "keywords": ["french drain fort worth", "yard drainage solutions", "drainage near me"],
-            "ad_group": "Drainage Solutions",
-            "changes": "Replaced 11 headlines with keyword-match + dynamic insertion across 2 RSAs. Control (Ad 791538738859) unchanged.",
-        },
-        {
-            "date": "2026-04-23",
-            "keywords": ["sod installers near me", "landscaping in fort worth", "landscaping near me"],
-            "ad_group": "Landscape & Sod Installation",
-            "changes": "Replaced 10 headlines: added keyword insertion, 'near me' variants, direct CTAs. Control (Ad 797866469019) unchanged.",
-        },
-        {
-            "date": "2026-04-23",
-            "keywords": ["lawn fertilization fort worth", "lawn treatment fort worth", "weed control"],
-            "ad_group": "Fertilization & Weed Control",
-            "changes": "Replaced 11 headlines with keyword-match + CTAs across 2 RSAs. Control (Ad 797865249975) unchanged.",
-        },
-        {
-            "date": "2026-04-23",
-            "keywords": ["sprinkler system installation", "irrigation install near me"],
-            "ad_group": "Sprinkler Installations",
-            "changes": "Replaced 9 headlines with keyword-match + dynamic insertion across 2 RSAs. Control (Ad 791538623020) unchanged.",
-        },
-        {
-            "date": "2026-04-23",
-            "keywords": ["landscape maintenance near me", "commercial landscaping fort worth"],
-            "ad_group": "Property Mgr + Commercial",
-            "changes": "Replaced 10 headlines with keyword-match + dynamic insertion. 1 RSA per ad group updated.",
-        },
-    ]
-    from datetime import datetime as _dt
-    active_watches = [w for w in headline_watch if (_dt.now() - _dt.strptime(w["date"], "%Y-%m-%d")).days <= 21]
-    if active_watches:
-        h('<div style="margin-top:16px;padding:12px;background:#1a2332;border-left:3px solid #3498db;border-radius:4px;">')
-        h('<div style="font-weight:600;color:#3498db;margin-bottom:8px;">Headline Changes to Watch</div>')
-        for w in active_watches:
-            days_ago = (_dt.now() - _dt.strptime(w["date"], "%Y-%m-%d")).days
-            h(f'<div style="font-size:11px;color:#aaa;margin-bottom:6px;">')
-            h(f'<strong>{w["ad_group"]}</strong> (changed {days_ago}d ago) &mdash; watching: {", ".join(w["keywords"])}')
-            h(f'<br/><span style="color:#888;">{w["changes"]}</span>')
-            h(f'</div>')
-        h('</div>')
-
-    # --- Impression share strategy tracker (auto-expires) ---
-    impr_share_plan = {
-        "start_date": "2026-04-23",
-        "review_date": "2026-05-07",
-        "phase": "Phase 1: QS Improvement",
-        "strategy": "62 headlines replaced across 7 ad groups to improve Expected CTR and Ad Relevance. "
-                     "Landing page updates sent to web dev. Overnight hours (12a-6a) excluded. "
-                     "If impression share hasn't improved by May 7, consider adding target CPA to Maximize Conversions.",
-        "current_bidding": "Maximize Conversions (all 4 search campaigns)",
-        "target": "Impression share from 14% to 30%+ without bidding changes",
-    }
-    review_dt = _dt.strptime(impr_share_plan["review_date"], "%Y-%m-%d")
-    days_until_review = (review_dt - _dt.now()).days
-    if days_until_review >= -7:  # show for 1 week past review date
-        review_color = "#f39c12" if days_until_review <= 3 else "#3498db"
-        h(f'<div style="margin-top:16px;padding:12px;background:#1a2a1a;border-left:3px solid {review_color};border-radius:4px;">')
-        h(f'<div style="font-weight:600;color:{review_color};margin-bottom:8px;">Impression Share Strategy</div>')
-        h(f'<div style="font-size:12px;color:#aaa;margin-bottom:4px;"><strong>{impr_share_plan["phase"]}</strong></div>')
-        h(f'<div style="font-size:11px;color:#888;margin-bottom:4px;">{impr_share_plan["strategy"]}</div>')
-        h(f'<div style="font-size:11px;color:#888;">Bidding: {impr_share_plan["current_bidding"]}</div>')
-        if days_until_review > 0:
-            h(f'<div style="font-size:11px;color:{review_color};margin-top:6px;">Review in {days_until_review} days ({impr_share_plan["review_date"]})</div>')
-        else:
-            h(f'<div style="font-size:11px;color:#f39c12;margin-top:6px;font-weight:600;">REVIEW DUE: Check if impression share improved. If not, add target CPA.</div>')
-        h('</div>')
-
     h('</div>')
 
 # ============================================================
@@ -1433,13 +1376,8 @@ if google_recs:
             h(f'</div>')
 
     if skip_recs:
-        h(f'<div style="font-size:12px;color:#888;font-weight:600;margin-top:12px;margin-bottom:8px;">Skip These ({sum(r["count"] for r in skip_recs)} total)</div>')
-        for rec in skip_recs:
-            type_label = rec["type"].replace("_", " ").title()
-            reason = rec["reason"] or "Not aligned with current strategy"
-            h(f'<div style="margin-bottom:4px;padding:6px 12px;background:#1a1a1a;border-radius:4px;font-size:12px;">')
-            h(f'<span style="color:#666;">&#10005;</span> <span style="color:#888;">{type_label} ({rec["count"]})</span> <span style="color:#555;">-- {reason}</span>')
-            h(f'</div>')
+        h(f'<div style="font-size:12px;color:#888;margin-top:12px;">'
+          f'{sum(r["count"] for r in skip_recs)} recommendations skipped as not aligned with current strategy.</div>')
 
     h('</div>')
 
@@ -1489,27 +1427,30 @@ if aspire_revenue and acct_this:
     md.append("")
     grand = aspire_revenue.get("grand_by_source") or {}
     if grand:
-        md.append("**Grand Total by Lead Source** (since Feb 19; all of each customer's won work rolls up to their origin channel).")
-        md.append("One-time is cash once; annual contract value recurs yearly. Do not add the two columns.")
+        ranked_srcs = sorted(
+            ((s, v[1]) for s, v in grand.items() if s != "(no source)"), key=lambda x: -x[1])
+        grand_opps = sum(v[0] for v in grand.values())
+        grand_onetime = sum(v[1] for v in grand.values())
+        ads_rank = next((i + 1 for i, (s, _) in enumerate(ranked_srcs) if s == "Google Ads"), None)
+        ads_rank_str = (f"Google Ads ranks #{ads_rank} of {len(ranked_srcs)} sources by one-time cash"
+                        if ads_rank else "Google Ads has no won revenue yet")
+        md.append(f"**Since Feb 19**: {grand_opps} opps, ${grand_onetime:,.0f} one-time revenue "
+                  f"across all lead sources -- {ads_rank_str}.")
         md.append("")
-        md.append("| Lead Source | Opps | One-Time | Annual Contract |")
-        md.append("|-------------|------|----------|-----------------|")
-        for s in sorted(grand, key=lambda k: -grand[k][1]):
-            if s == "(no source)":
-                continue
-            c, d, k = grand[s]
-            md.append(f"| {s} | {c} | ${d:,.0f} | ${k:,.0f} |")
-        nos = grand.get("(no source)")
-        if nos:
-            md.append(f"| Existing / no tracked source | {nos[0]} | ${nos[1]:,.0f} | ${nos[2]:,.0f} |")
+    won_opps = aspire_revenue.get("won_opps") or []
+    ads_opps = [o for o in won_opps if o.get("source_label") in _PAID_SRC]
+    organic_opps = [o for o in won_opps if o.get("source_label") in _ORGANIC_SRC]
+    if ads_opps:
+        md.append("**Closed this week (Google/Bing Ads)**:")
+        for opp in ads_opps:
+            num = f" #{opp['number']}" if opp.get("number") else ""
+            link = f"[{opp['name']}{num}]({opp['url']})" if opp.get("url") else f"{opp['name']}{num}"
+            md.append(f"- **[{opp['source_label']}]** {link} -- ${opp['dollars']:,.0f}")
         md.append("")
-    if aspire_revenue.get("won_opps"):
-        md.append("**Closed this week** (credited to each customer's origin source):")
-    for opp in aspire_revenue.get("won_opps") or []:
-        num = f" #{opp['number']}" if opp.get("number") else ""
-        link = f"[{opp['name']}{num}]({opp['url']})" if opp.get("url") else f"{opp['name']}{num}"
-        md.append(f"- **[{opp['source_label']}]** {link} -- ${opp['dollars']:,.0f}")
-    if aspire_revenue.get("won_opps"):
+    if organic_opps:
+        organic_total = sum(o["dollars"] for o in organic_opps)
+        md.append(f"*For comparison: {len(organic_opps)} organic win{'s' if len(organic_opps) != 1 else ''} "
+                  f"this week, ${organic_total:,.0f}.*")
         md.append("")
     lt90 = aspire_revenue.get("lead_type_90d")
     if lt90:
@@ -1518,17 +1459,6 @@ if aspire_revenue and acct_this:
                   f"phone calls ${c90['dollars']:,.0f} ({c90['won']} opps)*")
         md.append("")
     md.append("*Correlation only -- not direct attribution between ads and won deals*")
-    md.append("")
-
-if recommendations:
-    md.append("## What to Do This Week")
-    for i, rec in enumerate(recommendations, 1):
-        tag = rec["priority"].upper()
-        md.append(f"{i}. **[{tag}]** {rec['action']} -- {rec['detail']}")
-    md.append("")
-else:
-    md.append("## What to Do This Week")
-    md.append("No urgent actions this week. Everything looks healthy.")
     md.append("")
 
 if camp_data:
@@ -1620,18 +1550,20 @@ if already_blocked_terms:
 
 if headlines or descriptions:
     md.append("## Ad Copy Performance")
+    md.append("*Best and worst by impressions*")
+    md.append("")
     if headlines:
-        md.append("### Top Headlines")
-        md.append(f"| Headline | Impr | Clicks | CTR | Conv |")
-        md.append(f"|----------|------|--------|-----|------|")
-        for hl in headlines[:5]:
-            md.append(f"| {hl['text']} | {hl['impressions']:,} | {hl['clicks']} | {hl['ctr']:.1f}% | {hl['conversions']:.0f} |")
+        md.append("### Headlines")
+        md.append(f"| | Headline | Impr | Clicks | CTR | Conv |")
+        md.append(f"|-|----------|------|--------|-----|------|")
+        for label, hl in _best_worst(headlines):
+            md.append(f"| {label} | {hl['text']} | {hl['impressions']:,} | {hl['clicks']} | {hl['ctr']:.1f}% | {hl['conversions']:.0f} |")
     if descriptions:
-        md.append("### Top Descriptions")
-        md.append(f"| Description | Impr | Clicks | CTR | Conv |")
-        md.append(f"|-------------|------|--------|-----|------|")
-        for desc in descriptions[:5]:
-            md.append(f"| {desc['text']} | {desc['impressions']:,} | {desc['clicks']} | {desc['ctr']:.1f}% | {desc['conversions']:.0f} |")
+        md.append("### Descriptions")
+        md.append(f"| | Description | Impr | Clicks | CTR | Conv |")
+        md.append(f"|-|-------------|------|--------|-----|------|")
+        for label, desc in _best_worst(descriptions):
+            md.append(f"| {label} | {desc['text']} | {desc['impressions']:,} | {desc['clicks']} | {desc['ctr']:.1f}% | {desc['conversions']:.0f} |")
     md.append("")
 
 if device_data or hour_blocks:
@@ -1661,9 +1593,16 @@ if device_data or hour_blocks:
 
 if qs_keywords:
     md.append("## Quality Score Tracker")
+    below5_now_md = sum(1 for kw in qs_keywords if kw["qs"] < 5)
+    avg_qs_md = sum(kw["qs"] for kw in qs_keywords) / len(qs_keywords)
+    md.append(f"*{below5_now_md} of {len(qs_keywords)} keywords below QS 5. Average QS: {avg_qs_md:.1f}. "
+              f"Only QS 1-6 keywords are listed below; QS 7-10 keywords are healthy.*")
+    md.append("")
+    # Only QS 1-6 gets a row here -- same cut as the HTML report.
+    qs_keywords_low_md = [kw for kw in qs_keywords if kw["qs"] <= 6]
     md.append(f"| Keyword | QS | Exp CTR | Ad Rel | Landing Page |")
     md.append(f"|---------|----|---------| -------|-------------|")
-    for kw in qs_keywords:
+    for kw in qs_keywords_low_md:
         prior = prior_qs.get(kw["keyword"])
         trend = ""
         if prior is not None:
@@ -1671,17 +1610,6 @@ if qs_keywords:
             if diff != 0:
                 trend = f" ({'+' if diff > 0 else ''}{diff})"
         md.append(f"| {kw['keyword']} | {kw['qs']}{trend} | {qs_component_short(kw['ctr'])} | {qs_component_short(kw['relevance'])} | {qs_component_short(kw['landing'])} |")
-    md.append("")
-
-if days_until_review >= -7:
-    md.append("## Impression Share Strategy")
-    md.append(f"**{impr_share_plan['phase']}** (review: {impr_share_plan['review_date']})")
-    md.append(f"- {impr_share_plan['strategy']}")
-    md.append(f"- Bidding: {impr_share_plan['current_bidding']}")
-    if days_until_review > 0:
-        md.append(f"- Review in {days_until_review} days")
-    else:
-        md.append(f"- **REVIEW DUE**: Check if impression share improved. If not, add target CPA.")
     md.append("")
 
 md.append(f"---\n*Targets: CPA <= ${TARGET_CPA:.0f} | Impr Share >= {TARGET_IMPR_SHARE:.0f}%*")
@@ -1970,24 +1898,33 @@ elif fable_failure_reason:
 # SAVE & SEND
 # ============================================================
 
+# --dry-run builds the whole report, including every Google Ads and Aspire
+# query, then stops instead of emailing. Added 2026-08-12 so the revenue
+# attribution rewrite could be proved before its first scheduled send, since
+# dispatching the workflow otherwise mails the real report to all recipients.
+# Writes go to /tmp, not the repo's report archive or the QS-history state
+# file (guarded above), so a test run leaves no trace to commit or diff.
+if DRY_RUN:
+    dryrun_html_path = "/tmp/weekly_report_dryrun.html"
+    dryrun_md_path = "/tmp/weekly_report_dryrun.md"
+    with open(dryrun_html_path, "w") as f:
+        f.write(html_report)
+    with open(dryrun_md_path, "w") as f:
+        f.write(report_text)
+    print("=" * 70)
+    print("DRY RUN - report built successfully, email NOT sent, no state persisted")
+    print(f"HTML written to: {dryrun_html_path}")
+    print(f"Markdown written to: {dryrun_md_path}")
+    print("=" * 70)
+    _run.done()
+    sys.exit(0)
+
 report_dir = os.path.join(REPO_ROOT, ".claude", "reports", "marketing", "google-ads", "weekly")
 os.makedirs(report_dir, exist_ok=True)
 report_file = os.path.join(report_dir, f"{now.strftime('%Y-%m-%d')}.md")
 with open(report_file, "w") as f:
     f.write(report_text)
 print(f"Report saved: {report_file}")
-
-# --dry-run builds the whole report, including every Google Ads and Aspire
-# query, then stops instead of emailing. Added 2026-08-12 so the revenue
-# attribution rewrite could be proved before its first scheduled send, since
-# dispatching the workflow otherwise mails the real report to all recipients.
-if "--dry-run" in sys.argv:
-    print("=" * 70)
-    print("DRY RUN - report built successfully, email NOT sent")
-    print("=" * 70)
-    print(report_text)
-    _run.done()
-    sys.exit(0)
 
 # Send email via Gmail
 gmail_email = os.environ.get("GMAIL_EMAIL", "")
