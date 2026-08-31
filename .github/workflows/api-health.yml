@@ -38,6 +38,16 @@ jobs:
       - name: Install dependencies
         run: pip install google-ads
 
+      # The --heal path commits and pushes from inside api-health-monitor.py.
+      # actions/checkout does not set an author identity, so without this the
+      # commit dies with "Author identity unknown" (exit 128) and the script
+      # pushes a branch carrying zero commits. That is exactly what produced the
+      # nine empty api-drift/* branches in April 2026.
+      - name: Configure git identity
+        run: |
+          git config user.name "blackhill-bot"
+          git config user.email "bot@blackhilltx.com"
+
       - name: Run API health monitor
         id: health
         env:
