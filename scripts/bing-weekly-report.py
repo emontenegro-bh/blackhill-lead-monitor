@@ -54,6 +54,21 @@ TO_EMAIL = ", ".join(TO_EMAILS)
 TARGET_CPA = 80.0          # upper bound of the $50-80 CPL goal
 WASTE_THRESHOLD = 15.0     # a non-converting term must burn this much to be listed
 
+# Deliberate change freeze. The banner disappears on its own once the date passes,
+# so nobody has to remember to remove it. Set to None to drop it early.
+CHANGE_FREEZE_UNTIL = "2026-09-20"
+CHANGE_FREEZE_REASON = (
+    "Eight structural changes landed between Aug 23 and Aug 30: budgets shifted on both "
+    "campaigns, phone clicks became a counted conversion, counting moved from All to Unique, "
+    "the account time zone was corrected from Mid-Atlantic to Central, audience settings "
+    "changed, 26 negative keywords were added, and the highest-spend keyword moved from "
+    "phrase to exact. Every campaign bids on Auto: Max Conversions, which restarts learning "
+    "after each change, and the definition of a conversion itself changed on Aug 23, so "
+    "week-over-week conversion figures cross a boundary. Nothing structural changes until "
+    "the freeze lifts, so the effects can be read cleanly rather than tangled together. "
+    "Negative keywords stay the exception: they subtract irrelevant traffic without "
+    "disturbing bidding.")
+
 # Goals that represent a real contact attempt. "Form Start" is deliberately
 # excluded: starting a form is intent, not a lead.
 CONTACT_GOALS = {"Lead Form Submission", "phone click", "Email Click"}
@@ -527,7 +542,21 @@ h(f'<!DOCTYPE html><html><head><meta charset="utf-8">'
   f'<style>{STYLES}</style></head><body><div class="wrap">')
 h(f'<div class="header"><h1>Weekly Bing Ads Report</h1>')
 h(f'<div class="period">{week_ago_fmt} &mdash; {today_fmt}</div></div>')
+
 m(f"# Black Hill Landscaping - Weekly Bing Ads Report\n\n{week_ago_fmt} - {today_fmt}\n")
+# Change freeze notice (self-expiring)
+if CHANGE_FREEZE_UNTIL and now.strftime("%Y-%m-%d") <= CHANGE_FREEZE_UNTIL:
+    _fz = datetime.strptime(CHANGE_FREEZE_UNTIL, "%Y-%m-%d")
+    _fz_label = _fz.strftime("%A, %B %d, %Y")
+    _days = (_fz - now).days
+    _hdr = (f"Change freeze in effect until {_fz_label}"
+            + (f" ({_days} days away)" if _days > 0 else " (lifts today)"))
+    h('<div class="section" style="border-bottom:1px solid #2a2a2a;">')
+    h(f'<div style="padding:12px 16px;background:#1a1a12;border-left:4px solid #c8963e;border-radius:6px;">')
+    h(f'<div style="font-size:14px;font-weight:700;color:#c8963e;margin-bottom:8px;">{_hdr}</div>')
+    h(f'<div style="font-size:12px;color:#bbb;line-height:1.6;">{CHANGE_FREEZE_REASON}</div>')
+    h('</div></div>')
+    m(f"\n> **{_hdr}**\n>\n> {CHANGE_FREEZE_REASON}\n")
 
 # --- 1. Did We Move the Needle? ---
 h('<div class="section"><h2>Did We Move the Needle?</h2>')
