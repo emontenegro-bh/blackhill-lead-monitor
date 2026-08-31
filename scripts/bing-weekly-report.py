@@ -49,7 +49,9 @@ signal.signal(signal.SIGALRM, _timeout_handler)
 signal.alarm(720)
 
 # --- Config ---
-TO_EMAILS = ["evelin@blackhilltx.com"]
+# Matches the Google report distribution. Umair and Afaq are the web dev team and
+# need to see the change freeze, since they also have access to this account.
+TO_EMAILS = ["evelin@blackhilltx.com", "Umair@blackhilltx.com", "afaq@blackhilltx.com"]
 TO_EMAIL = ", ".join(TO_EMAILS)
 TARGET_CPA = 80.0          # upper bound of the $50-80 CPL goal
 WASTE_THRESHOLD = 15.0     # a non-converting term must burn this much to be listed
