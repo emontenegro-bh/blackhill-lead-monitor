@@ -514,21 +514,54 @@ def get_aspire_revenue_v2(start_date, end_date):
             return src[best]
 
         WON = "OpportunityStatusName eq 'Won'"
-        sel = "$select=WonDollars,OpportunityName,OpportunityNumber,OpportunityID,BillingContactID,PropertyID"
+        sel = ("$select=WonDollars,ActualEarnedRevenue,OpportunityType,OpportunityName,"
+               "OpportunityNumber,OpportunityID,BillingContactID,PropertyID")
+
+        def opp_revenue(o):
+            """The honest dollar figure for one won opportunity.
+
+            WonDollars alone is wrong in two different directions, so this
+            picks per type rather than applying one rule to both.
+
+            One-time work: WonDollars is what was AGREED, ActualEarnedRevenue
+            is what was BILLED, and for irrigation they are deliberately not
+            the same number -- the model is a $150 diagnosis followed by the
+            repair, invoiced on the same opportunity without the agreed figure
+            ever being revised. 14 of 34 paid-search diagnoses billed more than
+            they were won for ($150 -> $861 on one). Across all irrigation won
+            since February that is $69,070 agreed against $79,392 billed.
+
+            Contracts: the opposite. WonDollars is the ANNUAL value and
+            ActualEarnedRevenue is merely how much of the year has elapsed, so
+            using "actual" would value a contract by its age. Contracts won in
+            2023 show 98% earned, 2024 78%, 2025 72%, 2026 24% -- that gradient
+            is the calendar, not performance.
+            """
+            if (o.get("OpportunityType") or "") == "Contract":
+                return float(o.get("WonDollars", 0) or 0)
+            actual = float(o.get("ActualEarnedRevenue", 0) or 0)
+            return actual if actual > 0 else float(o.get("WonDollars", 0) or 0)
 
         def attribute(params, want_opps=False):
+            # Buckets are [count, one-time cash, annual contract value]. The
+            # last two are NEVER added together: one is money received once,
+            # the other recurs every year until cancelled. Summing them is what
+            # let a single $30,759 maintenance agreement outweigh twelve real
+            # installs and flatter whichever channel happened to win it.
             by = {}
             opp_list = []
             for o in paged("Opportunities", params):
                 s = origin(o.get("BillingContactID"), o.get("PropertyID"))
-                dollars = float(o.get("WonDollars", 0) or 0)
-                b = by.setdefault(s or "(no source)", [0, 0.0])
+                dollars = opp_revenue(o)
+                is_contract = (o.get("OpportunityType") or "") == "Contract"
+                b = by.setdefault(s or "(no source)", [0, 0.0, 0.0])
                 b[0] += 1
-                b[1] += dollars
+                b[2 if is_contract else 1] += dollars
                 if want_opps and s:
                     oid = o.get("OpportunityID")
                     opp_list.append({"name": o.get("OpportunityName") or "Unnamed opportunity",
                                      "dollars": dollars, "number": o.get("OpportunityNumber"),
+                                     "is_contract": is_contract,
                                      "source_label": s,
                                      "url": f"https://cloud.youraspire.com/app/opportunities/{oid}" if oid else None})
             return by, opp_list
@@ -538,27 +571,30 @@ def get_aspire_revenue_v2(start_date, end_date):
             want_opps=True)
         grand_by, _ = attribute(
             f"$filter={WON} and WonDate ge 2026-02-19T00:00:00Z and WonDate le {end_date}T23:59:59Z"
-            "&$select=WonDollars,BillingContactID,PropertyID")
+            "&$select=WonDollars,ActualEarnedRevenue,OpportunityType,BillingContactID,PropertyID")
 
-        cpc = [0, 0.0]
-        org = [0, 0.0]
-        oth = [0, 0.0]
-        for s, (c, d) in week_by.items():
-            if s in _PAID_SRC:
-                cpc[0] += c
-                cpc[1] += d
-            elif s in _ORGANIC_SRC:
-                org[0] += c
-                org[1] += d
-            elif s != "(no source)":
-                oth[0] += c
-                oth[1] += d
+        cpc = [0, 0.0, 0.0]
+        org = [0, 0.0, 0.0]
+        oth = [0, 0.0, 0.0]
+        for s, (c, d, k) in week_by.items():
+            tgt = (cpc if s in _PAID_SRC else
+                   org if s in _ORGANIC_SRC else
+                   oth if s != "(no source)" else None)
+            if tgt is None:
+                continue
+            tgt[0] += c
+            tgt[1] += d
+            tgt[2] += k
         week_opps.sort(key=lambda x: -x["dollars"])
         return {
-            "cpc_won": cpc[1], "cpc_count": cpc[0],
-            "organic_won": org[1], "organic_count": org[0],
-            "other_won": oth[1], "other_count": oth[0],
+            # *_won is ONE-TIME CASH ONLY. Annual contract value is reported
+            # beside it in *_acv and deliberately never folded in -- see the
+            # comment in attribute().
+            "cpc_won": cpc[1], "cpc_acv": cpc[2], "cpc_count": cpc[0],
+            "organic_won": org[1], "organic_acv": org[2], "organic_count": org[0],
+            "other_won": oth[1], "other_acv": oth[2], "other_count": oth[0],
             "total_won": cpc[1] + org[1] + oth[1],
+            "total_acv": cpc[2] + org[2] + oth[2],
             "count": cpc[0] + org[0] + oth[0],
             "won_opps": week_opps,
             "week_by_source": week_by,
@@ -790,9 +826,17 @@ def generate_verdict():
             lines.append(f"Budget is capping visibility -- losing up to {biggest_budget_loss:.0f}% to daily budget limits.")
 
     # -- Revenue tie-in --
+    # ROI compares one-time cash against one week of spend, which is the only
+    # like-for-like comparison available. Contract wins are called out
+    # separately rather than folded in: a $19,028 annual agreement is not a
+    # week's return, and adding it here would make a single signature look like
+    # a 900% week.
+    cpc_acv = aspire_revenue["cpc_acv"] if aspire_revenue else 0
     if cpc_rev > 0:
         roi = ((cpc_rev - spend) / spend * 100) if spend > 0 else 0
-        lines.append(f"Ad-sourced leads closed ${cpc_rev:,.0f} in revenue ({cpc_count} opp{'s' if cpc_count != 1 else ''}). ROI: {roi:+.0f}%.")
+        lines.append(f"Ad-sourced leads closed ${cpc_rev:,.0f} in one-time revenue ({cpc_count} opp{'s' if cpc_count != 1 else ''}). ROI: {roi:+.0f}%.")
+    if cpc_acv > 0:
+        lines.append(f"Ads also won ${cpc_acv:,.0f} in annual contract value, which recurs yearly and is not counted in that ROI.")
     elif spend > 0:
         lines.append(f"No ad-sourced revenue closed this week. ${spend:.0f} spent with no return yet.")
 
@@ -942,38 +986,56 @@ if aspire_revenue and acct_this:
     h(f'</div></td>')
     cpc_color = "#27ae60" if aspire_revenue["cpc_won"] > 0 else "#888"
     h(f'<td width="33%" style="padding:0 4px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
-    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Won from Ads</div>')
+    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">One-Time from Ads</div>')
     h(f'<div style="font-size:26px;font-weight:700;color:{cpc_color};">${aspire_revenue["cpc_won"]:,.0f}</div>')
     h(f'<div style="font-size:11px;color:#666;margin-top:4px;">{aspire_revenue["cpc_count"]} opp{"s" if aspire_revenue["cpc_count"] != 1 else ""}</div>')
     h(f'</div></td>')
     org_color = "#3498db" if aspire_revenue["organic_won"] > 0 else "#888"
     h(f'<td width="33%" style="padding:0 4px;"><div style="background:#222;border-radius:8px;padding:16px;text-align:center;border:1px solid #333;">')
-    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">Won from Organic</div>')
+    h(f'<div style="font-size:11px;color:#888;text-transform:uppercase;">One-Time from Organic</div>')
     h(f'<div style="font-size:26px;font-weight:700;color:{org_color};">${aspire_revenue["organic_won"]:,.0f}</div>')
     h(f'<div style="font-size:11px;color:#666;margin-top:4px;">{aspire_revenue["organic_count"]} opp{"s" if aspire_revenue["organic_count"] != 1 else ""}</div>')
     h(f'</div></td>')
     h('</tr></table>')
     if aspire_revenue["other_won"] > 0:
         h(f'<div style="text-align:center;margin-top:6px;font-size:11px;color:#666;">+ ${aspire_revenue["other_won"]:,.0f} from other sources ({aspire_revenue["other_count"]} opps)</div>')
+    # Annual contract value, kept visually separate from the cash figures
+    # above. A maintenance agreement recurs every year; a sod install does not.
+    if aspire_revenue.get("total_acv", 0) > 0:
+        h('<div style="margin-top:10px;padding:8px 10px;background:#1b1b1b;border-left:3px solid #C9700B;border-radius:4px;">')
+        h('<div style="font-size:11px;color:#888;text-transform:uppercase;">Plus annual contract value won this week</div>')
+        h(f'<div style="font-size:12px;color:#ddd;margin-top:3px;">'
+          f'Ads ${aspire_revenue["cpc_acv"]:,.0f} &bull; '
+          f'Organic ${aspire_revenue["organic_acv"]:,.0f} &bull; '
+          f'Other ${aspire_revenue["other_acv"]:,.0f}</div>')
+        h('<div style="font-size:10px;color:#777;margin-top:3px;">Recurring yearly, not one-time cash. Not added to the figures above.</div>')
+        h('</div>')
     grand = aspire_revenue.get("grand_by_source") or {}
     if grand:
         h('<div style="margin-top:14px;">')
         h('<div style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Grand Total by Lead Source '
           '(since Feb 19 &bull; all of each customer\'s won work rolls up to their origin channel)</div>')
         h('<table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size:12px;">')
+        h('<tr><td></td><td></td>'
+          '<td style="padding:3px 8px;color:#777;font-size:10px;text-align:right;">one-time</td>'
+          '<td style="padding:3px 8px;color:#777;font-size:10px;text-align:right;">annual contract</td></tr>')
+        # Ranked on one-time cash. Ranking on the two added together is exactly
+        # the distortion this split exists to remove.
         for s in sorted(grand, key=lambda k: -grand[k][1]):
             if s == "(no source)":
                 continue
-            c, d = grand[s]
+            c, d, k = grand[s]
             color = _SRC_COLOR.get(s, "#aaa")
             h(f'<tr><td style="padding:3px 8px;color:{color};font-weight:700;">{s}</td>'
               f'<td style="padding:3px 8px;color:#888;">{c} opp{"s" if c != 1 else ""}</td>'
-              f'<td style="padding:3px 8px;color:#27ae60;font-weight:600;text-align:right;">${d:,.0f}</td></tr>')
+              f'<td style="padding:3px 8px;color:#27ae60;font-weight:600;text-align:right;">${d:,.0f}</td>'
+              f'<td style="padding:3px 8px;color:#C9700B;font-weight:600;text-align:right;">${k:,.0f}</td></tr>')
         nos = grand.get("(no source)")
         if nos:
             h(f'<tr><td style="padding:3px 8px;color:#666;">Existing / no tracked source</td>'
               f'<td style="padding:3px 8px;color:#666;">{nos[0]} opps</td>'
-              f'<td style="padding:3px 8px;color:#666;text-align:right;">${nos[1]:,.0f}</td></tr>')
+              f'<td style="padding:3px 8px;color:#666;text-align:right;">${nos[1]:,.0f}</td>'
+              f'<td style="padding:3px 8px;color:#666;text-align:right;">${nos[2]:,.0f}</td></tr>')
         h('</table></div>')
 
     won_opps = aspire_revenue.get("won_opps") or []
@@ -1420,24 +1482,26 @@ if aspire_revenue and acct_this:
     md.append(f"| Metric | Amount |")
     md.append(f"|--------|--------|")
     md.append(f"| Ad Spend This Week | ${acct_this['spend']:.0f} |")
-    md.append(f"| Won Revenue This Week | ${aspire_revenue['total_won']:,.0f} ({aspire_revenue['count']} opportunities) |")
-    md.append(f"| Won from Ads | ${aspire_revenue['cpc_won']:,.0f} ({aspire_revenue['cpc_count']} opps) |")
-    md.append(f"| Won from Organic | ${aspire_revenue['organic_won']:,.0f} ({aspire_revenue['organic_count']} opps) |")
+    md.append(f"| One-Time Revenue Won This Week | ${aspire_revenue['total_won']:,.0f} ({aspire_revenue['count']} opportunities) |")
+    md.append(f"| Annual Contract Value Won This Week | ${aspire_revenue['total_acv']:,.0f} (recurring, not added to the above) |")
+    md.append(f"| One-Time from Ads | ${aspire_revenue['cpc_won']:,.0f} ({aspire_revenue['cpc_count']} opps) |")
+    md.append(f"| One-Time from Organic | ${aspire_revenue['organic_won']:,.0f} ({aspire_revenue['organic_count']} opps) |")
     md.append("")
     grand = aspire_revenue.get("grand_by_source") or {}
     if grand:
-        md.append("**Grand Total by Lead Source** (since Feb 19; all of each customer's won work rolls up to their origin channel):")
+        md.append("**Grand Total by Lead Source** (since Feb 19; all of each customer's won work rolls up to their origin channel).")
+        md.append("One-time is cash once; annual contract value recurs yearly. Do not add the two columns.")
         md.append("")
-        md.append("| Lead Source | Opps | Revenue |")
-        md.append("|-------------|------|---------|")
+        md.append("| Lead Source | Opps | One-Time | Annual Contract |")
+        md.append("|-------------|------|----------|-----------------|")
         for s in sorted(grand, key=lambda k: -grand[k][1]):
             if s == "(no source)":
                 continue
-            c, d = grand[s]
-            md.append(f"| {s} | {c} | ${d:,.0f} |")
+            c, d, k = grand[s]
+            md.append(f"| {s} | {c} | ${d:,.0f} | ${k:,.0f} |")
         nos = grand.get("(no source)")
         if nos:
-            md.append(f"| Existing / no tracked source | {nos[0]} | ${nos[1]:,.0f} |")
+            md.append(f"| Existing / no tracked source | {nos[0]} | ${nos[1]:,.0f} | ${nos[2]:,.0f} |")
         md.append("")
     if aspire_revenue.get("won_opps"):
         md.append("**Closed this week** (credited to each customer's origin source):")
