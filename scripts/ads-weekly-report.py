@@ -606,7 +606,13 @@ def get_aspire_revenue_v2(start_date, end_date):
             want_opps=True)
         grand_by, _ = attribute(
             f"$filter={WON} and WonDate ge 2026-02-19T00:00:00Z and WonDate le {end_date}T23:59:59Z"
-            "&$select=WonDollars,ActualEarnedRevenue,OpportunityType,BillingContactID,PropertyID")
+            # CompleteDate matters here too. Without it opp_revenue can never
+            # take the completion branch, so every one-time job in the
+            # season-to-date figure silently falls back to its quoted amount --
+            # $979,821 instead of $1,017,021 across the 342 wins since Feb 19.
+            # The week-level select already carries it; this one was missed.
+            "&$select=WonDollars,ActualEarnedRevenue,OpportunityType,CompleteDate,"
+            "BillingContactID,PropertyID")
 
         cpc = [0, 0.0, 0.0]
         org = [0, 0.0, 0.0]
