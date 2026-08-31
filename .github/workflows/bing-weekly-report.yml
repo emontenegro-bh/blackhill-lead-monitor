@@ -44,6 +44,8 @@ jobs:
           BING_ADS_CUSTOMER_ID: ${{ secrets.BING_ADS_CUSTOMER_ID }}
           BING_ADS_ACCOUNT_ID: ${{ secrets.BING_ADS_ACCOUNT_ID }}
           BING_ADS_REDIRECT_URI: ${{ secrets.BING_ADS_REDIRECT_URI }}
+          ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
+          ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: |
