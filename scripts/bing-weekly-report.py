@@ -29,7 +29,7 @@ prepared to re-set that secret afterwards.
 
     python3 scripts/bing-weekly-report.py [--dry-run]
 """
-import json, os, sys, smtplib, tempfile, signal
+import json, os, sys, smtplib, tempfile, signal, urllib.parse, urllib.request
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -304,6 +304,120 @@ keywords = sorted(run_report(build_request("KeywordPerformance", KEYWORD_COLS, t
                   key=lambda r: num(r.get("Spend")), reverse=True)[:12]
 
 
+
+# ============================================================
+# ASPIRE WON REVENUE ATTRIBUTED TO BING ADS
+# ============================================================
+# Ports the attribution the Google report already uses: Lead Source lives on the
+# CONTACT (custom field definition 34), and a customer belongs to one origin, so
+# every won opportunity for that customer rolls up to it. First touch wins when a
+# property has several tagged contacts. Aspire already carries a "Bing Ads" value,
+# so nothing new had to be created.
+#
+# Read this as a FLOOR, not a full picture: most won opportunities carry no lead
+# source at all, and the roll-up credits Bing with a customer's later work too.
+ASPIRE_SOURCE = "Bing Ads"
+LAUNCH_DATE = "2026-02-19"
+
+
+def get_aspire_bing_revenue(start_date, end_date):
+    """Won dollars attributed to Bing Ads. Returns None if Aspire is unreachable."""
+    try:
+        client_id = os.environ.get("ASPIRE_REPORTING_CLIENT_ID") or os.environ.get("ASPIRE_CLIENT_ID")
+        secret = os.environ.get("ASPIRE_REPORTING_SECRET") or os.environ.get("ASPIRE_SECRET")
+        if not client_id or not secret:
+            cfg_path = os.path.expanduser("~/.config/aspire/config.json")
+            if not os.path.exists(cfg_path):
+                return None
+            with open(cfg_path) as f:
+                acfg = json.load(f)
+            client_id = acfg.get("reporting_client_id", acfg.get("client_id"))
+            secret = acfg.get("reporting_secret", acfg.get("secret"))
+        base = os.environ.get("ASPIRE_API_URL", "https://cloud-api.youraspire.com")
+        auth = json.dumps({"ClientId": client_id, "Secret": secret}).encode()
+        areq = urllib.request.Request(f"{base}/Authorization", data=auth,
+                                      headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(areq, timeout=20) as resp:
+            token = json.loads(resp.read().decode()).get("Token", "")
+        if not token:
+            return None
+
+        def paged(entity, params, ps=500):
+            out, skip = [], 0
+            while True:
+                url = f"{base}/{entity}?" + urllib.parse.quote(
+                    params + f"&$top={ps}&$skip={skip}", safe="=&$,()/%:@")
+                req = urllib.request.Request(
+                    url, headers={"Authorization": f"Bearer {token}", "Accept": "application/json"})
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    d = json.loads(r.read().decode())
+                d = d if isinstance(d, list) else [d]
+                out += d
+                if len(d) < ps:
+                    break
+                skip += ps
+            return out
+
+        cf = paged("ContactCustomFields", "$filter=ContactCustomFieldDefinitionID eq 34")
+        src = {int(x["ContactID"]): (x.get("ColumnValue") or "").strip()
+               for x in cf if (x.get("ColumnValue") or "").strip()}
+        if not src:
+            return None
+        created = {c["ContactID"]: str(c.get("CreatedDateTime") or "")
+                   for c in paged("Contacts", "$select=ContactID,CreatedDateTime")}
+        prop_contacts = {}
+        ids = list(src)
+        for i in range(0, len(ids), 25):
+            filt = "ContactID in (" + ",".join(str(x) for x in ids[i:i + 25]) + ")"
+            for pc in paged("PropertyContacts", f"$filter={filt}&$select=PropertyID,ContactID"):
+                pid, cid = pc.get("PropertyID"), pc.get("ContactID")
+                if pid and cid and int(cid) in src:
+                    prop_contacts.setdefault(int(pid), set()).add(int(cid))
+
+        def origin(billing_id, property_id):
+            cands = set()
+            if billing_id and int(billing_id) in src:
+                cands.add(int(billing_id))
+            if property_id:
+                cands |= prop_contacts.get(int(property_id), set())
+            if not cands:
+                return None
+            return src[min(cands, key=lambda c: created.get(c, "9999"))]
+
+        WON = "OpportunityStatusName eq 'Won'"
+        sel = ("$select=WonDollars,OpportunityName,OpportunityNumber,OpportunityID,"
+               "BillingContactID,PropertyID,WonDate")
+        opps = paged("Opportunities", f"$filter={WON} and WonDate ge {LAUNCH_DATE}T00:00:00Z&{sel}")
+
+        week, life = [], [0, 0.0]
+        for o in opps:
+            if origin(o.get("BillingContactID"), o.get("PropertyID")) != ASPIRE_SOURCE:
+                continue
+            dollars = float(o.get("WonDollars", 0) or 0)
+            won_on = str(o.get("WonDate") or "")[:10]
+            life[0] += 1
+            life[1] += dollars
+            if start_date <= won_on <= end_date:
+                oid = o.get("OpportunityID")
+                week.append({"name": o.get("OpportunityName") or "Unnamed opportunity",
+                             "dollars": dollars, "won_on": won_on,
+                             "url": f"https://cloud.youraspire.com/app/opportunities/{oid}" if oid else None})
+        week.sort(key=lambda x: -x["dollars"])
+        return {"week_opps": week,
+                "week_count": len(week),
+                "week_dollars": sum(w["dollars"] for w in week),
+                "life_count": life[0],
+                "life_dollars": life[1]}
+    except Exception as e:
+        print(f"Aspire revenue warning: {e}", file=sys.stderr)
+        return None
+
+
+aspire_rev = get_aspire_bing_revenue(this_start.strftime("%Y-%m-%d"), this_end.strftime("%Y-%m-%d"))
+# Spend since launch, so lifetime return is a real number rather than a ratio of
+# one week's revenue to one week's spend (won dates lag the clicks that caused them).
+life_spend = account_totals(datetime.strptime(LAUNCH_DATE, "%Y-%m-%d"), now)["total_spend"] if aspire_rev else 0.0
+
 # ============================================================
 # SECTION 6: RECOMMENDATIONS
 # ============================================================
@@ -450,6 +564,57 @@ if goals_this:
     h(f'<div style="margin-top:12px;padding:10px 14px;background:#1a2332;border-left:3px solid #3498db;'
       f'border-radius:4px;font-size:12px;color:#9cf;">Goals this week &mdash; {breakdown}</div>')
     m(f"\nGoals this week: {breakdown}\n")
+h("</div>")
+
+
+# --- Revenue Context (Aspire won revenue attributed to Bing Ads) ---
+h('<div class="section"><h2>Revenue Context</h2>')
+m("\n## Revenue Context\n")
+if aspire_rev:
+    wk_roas = (aspire_rev["week_dollars"] / this_week["total_spend"]) if this_week["total_spend"] else 0
+    life_roas = (aspire_rev["life_dollars"] / life_spend) if life_spend else 0
+    h('<table><tr><th>Won revenue attributed to Bing Ads</th>'
+      '<th class="right">This Week</th><th class="right">Since Feb 19</th></tr>')
+    rev_rows = [
+        ("Won opportunities", f"{aspire_rev['week_count']:,}", f"{aspire_rev['life_count']:,}"),
+        ("Won revenue", f"${aspire_rev['week_dollars']:,.2f}", f"${aspire_rev['life_dollars']:,.2f}"),
+        ("Ad spend", f"${this_week['total_spend']:,.2f}", f"${life_spend:,.2f}"),
+        ("Return on spend", f"{wk_roas:,.1f}x" if this_week["total_spend"] else "--",
+         f"{life_roas:,.1f}x" if life_spend else "--"),
+    ]
+    m("| Won revenue attributed to Bing Ads | This Week | Since Feb 19 |")
+    m("|---|---|---|")
+    for label, a, b in rev_rows:
+        colour = ""
+        if label == "Return on spend" and life_roas >= 1:
+            colour = ' style="color:#27ae60;font-weight:600;"'
+        h(f'<tr><td>{label}</td><td class="right"{colour}>{a}</td><td class="right"{colour}>{b}</td></tr>')
+        m(f"| {label} | {a} | {b} |")
+    h("</table>")
+
+    if aspire_rev["week_opps"]:
+        h('<div style="margin-top:14px;font-size:12px;color:#c8963e;text-transform:uppercase;'
+          'letter-spacing:0.5px;">Won this week</div>')
+        m("\nWon this week:\n")
+        for o in aspire_rev["week_opps"]:
+            link = f'<a href="{o["url"]}" style="color:#9cf;text-decoration:none;">{o["name"]}</a>' if o["url"] else o["name"]
+            h(f'<div style="margin-top:6px;padding:8px 12px;background:#1a1a1a;border-radius:4px;font-size:12px;">'
+              f'{o["won_on"]} &middot; <strong>${o["dollars"]:,.2f}</strong> &middot; {link}</div>')
+            m(f"- {o['won_on']}  ${o['dollars']:,.2f}  {o['name']}")
+    else:
+        h('<div style="margin-top:10px;font-size:12px;color:#888;">No Bing-attributed opportunities '
+          'were won this week. Won dates lag the clicks that caused them.</div>')
+        m("\nNo Bing-attributed opportunities were won this week.")
+
+    caveat = ("Attribution is first touch by customer origin, from the Lead Source field in Aspire. "
+              "A customer tagged Bing Ads has all their won work counted here, including later jobs. "
+              "Most won opportunities carry no lead source at all, so treat this as a floor.")
+    h(f'<div style="margin-top:12px;padding:10px 14px;background:#1a1a1a;border-left:3px solid #666;'
+      f'border-radius:4px;font-size:11px;color:#888;">{caveat}</div>')
+    m(f"\n*{caveat}*\n")
+else:
+    h('<div style="color:#888;font-size:13px;">Aspire revenue unavailable this run.</div>')
+    m("Aspire revenue unavailable this run.")
 h("</div>")
 
 # --- 2. Where's the Money Going? ---
