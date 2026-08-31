@@ -214,6 +214,11 @@ def num(v):
 ACCOUNT_COLS = ["Impressions", "Clicks", "Spend", "Conversions"]
 CAMPAIGN_COLS = ["CampaignName", "CampaignStatus", "Impressions", "Clicks", "Ctr",
                  "AverageCpc", "Spend", "Conversions"]
+# AdDistribution splits Search from the Microsoft Audience Network. Blending them
+# makes impressions look like growth and craters CTR: on 2026-08-30 audience served
+# 2,254 impressions for 7 clicks and 0 conversions, dragging a healthy 3.33% search
+# CTR down to a reported 1.41%.
+DIST_COLS = ["AdDistribution", "Impressions", "Clicks", "Spend", "Conversions"]
 QUERY_COLS = ["SearchQuery", "CampaignName", "Impressions", "Clicks", "Spend", "Conversions"]
 KEYWORD_COLS = ["Keyword", "CampaignName", "Impressions", "Clicks", "Spend",
                 "AverageCpc", "Conversions"]
@@ -226,15 +231,20 @@ def account_totals(start, end):
     AccountPerformanceReport rejects our request shape ("Invalid client data"),
     and deriving from campaigns guarantees section 1 reconciles with section 2.
     """
-    rows = run_report(build_request("CampaignPerformance", CAMPAIGN_COLS, start, end))
-    t = {"impressions": 0.0, "clicks": 0.0, "spend": 0.0, "conversions": 0.0}
+    rows = run_report(build_request("CampaignPerformance", DIST_COLS, start, end))
+    t = {"impressions": 0.0, "clicks": 0.0, "spend": 0.0, "conversions": 0.0,
+         "aud_impressions": 0.0, "aud_clicks": 0.0, "aud_spend": 0.0, "aud_conversions": 0.0}
     for r in rows:
-        t["impressions"] += num(r.get("Impressions"))
-        t["clicks"] += num(r.get("Clicks"))
-        t["spend"] += num(r.get("Spend"))
-        t["conversions"] += num(r.get("Conversions"))
+        audience = "audience" in str(r.get("AdDistribution") or "").lower()
+        pre = "aud_" if audience else ""
+        t[pre + "impressions"] += num(r.get("Impressions"))
+        t[pre + "clicks"] += num(r.get("Clicks"))
+        t[pre + "spend"] += num(r.get("Spend"))
+        t[pre + "conversions"] += num(r.get("Conversions"))
+    # CTR and CPC describe SEARCH only; audience is reported separately below the table.
     t["ctr"] = (t["clicks"] / t["impressions"] * 100) if t["impressions"] else 0.0
     t["cpc"] = (t["spend"] / t["clicks"]) if t["clicks"] else 0.0
+    t["total_spend"] = t["spend"] + t["aud_spend"]
     return t
 
 
@@ -251,7 +261,8 @@ def goal_totals(start, end):
 this_week = account_totals(this_start, this_end)
 prev_week = account_totals(prev_start, prev_end)
 four_week = account_totals(four_start, four_end)
-for k in ("impressions", "clicks", "spend", "conversions"):
+for k in ("impressions", "clicks", "spend", "conversions", "total_spend",
+          "aud_impressions", "aud_clicks", "aud_spend", "aud_conversions"):
     four_week[k] = four_week[k] / 4.0
 
 goals_this = goal_totals(this_start, this_end)
@@ -263,7 +274,7 @@ def contacts(goals):
 
 
 contacts_this, contacts_prev = contacts(goals_this), contacts(goals_prev)
-cost_per_contact = (this_week["spend"] / contacts_this) if contacts_this else 0.0
+cost_per_contact = (this_week["total_spend"] / contacts_this) if contacts_this else 0.0
 
 campaigns = [
     r for r in run_report(build_request("CampaignPerformance", CAMPAIGN_COLS, this_start, this_end))
@@ -299,15 +310,27 @@ keywords = sorted(run_report(build_request("KeywordPerformance", KEYWORD_COLS, t
 def build_actions():
     out = []
 
-    # Uncounted phone clicks -> bidding is aimed at the wrong goal.
-    uncounted = {k: v for k, v in goals_this.items()
-                 if k in CONTACT_GOALS and k != "Lead Form Submission" and v > 0}
-    if uncounted:
-        detail = ", ".join(f"{int(v)} {k}" for k, v in sorted(uncounted.items()))
+    # Contact goals recorded but NOT reflected in the Conversions column.
+    # Inferred, not assumed: if the goals that fired already sum to at least the
+    # account Conversions figure, everything is being counted. The old version
+    # hard-coded "anything but Lead Form Submission is excluded", which kept
+    # printing a false warning after phone click was switched on 2026-08-23.
+    fired = sum(v for k, v in goals_this.items() if k in CONTACT_GOALS and v > 0)
+    counted = this_week["conversions"]
+    if fired > counted + 0.5:
+        gap = fired - counted
         out.append(
-            f"Conversion tracking is undercounting. {detail} recorded this week but excluded "
-            f"from the Conversions column, so Max Conversions bidding cannot see them. "
-            f"Reported CPA is inflated as a result.")
+            f"Conversion tracking may be undercounting: contact goals recorded "
+            f"{fired:.0f} actions but only {counted:.0f} reached the Conversions column "
+            f"({gap:.0f} unaccounted). Check each goal's Include in \"Conversions\" setting.")
+
+    # Audience network noise: cheap, but it distorts impressions and CTR.
+    if this_week["aud_impressions"] > this_week["impressions"] and this_week["aud_conversions"] == 0:
+        out.append(
+            f"Microsoft Audience Network served {this_week['aud_impressions']:,.0f} impressions "
+            f"({this_week['aud_clicks']:,.0f} clicks, ${this_week['aud_spend']:,.2f}, no conversions) "
+            f"versus {this_week['impressions']:,.0f} on search. It costs little but inflates "
+            f"impressions and depresses blended CTR.")
 
     # Budget-starved winners vs expensive losers.
     best = worst = None
@@ -393,17 +416,17 @@ m("| Metric | This Week | Last Week | 4-Wk Avg |")
 m("|---|---|---|---|")
 
 rows = [
-    ("Spend", f"${this_week['spend']:,.2f}", f"${prev_week['spend']:,.2f}",
-     f"${four_week['spend']:,.2f}", delta(this_week["spend"], prev_week["spend"], inverse=True)),
-    ("Clicks", f"{this_week['clicks']:,.0f}", f"{prev_week['clicks']:,.0f}",
+    ("Spend", f"${this_week['total_spend']:,.2f}", f"${prev_week['total_spend']:,.2f}",
+     f"${four_week['total_spend']:,.2f}", delta(this_week["total_spend"], prev_week["total_spend"], inverse=True)),
+    ("Clicks (search)", f"{this_week['clicks']:,.0f}", f"{prev_week['clicks']:,.0f}",
      f"{four_week['clicks']:,.0f}", delta(this_week["clicks"], prev_week["clicks"])),
-    ("Impressions", f"{this_week['impressions']:,.0f}", f"{prev_week['impressions']:,.0f}",
+    ("Impressions (search)", f"{this_week['impressions']:,.0f}", f"{prev_week['impressions']:,.0f}",
      f"{four_week['impressions']:,.0f}", delta(this_week["impressions"], prev_week["impressions"])),
-    ("CTR", f"{this_week['ctr']:.2f}%", f"{prev_week['ctr']:.2f}%",
+    ("CTR (search)", f"{this_week['ctr']:.2f}%", f"{prev_week['ctr']:.2f}%",
      f"{four_week['ctr']:.2f}%", delta(this_week["ctr"], prev_week["ctr"])),
-    ("Avg CPC", f"${this_week['cpc']:,.2f}", f"${prev_week['cpc']:,.2f}",
+    ("Avg CPC (search)", f"${this_week['cpc']:,.2f}", f"${prev_week['cpc']:,.2f}",
      f"${four_week['cpc']:,.2f}", delta(this_week["cpc"], prev_week["cpc"], inverse=True)),
-    ("Form submissions", f"{this_week['conversions']:,.0f}", f"{prev_week['conversions']:,.0f}",
+    ("Conversions (counted)", f"{this_week['conversions']:,.0f}", f"{prev_week['conversions']:,.0f}",
      f"{four_week['conversions']:,.1f}", delta(this_week["conversions"], prev_week["conversions"])),
     ("All contacts", f"{contacts_this:,.0f}", f"{contacts_prev:,.0f}", "--",
      delta(contacts_this, contacts_prev)),
@@ -414,6 +437,13 @@ for label, a, b, c, d in rows:
       f'<td class="right">{c}</td><td class="right">{d}</td></tr>')
     m(f"| {label} | {a} | {b} | {c} |")
 h("</table>")
+
+aud_note = (f"Audience network (excluded from the search figures above): "
+            f"{this_week['aud_impressions']:,.0f} impressions, {this_week['aud_clicks']:,.0f} clicks, "
+            f"${this_week['aud_spend']:,.2f}, {this_week['aud_conversions']:,.0f} conversions")
+h(f'<div style="margin-top:12px;padding:10px 14px;background:#1a1a1a;border-left:3px solid #666;'
+  f'border-radius:4px;font-size:12px;color:#999;">{aud_note}</div>')
+m(f"\n{aud_note}\n")
 
 if goals_this:
     breakdown = ", ".join(f"{k}: {int(v)}" for k, v in sorted(goals_this.items()) if v)
