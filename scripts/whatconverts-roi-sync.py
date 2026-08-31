@@ -146,8 +146,43 @@ def aspire_query(config, token, endpoint, params=""):
 
 def get_opportunities_for_contact(config, token, contact_id):
     """Get all opportunities where this contact is the billing contact."""
-    params = f"$filter=BillingContactID eq {contact_id}&$select=OpportunityID,OpportunityNumber,OpportunityStatusName,EstimatedDollars,WonDollars,WonDate,LostDate,ProposedDate,DivisionName,OpportunityName&$orderby=CreatedDateTime desc"
+    params = f"$filter=BillingContactID eq {contact_id}&$select=OpportunityID,OpportunityNumber,OpportunityStatusName,EstimatedDollars,WonDollars,ActualEarnedRevenue,OpportunityType,CompleteDate,WonDate,LostDate,ProposedDate,DivisionName,OpportunityName&$orderby=CreatedDateTime desc"
     return aspire_query(config, token, "Opportunities", params)
+
+
+def opp_revenue(o):
+    """What a won opportunity is actually worth, picked per type.
+
+    One-time work: WonDollars is what was AGREED, ActualEarnedRevenue is what
+    was BILLED, and for irrigation those differ on purpose -- a $150 diagnosis
+    then the repair, invoiced on the same opportunity without the agreed figure
+    ever being revised. Three leads already sitting in WhatConverts are stamped
+    $150 against $262, $262 and $227 actually earned.
+
+    Contracts: the reverse, so this must NOT be one rule for both.
+    ActualEarnedRevenue on a contract is only how much of the year has elapsed
+    (2023 contracts 98% earned, 2026 24%), so using it would value an agreement
+    by its age rather than its size.
+
+    KNOWN LIMIT, not fixable here: WhatConverts has ONE revenue field per lead,
+    so a $30,758 annual agreement and a $250 repair land in the same column
+    with nothing to tell them apart. 17 of the 35 leads synced so far carry
+    $73,704 of annual contract value in `sales_value`. Any ROI figure
+    WhatConverts shows therefore reads recurring value as one-time cash. The
+    split lives in v_opportunity_revenue and the weekly ads report; treat those
+    as authoritative and this as a convenience mirror.
+    """
+    if (o.get("OpportunityType") or "") == "Contract":
+        return float(o.get("WonDollars", 0) or 0)
+    # And only once the job is COMPLETE. On work in progress
+    # ActualEarnedRevenue is just what has been earned so far -- opportunity
+    # #3250 "Spiraling Junipers" is won at $1,100 with $57.84 earned and no
+    # completion date. A dry run of this script proposed writing $58 to
+    # WhatConverts for it. 148 of 1,680 won work orders are still open.
+    actual = float(o.get("ActualEarnedRevenue", 0) or 0)
+    if o.get("CompleteDate") and actual > 0:
+        return actual
+    return float(o.get("WonDollars", 0) or 0)
 
 
 # --- WhatConverts API ---
@@ -339,9 +374,14 @@ def sync_lead(wc_config, aspire_config, aspire_token, wc_lead_id, mapping, sync_
     synced = sync_state["synced_leads"].get(wc_lead_id, {})
     last_status = synced.get("last_status", "")
 
-    # If already synced as Won, nothing more to do
-    if last_status == "Won":
-        return
+    # Won is no longer a terminal state. It used to be: this returned here, so
+    # a lead was stamped once and never revisited. That froze every irrigation
+    # lead at its diagnosis fee -- the repair bills onto the same opportunity
+    # afterwards and nothing ever went back to look. The gap is small today
+    # ($306 across 35 leads) precisely because it has only had six months to
+    # accumulate; leaving it terminal means it grows with every diagnosis that
+    # converts. Re-checking costs one Aspire read per won lead per run and
+    # writes to WhatConverts only when the number actually moved.
 
     # Get opportunities for this contact
     opps = get_opportunities_for_contact(aspire_config, aspire_token, int(aspire_contact_id))
@@ -368,16 +408,35 @@ def sync_lead(wc_config, aspire_config, aspire_token, wc_lead_id, mapping, sync_
     status = best_opp.get("OpportunityStatusName", "")
     opp_num = best_opp.get("OpportunityNumber", "?")
     estimated = best_opp.get("EstimatedDollars", 0) or 0
-    won_dollars = best_opp.get("WonDollars", 0) or 0
+    won_dollars = opp_revenue(best_opp) if status == "Won" else 0
 
     # Determine what to update in WhatConverts
     updates = {}
 
-    if status == "Won" and last_status != "Won":
+    # Write on the first Won, and again only when the figure genuinely moved.
+    # The equality check is what keeps re-checking cheap: without it every run
+    # would rewrite all 35 won leads, and WhatConverts writes fail silently
+    # here, so a pointless write is a pointless chance to fail.
+    prev_sales = int(synced.get("sales_value") or 0)
+    # Revise only the SAME opportunity. best_opp is "first Won in CreatedDateTime
+    # desc", i.e. the customer's NEWEST win, so once re-checking is enabled a
+    # second job silently replaces the first in this lead's sales_value rather
+    # than adding to it. A dry run showed exactly that: a lead recorded at
+    # $8,890 would have been rewritten to $800 because opportunity #3428 was
+    # created later. That is a different bug -- one lead, one opportunity, by
+    # design -- and quietly shrinking a recorded sale is worse than the stale
+    # figure this change set out to fix.
+    same_opp = str(synced.get("opp_number") or "") == str(opp_num)
+    prev_wins = last_status == "Won"
+    if status == "Won" and (not prev_wins or (same_opp and int(won_dollars) != prev_sales)):
         updates["quotable"] = "yes"
         updates["quote_value"] = int(estimated)
         updates["sales_value"] = int(won_dollars)
-        log(f"  WC #{wc_lead_id} → Won (Opp #{opp_num}: ${won_dollars:,.0f})")
+        if prev_wins:
+            log(f"  WC #{wc_lead_id} → Won value revised (Opp #{opp_num}: "
+                f"${prev_sales:,.0f} → ${won_dollars:,.0f})")
+        else:
+            log(f"  WC #{wc_lead_id} → Won (Opp #{opp_num}: ${won_dollars:,.0f})")
 
     elif status == "Delivered" and last_status not in ("Delivered", "Won"):
         updates["quotable"] = "yes"
@@ -457,9 +516,9 @@ def main():
     # Process each mapped lead
     synced_count = 0
     for wc_lead_id, mapping in mappings.items():
-        # Skip leads already synced as Won (final state)
-        if sync_state["synced_leads"].get(wc_lead_id, {}).get("last_status") == "Won":
-            continue
+        # Won leads are re-checked rather than skipped -- see the note in
+        # sync_lead(). sync_lead only writes when the value changed, so this
+        # costs reads, not writes.
         try:
             sync_lead(wc_config, aspire_config, aspire_token, wc_lead_id, mapping, sync_state)
             synced_count += 1
