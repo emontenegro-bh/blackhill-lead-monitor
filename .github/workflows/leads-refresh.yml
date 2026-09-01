@@ -1,0 +1,96 @@
+name: Leads Refresh (WhatConverts -> Supabase)
+
+# Keeps the `leads` table current. Until now it was a one-time backfill taken
+# on 2026-08-25 and went stale immediately.
+#
+# DELIBERATELY SEPARATE FROM THE LIVE LEAD MONITORS. The obvious alternative
+# was to have whatconverts-lead-monitor.py write to `leads` as it processes.
+# That would couple an analytics table to the pipeline that sends customers
+# their "we will contact you before 5pm" auto-reply -- a bug in the reporting
+# path could then delay or break a real notification. Reporting must not be
+# able to break operations, so this reads the same API separately.
+#
+# Daily is enough. This table answers "where did our leads come from", not
+# "tell me about this lead now" -- that second job belongs to the two lead
+# monitors, which run every 5 minutes via their cron-job.org dispatchers.
+
+on:
+  # 14:17 is unused by any other workflow here. Two on the same minute compete
+  # for GitHub's scheduler and one loses.
+  schedule:
+    - cron: '17 14 * * *'
+  workflow_dispatch:
+    inputs:
+      months:
+        description: 'How many months of WhatConverts history to walk'
+        type: string
+        default: '2'
+      dry_run:
+        description: 'Read and print, write nothing'
+        type: boolean
+        default: false
+
+concurrency:
+  group: leads-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      # 1. New WhatConverts leads. Two months rather than one so a lead that
+      #    arrives late in a month is not missed at the boundary, and because
+      #    inserts ignore duplicates -- re-reading is a no-op, not a rewrite.
+      - name: Sync leads from WhatConverts
+        env:
+          WC_API_TOKEN: ${{ secrets.WC_API_TOKEN }}
+          WC_API_SECRET: ${{ secrets.WC_API_SECRET }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/backfill-leads.py --months ${{ inputs.months || '2' }} ${{ inputs.dry_run == true && '--dry-run' || '' }}
+
+      # 2. Link phone leads to Aspire contacts that already exist. Creates
+      #    NOTHING in Aspire -- see the script header. This is what lets a GMB
+      #    call be traced to a customer at all.
+      - name: Link phone leads to Aspire contacts
+        if: ${{ inputs.dry_run != true }}
+        env:
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/link-phone-leads.py
+
+      # 3. Record any Lead Source that changed. Runs last, after new leads are
+      #    linked, so a lead linked today gets its baseline today rather than
+      #    tomorrow. Ordering matters: baseline only covers leads that were
+      #    already linked when it ran.
+      - name: Record Lead Source changes
+        if: ${{ inputs.dry_run != true }}
+        env:
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/lead-source-observer.py
+
+  notify-failure:
+    needs: [refresh]
+    # `|| cancelled()` because a timeout concludes `cancelled`, not `failure`,
+    # and a plain `if: failure()` cannot see it.
+    if: failure() || cancelled()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Leads Refresh"
+    secrets: inherit

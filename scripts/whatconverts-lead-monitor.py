@@ -1673,6 +1673,59 @@ PENDING_ATTRIBUTION_NOTIFY_HOURS = 24
 # contact does not re-query Aspire on every 5-minute run for the rest of its life.
 PENDING_ATTRIBUTION_BACKOFF_MINUTES = 60
 
+# A call must run this long before its missing Aspire contact is worth an email.
+MIN_ALERT_CALL_SECONDS = 60
+
+
+def _call_is_worth_alerting_about(entry):
+    """Should a phone call with no Aspire contact actually email anyone?
+
+    Nearly all of them should not, and sending them all is how the real ones
+    got lost. Measured over Feb-Aug 2026: 421 unlinked phone calls, ~70 emails
+    a month. Reading every one of them individually, about 11 were qualified
+    prospects anyone would want back -- roughly two a month buried in seventy.
+    The rest were robocalls, job applicants (WhatConverts labels an applicant
+    "New Customer"), vendors pitching us, and silent hangups.
+
+    Two gates, and the ORDER of the logic matters:
+
+    Duration is the hard gate. A caller who hung up inside a minute did not
+    leave enough to act on, and 212 of the 342 Google Business Profile calls
+    are under 60s -- that listing publishes a scrapable number, so it absorbs
+    almost all the robocall traffic aimed at the business.
+
+    Customer Type only ever EXCLUDES, and only when it positively says the
+    caller was not a customer. Missing analysis is treated as "alert", not as
+    "skip": 99 unlinked calls have no Customer Type at all and exactly one of
+    them ran over a minute, so failing open here costs about one email every
+    six months and guarantees a WhatConverts analysis outage cannot silently
+    switch this alert off.
+
+    Deliberately NOT gated on Call Type. Adding `in (Sales, Support)` would cut
+    another 4 emails a month but would drop 26 calls typed "Other", and the
+    cost of losing one 312 Management is far higher than the cost of four
+    emails.
+
+    Effect on the measured history: 421 alerts become 78, ~13 a month, with
+    every hand-identified real lead still included.
+    """
+    raw_secs = entry.get("call_duration_seconds")
+    if raw_secs is None:
+        # Queued by a build older than this filter, so it has no seconds field.
+        # Fail open -- an extra email beats dropping a lead during a rollout.
+        return True
+    try:
+        secs = float(raw_secs)
+    except (TypeError, ValueError):
+        return True
+    if secs < MIN_ALERT_CALL_SECONDS:
+        return False
+
+    ctype = (entry.get("customer_type") or "").strip()
+    if ctype and not ctype.startswith(("New", "Existing")):
+        return False
+    return True
+
 
 def send_unattributed_call_notification(config, entry):
     """Email Evelin when a phone call's Aspire contact was never created by the branch admin."""
@@ -1755,8 +1808,22 @@ def retry_pending_call_attributions(config, state):
             log(f"  Pending: WC #{wc_id} stamped on retry (age {age_h:.1f}h)")
             continue
         if age_h >= PENDING_ATTRIBUTION_NOTIFY_HOURS and not entry.get("notified"):
-            send_unattributed_call_notification(config, entry)
+            # The same filter decides two different things, and it should: a call
+            # worth telling someone about is also the only kind worth spending
+            # more Aspire lookups on.
+            worth_alerting = _call_is_worth_alerting_about(entry)
+            if worth_alerting:
+                send_unattributed_call_notification(config, entry)
+            else:
+                log(f"  Pending: WC #{wc_id} aged out, not alert-worthy "
+                    f"({entry.get('call_duration_seconds')}s, "
+                    f"{entry.get('customer_type') or 'no type'}) - dropped quietly")
             entry["notified"] = True
+            if not worth_alerting:
+                continue
+            # A real prospect stays queued. Carlos may not create the Aspire
+            # contact for days, and dropping the entry at 24h destroys the only
+            # record of which call it was.
             log(f"  Pending: WC #{wc_id} notified at {age_h:.1f}h; keeping and "
                 f"retrying hourly")
         entry["attempts"] = entry.get("attempts", 0) + 1
@@ -1922,6 +1989,15 @@ def process_leads(config, state):
                     "call_duration": lead_data.get("call_duration", ""),
                     "received_at": lead_data.get("date_created", ""),
                     "transcription": (lead_data.get("call_transcription") or "").strip(),
+                    # Used by _call_is_worth_alerting_about. Stored at queue time
+                    # because the notification fires 24h later, by which point
+                    # re-fetching the WhatConverts payload would be a second API
+                    # call for data we already had in hand.
+                    "call_duration_seconds": lead_data.get("call_duration_seconds"),
+                    "customer_type": ((lead_data.get("lead_analysis") or {})
+                                      .get("Customer Type") or ""),
+                    "call_type": ((lead_data.get("lead_analysis") or {})
+                                  .get("Call Type") or ""),
                 }
                 log(f"  Queued for retry (will notify Evelin if not entered within {PENDING_ATTRIBUTION_NOTIFY_HOURS}h)")
             # Mark processed in WC ledger regardless — retries are driven from pending state.

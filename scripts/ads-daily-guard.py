@@ -6,6 +6,7 @@ Checks (all read-only, no AI):
 2. Budget / target CPA changes - vs yesterday's snapshot
 3. Keyword hygiene - typos from known list, UNSPECIFIED match, enabled duplicates
 4. Yesterday's keyword deletes+recreates (performance history loss)
+5. Runaway spend/CPA - 3-day spend with zero conversions, or CPA >2.5x target
 
 Emails evelin only when something is found. The snapshot lives in Supabase
 (automation_state, 'ads-daily-guard'), not in the repo.
@@ -17,6 +18,11 @@ from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db
+
+# No main() to wrap, so the run is opened here and closed at each
+# successful exit below. Anything that leaves without calling done()
+# is recorded as an error by db.track_flat's atexit hook.
+_run = db.track_flat("ads-daily-guard")
 
 SCRIPT_TIMEOUT = 300
 signal.signal(signal.SIGALRM, lambda s, f: sys.exit("ERROR: guard timed out"))
@@ -153,6 +159,49 @@ for text in sorted(removed & set(created)):
         f"(performance history and Quality Score reset)"
     )
 
+# --- 5. Runaway spend / CPA guard (catches "ballistic" smart bidding) ---
+# A raised target CPA cannot overspend past the daily budget, but it can burn the
+# budget on traffic that never converts. Flag any enabled campaign that spent real
+# money over the last 7 days with zero conversions, or at a CPA far above its own
+# target -- the signature of smart bidding gone wrong (the thing that burned us before).
+#
+# 5a. FAST 1-day spike: yesterday's spend well above the daily budget. Google can
+# overdeliver up to ~2x budget on a high-opportunity day, so a fresh aggressive
+# target shows up here first -- caught the very next morning, not days later.
+for r in rows("""SELECT campaign.name, metrics.cost_micros FROM campaign
+                 WHERE campaign.status = 'ENABLED' AND segments.date DURING YESTERDAY"""):
+    name = r.campaign.name
+    cost = r.metrics.cost_micros / 1e6
+    budget = camp_settings.get(name, {}).get("budget", 0)
+    if budget and cost > 1.5 * budget:
+        findings.append(
+            f"SPEND SPIKE: {name} spent ${cost:.0f} yesterday vs a ${budget:.0f}/day budget (>1.5x). "
+            f"Check smart bidding now -- do not wait."
+        )
+
+# 5b. Sustained waste over 3 days.
+_g_end = datetime.now().strftime("%Y-%m-%d")
+_g_start = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
+for r in rows(f"""SELECT campaign.name, metrics.cost_micros, metrics.conversions
+                  FROM campaign
+                  WHERE campaign.status = 'ENABLED'
+                  AND segments.date BETWEEN '{_g_start}' AND '{_g_end}'"""):
+    name = r.campaign.name
+    cost = r.metrics.cost_micros / 1e6
+    conv = r.metrics.conversions
+    tcpa = camp_settings.get(name, {}).get("tcpa", 0)
+    if cost < 100:
+        continue
+    if conv == 0:
+        findings.append(
+            f"RUNAWAY WATCH: {name} spent ${cost:.0f} over the last 3 days with 0 conversions."
+        )
+    elif tcpa and (cost / conv) > 2.5 * tcpa:
+        findings.append(
+            f"RUNAWAY WATCH: {name} 3-day CPA is ${cost/conv:.0f}, over 2.5x its ${tcpa:.0f} target "
+            f"(${cost:.0f} spend, {conv:.1f} conv). Possible ballistic bidding."
+        )
+
 # --- Save snapshot (always) ---
 # Written before the findings check below, which can sys.exit(0) early. Today's
 # reading has to become tomorrow's baseline whether or not anything was found,
@@ -165,6 +214,7 @@ db.save_state(STATE_NAME, {
 
 if not findings:
     print("Guard clean: no risky changes detected.")
+    _run.done()
     sys.exit(0)
 
 print(f"{len(findings)} finding(s):")
@@ -175,6 +225,7 @@ gmail_email = os.environ.get("GMAIL_EMAIL", "")
 gmail_password = os.environ.get("GMAIL_APP_PASSWORD", "")
 if not gmail_email or not gmail_password:
     print("No Gmail credentials; findings printed only.")
+    _run.done()
     sys.exit(0)
 
 body_lines = ["The daily Google Ads guard found account changes that need your attention:\n"]
@@ -189,3 +240,5 @@ with smtplib.SMTP("smtp.gmail.com", 587, timeout=30) as server:
     server.login(gmail_email, gmail_password)
     server.sendmail(gmail_email, TO_EMAIL, msg.as_string())
 print("Alert email sent.")
+
+_run.done()

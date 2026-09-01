@@ -17,6 +17,7 @@ notifications to Evelin and Denisse.
 Phase 0 of docs/architecture/data-platform-plan.md.
 """
 
+import atexit
 import json
 import os
 import time
@@ -460,14 +461,112 @@ def link_leads_to_contacts(pairs):
         )
 
 
-def leads_with_aspire_contact(limit=5000):
-    """Leads linked to an Aspire contact, with their Lead Source baseline."""
-    return _request(
-        "GET",
+OPPORTUNITY_COLUMNS = (
+    "opportunity_id", "opportunity_number", "name", "property_id",
+    "property_name", "billing_contact_id", "status", "stage",
+    "opportunity_type", "sales_type", "division", "estimated_dollars",
+    "won_dollars", "actual_revenue", "estimated_margin", "actual_margin",
+    "created_at_aspire", "proposed_date", "won_date", "lost_date",
+    "complete_date", "start_date", "end_date", "lost_reason",
+    "aspire_lead_source", "sales_rep", "raw", "synced_at",
+)
+
+
+def opportunities_current():
+    """{opportunity_id: {status, estimated_dollars}} for change detection.
+
+    Deliberately NOT the whole row. This is compared on every sync against
+    thousands of records, and pulling raw jsonb for all of them to check two
+    scalars would move megabytes to decide nothing changed.
+    """
+    out, offset = {}, 0
+    while True:
+        rows = _request(
+            "GET",
+            "opportunities?select=opportunity_id,status,estimated_dollars"
+            f"&order=opportunity_id.asc&limit=1000&offset={offset}")
+        for r in rows:
+            out[r["opportunity_id"]] = {
+                "status": r["status"],
+                "estimated_dollars": r["estimated_dollars"],
+            }
+        if len(rows) < 1000:
+            break
+        offset += 1000
+    return out
+
+
+def upsert_opportunities(rows, chunk=200):
+    """Insert or UPDATE opportunities. Unlike leads, this table mirrors.
+
+    leads is append-only because a lead is an event -- it happened once and
+    nothing later changes what it was. An opportunity is a process that
+    legitimately moves Delivered -> Won -> Complete, so freezing it would be a
+    lie. The history of those moves lives in opportunity_snapshots instead.
+    """
+    if not rows:
+        return 0
+    written = 0
+    for i in range(0, len(rows), chunk):
+        batch = [{c: r.get(c) for c in OPPORTUNITY_COLUMNS} for r in rows[i:i + chunk]]
+        got = _request(
+            "POST", "opportunities?on_conflict=opportunity_id", body=batch,
+            prefer="resolution=merge-duplicates,return=representation")
+        written += len(got or [])
+    return written
+
+
+def record_opportunity_changes(changes, chunk=200):
+    """Append change rows. `changes` are dicts already shaped for the table."""
+    for i in range(0, len(changes), chunk):
+        _request("POST", "opportunity_snapshots",
+                 body=changes[i:i + chunk], prefer="return=minimal")
+
+
+PAGE_MAX = 1000   # PostgREST db-max-rows. Asking for more is silently capped.
+
+
+def _paged(path, order, page=PAGE_MAX, cap=200000):
+    """Fetch every row of a query, not just the first page.
+
+    PostgREST enforces a server-side max-rows (1000 here) and `limit=10000`
+    does NOT override it -- it returns 1000 rows with a 200 and no warning, so
+    a truncated read is indistinguishable from a complete one. That is how the
+    weekly heartbeat came to report "1,000 runs, 0 errors across 17 scripts"
+    when the true figures were 2,986 runs, 24 scripts and 1 error. An all-clear
+    computed from a truncated read is worse than no all-clear at all.
+
+    `order` must be on a unique, stable column. Ordering by something with
+    ties (started_at) lets rows shuffle between pages, so offset paging can
+    skip and repeat rows -- use the primary key.
+    """
+    out, off = [], 0
+    sep = "&" if "?" in path else "?"
+    while off < cap:
+        rows = _request(
+            "GET", f"{path}{sep}order={order}&limit={page}&offset={off}")
+        if not rows:
+            break
+        out.extend(rows)
+        if len(rows) < page:
+            break
+        off += page
+    return out
+
+
+def leads_with_aspire_contact(limit=None):
+    """Leads linked to an Aspire contact, with their Lead Source baseline.
+
+    Pages rather than taking a limit. The old 5000 default was capped to 1000
+    by the server, which would have silently stopped linking leads once the
+    table passed 1000 rows -- it was at 861 when this was found.
+    """
+    rows = _paged(
         "leads?aspire_contact_id=not.is.null"
-        "&select=id,aspire_contact_id,aspire_lead_source,aspire_lead_source_first_seen"
-        f"&order=id.asc&limit={int(limit)}",
+        "&select=id,aspire_contact_id,aspire_lead_source,aspire_lead_source_first_seen",
+        order="id.asc",
     )
+    return rows[:limit] if limit else rows
 
 
 def set_lead_source_baseline(pairs):
@@ -554,17 +653,68 @@ def unfinished_runs(older_than_minutes=90):
 
 
 def run_counts_since(since_iso):
-    """[{script, n}] run totals since a timestamp. Used by the heartbeat."""
-    rows = _request(
-        "GET",
+    """{script: {ok, error, running}} run totals since a timestamp.
+
+    Pages: a week is ~3,000 rows and whatconverts-lead-monitor alone is 2,100
+    of them, so a single-page read shows only the noisiest handful of scripts
+    and silently zeroes the rest. See _paged.
+    """
+    rows = _paged(
         f"automation_runs?started_at=gte.{_q(since_iso)}"
-        "&select=script,status&limit=10000",
+        "&select=script,status",
+        order="id.asc",
     )
     tally = {}
     for r in rows:
         d = tally.setdefault(r["script"], {"ok": 0, "error": 0, "running": 0})
         d[r["status"]] = d.get(r["status"], 0) + 1
     return tally
+
+
+class _FlatRun:
+    """Run handle for a script that has no main() to wrap.
+
+    track() needs a block to wrap. Several scripts here are flat top-level
+    code -- seo-audit is 947 lines of it -- and reindenting them into a
+    function just to get a run row is a large, risky diff for an observability
+    change.
+
+    So: open the row at import, and close it explicitly at each point the
+    script legitimately finishes. Anything that exits WITHOUT calling done()
+    is closed as an error by the atexit hook, which is the right default --
+    a crash, an unhandled exception, or a signal all leave via that path.
+
+    The failure mode this avoids is the opposite one: a naive atexit hook that
+    always records 'ok' would mark a crashed run successful, and a failure
+    written down as a success is worse than no record at all.
+    """
+
+    __slots__ = ("id", "_closed")
+
+    def __init__(self, run_id):
+        self.id = run_id
+        self._closed = False
+
+    def done(self, records=None):
+        """Call at each successful exit, including before sys.exit(0)."""
+        if self._closed:
+            return
+        self._closed = True
+        run_finish(self.id, "ok", records=records)
+
+    def _on_exit(self):
+        if self._closed:
+            return
+        self._closed = True
+        run_finish(self.id, "error",
+                   error="exited without reaching a successful end")
+
+
+def track_flat(script):
+    """Start a tracked run for a script with no main(). See _FlatRun."""
+    handle = _FlatRun(run_start(script))
+    atexit.register(handle._on_exit)
+    return handle
 
 
 class _Run:

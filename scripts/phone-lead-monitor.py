@@ -894,9 +894,16 @@ if __name__ == "__main__":
     elif "--status" in sys.argv:
         show_status()
     elif "--reconcile" in sys.argv:
-        reconcile()
+        # Tracked under its OWN name, not "phone-lead-monitor". Both paths live
+        # in this file but they are different scheduled jobs: run_monitor every
+        # 30 minutes, reconcile once daily at 13:07. Sharing a name would let
+        # the 30-minute runs satisfy a liveness check for reconcile, so
+        # reconcile could stop entirely and nothing would notice -- the exact
+        # blind spot this tracking exists to close.
+        with db.track("phone-lead-reconcile"):
+            reconcile()
     else:
-        # Only the unattended path is tracked. --test/--list/--status are
+        # Only the unattended paths are tracked. --test/--list/--status are
         # interactive debugging and would bury real runs in the history.
         with db.track("phone-lead-monitor"):
             run_monitor()

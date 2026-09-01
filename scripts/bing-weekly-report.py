@@ -29,7 +29,7 @@ prepared to re-set that secret afterwards.
 
     python3 scripts/bing-weekly-report.py [--dry-run]
 """
-import json, os, sys, smtplib, tempfile, signal
+import json, os, sys, smtplib, tempfile, signal, urllib.parse, urllib.request
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -49,10 +49,27 @@ signal.signal(signal.SIGALRM, _timeout_handler)
 signal.alarm(720)
 
 # --- Config ---
-TO_EMAILS = ["evelin@blackhilltx.com"]
+# Matches the Google report distribution. Umair and Afaq are the web dev team and
+# need to see the change freeze, since they also have access to this account.
+TO_EMAILS = ["evelin@blackhilltx.com", "Umair@blackhilltx.com", "afaq@blackhilltx.com"]
 TO_EMAIL = ", ".join(TO_EMAILS)
 TARGET_CPA = 80.0          # upper bound of the $50-80 CPL goal
 WASTE_THRESHOLD = 15.0     # a non-converting term must burn this much to be listed
+
+# Deliberate change freeze. The banner disappears on its own once the date passes,
+# so nobody has to remember to remove it. Set to None to drop it early.
+CHANGE_FREEZE_UNTIL = "2026-09-20"
+CHANGE_FREEZE_REASON = (
+    "Eight structural changes landed between Aug 23 and Aug 30: budgets shifted on both "
+    "campaigns, phone clicks became a counted conversion, counting moved from All to Unique, "
+    "the account time zone was corrected from Mid-Atlantic to Central, audience settings "
+    "changed, 26 negative keywords were added, and the highest-spend keyword moved from "
+    "phrase to exact. Every campaign bids on Auto: Max Conversions, which restarts learning "
+    "after each change, and the definition of a conversion itself changed on Aug 23, so "
+    "week-over-week conversion figures cross a boundary. Nothing structural changes until "
+    "the freeze lifts, so the effects can be read cleanly rather than tangled together. "
+    "Negative keywords stay the exception: they subtract irrelevant traffic without "
+    "disturbing bidding.")
 
 # Goals that represent a real contact attempt. "Form Start" is deliberately
 # excluded: starting a form is intent, not a lead.
@@ -214,6 +231,11 @@ def num(v):
 ACCOUNT_COLS = ["Impressions", "Clicks", "Spend", "Conversions"]
 CAMPAIGN_COLS = ["CampaignName", "CampaignStatus", "Impressions", "Clicks", "Ctr",
                  "AverageCpc", "Spend", "Conversions"]
+# AdDistribution splits Search from the Microsoft Audience Network. Blending them
+# makes impressions look like growth and craters CTR: on 2026-08-30 audience served
+# 2,254 impressions for 7 clicks and 0 conversions, dragging a healthy 3.33% search
+# CTR down to a reported 1.41%.
+DIST_COLS = ["AdDistribution", "Impressions", "Clicks", "Spend", "Conversions"]
 QUERY_COLS = ["SearchQuery", "CampaignName", "Impressions", "Clicks", "Spend", "Conversions"]
 KEYWORD_COLS = ["Keyword", "CampaignName", "Impressions", "Clicks", "Spend",
                 "AverageCpc", "Conversions"]
@@ -226,15 +248,20 @@ def account_totals(start, end):
     AccountPerformanceReport rejects our request shape ("Invalid client data"),
     and deriving from campaigns guarantees section 1 reconciles with section 2.
     """
-    rows = run_report(build_request("CampaignPerformance", CAMPAIGN_COLS, start, end))
-    t = {"impressions": 0.0, "clicks": 0.0, "spend": 0.0, "conversions": 0.0}
+    rows = run_report(build_request("CampaignPerformance", DIST_COLS, start, end))
+    t = {"impressions": 0.0, "clicks": 0.0, "spend": 0.0, "conversions": 0.0,
+         "aud_impressions": 0.0, "aud_clicks": 0.0, "aud_spend": 0.0, "aud_conversions": 0.0}
     for r in rows:
-        t["impressions"] += num(r.get("Impressions"))
-        t["clicks"] += num(r.get("Clicks"))
-        t["spend"] += num(r.get("Spend"))
-        t["conversions"] += num(r.get("Conversions"))
+        audience = "audience" in str(r.get("AdDistribution") or "").lower()
+        pre = "aud_" if audience else ""
+        t[pre + "impressions"] += num(r.get("Impressions"))
+        t[pre + "clicks"] += num(r.get("Clicks"))
+        t[pre + "spend"] += num(r.get("Spend"))
+        t[pre + "conversions"] += num(r.get("Conversions"))
+    # CTR and CPC describe SEARCH only; audience is reported separately below the table.
     t["ctr"] = (t["clicks"] / t["impressions"] * 100) if t["impressions"] else 0.0
     t["cpc"] = (t["spend"] / t["clicks"]) if t["clicks"] else 0.0
+    t["total_spend"] = t["spend"] + t["aud_spend"]
     return t
 
 
@@ -251,7 +278,8 @@ def goal_totals(start, end):
 this_week = account_totals(this_start, this_end)
 prev_week = account_totals(prev_start, prev_end)
 four_week = account_totals(four_start, four_end)
-for k in ("impressions", "clicks", "spend", "conversions"):
+for k in ("impressions", "clicks", "spend", "conversions", "total_spend",
+          "aud_impressions", "aud_clicks", "aud_spend", "aud_conversions"):
     four_week[k] = four_week[k] / 4.0
 
 goals_this = goal_totals(this_start, this_end)
@@ -263,7 +291,7 @@ def contacts(goals):
 
 
 contacts_this, contacts_prev = contacts(goals_this), contacts(goals_prev)
-cost_per_contact = (this_week["spend"] / contacts_this) if contacts_this else 0.0
+cost_per_contact = (this_week["total_spend"] / contacts_this) if contacts_this else 0.0
 
 campaigns = [
     r for r in run_report(build_request("CampaignPerformance", CAMPAIGN_COLS, this_start, this_end))
@@ -293,21 +321,155 @@ keywords = sorted(run_report(build_request("KeywordPerformance", KEYWORD_COLS, t
                   key=lambda r: num(r.get("Spend")), reverse=True)[:12]
 
 
+
+# ============================================================
+# ASPIRE WON REVENUE ATTRIBUTED TO BING ADS
+# ============================================================
+# Ports the attribution the Google report already uses: Lead Source lives on the
+# CONTACT (custom field definition 34), and a customer belongs to one origin, so
+# every won opportunity for that customer rolls up to it. First touch wins when a
+# property has several tagged contacts. Aspire already carries a "Bing Ads" value,
+# so nothing new had to be created.
+#
+# Read this as a FLOOR, not a full picture: most won opportunities carry no lead
+# source at all, and the roll-up credits Bing with a customer's later work too.
+ASPIRE_SOURCE = "Bing Ads"
+LAUNCH_DATE = "2026-02-19"
+
+
+def get_aspire_bing_revenue(start_date, end_date):
+    """Won dollars attributed to Bing Ads. Returns None if Aspire is unreachable."""
+    try:
+        client_id = os.environ.get("ASPIRE_REPORTING_CLIENT_ID") or os.environ.get("ASPIRE_CLIENT_ID")
+        secret = os.environ.get("ASPIRE_REPORTING_SECRET") or os.environ.get("ASPIRE_SECRET")
+        if not client_id or not secret:
+            cfg_path = os.path.expanduser("~/.config/aspire/config.json")
+            if not os.path.exists(cfg_path):
+                return None
+            with open(cfg_path) as f:
+                acfg = json.load(f)
+            client_id = acfg.get("reporting_client_id", acfg.get("client_id"))
+            secret = acfg.get("reporting_secret", acfg.get("secret"))
+        base = os.environ.get("ASPIRE_API_URL", "https://cloud-api.youraspire.com")
+        auth = json.dumps({"ClientId": client_id, "Secret": secret}).encode()
+        areq = urllib.request.Request(f"{base}/Authorization", data=auth,
+                                      headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(areq, timeout=20) as resp:
+            token = json.loads(resp.read().decode()).get("Token", "")
+        if not token:
+            return None
+
+        def paged(entity, params, ps=500):
+            out, skip = [], 0
+            while True:
+                url = f"{base}/{entity}?" + urllib.parse.quote(
+                    params + f"&$top={ps}&$skip={skip}", safe="=&$,()/%:@")
+                req = urllib.request.Request(
+                    url, headers={"Authorization": f"Bearer {token}", "Accept": "application/json"})
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    d = json.loads(r.read().decode())
+                d = d if isinstance(d, list) else [d]
+                out += d
+                if len(d) < ps:
+                    break
+                skip += ps
+            return out
+
+        cf = paged("ContactCustomFields", "$filter=ContactCustomFieldDefinitionID eq 34")
+        src = {int(x["ContactID"]): (x.get("ColumnValue") or "").strip()
+               for x in cf if (x.get("ColumnValue") or "").strip()}
+        if not src:
+            return None
+        created = {c["ContactID"]: str(c.get("CreatedDateTime") or "")
+                   for c in paged("Contacts", "$select=ContactID,CreatedDateTime")}
+        prop_contacts = {}
+        ids = list(src)
+        for i in range(0, len(ids), 25):
+            filt = "ContactID in (" + ",".join(str(x) for x in ids[i:i + 25]) + ")"
+            for pc in paged("PropertyContacts", f"$filter={filt}&$select=PropertyID,ContactID"):
+                pid, cid = pc.get("PropertyID"), pc.get("ContactID")
+                if pid and cid and int(cid) in src:
+                    prop_contacts.setdefault(int(pid), set()).add(int(cid))
+
+        def origin(billing_id, property_id):
+            cands = set()
+            if billing_id and int(billing_id) in src:
+                cands.add(int(billing_id))
+            if property_id:
+                cands |= prop_contacts.get(int(property_id), set())
+            if not cands:
+                return None
+            return src[min(cands, key=lambda c: created.get(c, "9999"))]
+
+        WON = "OpportunityStatusName eq 'Won'"
+        sel = ("$select=WonDollars,OpportunityName,OpportunityNumber,OpportunityID,"
+               "BillingContactID,PropertyID,WonDate")
+        opps = paged("Opportunities", f"$filter={WON} and WonDate ge {LAUNCH_DATE}T00:00:00Z&{sel}")
+
+        week, life = [], [0, 0.0]
+        by_customer = {}
+        for o in opps:
+            if origin(o.get("BillingContactID"), o.get("PropertyID")) != ASPIRE_SOURCE:
+                continue
+            dollars = float(o.get("WonDollars", 0) or 0)
+            won_on = str(o.get("WonDate") or "")[:10]
+            life[0] += 1
+            life[1] += dollars
+            pid = o.get("PropertyID")
+            if pid is not None:
+                by_customer[pid] = by_customer.get(pid, 0.0) + dollars
+            if start_date <= won_on <= end_date:
+                oid = o.get("OpportunityID")
+                week.append({"name": o.get("OpportunityName") or "Unnamed opportunity",
+                             "dollars": dollars, "won_on": won_on,
+                             "url": f"https://cloud.youraspire.com/app/opportunities/{oid}" if oid else None})
+        week.sort(key=lambda x: -x["dollars"])
+        top_dollars = max(by_customer.values()) if by_customer else 0.0
+        return {"week_opps": week,
+                "week_count": len(week),
+                "week_dollars": sum(w["dollars"] for w in week),
+                "life_count": life[0],
+                "life_dollars": life[1],
+                "customers": len(by_customer),
+                "top_customer_dollars": top_dollars,
+                "ex_top_dollars": life[1] - top_dollars}
+    except Exception as e:
+        print(f"Aspire revenue warning: {e}", file=sys.stderr)
+        return None
+
+
+aspire_rev = get_aspire_bing_revenue(this_start.strftime("%Y-%m-%d"), this_end.strftime("%Y-%m-%d"))
+# Spend since launch, so lifetime return is a real number rather than a ratio of
+# one week's revenue to one week's spend (won dates lag the clicks that caused them).
+life_spend = account_totals(datetime.strptime(LAUNCH_DATE, "%Y-%m-%d"), now)["total_spend"] if aspire_rev else 0.0
+
 # ============================================================
 # SECTION 6: RECOMMENDATIONS
 # ============================================================
 def build_actions():
     out = []
 
-    # Uncounted phone clicks -> bidding is aimed at the wrong goal.
-    uncounted = {k: v for k, v in goals_this.items()
-                 if k in CONTACT_GOALS and k != "Lead Form Submission" and v > 0}
-    if uncounted:
-        detail = ", ".join(f"{int(v)} {k}" for k, v in sorted(uncounted.items()))
+    # Contact goals recorded but NOT reflected in the Conversions column.
+    # Inferred, not assumed: if the goals that fired already sum to at least the
+    # account Conversions figure, everything is being counted. The old version
+    # hard-coded "anything but Lead Form Submission is excluded", which kept
+    # printing a false warning after phone click was switched on 2026-08-23.
+    fired = sum(v for k, v in goals_this.items() if k in CONTACT_GOALS and v > 0)
+    counted = this_week["conversions"]
+    if fired > counted + 0.5:
+        gap = fired - counted
         out.append(
-            f"Conversion tracking is undercounting. {detail} recorded this week but excluded "
-            f"from the Conversions column, so Max Conversions bidding cannot see them. "
-            f"Reported CPA is inflated as a result.")
+            f"Conversion tracking may be undercounting: contact goals recorded "
+            f"{fired:.0f} actions but only {counted:.0f} reached the Conversions column "
+            f"({gap:.0f} unaccounted). Check each goal's Include in \"Conversions\" setting.")
+
+    # Audience network noise: cheap, but it distorts impressions and CTR.
+    if this_week["aud_impressions"] > this_week["impressions"] and this_week["aud_conversions"] == 0:
+        out.append(
+            f"Microsoft Audience Network served {this_week['aud_impressions']:,.0f} impressions "
+            f"({this_week['aud_clicks']:,.0f} clicks, ${this_week['aud_spend']:,.2f}, no conversions) "
+            f"versus {this_week['impressions']:,.0f} on search. It costs little but inflates "
+            f"impressions and depresses blended CTR.")
 
     # Budget-starved winners vs expensive losers.
     best = worst = None
@@ -382,7 +544,24 @@ h(f'<!DOCTYPE html><html><head><meta charset="utf-8">'
   f'<style>{STYLES}</style></head><body><div class="wrap">')
 h(f'<div class="header"><h1>Weekly Bing Ads Report</h1>')
 h(f'<div class="period">{week_ago_fmt} &mdash; {today_fmt}</div></div>')
+
 m(f"# Black Hill Landscaping - Weekly Bing Ads Report\n\n{week_ago_fmt} - {today_fmt}\n")
+# Change freeze notice (self-expiring)
+if CHANGE_FREEZE_UNTIL and now.strftime("%Y-%m-%d") <= CHANGE_FREEZE_UNTIL:
+    _fz = datetime.strptime(CHANGE_FREEZE_UNTIL, "%Y-%m-%d")
+    _fz_label = _fz.strftime("%A, %B %d, %Y")
+    # Date arithmetic, not datetime: the run happens mid-afternoon and the freeze
+    # date is midnight, so subtracting datetimes truncates a partial day and the
+    # banner would say "lifts today" a day early.
+    _days = (_fz.date() - now.date()).days
+    _hdr = (f"Change freeze in effect until {_fz_label}"
+            + (f" ({_days} day{'s' if _days != 1 else ''} away)" if _days > 0 else " (lifts today)"))
+    h('<div class="section" style="border-bottom:1px solid #2a2a2a;">')
+    h(f'<div style="padding:12px 16px;background:#1a1a12;border-left:4px solid #c8963e;border-radius:6px;">')
+    h(f'<div style="font-size:14px;font-weight:700;color:#c8963e;margin-bottom:8px;">{_hdr}</div>')
+    h(f'<div style="font-size:12px;color:#bbb;line-height:1.6;">{CHANGE_FREEZE_REASON}</div>')
+    h('</div></div>')
+    m(f"\n> **{_hdr}**\n>\n> {CHANGE_FREEZE_REASON}\n")
 
 # --- 1. Did We Move the Needle? ---
 h('<div class="section"><h2>Did We Move the Needle?</h2>')
@@ -393,17 +572,17 @@ m("| Metric | This Week | Last Week | 4-Wk Avg |")
 m("|---|---|---|---|")
 
 rows = [
-    ("Spend", f"${this_week['spend']:,.2f}", f"${prev_week['spend']:,.2f}",
-     f"${four_week['spend']:,.2f}", delta(this_week["spend"], prev_week["spend"], inverse=True)),
-    ("Clicks", f"{this_week['clicks']:,.0f}", f"{prev_week['clicks']:,.0f}",
+    ("Spend", f"${this_week['total_spend']:,.2f}", f"${prev_week['total_spend']:,.2f}",
+     f"${four_week['total_spend']:,.2f}", delta(this_week["total_spend"], prev_week["total_spend"], inverse=True)),
+    ("Clicks (search)", f"{this_week['clicks']:,.0f}", f"{prev_week['clicks']:,.0f}",
      f"{four_week['clicks']:,.0f}", delta(this_week["clicks"], prev_week["clicks"])),
-    ("Impressions", f"{this_week['impressions']:,.0f}", f"{prev_week['impressions']:,.0f}",
+    ("Impressions (search)", f"{this_week['impressions']:,.0f}", f"{prev_week['impressions']:,.0f}",
      f"{four_week['impressions']:,.0f}", delta(this_week["impressions"], prev_week["impressions"])),
-    ("CTR", f"{this_week['ctr']:.2f}%", f"{prev_week['ctr']:.2f}%",
+    ("CTR (search)", f"{this_week['ctr']:.2f}%", f"{prev_week['ctr']:.2f}%",
      f"{four_week['ctr']:.2f}%", delta(this_week["ctr"], prev_week["ctr"])),
-    ("Avg CPC", f"${this_week['cpc']:,.2f}", f"${prev_week['cpc']:,.2f}",
+    ("Avg CPC (search)", f"${this_week['cpc']:,.2f}", f"${prev_week['cpc']:,.2f}",
      f"${four_week['cpc']:,.2f}", delta(this_week["cpc"], prev_week["cpc"], inverse=True)),
-    ("Form submissions", f"{this_week['conversions']:,.0f}", f"{prev_week['conversions']:,.0f}",
+    ("Conversions (counted)", f"{this_week['conversions']:,.0f}", f"{prev_week['conversions']:,.0f}",
      f"{four_week['conversions']:,.1f}", delta(this_week["conversions"], prev_week["conversions"])),
     ("All contacts", f"{contacts_this:,.0f}", f"{contacts_prev:,.0f}", "--",
      delta(contacts_this, contacts_prev)),
@@ -415,11 +594,84 @@ for label, a, b, c, d in rows:
     m(f"| {label} | {a} | {b} | {c} |")
 h("</table>")
 
+aud_note = (f"Audience network (excluded from the search figures above): "
+            f"{this_week['aud_impressions']:,.0f} impressions, {this_week['aud_clicks']:,.0f} clicks, "
+            f"${this_week['aud_spend']:,.2f}, {this_week['aud_conversions']:,.0f} conversions")
+h(f'<div style="margin-top:12px;padding:10px 14px;background:#1a1a1a;border-left:3px solid #666;'
+  f'border-radius:4px;font-size:12px;color:#999;">{aud_note}</div>')
+m(f"\n{aud_note}\n")
+
 if goals_this:
     breakdown = ", ".join(f"{k}: {int(v)}" for k, v in sorted(goals_this.items()) if v)
     h(f'<div style="margin-top:12px;padding:10px 14px;background:#1a2332;border-left:3px solid #3498db;'
       f'border-radius:4px;font-size:12px;color:#9cf;">Goals this week &mdash; {breakdown}</div>')
     m(f"\nGoals this week: {breakdown}\n")
+h("</div>")
+
+
+# --- Revenue Context (Aspire won revenue attributed to Bing Ads) ---
+h('<div class="section"><h2>Revenue Context</h2>')
+m("\n## Revenue Context\n")
+if aspire_rev:
+    wk_roas = (aspire_rev["week_dollars"] / this_week["total_spend"]) if this_week["total_spend"] else 0
+    life_roas = (aspire_rev["life_dollars"] / life_spend) if life_spend else 0
+    h('<table><tr><th>Won revenue attributed to Bing Ads</th>'
+      '<th class="right">This Week</th><th class="right">Since Feb 19</th></tr>')
+    rev_rows = [
+        ("Won opportunities", f"{aspire_rev['week_count']:,}", f"{aspire_rev['life_count']:,}"),
+        ("Won revenue", f"${aspire_rev['week_dollars']:,.2f}", f"${aspire_rev['life_dollars']:,.2f}"),
+        ("Ad spend", f"${this_week['total_spend']:,.2f}", f"${life_spend:,.2f}"),
+        ("Return on spend", f"{wk_roas:,.1f}x" if this_week["total_spend"] else "--",
+         f"{life_roas:,.1f}x" if life_spend else "--"),
+    ]
+    m("| Won revenue attributed to Bing Ads | This Week | Since Feb 19 |")
+    m("|---|---|---|")
+    for label, a, b in rev_rows:
+        colour = ""
+        if label == "Return on spend" and life_roas >= 1:
+            colour = ' style="color:#27ae60;font-weight:600;"'
+        h(f'<tr><td>{label}</td><td class="right"{colour}>{a}</td><td class="right"{colour}>{b}</td></tr>')
+        m(f"| {label} | {a} | {b} |")
+    h("</table>")
+
+    # A single customer can carry the whole ratio, so say so next to the ratio.
+    if aspire_rev["life_dollars"] > 0 and aspire_rev.get("customers"):
+        share = aspire_rev["top_customer_dollars"] / aspire_rev["life_dollars"] * 100
+        ex_roas = (aspire_rev["ex_top_dollars"] / life_spend) if life_spend else 0
+        conc = (f"Concentration: {aspire_rev['life_count']} jobs across "
+                f"{aspire_rev['customers']} customers. The largest is "
+                f"${aspire_rev['top_customer_dollars']:,.2f} of ${aspire_rev['life_dollars']:,.2f} "
+                f"({share:.0f}%). Excluding them, ${aspire_rev['ex_top_dollars']:,.2f} on "
+                f"${life_spend:,.2f} spend is {ex_roas:,.1f}x.")
+        warn = share >= 50
+        h(f'<div style="margin-top:10px;padding:10px 14px;background:{"#1a1212" if warn else "#1a1a1a"};'
+          f'border-left:3px solid {"#e74c3c" if warn else "#666"};border-radius:4px;font-size:12px;'
+          f'color:{"#e08" if warn else "#999"};">{conc}</div>')
+        m(f"\n**{conc}**\n")
+
+    if aspire_rev["week_opps"]:
+        h('<div style="margin-top:14px;font-size:12px;color:#c8963e;text-transform:uppercase;'
+          'letter-spacing:0.5px;">Won this week</div>')
+        m("\nWon this week:\n")
+        for o in aspire_rev["week_opps"]:
+            link = f'<a href="{o["url"]}" style="color:#9cf;text-decoration:none;">{o["name"]}</a>' if o["url"] else o["name"]
+            h(f'<div style="margin-top:6px;padding:8px 12px;background:#1a1a1a;border-radius:4px;font-size:12px;">'
+              f'{o["won_on"]} &middot; <strong>${o["dollars"]:,.2f}</strong> &middot; {link}</div>')
+            m(f"- {o['won_on']}  ${o['dollars']:,.2f}  {o['name']}")
+    else:
+        h('<div style="margin-top:10px;font-size:12px;color:#888;">No Bing-attributed opportunities '
+          'were won this week. Won dates lag the clicks that caused them.</div>')
+        m("\nNo Bing-attributed opportunities were won this week.")
+
+    caveat = ("Attribution is first touch by customer origin, from the Lead Source field in Aspire. "
+              "A customer tagged Bing Ads has all their won work counted here, including later jobs. "
+              "Most won opportunities carry no lead source at all, so treat this as a floor.")
+    h(f'<div style="margin-top:12px;padding:10px 14px;background:#1a1a1a;border-left:3px solid #666;'
+      f'border-radius:4px;font-size:11px;color:#888;">{caveat}</div>')
+    m(f"\n*{caveat}*\n")
+else:
+    h('<div style="color:#888;font-size:13px;">Aspire revenue unavailable this run.</div>')
+    m("Aspire revenue unavailable this run.")
 h("</div>")
 
 # --- 2. Where's the Money Going? ---

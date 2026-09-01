@@ -318,8 +318,21 @@ def build_body(window, passed, breaks, unauth, policy, domain):
                       "outright right now.",
         }.get(policy, f"Published policy is p={policy}.")
         lines += [
-            "NEEDS FIXING - our own mail failing authentication",
+            "MAIL USING OUR DOMAIN IS FAILING AUTHENTICATION",
             consequence,
+            "",
+            "This is EITHER our own misconfigured sender OR someone forging",
+            "the domain. The check below cannot tell them apart -- it asks",
+            "whether one of our domains is involved, which is true in both",
+            "cases -- so read the source IP before assuming it is ours:",
+            "",
+            "  Microsoft or Mailchimp address  -> our own mail, needs fixing",
+            "  anything else                   -> a forgery, and the policy",
+            "                                     above is already handling it",
+            "",
+            "Between 2026-08-21 and 08-26 three different ColoCrossing hosts",
+            "forged meangreenlawncare.com. None of them were ours and none",
+            "needed a fix.",
             "",
         ]
         for (ip, doms), n in sorted(breaks.items(), key=lambda kv: -kv[1]):
@@ -435,25 +448,47 @@ def main():
     # permanently, only repeated less.
     alerted = dict(state.get("alerted_sources") or {})
     now = datetime.now(timezone.utc)
+
+    def _age(fp):
+        prev = alerted.get(fp)
+        if not prev:
+            return None
+        try:
+            return (now - datetime.fromisoformat(prev)).days
+        except ValueError:
+            return None
+
     fresh = {}
     for key, n in breaks.items():
-        fp = f"{key[0]}|{key[1]}"
-        prev = alerted.get(fp)
-        age = None
-        if prev:
-            try:
-                age = (now - datetime.fromisoformat(prev)).days
-            except ValueError:
-                age = None
-        if age is not None and age < SUPPRESS_DAYS:
-            log(f"  Suppressing known source {key[0]} "
-                f"({n} msg, last alerted {age}d ago)")
+        ip, domains = key
+        # TWO keys, and the second one is the point.
+        #
+        # Keying only on the exact IP is defeated entirely by a spoofer that
+        # rotates hosts. Between 2026-08-21 and 08-26 three different
+        # ColoCrossing addresses forged meangreenlawncare.com --
+        # 104.168.101.10, 198.46.243.200, 198.23.177.22 -- and each one read
+        # as a brand new source and alerted. The domain-level key means
+        # "someone is forging this domain, you already know" and holds across
+        # the rotation.
+        #
+        # The exact-IP key is kept as well, so a genuine misconfiguration on
+        # one of our own hosts still alerts on its own merits rather than
+        # being hidden by an unrelated spoof of the same domain.
+        ip_age = _age(f"{ip}|{domains}")
+        dom_age = _age(f"domain:{domains}")
+        if ip_age is not None and ip_age < SUPPRESS_DAYS:
+            log(f"  Suppressing known source {ip} "
+                f"({n} msg, last alerted {ip_age}d ago)")
+            continue
+        if dom_age is not None and dom_age < SUPPRESS_DAYS:
+            log(f"  Suppressing {ip} - {domains} already reported "
+                f"{dom_age}d ago from a different address (rotating source)")
             continue
         fresh[key] = n
 
     if fresh or (SUMMARY and total_fail):
         window = ", ".join(sorted(set(windows))) or "latest"
-        subject = ("DMARC: our mail is failing authentication"
+        subject = ("DMARC: mail using our domain is failing authentication"
                    if fresh else "DMARC summary")
         body = build_body(window, passed_total, fresh or breaks, unauth,
                           policy, domain)
@@ -471,6 +506,9 @@ def main():
         # would keep pushing its window forward and silence it forever.
         for key in fresh:
             alerted[f"{key[0]}|{key[1]}"] = now.isoformat()
+            # Also stamp the domain, so the next rotation of a spoofing
+            # source is suppressed rather than treated as news.
+            alerted[f"domain:{key[1]}"] = now.isoformat()
         cutoff = now.timestamp() - SUPPRESS_DAYS * 2 * 86400
         state["alerted_sources"] = {
             k: v for k, v in alerted.items()

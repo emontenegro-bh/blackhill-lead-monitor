@@ -72,27 +72,90 @@ MAX_PAGES = 5            # backstop; a window this wide never holds 500 failures
 # GitHub scheduler lag of 1.5-2.5h, so a tight bound would alarm on lateness
 # rather than absence, and an alert that cries wolf is worse than none.
 EXPECTED_CADENCE_HOURS = {
-    # Both of these are cron */5, and they do NOT behave the same. Measured
-    # 2026-08-22 over ~10h: whatconverts-lead-monitor held a 5-minute median
-    # with a 5-minute max, while lead-monitor ran a 26-minute median and a
-    # 43-minute max. GitHub throttles scheduled workflows under load and does
-    # not say so. 3h leaves ~4x headroom over the worst gap actually seen;
-    # revisit once a full week of automation_runs exists, because ten hours
-    # is not enough to have seen the real tail.
-    "lead-monitor": 3,
+    # Both are cron */5 and neither is really driven by its cron. An external
+    # cron-job.org job POSTs a workflow_dispatch to lead-monitor.yml every 5
+    # minutes; GitHub's own scheduled queue delivers only a handful a day to
+    # either. Measured 2026-08-24..29: lead-monitor.yml took 98 dispatches to
+    # 2 scheduled runs, email-lead-monitor.yml took 0 dispatches to 61.
+    #
+    # So these thresholds are really watching the DISPATCHER, not the cron.
+    # That is the point: if cron-job.org stops, no workflow starts, the
+    # if: failure() notifier has nothing to fire on, and nothing else would
+    # ever notice. This check is the only thing that would.
+    #
+    # 2h on whatconverts-lead-monitor, which has a working dispatcher and
+    # holds a 5-minute median -- 2h is ~24x its real gap, tight enough to
+    # catch a dead dispatcher within one working morning.
     "whatconverts-lead-monitor": 2,
-    # cron at :15/:45 and :17/:47 -- twice hourly.
-    "whatconverts-roi-sync": 3,
+    #
+    # lead-monitor (the sales@ mailbox pipeline) got its own cron-job.org
+    # job "Email Lead Monitor 5min" on 2026-08-29, so it is now a 5-minute
+    # pipeline like its twin and the 30h placeholder is retired as planned.
+    #
+    # 2h matters more here than anywhere else in this table. This is the
+    # pipeline that sends the "we will contact you before 5pm" auto-reply,
+    # and it is the ONLY thing reading sales@meangreenlawncare.com -- it
+    # caught 50 leads in the 20 days to 2026-08-29 that WhatConverts never
+    # saw, zero overlap. If the dispatcher dies, no workflow starts, the
+    # if: failure() notifier has nothing to fire on, and this check is the
+    # only thing anywhere that would notice.
+    "lead-monitor": 2,
+    # Both cron twice hourly (:15/:45 and :17/:47) and NEITHER gets it.
+    # Measured 2026-08-23..30: 13.7 and 13.3 runs a day against 48 asked for,
+    # median gap 0.9h but max gap 11.8h on both. Every other scheduled script
+    # here maxes out at 11.8-14.8h too, on unrelated crons -- so this is one
+    # repo-wide blackout in GitHub's scheduled queue, not two sick scripts.
+    #
+    # The two get DIFFERENT treatment on purpose, because widening a threshold
+    # is honest only when the business can genuinely tolerate the gap.
+    #
+    # roi-sync pushes Aspire won-revenue back to WhatConverts so ROI reporting
+    # is right. Nothing downstream reads it inside a day, so a 12h gap costs
+    # nothing real and 3h was alerting on a non-problem. 14h sits just above
+    # the observed max.
+    "whatconverts-roi-sync": 14,
+    #
+    # phone-lead-monitor STAYS at 3h even though it will keep firing, because
+    # here the gap is the damage: this is Carlos's phone-form intake into
+    # Aspire and HubSpot, and an 11.8h blackout is a lead sitting untouched
+    # overnight. Raising this to 14h would silence the alert without making a
+    # single lead arrive sooner. The fix is a cron-job.org dispatcher like the
+    # three that already drive lead-monitor, whatconverts-lead-monitor and
+    # crew-location; until that exists the alert is telling the truth and
+    # should be left alone to say so.
     "phone-lead-monitor": 3,
-    "startup-failure-sweep": 3,
+    #
+    # This sweep watching itself. Measured over 48h to 2026-08-29: 6 runs
+    # against a cron asking for 96, median gap 7.5h, max 12.4h. It has no
+    # cron-job.org dispatcher either, so 3h would fire on almost every run
+    # and it was already doing so.
+    #
+    # 16h is chosen to sit above the observed 12.4h max rather than to make
+    # the alert stop. Note this threshold is the weaker of the two guards on
+    # this script: a sweep that dies entirely cannot alert about itself, so
+    # the real backstop is the weekly heartbeat -- if a Monday passes with no
+    # heartbeat, this stopped.
+    "startup-failure-sweep": 16,
     # cron 23 */2 -- every two hours.
     "dmarc-monitor": 6,
     # cron 0 0,6,12,18 -- four times daily.
     "api-health-monitor": 14,
     # daily.
     "lead-fuzzy-match": 30,
+    "ads-daily-guard": 30,
+    "ads-weekly-report": 176,      # Sun 15:07
+    "seo-audit": 176,              # Mon 14:00
+    "phone-lead-reconcile": 30,    # daily 13:07, own name -- see the script
     "aspire-mailchimp-backfill": 30,
     "bid-monitor": 30,
+    # The leads-refresh workflow, three scripts in sequence, daily 14:17.
+    # Tracked separately so a failure in one is visible rather than hidden
+    # behind whichever ran last.
+    "backfill-leads": 30,
+    "link-phone-leads": 30,
+    "lead-source-observer": 30,
+    # Daily 13:47.
+    "sync-opportunities": 30,
     # cron 13 12 * * 1,4 -- Monday and Thursday. Thu -> Mon is 96h.
     "events-monitor": 100,
     # Weekdays ~20:55Z. Counted in BUSINESS hours (see WEEKDAY_ONLY), so this
@@ -118,32 +181,19 @@ WEEKDAY_ONLY = {"crew-location", "phone-lead-staleness-check"}
 # overdue. Empty today; kept as the documented place to put one.
 ON_DEMAND_SCRIPTS = set()
 
-# KNOWN BLIND SPOTS -- scheduled work this check still cannot see, because the
-# script is not wrapped in db.track(). Listed rather than silently omitted, so
-# the heartbeat's "all clear" is honest about its own coverage.
-# Audited 2026-08-22, reduced from 10 to 4 on 2026-08-23.
+# KNOWN BLIND SPOTS -- none left among scheduled scripts as of 2026-08-27.
 #
-# All four are the same shape: flat top-level scripts with no main() to wrap,
-# or a branch sitting outside an existing wrapper. Each needs a small refactor
-# rather than two lines, which is why they were not done in the same pass.
+# All 20 scheduled scripts now write to automation_runs. The last four were
+# flat top-level code with no main() to wrap (seo-audit alone is 947 lines),
+# plus the --reconcile branch of phone-lead-monitor, which shared a tracked
+# name with the 30-minute monitor and so could have stopped entirely without
+# anyone noticing. They use db.track_flat(), which opens the run at import and
+# closes it at each successful exit; anything leaving by another path is
+# recorded as an error rather than silently as ok.
 #
-#   ads-daily-guard.py            daily 12:07 -- flat script, no main(). Also
-#                                 has legitimate early sys.exit(0) paths, so a
-#                                 naive atexit wrapper would record a clean
-#                                 guard run as an error.
-#   seo-audit.py                  Mon 14:00 -- flat script. Concluded
-#                                 `cancelled` on 6 of its last 12 scheduled
-#                                 runs; `cancelled` does not trigger
-#                                 if: failure(), so those silent no-ops
-#                                 notified nobody. Tracking it would catch
-#                                 exactly this.
-#   ads-weekly-report.py          Sun 15:07 -- flat script.
-#   phone-lead-monitor --reconcile  daily 13:07 -- the reconcile branch sits
-#                                 outside the db.track() wrapper, and a check
-#                                 keyed on the script name is satisfied by the
-#                                 30-minute monitor runs even if reconcile has
-#                                 stopped entirely. Needs its own tracked name.
-UNTRACKED_SCHEDULED = 4
+# qs-recheck is tracked but deliberately has no cadence entry: it runs once a
+# year on 1 April, and an 8760-hour threshold is a threshold in name only.
+UNTRACKED_SCHEDULED = 0
 #
 # qs-recheck.py is tracked but deliberately has no cadence entry: it runs once
 # a year on 1 April, and a 8760-hour threshold would be a threshold in name
@@ -276,7 +326,7 @@ def business_hours_between(start, end):
     return total
 
 
-def check_liveness(now):
+def check_liveness(now, state=None):
     """Scripts that should have checked in by now and have not.
 
     Returns (overdue, seen_count). `overdue` entries carry the script, hours
@@ -299,19 +349,40 @@ def check_liveness(now):
     # yet had a single working day in which to run.
     table_start = db.table_started_at()
 
+    # Per-script grace, not per-table.
+    #
+    # The table can be old while a script name is brand new -- adding
+    # ads-daily-guard to the cadence map on 2026-08-27 gave it zero rows
+    # against a 128h-old table, so the table-age guard let it straight
+    # through and it read as a dead daily job. Wrong, and exactly the kind
+    # of false alarm that teaches someone to ignore this email.
+    #
+    # So each script gets its own clock, started the first time it is seen
+    # here. Falls back to the table's age for scripts already established
+    # before this existed.
+    first_expected = dict((state or {}).get("first_expected") or {})
+
     overdue = []
     for script in watched:
         allowed = EXPECTED_CADENCE_HOURS[script]
         stamp = latest.get(script)
         if stamp is None:
-            if table_start is not None:
-                age = (business_hours_between(table_start, now)
+            if script not in first_expected:
+                first_expected[script] = now.isoformat()
+            try:
+                since = datetime.fromisoformat(first_expected[script])
+            except (TypeError, ValueError):
+                since = table_start
+            if since is None:
+                since = table_start
+            if since is not None:
+                age = (business_hours_between(since, now)
                        if script in WEEKDAY_ONLY
-                       else (now - table_start).total_seconds() / 3600)
+                       else (now - since).total_seconds() / 3600)
                 unit = " business h" if script in WEEKDAY_ONLY else "h"
                 if age < allowed:
-                    print(f"  {script}: no rows yet, but tracking is only "
-                          f"{age:.1f}{unit} old vs {allowed}h cadence "
+                    print(f"  {script}: no rows yet, but has only been watched "
+                          f"for {age:.1f}{unit} vs {allowed}h cadence "
                           f"-- not yet a fault")
                     continue
             overdue.append({"script": script, "silent_h": None, "allowed_h": allowed})
@@ -325,6 +396,8 @@ def check_liveness(now):
             overdue.append({"script": script, "silent_h": silent,
                             "allowed_h": allowed,
                             "weekday_only": script in WEEKDAY_ONLY})
+    if state is not None:
+        state["first_expected"] = first_expected
     return overdue, len(latest)
 
 
@@ -345,10 +418,35 @@ def send_liveness_alert(overdue):
     <table border="1" cellpadding="6" cellspacing="0">
     <tr><th>Script</th><th>Last check-in</th><th>Allowed silence</th></tr>
     {rows}</table>
-    <p>Check the workflow is still <b>active</b> first
-    (<code>gh api repos/emontenegro-bh/blackhill-lead-monitor/actions/workflows</code>)
-    -- GitHub disables scheduled workflows in repos with no recent commits, and
-    it does so quietly.</p>"""
+    <p><b>Check these in order.</b> The first is by far the most common cause
+    here, and the original version of this email did not mention it at all --
+    it led with auto-disabling, which is real but rare, and sent someone
+    looking in the wrong place.</p>
+    <ol>
+      <li><b>Is GitHub actually starting the workflow?</b> The runs may all be
+      succeeding and simply not happening often enough. GitHub delivers
+      scheduled workflows on a best-effort basis and drops them under load.
+      Measured on this repo 2026-08-27: dmarc-monitor ran 3 times against a
+      2-hourly schedule, and whatconverts-roi-sync and phone-lead-monitor both
+      ran at about 4% of their configured cadence. Compare the API's
+      <code>total_count</code> for the last day against what the cron asks for
+      -- and do not use <code>gh run list</code> for this, it caps at the
+      fetched page and undercounts.</li>
+      <li><b>Do two workflows share a cron minute?</b> They compete, and the
+      same one loses every time. email-lead-monitor sat on
+      <code>*/5</code> alongside lead-monitor and took 35 runs a day to its
+      twin's 325 for a week.</li>
+      <li><b>Is the workflow still active?</b>
+      <code>gh api repos/emontenegro-bh/blackhill-lead-monitor/actions/workflows</code>
+      -- GitHub disables scheduled workflows in repos with no recent commits,
+      quietly.</li>
+      <li><b>Did the script itself break?</b> Least likely, because a script
+      that runs and fails already emails via notify-failure. Silence here
+      usually means it never started.</li>
+    </ol>
+    <p>If the cause is throttling and the cadence genuinely cannot be met, the
+    honest fix is to change the cron to something GitHub will actually deliver,
+    not to widen this threshold until the alert stops.</p>"""
     return send_html(f"[ALERT] {n} script(s) stopped checking in", html)
 
 
@@ -478,7 +576,8 @@ def main():
     # one failure the two are least likely to share a cause with.
     dirty = False
     try:
-        overdue, checked_in = check_liveness(now)
+        overdue, checked_in = check_liveness(now, state)
+        dirty = True   # first_expected may have gained an entry
         print(f"Liveness: {checked_in}/{len(EXPECTED_CADENCE_HOURS)} scripts "
               f"checked in, {len(overdue)} overdue.")
 

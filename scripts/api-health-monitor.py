@@ -60,7 +60,7 @@ SCRIPT_TARGETS = {
     "companycam": ["companycam-query.py"],
     "hubspot": ["hubspot-sync.py", "hubspot-builder-pipeline.py",
                 "whatconverts-lead-monitor.py"],
-    "google_ads": ["morning-briefing.py", "ads-smoke-test.py",
+    "google_ads": ["ads-smoke-test.py",
                    "ads-weekly-report.py", "ads-budget-and-negatives.py"],
 }
 
@@ -1126,8 +1126,20 @@ def create_heal_branch(drifts, changes):
                   "\n".join(f"  - {s}" for s in drift_summary) +
                   f"\n\nAffected files: {', '.join(changed_files)}")
 
-    subprocess.run(["git", "commit", "-m", commit_msg],
-                    capture_output=True, text=True, cwd=PROJECT_DIR)
+    # Return code went unchecked until 2026-08-31. In CI the commit failed with
+    # "Author identity unknown" and we fell straight through to the push, so the
+    # branch went up with nothing on it and `gh pr create` had no commits to open
+    # a PR from. Nine such branches accumulated in April 2026 before the drift
+    # they were meant to fix (WhatConverts id -> lead_id) got patched by hand.
+    commit_result = subprocess.run(["git", "commit", "-m", commit_msg],
+                                    capture_output=True, text=True, cwd=PROJECT_DIR)
+    if commit_result.returncode != 0:
+        log(f"Commit failed, aborting heal: {commit_result.stderr.strip()}")
+        subprocess.run(["git", "checkout", "main"],
+                        capture_output=True, text=True, cwd=PROJECT_DIR)
+        subprocess.run(["git", "branch", "-D", branch],
+                        capture_output=True, text=True, cwd=PROJECT_DIR)
+        return None
 
     # Push
     push_result = subprocess.run(
