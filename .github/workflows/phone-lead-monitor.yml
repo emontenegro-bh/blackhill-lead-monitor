@@ -2,10 +2,27 @@ name: Phone Lead Monitor
 
 on:
   schedule:
-    # Backstop only. Real-time routing is driven by Power Automate calling
-    # workflow_dispatch on each form submission; GitHub throttles frequent
-    # schedules to hours anyway, so this is just a safety net + the reconcile.
-    - cron: '17,47 * * * *'
+    # Backstop only, and GitHub throttles frequent schedules under load, so do
+    # not read this as the real cadence -- see below for what actually drives it.
+    #
+    # Was '17,47' (every 30 min) until 2026-09-02. Matched to lead-monitor's
+    # '*/5' so that if the external dispatcher ever stops, phone leads degrade
+    # to the same worst case as web leads instead of a far worse one.
+    - cron: '*/5 * * * *'
+
+  # WHAT ACTUALLY DRIVES THIS
+  #
+  # An external scheduler (cron-job.org) POSTs a workflow_dispatch on a fixed
+  # interval, the same workaround lead-monitor uses because GitHub silently
+  # throttles scheduled runs.
+  #
+  # This block used to claim "Real-time routing is driven by Power Automate
+  # calling workflow_dispatch on each form submission". That is not happening.
+  # Of the last 93 dispatches, 92 landed exactly on a 15-minute boundary and
+  # the only exception was a hand-run job -- so every dispatch came from the
+  # timer and none from a form submission. Whether Power Automate ever worked
+  # or silently stopped is unresolved; either way nothing is event-driven today
+  # and a lead waits for the next tick.
   workflow_dispatch: {}
 
 concurrency:
