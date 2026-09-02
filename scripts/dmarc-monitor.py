@@ -19,6 +19,13 @@ Two kinds of finding, and the distinction matters:
   UNAUTHENTICATED        A source failing everything. Usually spoofing or
                          someone forwarding our mail. Informational at p=none.
 
+  FORWARDED              A recipient's mail system re-sent our message and
+                         signed it with its own DKIM key. Nothing to fix and
+                         nothing to alert on. Only the forwarders named in
+                         KNOWN_FORWARDERS are treated this way, because an
+                         unidentified third-party signer could be a spoofer
+                         signing with a domain of their own.
+
 Usage:
   python3 scripts/dmarc-monitor.py             # normal run
   python3 scripts/dmarc-monitor.py --dry-run   # parse and print, send nothing
@@ -73,6 +80,23 @@ KNOWN_SENDING_DOMAINS = {
     "meangreenlawncare.com",
     "protection.outlook.com", "outlook.com",       # Microsoft 365
     "mcsv.net", "mcdlv.net", "rsgsv.net",          # Mailchimp
+}
+
+# Recipients whose mail system re-signs and re-sends what we send them.
+#
+# tbrown131@lamar.edu is a fertilization customer. Lamar University runs on
+# Microsoft, so when Carlos emails Tom the message leaves again from Lamar's
+# outbound host, still carrying blackhilltx.com in the From header. SPF fails
+# (Lamar's IP is not in our record and never can be) and Lamar's own DKIM
+# signature replaces ours, so DMARC reports a failure for a message that is
+# working exactly as intended.
+#
+# Before 2026-09-02 this landed in BREAKS-ON-ENFORCEMENT and told Evelin her
+# own sender needed fixing, because the SPF auth domain still reads
+# blackhilltx.com. One customer's mail forwarding generated that alarm on
+# 08-20 and again on 09-02. Nothing here is fixable from our side.
+KNOWN_FORWARDERS = {
+    "lamar.edu",
 }
 
 
@@ -261,8 +285,8 @@ def parse_report(xml_bytes):
 
 
 def classify(records):
-    """Split failing volume into the two buckets that need different responses."""
-    breaks, unauth = defaultdict(int), defaultdict(int)
+    """Split failing volume into the buckets that need different responses."""
+    breaks, unauth, forwarded = defaultdict(int), defaultdict(int), defaultdict(int)
     passed = 0
     for r in records:
         if r["dkim"] == "pass" or r["spf"] == "pass":
@@ -270,13 +294,32 @@ def classify(records):
             continue
         # Failed DMARC. Does any underlying check recognise a domain of ours?
         seen = {d for d, _ in r["dkim_auth"] + r["spf_auth"]}
+
+        # A DKIM signature that PASSES for a domain that is not ours means some
+        # third party signed this message on its way through, which is what
+        # forwarding looks like from the report side.
+        #
+        # Only the forwarders we have actually identified are silenced. An
+        # unknown third-party signer could just as easily be a spoofer signing
+        # with a domain of their own, and that has to keep alerting -- so
+        # anything not on the list falls through to the checks below and
+        # behaves exactly as it did before.
+        relay = sorted(
+            d for d, res in r["dkim_auth"]
+            if res == "pass" and any(d == k or d.endswith("." + k)
+                                     for k in KNOWN_FORWARDERS)
+        )
+        if relay:
+            forwarded[(r["source_ip"], ", ".join(relay))] += r["count"]
+            continue
+
         recognised = any(
             d == k or d.endswith("." + k)
             for d in seen for k in KNOWN_SENDING_DOMAINS
         )
         key = (r["source_ip"], ", ".join(sorted(seen)) or "no auth domain")
         (breaks if recognised else unauth)[key] += r["count"]
-    return passed, breaks, unauth
+    return passed, breaks, unauth, forwarded
 
 
 # ---------------------------------------------------------------------------
@@ -294,7 +337,7 @@ def send_alert(token, mailbox, subject, body):
     })
 
 
-def build_body(window, passed, breaks, unauth, policy, domain):
+def build_body(window, passed, breaks, unauth, policy, domain, forwarded=None):
     lines = [
         f"DMARC findings for {domain} ({window})",
         f"Current policy: p={policy}",
@@ -326,9 +369,15 @@ def build_body(window, passed, breaks, unauth, policy, domain):
             "whether one of our domains is involved, which is true in both",
             "cases -- so read the source IP before assuming it is ours:",
             "",
-            "  Microsoft or Mailchimp address  -> our own mail, needs fixing",
+            "  Microsoft or Mailchimp address  -> usually our own mail, but see",
+            "                                     below before assuming it",
             "  anything else                   -> a forgery, and the policy",
             "                                     above is already handling it",
+            "",
+            "A Microsoft address is not proof the mail is ours. Microsoft's",
+            "outbound hosts are shared, so a customer whose employer runs on",
+            "Microsoft will relay our mail from one of those same addresses.",
+            "That is how lamar.edu read as our own broken sender twice.",
             "",
             "Between 2026-08-21 and 08-26 three different ColoCrossing hosts",
             "forged meangreenlawncare.com. None of them were ours and none",
@@ -345,6 +394,17 @@ def build_body(window, passed, breaks, unauth, policy, domain):
             "",
         ]
         for (ip, doms), n in sorted(unauth.items(), key=lambda kv: -kv[1])[:10]:
+            lines.append(f"  {n:>6,} messages   {ip}   ({doms})")
+        lines.append("")
+    if forwarded:
+        lines += [
+            "FORWARDED - no action, listed so the count adds up",
+            "A recipient's mail system re-sent our message and signed it with",
+            "its own DKIM key. SPF cannot pass across a forward and never will.",
+            "This is our mail reaching a real customer.",
+            "",
+        ]
+        for (ip, doms), n in sorted(forwarded.items(), key=lambda kv: -kv[1]):
             lines.append(f"  {n:>6,} messages   {ip}   ({doms})")
         lines.append("")
     lines.append("Reports were filed into the '%s' folder." % REPORT_FOLDER)
@@ -368,7 +428,7 @@ def main():
         f"{len(messages) - in_inbox} in '{REPORT_FOLDER}'")
 
     passed_total = 0
-    breaks, unauth = defaultdict(int), defaultdict(int)
+    breaks, unauth, forwarded = defaultdict(int), defaultdict(int), defaultdict(int)
     policy = domain = "?"
     processed, windows = [], []
 
@@ -394,12 +454,14 @@ def main():
             if rid in seen:
                 got_one = True
                 continue
-            p, b, u = classify(records)
+            p, b, u, f = classify(records)
             passed_total += p
             for k, v in b.items():
                 breaks[k] += v
             for k, v in u.items():
                 unauth[k] += v
+            for k, v in f.items():
+                forwarded[k] += v
             windows.append(org)
             seen.add(rid)
             got_one = True
@@ -435,7 +497,8 @@ def main():
 
     total_fail = sum(breaks.values()) + sum(unauth.values())
     log(f"Parsed {len(windows)} new report(s): {passed_total:,} passed, "
-        f"{sum(breaks.values()):,} failing (ours), {sum(unauth.values()):,} failing (unknown)")
+        f"{sum(breaks.values()):,} failing (ours), {sum(unauth.values()):,} failing (unknown), "
+        f"{sum(forwarded.values()):,} forwarded (no action)")
 
     # Suppress repeats of a source already reported recently.
     #
@@ -491,7 +554,7 @@ def main():
         subject = ("DMARC: mail using our domain is failing authentication"
                    if fresh else "DMARC summary")
         body = build_body(window, passed_total, fresh or breaks, unauth,
-                          policy, domain)
+                          policy, domain, forwarded)
         if DRY_RUN:
             log("DRY RUN - would have sent:\n" + body)
         else:
