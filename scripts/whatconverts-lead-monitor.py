@@ -315,6 +315,20 @@ AGENCY_DOMAIN_TOKENS = [
     "digital", "outreach", "influence", "rank", "convert",
 ]
 
+# Words that mean somebody is asking us to do landscaping work. Their presence
+# is not proof a lead is real, but their ABSENCE is what makes the weaker
+# signals (IP geolocation, area code) safe to act on.
+SERVICE_SIGNALS = [
+    "yard", "lawn", "landscap", "tree", "sod", "irrigat", "sprinkler",
+    "mulch", "fence", "patio", "drain", "mow", "weed", "shrub", "garden",
+    "plant", "grass", "estimate", "quote", "bid", "maintenance", "property",
+]
+
+
+def _has_service_signal(message):
+    """True if the message actually asks for landscaping work."""
+    return any(s in (message or "").lower() for s in SERVICE_SIGNALS)
+
 SPAM_EMAIL_DOMAINS = [
     "rambler.ru", "yandex.ru", "mail.ru", "melssa.com",
     "mailnesia.com", "guerrillamail.com", "tempmail.com",
@@ -706,12 +720,7 @@ def _is_spam_form(lead_data):
         domain = email.split("@", 1)[1]
         for token in AGENCY_DOMAIN_TOKENS:
             if token in domain:
-                service_signals = ["yard", "lawn", "landscap", "tree", "sod",
-                                   "irrigat", "sprinkler", "mulch", "fence",
-                                   "patio", "drain", "mow", "weed", "shrub",
-                                   "garden", "plant", "grass", "estimate",
-                                   "quote", "bid", "maintenance", "property"]
-                if not any(s in message for s in service_signals):
+                if not _has_service_signal(message):
                     return True, f"Agency-style email domain ({domain}) with no service signal"
                 break
 
@@ -722,11 +731,23 @@ def _is_spam_form(lead_data):
         return True, f"City field contains name instead of city: '{city_field}'"
 
     # Out-of-state geolocation (WhatConverts IP-based state != Texas)
+    #
+    # An IP address is the weakest signal here and it must never drop a lead by
+    # itself. On 2026-07-14 this rule discarded jen.carman@phelps.com -- a
+    # corporate address at a real law firm, asking for turf and a wall of
+    # privacy trees -- because her IP geolocated to Alabama. A VPN or a work
+    # laptop produces exactly that. She was never added to Aspire and the lead
+    # was gone for seven weeks before anyone noticed.
+    #
+    # So geolocation now only fires when the message does not ask for any
+    # service. A message that does gets handed to the structural and LLM checks
+    # below, which read what was actually written instead of where the packet
+    # came from. Those are allowed to reject it; this rule is not.
     geo_state = (lead_data.get("state", "") or "").strip()
-    if geo_state and geo_state not in ("Texas", "TX", ""):
+    if geo_state and geo_state not in ("Texas", "TX", "") and not _has_service_signal(message):
         lead_source = (lead_data.get("lead_source", "") or "").lower()
         lead_medium = (lead_data.get("lead_medium", "") or "").lower()
-        # Out-of-state + direct/unknown source = very likely spam
+        # Out-of-state + direct/unknown source + nothing asked for = spam
         if lead_source in ("(direct)", "") or lead_medium in ("(none)", ""):
             return True, f"Out-of-state geolocation ({geo_state}) with direct/unknown source"
 
@@ -740,7 +761,12 @@ def _is_spam_form(lead_data):
                              "430", "432", "469", "512", "682", "713", "726", "737",
                              "806", "817", "830", "832", "903", "915", "936", "940",
                              "945", "956", "972", "979"}
-            if area_code not in tx_area_codes and "(direct)" in (lead_data.get("lead_source", "") or "").lower():
+            # Same rule as geolocation above, and for the same reason: plenty of
+            # real customers moving to DFW still carry their old cell number.
+            # A phone prefix cannot outvote an actual service request.
+            if (area_code not in tx_area_codes
+                    and "(direct)" in (lead_data.get("lead_source", "") or "").lower()
+                    and not _has_service_signal(message)):
                 return True, f"Non-TX area code ({area_code}) with direct/unknown source"
 
     # No email and no phone = likely spam
