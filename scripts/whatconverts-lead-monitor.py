@@ -1244,8 +1244,12 @@ def _aspire_lead_source(lead):
     is exactly how phone-lead-monitor.py went on writing 'Phone Call' and blanking
     six contacts. Import, do not copy.
     """
+    # phone_name is the tracking number the caller dialled. It is only set for
+    # calls, and it is what rescues a self-referral: the session's referrer can
+    # be wrong, the number that rang cannot.
     resolved = lead_source_map.from_whatconverts(
-        lead.get("lead_source_raw"), lead.get("lead_medium_raw"))
+        lead.get("lead_source_raw"), lead.get("lead_medium_raw"),
+        lead.get("phone_name"))
     if resolved:
         return resolved
     # Direct/unknown is the absence of a source. A call is at least a call;
