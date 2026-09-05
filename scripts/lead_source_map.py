@@ -35,12 +35,60 @@ PICKLIST = (PHONE_CALL, WEBSITE, REFERRAL, BING_ORGANIC, BING_ADS, GOOGLE_ORGANI
 # ContactCustomFieldDefinitionID for the Lead Source picklist (looked up 2026-05-13).
 DEFINITION_ID = 34
 
+# Hosts of ours. When one of these turns up as the "source" of a lead, the site
+# has been recorded as referring itself: the visitor's session broke somewhere
+# mid-visit and WhatConverts read the previous page as the referrer. It is a
+# tracking artefact, not a channel.
+#
+# 79 leads carried it between 2026-03-01 and 09-05, making it the fifth-largest
+# apparent source. Because the medium is literally "referral" it used to fall
+# through to REFERRAL below and get written to Aspire as a word-of-mouth
+# referral -- so calls that came from the Google Business Profile listing were
+# being credited to the referral channel, which both overstates referrals and
+# robs GMB. Anything matching here must never reach that rule.
+SELF_REFERRAL_HOSTS = (
+    "blackhilllandscaping.com",
+    "meangreenlawncare.com",
+    "blackhilltx.com",
+)
 
-def from_whatconverts(lead_source, lead_medium):
+# Tracking-number name -> the source that number represents.
+#
+# For a phone call this outranks everything else WhatConverts reports. The
+# number a caller dialled is a fact: each one is published in exactly one place,
+# so if the GMB number rang, the call came from the GMB listing, whatever the
+# session's referrer happened to say.
+#
+# "All Traffic" is deliberately absent. It is the catch-all number shown when
+# nothing more specific applies, so it identifies no source and must stay
+# unattributed rather than be guessed at. 4 of the 11 self-referral calls in the
+# sample rang it and they stay unresolved.
+TRACKING_NUMBER_SOURCE = {
+    "new google my business": GOOGLE_BUSINESS_PROFILE,
+    "google mybusiness": GOOGLE_BUSINESS_PROFILE,
+    "google cpc": GOOGLE_ADS,
+    "google lsa": GOOGLE_ADS,
+}
+
+
+def is_self_referral(lead_source):
+    """True if WhatConverts recorded one of our own hosts as the lead's source."""
+    src = (lead_source or "").lower().strip()
+    return any(host in src for host in SELF_REFERRAL_HOSTS)
+
+
+def from_tracking_number(phone_name):
+    """Map a WhatConverts tracking-number name to a picklist value, or None."""
+    return TRACKING_NUMBER_SOURCE.get((phone_name or "").lower().strip())
+
+
+def from_whatconverts(lead_source, lead_medium, phone_name=None):
     """Map a WhatConverts (lead_source, lead_medium) pair to a picklist value.
 
     WhatConverts knows which tracking number the caller dialled, which makes it the
-    only system that can say where a phone call actually came from.
+    only system that can say where a phone call actually came from. Pass
+    phone_name whenever the lead is a call so a self-referral can be recovered
+    from the number; it is optional so existing callers keep working.
 
     Returns None for direct/unknown traffic. That is not a source so much as the
     absence of one, and the right fallback depends on the channel: a phone call
@@ -49,6 +97,15 @@ def from_whatconverts(lead_source, lead_medium):
     """
     src = (lead_source or "").lower().strip()
     med = (lead_medium or "").lower().strip()
+
+    # Self-referral first, because the medium is "referral" and the rule at the
+    # bottom would otherwise claim it. The tracking number is the one piece of
+    # evidence the broken session cannot corrupt, so try it; if it says nothing
+    # useful return None and let the caller fall back to WEBSITE / PHONE_CALL.
+    # Never REFERRAL -- our own site referring itself is not word of mouth.
+    if is_self_referral(src):
+        return from_tracking_number(phone_name)
+
     if src == "gmb":                              # WC tags map-pack calls/clicks 'gmb'
         return GOOGLE_BUSINESS_PROFILE
     if src == "google" and med == "cpc":
