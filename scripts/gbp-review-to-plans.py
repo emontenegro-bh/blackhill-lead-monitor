@@ -25,6 +25,8 @@ from datetime import datetime, timedelta, timezone
 from difflib import SequenceMatcher
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
 sys.path.insert(0, os.path.join(REPO, "scripts"))
 
 DRY_RUN = "--live" not in sys.argv
@@ -33,7 +35,7 @@ SINCE_ARG = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--since=
 MAX_LOOKBACK_DAYS = 14   # a long outage should not fire a mass send
 ALL_FIVE_STAR = "--all-five-star" in sys.argv
 
-STATE_FILE = os.path.expanduser("~/.config/gbp/plans-routed.json")
+STATE_NAME = "gbp-review-to-plans"
 QUEUE_FILE = os.path.join(REPO, "data", "plans-review-queue.json")
 
 PLANS_TAG = "plans-prospect"          # triggers the Mailchimp journey
@@ -280,7 +282,9 @@ def main():
     mode = "DRY RUN" if DRY_RUN else "LIVE"
     print(f"[{datetime.now(timezone.utc).isoformat(timespec='seconds')}] gbp-review-to-plans ({mode})")
 
-    state = load_json(STATE_FILE, {"routed": [], "jon_mentions": []})
+    # Supabase, not a local file. The workflow used to cache a path the
+    # script never wrote, so dedup state silently reset on every CI run.
+    state = db.load_state(STATE_NAME, default={"routed": [], "jon_mentions": []})
     routed = set(state.get("routed", []))
 
     reviews = load_reviews()
@@ -351,9 +355,9 @@ def main():
         state["routed"] = sorted(routed)
         if not DRY_RUN:
             state["last_run"] = datetime.now(timezone.utc).isoformat()
-        save_json(STATE_FILE, state)
+        db.save_state(STATE_NAME, state)
         save_json(QUEUE_FILE, queue)
-        print(f"  state -> {STATE_FILE}")
+        print(f"  state -> Supabase ({STATE_NAME})")
         print(f"  queue -> {QUEUE_FILE}")
 
 

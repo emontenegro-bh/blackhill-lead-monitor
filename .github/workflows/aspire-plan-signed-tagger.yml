@@ -32,15 +32,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Restore state
-        uses: actions/cache@v4
-        with:
-          path: ~/.claude/states/plan-signed-tagger.json
-          key: plan-signed-state-${{ github.run_id }}
-          restore-keys: plan-signed-state-
 
       - name: Tag plan buyers
         env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
           ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
           MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}

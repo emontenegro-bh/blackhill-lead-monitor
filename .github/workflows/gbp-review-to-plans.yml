@@ -37,15 +37,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Restore state
-        uses: actions/cache@v4
-        with:
-          path: ~/.claude/states/review-to-plans.json
-          key: review-to-plans-state-${{ github.run_id }}
-          restore-keys: review-to-plans-state-
 
       - name: Route reviews to the plans journey
         env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
           GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
           GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}

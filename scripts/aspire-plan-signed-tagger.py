@@ -18,10 +18,13 @@ Credentials: ~/.config/{aspire,mailchimp}/config.json locally, env vars in CI.
 import json, os, sys, base64, hashlib, urllib.request, urllib.parse, urllib.error
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import db
+
 DRY_RUN = "--live" not in sys.argv
 TAG = "plan-signed"
 PLAN_NAME_MATCH = "Irrigation Maintenance Plan"
-STATE_PATH = os.path.expanduser("~/.claude/states/plan-signed-tagger.json")
+STATE_NAME = "plan-signed-tagger"
 INTERNAL_DOMAINS = {"meangreenlawncare.com", "blackhilltx.com", "blackhilllandscaping.com"}
 
 
@@ -115,18 +118,15 @@ def tag_contact(srv, key, lid, email):
 
 
 def load_state():
-    if os.path.exists(STATE_PATH):
-        try:
-            return json.load(open(STATE_PATH))
-        except Exception:
-            pass
-    return {"tagged_opportunity_ids": [], "last_run": None}
+    # Supabase, not the repo. Repo-path state caused the read-modify-write
+    # race that double-emailed customers; a miss here would re-tag buyers.
+    return db.load_state(STATE_NAME,
+                         default={"tagged_opportunity_ids": [], "last_run": None})
 
 
 def save_state(state):
-    os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
     state["last_run"] = datetime.now(timezone.utc).isoformat()
-    json.dump(state, open(STATE_PATH, "w"), indent=1)
+    db.save_state(STATE_NAME, state)
 
 
 def main():
@@ -175,7 +175,7 @@ def main():
     if not DRY_RUN and newly:
         state["tagged_opportunity_ids"] = sorted(seen | set(newly))
         save_state(state)
-        print(f"state written to {STATE_PATH}")
+        print(f"state written to Supabase ({STATE_NAME})")
     elif DRY_RUN:
         print("dry run, no tags written and no state saved. re-run with --live to apply.")
     if failed:
