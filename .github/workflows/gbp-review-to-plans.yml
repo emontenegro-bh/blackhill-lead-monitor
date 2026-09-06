@@ -1,0 +1,67 @@
+name: Review to Plans - daily
+
+# Each weekday morning, look at the Google reviews posted since the last run
+# (normally yesterday's) and tag any five-star reviewer who named Jon with
+# 'plans-prospect'. That tag is what starts the Maintenance Plans journey in
+# Mailchimp, so this job is the front door of that sequence.
+#
+# 13:17 UTC is 08:17 America/Chicago during daylight time, 07:17 during standard
+# time. GitHub cron is UTC only, so the hour shifts by one in November.
+
+on:
+  schedule:
+    - cron: '17 13 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run without writing tags'
+        type: boolean
+        default: false
+      since:
+        description: 'Override the window start, YYYY-MM-DD'
+        type: string
+        required: false
+
+concurrency:
+  group: review-to-plans
+  cancel-in-progress: false
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+
+      - name: Route reviews to the plans journey
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
+          GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
+          GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}
+          GBP_ACCOUNT_ID: ${{ secrets.GBP_ACCOUNT_ID }}
+          GBP_LOCATION_ID: ${{ secrets.GBP_LOCATION_ID }}
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+          MAILCHIMP_SERVER: ${{ secrets.MAILCHIMP_SERVER }}
+          MAILCHIMP_LIST_ID: ${{ secrets.MAILCHIMP_LIST_ID }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" != "true" ]; then ARGS="--live"; fi
+          if [ -n "${{ inputs.since }}" ]; then ARGS="$ARGS --since=${{ inputs.since }}"; fi
+          python3 scripts/gbp-review-to-plans.py $ARGS
+
+  notify-failure:
+    needs: route
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: Review to Plans - daily
+    secrets: inherit

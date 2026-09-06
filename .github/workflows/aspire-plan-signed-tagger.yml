@@ -1,0 +1,58 @@
+name: Plan Signed Tagger
+
+# Watches Aspire for won "* Irrigation Maintenance Plan" opportunities and tags
+# the buyer 'plan-signed' in Mailchimp. The Maintenance Plans journey checks that
+# tag before emails 2 and 3, so a customer who buys stops receiving the pitch.
+#
+# Runs four times a day. The journey's sends cluster in the morning, so the 12:17
+# UTC run lands before them; the others keep the gap small the rest of the day.
+
+on:
+  schedule:
+    - cron: '17 0,6,12,18 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run without writing tags'
+        type: boolean
+        default: false
+
+concurrency:
+  group: plan-signed-tagger
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+
+      - name: Tag plan buyers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+          MAILCHIMP_SERVER: ${{ secrets.MAILCHIMP_SERVER }}
+          MAILCHIMP_LIST_ID: ${{ secrets.MAILCHIMP_LIST_ID }}
+        run: |
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            python3 scripts/aspire-plan-signed-tagger.py
+          else
+            python3 scripts/aspire-plan-signed-tagger.py --live
+          fi
+
+  notify-failure:
+    needs: tag
+    if: failure()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: Plan Signed Tagger
+    secrets: inherit
