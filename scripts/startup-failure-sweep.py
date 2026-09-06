@@ -493,13 +493,15 @@ def maybe_send_heartbeat(state, now):
     silent-unless-broken, which cannot distinguish "nothing is wrong" from
     "the thing that checks is itself dead". If a week passes with no
     heartbeat, the monitoring stopped, not the problems.</p>
-    <p><b>Coverage:</b> {len(watched)} scripts are checked here.
-    {UNTRACKED_SCHEDULED} other scheduled scripts are <i>not</i> -- they do not
-    write to <code>automation_runs</code>, so this all-clear says nothing about
-    them. See UNTRACKED_SCHEDULED in <code>startup-failure-sweep.py</code> for
-    the list. Of those still uncovered, <code>phone-lead-staleness-check.py</code>
-    is the one to do next: it is itself an alerter, so its silence is doubly
-    invisible.</p>"""
+    <p><b>Coverage:</b> {len(watched)} scripts are checked here, and every
+    scheduled script now writes to <code>automation_runs</code>.</p>
+    <p>Coverage is not the same as evidence. A script can carry the tracking
+    call and still write nothing, because <code>run_start()</code> swallows a
+    credentials failure on purpose -- observability must never take down the
+    automation it watches. <code>seo-audit</code> did exactly that until
+    2026-09-06: wired since 2026-08-22, zero rows the whole time, because
+    <code>seo-audit-weekly.yml</code> never passed the Supabase secrets. If a
+    script below shows no runs, suspect its workflow's env before its code.</p>"""
 
     if send_html(f"Automation heartbeat: {total:,} runs, {errs} errors", html):
         state["last_heartbeat"] = now.isoformat()

@@ -37,6 +37,13 @@ jobs:
         env:
           GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          # seo-audit.py has called db.track_flat("seo-audit") since 2026-08-22,
+          # but without these it wrote nothing: run_start() swallows a
+          # credentials failure by design, so the script ran fine and recorded
+          # zero runs. The sweep counts seo-audit as covered, which made this a
+          # silent hole in exactly the monitor built to find silent holes.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/seo-audit.py
 
       - name: Commit audit reports
