@@ -37,6 +37,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      # gbp-review-to-plans.py imports no Google library itself, which is why
+      # this was easy to miss -- it loads gbp_auth.py at runtime via
+      # spec_from_file_location, and THAT needs them. Same set as
+      # gbp-scheduled-poster.yml, which is the one that already works.
+      - name: Install dependencies
+        run: pip install google-auth google-auth-httplib2 google-api-python-client requests
 
       - name: Route reviews to the plans journey
         env:
