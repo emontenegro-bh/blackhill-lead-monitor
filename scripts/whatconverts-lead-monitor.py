@@ -1769,10 +1769,19 @@ def assign_lead_owner(lead, state):
     service = (lead.get("service_interest", "") or "").lower()
     message = (lead.get("message", "") or "").lower()
 
+    # Commercial bid requests go to Evelin, and this has to be tested first.
+    # The old order asked "commercial" AND "maint" of the service field only,
+    # but the website form has no Commercial Maintenance option -- every
+    # commercial RFP arrives as "Landscaping" and fell through to round-robin.
+    # Sheri Manabat's request for bids on four multi-family properties was
+    # assigned by coin flip on 2026-09-03. Testing the message too, via the
+    # same procurement check the spam filter uses, is what makes the rule mean
+    # what it says. It also has to outrank the irrigation rule below: an RFP
+    # that happens to mention irrigation is still a commercial bid.
+    if _is_procurement_request(message, service) or ("commercial" in service and "maint" in service):
+        return OWNER_EVELIN_HUBSPOT_ID
     if "irrigation" in service or "sprinkler" in service or "irrigation" in message:
         return OWNER_DENISSE_HUBSPOT_ID
-    if "commercial" in service and "maint" in service:
-        return OWNER_EVELIN_HUBSPOT_ID
 
     rr = state.setdefault("round_robin_state", {"last_index": -1})
     owners = [OWNER_EVELIN_HUBSPOT_ID, OWNER_DENISSE_HUBSPOT_ID]
