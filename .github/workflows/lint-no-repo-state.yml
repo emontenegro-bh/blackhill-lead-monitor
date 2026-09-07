@@ -66,7 +66,12 @@ jobs:
     # `cancelled`, not `failure`, and plain `if: failure()` cannot see it.
     # That blind spot hid six silent seo-audit timeouts between June and
     # August 2026.
-    if: failure() || cancelled()
+    # Not on pull_request. This lint failing on a PR is the guard WORKING --
+    # it blocked PR #45 from committing a state file on 2026-09-06 and emailed
+    # Evelin as though something had broken. The PR author already sees the red
+    # check; nobody needs paging for a rule that did its job. A failure on main
+    # still alerts, because that means it slipped through.
+    if: (failure() || cancelled()) && github.event_name != 'pull_request'
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "Lint - no state written into the repo"

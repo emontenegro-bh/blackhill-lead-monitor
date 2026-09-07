@@ -116,8 +116,14 @@ def load_reviews():
 
 def aspire_client():
     import importlib.util
-    p = os.path.join(REPO, "..", "scripts", "aspire-api-sync.py")
-    p = os.path.abspath(p)
+    # REPO is already the repo root (two dirnames up from scripts/), so the
+    # "../scripts" that used to be here climbed out of the checkout entirely.
+    # It resolved locally only because the parent directory happens to hold a
+    # sibling copy; in CI there is no sibling and it failed every day from
+    # 2026-09-01 with FileNotFoundError on
+    # /home/runner/work/blackhill-lead-monitor/scripts/aspire-api-sync.py --
+    # note the missing second repo-name segment.
+    p = os.path.join(REPO, "scripts", "aspire-api-sync.py")
     spec = importlib.util.spec_from_file_location("asy", p)
     asy = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(asy)
