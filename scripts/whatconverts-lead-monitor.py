@@ -329,6 +329,71 @@ def _has_service_signal(message):
     """True if the message actually asks for landscaping work."""
     return any(s in (message or "").lower() for s in SERVICE_SIGNALS)
 
+
+# A business asking Black Hill to bid on landscaping work is the most valuable
+# lead type there is -- commercial maintenance is the number one acquisition
+# priority. It is also the lead type both spam layers were most likely to kill,
+# because procurement language and sales-pitch language overlap almost exactly:
+# "our team", "on behalf of", "proposal", "our clients".
+#
+# On 2026-09-03 Sheri Manabat asked for bids on four multi-family properties,
+# 37 visits a year, and the LLM classifier discarded her with the reason
+# "a solicitation for competitive bids ... not a customer requesting services".
+# It was applying the prompt correctly; the prompt was wrong. Four days passed
+# before anyone saw it, and only because she followed up.
+#
+# So this check runs FIRST, before the keyword list, the structural check and
+# the LLM, and it is the only rule in the file that can end the whole spam path
+# with "this is a lead". It requires all three of:
+#   * a real landscaping service signal
+#   * a procurement marker (words that appear in an RFP and not in a pitch)
+#   * no hard sales-pitch marker anywhere in the text
+PROCUREMENT_MARKERS = [
+    "request for proposal", "rfp", "invitation to bid", "itb",
+    "scope of work", "statement of work", "competitive proposal",
+    "competitive proposals", "competitive bid", "competitive bids",
+    "submit a proposal", "submit a bid", "solicit", "soliciting",
+    "site walkthrough", "site walk", "walkthrough", "walk-through",
+    "certificate of insurance", "coi", "net 30", "net30", "net 60",
+    "itemized", "per property", "annual service schedule",
+    "visits per year", "visit annual", "service schedule",
+    "portfolio", "multi-family", "multifamily", "hoa",
+    "property manager", "property management", "properties",
+]
+
+# If any of these appear, the override never fires. These are the phrases that
+# only ever show up when someone is selling something TO us.
+HARD_PITCH_MARKERS = [
+    "seo", "backlink", "link building", "our agency", "digital marketing",
+    "we offer", "we provide", "we specialize in", "we can guarantee",
+    "increase your revenue", "grow your business", "book a call",
+    "schedule a demo", "free audit", "leads for your business",
+    "exclusive leads", "qualified leads", "white label", "saas",
+    "i noticed your website", "i came across your", "your competitors",
+    "software demo", "product demo", "platform demo", "crm",
+]
+
+
+def _is_procurement_request(message, service=""):
+    """True when a business is asking US to bid on landscaping work.
+
+    Markers are matched on word boundaries deliberately: the bare substring
+    "coi" matches "coil" and "rfp" matches nothing useful inside another word.
+    The rest of this file matches keywords as raw substrings, which is what
+    made the surrounding filters so eager in the first place.
+    """
+    text = f"{service} {message}".lower()
+    if not text.strip():
+        return False
+    if not _has_service_signal(text):
+        return False
+    if any(pitch in text for pitch in HARD_PITCH_MARKERS):
+        return False
+    return any(
+        re.search(rf"(?<![a-z0-9]){re.escape(m)}(?![a-z0-9])", text)
+        for m in PROCUREMENT_MARKERS
+    )
+
 SPAM_EMAIL_DOMAINS = [
     "rambler.ru", "yandex.ru", "mail.ru", "melssa.com",
     "mailnesia.com", "guerrillamail.com", "tempmail.com",
@@ -544,8 +609,23 @@ def _classify_message_with_llm(name, email, address, service, message):
     prompt = f"""You are a spam classifier for a landscaping company (Black Hill Landscaping) in Fort Worth, TX.
 Classify this web form submission as SPAM or LEGIT.
 
-SPAM = someone selling a product/service TO the company, soliciting business, or fake/bot submission.
-LEGIT = a real potential customer asking about landscaping, irrigation, lawn care, drainage, sod, or related services.
+The only question that matters is which direction the money flows.
+
+SPAM = someone trying to SELL something TO Black Hill, or a fake/bot submission.
+  Examples: SEO or marketing agencies, lead-generation vendors, software demos,
+  staffing and virtual-assistant pitches, link building, anything offering to
+  grow our business.
+
+LEGIT = someone who wants Black Hill to DO landscaping work and get paid for it.
+  This includes residential customers asking for a quote, AND businesses,
+  property managers, HOAs, schools, churches and municipalities requesting
+  bids, proposals, or RFP responses for grounds and landscape maintenance.
+
+A property manager soliciting competitive bids for landscape maintenance is a
+LEGIT lead -- in fact it is the most valuable kind we receive. Do not classify
+it as spam merely because it uses procurement language such as "soliciting
+proposals", "on behalf of", "our portfolio", "scope of work" or "Net 30".
+Commercial bid requests are the business we are trying to win.
 
 Submission:
 Name: {name}
@@ -651,6 +731,12 @@ def _is_spam_form(lead_data):
         fields = {}
     email = (lead_data.get("contact_email_address") or fields.get("Email", "") or "").lower()
     message = (fields.get("Anything else you would like to share?", "") or "").lower()
+    service = (fields.get("What Type Of Service Do You Need?", "") or "").lower()
+
+    # Commercial bid requests are leads, not solicitations. This must stay
+    # ahead of every other rule below -- see _is_procurement_request.
+    if _is_procurement_request(message, service):
+        return False, ""
 
     # Check email domain
     for domain in SPAM_EMAIL_DOMAINS:

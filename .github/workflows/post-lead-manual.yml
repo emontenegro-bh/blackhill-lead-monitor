@@ -1,0 +1,71 @@
+name: Post Lead Manually
+
+# Replays a single lead that the automatic pipeline lost, through the same
+# routing, Teams card and owner notification a working lead would have used.
+# Manual only: there is no schedule, and it does nothing until dispatched.
+#
+# Does not write to Aspire, HubSpot or Mailchimp. The assigned owner enters it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      lead_json:
+        description: 'WhatConverts-shaped lead JSON (see scripts/post-lead-manual.py)'
+        required: true
+        type: string
+      owner:
+        description: 'Force an owner. Leave as "auto" to use the routing rules.'
+        required: false
+        default: auto
+        type: choice
+        options: [auto, evelin, denisse]
+      dry_run:
+        description: 'Print what would be sent and stop'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: post-lead-manual
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Post the lead
+        env:
+          # Passed through the environment, never interpolated into the shell
+          # line: the JSON carries quotes and a customer's free text, and
+          # ${{ }} expanded inside `run` is a script-injection hole.
+          LEAD_JSON: ${{ inputs.lead_json }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_FROM_EMAIL: ${{ secrets.NOTIFY_FROM_EMAIL }}
+          WC_API_TOKEN: ${{ secrets.WC_API_TOKEN }}
+          WC_API_SECRET: ${{ secrets.WC_API_SECRET }}
+          WC_PROFILE_ID: ${{ secrets.WC_PROFILE_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python scripts/post-lead-manual.py \
+            --lead-json "$LEAD_JSON" \
+            ${{ inputs.owner != 'auto' && format('--owner {0}', inputs.owner) || '' }} \
+            ${{ inputs.dry_run && '--dry-run' || '' }}
+
+  notify-failure:
+    needs: [post]
+    if: failure() || cancelled()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Post Lead Manually"
+    secrets: inherit
