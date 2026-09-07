@@ -62,6 +62,27 @@ ALERT_TO = "evelin@blackhilltx.com"
 # a real misconfiguration nobody fixed comes back and says so again.
 SUPPRESS_DAYS = 7
 
+# The domain-level key deserves a much longer window than the IP-level one,
+# because the two answer different questions.
+#
+# The IP key means "this host is still failing" -- if that is one of ours and
+# nobody has fixed it, it should come back weekly and keep nagging.
+#
+# The domain key means "someone is forging this domain, you already know, no
+# action". Once true it stays true however long the forger goes quiet, so
+# repeating it teaches Evelin to ignore the email.
+#
+# meangreenlawncare.com has been forged from a rotating set of hosts since
+# 2026-08-21 (198.23.177.22, 107.175.114.220, 44.202.169.39, 192.3.180.42 ...).
+# The gaps between attempts -- 08-26, 08-27, 08-30, 09-07 -- straddle 7 days,
+# so some were suppressed and some were not, and the 09-07 one landed 8 days
+# after the last alert and fired for no reason anyone could act on.
+#
+# 30 days hides nothing real: a genuine misconfiguration on one of OUR hosts
+# arrives on its own IP and is still caught by the 7-day IP check above,
+# independently of this.
+DOMAIN_SUPPRESS_DAYS = 30
+
 # Senders we expect to send as blackhilltx.com. A failure from one of these is
 # our own misconfiguration and needs fixing before p= moves off none.
 #
@@ -543,7 +564,7 @@ def main():
             log(f"  Suppressing known source {ip} "
                 f"({n} msg, last alerted {ip_age}d ago)")
             continue
-        if dom_age is not None and dom_age < SUPPRESS_DAYS:
+        if dom_age is not None and dom_age < DOMAIN_SUPPRESS_DAYS:
             log(f"  Suppressing {ip} - {domains} already reported "
                 f"{dom_age}d ago from a different address (rotating source)")
             continue
