@@ -161,6 +161,15 @@ BONFIRE_ORGS = [
     ("City of Southlake", "southlake"),
     ("DFW Airport", "dfwairport"),
     ("City of Frisco", "friscotexas"),  # friscotexas.gov/883 embeds this Bonfire portal
+    # Added 2026-09-07 (RFP-target parcel audit, top acreage school/public bodies not monitored).
+    # Fort Worth Housing Authority rebranded "Fort Worth Housing Solutions"; covers CSV rows
+    # "HOUSING AUTHORITY OF FTW" / "HOUSING AUTHORITY OF THE CITY OF FORT WORTH TEXAS".
+    # Verified: fwhs.org/working-with-fwhs/business-opportunities/rfps-and-bids/ links here;
+    # getOpenPublicOpportunitiesSectionData returned live open RFQs (2026-09-07).
+    ("Fort Worth Housing Solutions", "fwhs"),
+    # Verified: tccd.edu/community/business/bids-with-tcc/ links here; JSON endpoint returned
+    # a live open RFP (2026-09-07).
+    ("Tarrant County College District", "tccd"),
 ]
 
 
@@ -197,6 +206,11 @@ CIVICPLUS_SITES = [
     ("City of Richland Hills", "https://www.richlandhills.com/Bids.aspx"),
     ("City of Westworth Village", "https://www.cityofwestworth.com/Bids.aspx"),
     ("City of Cleburne", "https://www.cleburne.net/Bids.aspx"),  # /207/Bid-Opportunities maps to this CivicPlus module
+    # Added 2026-09-07 (RFP-target parcel audit). Verified 200 + "no open bid postings"
+    # empty-state marker present on each (2026-09-07).
+    ("City of Lake Worth", "https://www.lakeworthtx.org/Bids.aspx"),
+    ("Town of Westlake", "https://www.westlake-tx.org/Bids.aspx"),
+    ("City of Roanoke", "https://www.roanoketexas.com/Bids.aspx"),
 ]
 
 
@@ -236,6 +250,22 @@ IONWAVE_SITES = [
     ("White Settlement ISD", "https://wsisdebid.ionwave.net/SourcingEvents.aspx?SourceType=1"),
     ("Grapevine-Colleyville ISD", "https://gcisdbid.ionwave.net/SourcingEvents.aspx?SourceType=1"),
     ("Aledo ISD", "https://aledoisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    # Added 2026-09-07 (RFP-target parcel audit: Tarrant County parcel records show these
+    # ISDs/districts are among the largest grounds-holding public bodies in the service area
+    # and were not monitored). Each slug found via the district's own purchasing/bids page
+    # linking to it, then verified live and directly: HTTP 200 with a "Bid Title" RadGrid
+    # header matching scrape_ionwave()'s parser (2026-09-07).
+    ("Arlington ISD", "https://aisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Mansfield ISD", "https://misd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Eagle Mountain-Saginaw ISD", "https://emsisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Keller ISD", "https://kellerisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Northwest ISD", "https://nisdtx.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Crowley ISD", "https://crowleyisdtx.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Birdville ISD", "https://birdvilleschools.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Hurst-Euless-Bedford ISD", "https://hebisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Carroll ISD", "https://southlakecarroll.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Azle ISD", "https://azleisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
+    ("Burleson ISD", "https://burlesonisd.ionwave.net/SourcingEvents.aspx?SourceType=1"),
 ]
 
 
