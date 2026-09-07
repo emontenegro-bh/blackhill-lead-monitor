@@ -1708,5 +1708,83 @@
       "website_clicks": 4,
       "direction_requests": 9
     }
+  },
+  {
+    "date": "2026-09-07",
+    "date_range": "2026-08-29 to 2026-09-04",
+    "gsc": {
+      "impressions": 10045,
+      "clicks": 45,
+      "ctr": 0.45,
+      "avg_position": 14.58
+    },
+    "priority_keywords": [
+      {
+        "query": "arlington commercial landscaping",
+        "position": 10.8,
+        "impressions": 38,
+        "clicks": 0
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1.2,
+        "impressions": 31,
+        "clicks": 11
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 11.3,
+        "impressions": 30,
+        "clicks": 0
+      },
+      {
+        "query": "landscapers fort worth",
+        "position": 29.2,
+        "impressions": 26,
+        "clicks": 1
+      },
+      {
+        "query": "aledo culvert construction",
+        "position": 32.1,
+        "impressions": 15,
+        "clicks": 0
+      },
+      {
+        "query": "aledo driveway construction",
+        "position": 38.3,
+        "impressions": 15,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscaping",
+        "position": 18.5,
+        "impressions": 15,
+        "clicks": 0
+      },
+      {
+        "query": "arlington sprinkler repair",
+        "position": 9.3,
+        "impressions": 15,
+        "clicks": 0
+      },
+      {
+        "query": "aledo excavation services",
+        "position": 21.7,
+        "impressions": 14,
+        "clicks": 0
+      },
+      {
+        "query": "24 hour tree service fort worth",
+        "position": 9.1,
+        "impressions": 13,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 104,
+      "calls": 0,
+      "website_clicks": 0,
+      "direction_requests": 0
+    }
   }
 ]
