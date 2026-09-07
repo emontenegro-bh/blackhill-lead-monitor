@@ -44,6 +44,12 @@ jobs:
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
           MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
           MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+          # The web-form safety net asks WhatConverts whether it ever saw the
+          # lead, and needs Gmail SMTP to alert when it did not.
+          WC_API_TOKEN: ${{ secrets.WC_API_TOKEN }}
+          WC_API_SECRET: ${{ secrets.WC_API_SECRET }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           LEAD_RECIPIENTS: ${{ secrets.LEAD_RECIPIENTS }}
           SPAM_RECIPIENTS: ${{ secrets.SPAM_RECIPIENTS }}

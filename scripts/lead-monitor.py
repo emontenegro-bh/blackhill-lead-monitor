@@ -18,7 +18,7 @@ Usage:
   python3 scripts/lead-monitor.py --verify    # Health check all integrations
 """
 
-import json, os, sys, re, hashlib, signal, smtplib, time, urllib.request, urllib.parse, urllib.error
+import base64, json, os, sys, re, hashlib, signal, smtplib, time, urllib.request, urllib.parse, urllib.error
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -596,6 +596,113 @@ def _is_gibberish(text):
             return True
 
     return False
+
+
+# --- Web-form safety net -------------------------------------------------
+#
+# Web-form leads are handed to the WhatConverts monitor, which owns the CRM
+# writes and the alerting. That works only while WhatConverts actually sees the
+# submission. It captures forms through a tracking script loaded from a
+# third-party domain, and when a visitor's browser blocks that domain -- ad
+# blocker, privacy DNS, Safari's default -- WhatConverts records nothing while
+# the site still emails sales@. The lead then exists in one place and nobody is
+# told.
+#
+# David Consolver submitted at 00:53 on 2026-09-07 asking about dry spots in
+# his yard. This monitor read it, classified it correctly, and dropped it,
+# because the branch below assumed the handoff always has a receiver. He was
+# never contacted.
+#
+# Rather than alert on every web form, which would double up with WhatConverts
+# on the ones that work, a form is parked and reconciled later: after
+# WEBFORM_GRACE_MINUTES we ask WhatConverts whether it ever saw this person. If
+# it did, the entry is dropped and WhatConverts alerts as usual. If it did not,
+# we alert. Exactly one notification either way.
+WEBFORM_GRACE_MINUTES = 20      # WhatConverts ingests within a minute or two
+WEBFORM_MATCH_HOURS = 6         # how far back to look for a matching WC lead
+
+
+def _wc_creds():
+    tok = os.environ.get("WC_API_TOKEN", "")
+    sec = os.environ.get("WC_API_SECRET", "")
+    if tok and sec:
+        return tok, sec
+    path = os.path.expanduser("~/.config/whatconverts/config.json")
+    if os.path.exists(path):
+        with open(path) as f:
+            c = json.load(f)
+        return c.get("api_token", ""), c.get("api_secret", "")
+    return "", ""
+
+
+def _last10(v):
+    return re.sub(r"\D", "", str(v or ""))[-10:]
+
+
+def whatconverts_has_lead(email, phone):
+    """True if WhatConverts holds a lead matching this email or phone.
+
+    Returns None when the question cannot be answered -- no credentials, or the
+    API failed. The caller treats None as "not yet" and retries on the next
+    run, because alerting on an API blip would produce exactly the duplicate
+    Teams post this design exists to prevent.
+    """
+    tok, sec = _wc_creds()
+    if not (tok and sec):
+        return None
+    now = datetime.now(timezone.utc)
+    since = (now - timedelta(hours=WEBFORM_MATCH_HOURS)).strftime("%Y-%m-%d")
+    url = ("https://app.whatconverts.com/api/v1/leads"
+           f"?start_date={since}&end_date={now.strftime('%Y-%m-%d')}"
+           "&leads_per_page=250&page_number=1")
+    auth = base64.b64encode(f"{tok}:{sec}".encode()).decode()
+    try:
+        req = urllib.request.Request(url, headers={"Authorization": f"Basic {auth}"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            leads = json.loads(resp.read().decode()).get("leads", [])
+    except Exception as e:
+        log(f"  Safety net: WhatConverts lookup failed ({e}); retrying next run")
+        return None
+    email_l = (email or "").strip().lower()
+    phone_d = _last10(phone)
+    for l in leads:
+        if email_l and (l.get("email_address") or "").strip().lower() == email_l:
+            return True
+        if phone_d and _last10(l.get("phone_number") or l.get("contact_phone_number")) == phone_d:
+            return True
+    return False
+
+
+def reconcile_pending_web_forms(config, state):
+    """Alert on parked web forms that WhatConverts never received."""
+    pending = state.setdefault("pending_web_forms", [])
+    if not pending:
+        return
+    now = datetime.now(timezone.utc)
+    keep = []
+    for entry in pending:
+        try:
+            seen = datetime.fromisoformat(entry["first_seen"])
+        except Exception:
+            seen = now
+        age_min = (now - seen).total_seconds() / 60.0
+        lead = entry.get("lead", {})
+        who = (f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip()
+               or lead.get("email") or "(unknown)")
+        if age_min < WEBFORM_GRACE_MINUTES:
+            keep.append(entry)
+            continue
+        found = whatconverts_has_lead(lead.get("email"), lead.get("phone"))
+        if found is None:
+            keep.append(entry)
+            continue
+        if found:
+            log(f"  Safety net: {who} reached WhatConverts; dropping, no duplicate alert")
+            continue
+        log(f"  Safety net: {who} never reached WhatConverts after {age_min:.0f}m -- alerting")
+        notify_new_lead(config, lead)
+        send_teams_notification(lead)
+    state["pending_web_forms"] = keep
 
 
 def _is_web_form_email(message):
@@ -1862,6 +1969,12 @@ def process_messages(token, config, state):
         if _is_web_form_email(msg):
             log("  SKIP CRM: Web form lead — handled by WhatConverts monitor")
             save_lead_file(lead, "lead")
+            # Parked, not dropped. See the safety-net block above.
+            state.setdefault("pending_web_forms", []).append({
+                "first_seen": datetime.now(timezone.utc).isoformat(),
+                "msg_id": msg_id,
+                "lead": lead,
+            })
             mark_as_read(token, config, msg_id)
             state["processed_ids"].append(msg_id)
             continue
@@ -2049,6 +2162,13 @@ def main():
 
     try:
         process_messages(token, config, state)
+        # Runs after the mail loop, and in its own try: a failure here must not
+        # cost us the state save above it, or the same messages get reprocessed
+        # and auto-replied on the next run.
+        try:
+            reconcile_pending_web_forms(config, state)
+        except Exception as e:
+            log(f"  Safety net: reconciliation failed (non-fatal): {e}")
     except Exception as e:
         log(f"ERROR: Unhandled exception: {e}")
         import traceback
