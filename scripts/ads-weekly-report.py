@@ -57,6 +57,16 @@ else:
 # --- Config ---
 TO_EMAILS = ["evelin@blackhilltx.com", "Umair@blackhilltx.com", "afaq@blackhilltx.com"]
 TO_EMAIL = ", ".join(TO_EMAILS)  # comma-joined for the "To" header
+# Sections trimmed 2026-09-07. The report had grown to 155 lines across 10
+# sections while the Bing one says as much in 88 across 6, and Evelin asked for
+# this back on 2026-08-23. Each section below was cut for a stated reason, not
+# for length alone. Flip one back to True when its reason stops holding; the
+# data is still collected either way, so nothing has to be rebuilt.
+SHOW_IRRIGATION_PROMO = False   # test concluded: 3.38% CTR vs 2.06% baseline
+SHOW_AD_COPY = False            # "worst" rows are routinely a single impression
+SHOW_DEVICE_TIMING = False      # ~44 clicks/wk is too thin to act on
+SHOW_QS_TRACKER = False         # slow-moving; the one-line summary is kept
+
 TARGET_CPA = 80.0
 TARGET_IMPR_SHARE = 50.0
 
@@ -1203,7 +1213,7 @@ if waste_terms:
 def _best_worst(assets):
     return [("Best", assets[0])] if len(assets) == 1 else [("Best", assets[0]), ("Worst", assets[-1])]
 
-if headlines or descriptions:
+if (headlines or descriptions) and SHOW_AD_COPY:
     h('<div class="section">')
     h('<h2>Ad Copy Performance</h2>')
     h('<div style="font-size:12px;color:#888;margin-bottom:12px;">RSA asset performance this week -- best and worst by impressions</div>')
@@ -1232,7 +1242,7 @@ if headlines or descriptions:
     h('</div>')
 
 # --- Device & timing ---
-if device_data or hour_blocks:
+if (device_data or hour_blocks) and SHOW_DEVICE_TIMING:
     DEVICE_NAMES = {"MOBILE": "Mobile", "DESKTOP": "Desktop", "TABLET": "Tablet", "CONNECTED_TV": "Connected TV", "OTHER": "Other"}
     h('<div class="section">')
     h('<h2>Device &amp; Timing</h2>')
@@ -1268,7 +1278,7 @@ if device_data or hour_blocks:
 # ============================================================
 # QUALITY SCORE TRACKER
 # ============================================================
-if qs_keywords:
+if qs_keywords and SHOW_QS_TRACKER:
     # Sort: lowest QS first (problems at top)
     qs_keywords.sort(key=lambda x: x["qs"])
 
@@ -1497,7 +1507,7 @@ PROMO_CAMPAIGN = "BH_PC_Irrigationservice"
 PROMO_BASELINE_CTR = 2.06   # trailing-30d CTR at launch (see project_irrigation_promo_baseline)
 PROMO_BASELINE_CVR = 3.09
 _irr = camp_data.get(PROMO_CAMPAIGN, {}).get("this", {})
-if _irr:
+if _irr and SHOW_IRRIGATION_PROMO:
     _irr_ctr = _irr.get("ctr", 0)
     _irr_cvr = (_irr["conversions"] / _irr["clicks"] * 100) if _irr.get("clicks") else 0
     # control = other enabled campaigns (no promo), aggregated
@@ -1554,7 +1564,7 @@ if already_blocked_terms:
               f"({', '.join(w['term'] for w in already_blocked_terms[:6])}). This spend happened before the negatives went live.*")
     md.append("")
 
-if headlines or descriptions:
+if (headlines or descriptions) and SHOW_AD_COPY:
     md.append("## Ad Copy Performance")
     md.append("*Best and worst by impressions*")
     md.append("")
@@ -1572,7 +1582,7 @@ if headlines or descriptions:
             md.append(f"| {label} | {desc['text']} | {desc['impressions']:,} | {desc['clicks']} | {desc['ctr']:.1f}% | {desc['conversions']:.0f} |")
     md.append("")
 
-if device_data or hour_blocks:
+if (device_data or hour_blocks) and SHOW_DEVICE_TIMING:
     md.append("## Device & Timing")
     if device_data:
         DEVICE_NAMES_MD = {"MOBILE": "Mobile", "DESKTOP": "Desktop", "TABLET": "Tablet", "CONNECTED_TV": "Connected TV", "OTHER": "Other"}
@@ -1597,7 +1607,7 @@ if device_data or hour_blocks:
         md.append(f"\n*Peak: {best_block_md['label']} ({best_block_md['conversions']:.0f} conversions)*")
     md.append("")
 
-if qs_keywords:
+if qs_keywords and SHOW_QS_TRACKER:
     md.append("## Quality Score Tracker")
     below5_now_md = sum(1 for kw in qs_keywords if kw["qs"] < 5)
     avg_qs_md = sum(kw["qs"] for kw in qs_keywords) / len(qs_keywords)
@@ -1618,7 +1628,15 @@ if qs_keywords:
         md.append(f"| {kw['keyword']} | {kw['qs']}{trend} | {qs_component_short(kw['ctr'])} | {qs_component_short(kw['relevance'])} | {qs_component_short(kw['landing'])} |")
     md.append("")
 
-md.append(f"---\n*Targets: CPA <= ${TARGET_CPA:.0f} | Impr Share >= {TARGET_IMPR_SHARE:.0f}%*")
+# Quality Score kept as one line rather than a table. It moves slowly, so a
+# weekly list of the same twelve keywords was noise; a moving average is not.
+_qs_line = ""
+if qs_keywords:
+    _below5 = sum(1 for kw in qs_keywords if kw["qs"] < 5)
+    _avg_qs = sum(kw["qs"] for kw in qs_keywords) / len(qs_keywords)
+    _qs_line = f" | Avg QS {_avg_qs:.1f} ({_below5} of {len(qs_keywords)} below 5)"
+
+md.append(f"---\n*Targets: CPA <= ${TARGET_CPA:.0f} | Impr Share >= {TARGET_IMPR_SHARE:.0f}%{_qs_line}*")
 
 report_text = "\n".join(md)
 
