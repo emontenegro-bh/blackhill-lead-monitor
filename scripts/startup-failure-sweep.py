@@ -136,8 +136,27 @@ EXPECTED_CADENCE_HOURS = {
     # the real backstop is the weekly heartbeat -- if a Monday passes with no
     # heartbeat, this stopped.
     "startup-failure-sweep": 16,
-    # cron 23 */2 -- every two hours.
-    "dmarc-monitor": 6,
+    # cron 23 */2 asks for every two hours. GitHub does not deliver that, and
+    # this threshold now measures GitHub's schedule queue rather than the
+    # script's health.
+    #
+    # Measured over the 14 days to 2026-09-10, across 72 runs: median gap 4.5h,
+    # p90 8.0h, max 12.6h. Every one of those runs SUCCEEDED. At 6h that is 20
+    # alerts in a fortnight about a script that is working perfectly; at 14h it
+    # is zero. On 2026-09-07 the whole repo's schedule queue went dark for eight
+    # hours at once -- even startup-failure-sweep, on a 30-minute cron, missed
+    # the same stretch -- so no interval short enough to be useful survives it.
+    #
+    # 14h is therefore a workaround, not a cadence. DMARC reports are daily
+    # aggregates, so a genuinely dead monitor still surfaces within a day, which
+    # is soon enough for what this watches.
+    #
+    # THE REAL FIX is an external cron-job.org job POSTing workflow_dispatch,
+    # the same pattern lead-monitor and phone-lead-monitor already use --
+    # those kept firing every five minutes straight through the 09-07 blackout.
+    # It needs the cron-job.org login, so it is Evelin's to add. Put this back
+    # to 6 once it exists, because then 6h means something again.
+    "dmarc-monitor": 14,
     # cron 0 0,6,12,18 -- four times daily.
     "api-health-monitor": 14,
     # daily.
