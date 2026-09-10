@@ -39,6 +39,9 @@ from bingads.authorization import AuthorizationData, OAuthWebAuthCodeGrant
 from bingads.service_client import ServiceClient
 from bingads.v13.reporting import ReportingServiceManager, ReportingDownloadParameters
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import url_health
+
 
 # --- Global timeout: kill the process if it runs longer than 12 minutes ---
 def _timeout_handler(signum, frame):
@@ -775,6 +778,77 @@ else:
     h('<div style="color:#888;font-size:13px;">No keyword data this week.</div>')
     m("No keyword data this week.")
 h("</div>")
+
+# --- 5b. Landing Page Health ---
+# Added 2026-09-09, same reason as the Google report: a broken destination is
+# invisible in the metrics because the ad still serves and the click is still
+# billed. Keyword and ad URLs live in Campaign Management, not Reporting, so
+# this needs its own service client. Wrapped so a Bing API failure degrades to
+# a note instead of taking the whole report down.
+def collect_bing_destinations():
+    campaign_service = ServiceClient(
+        service="CampaignManagementService", version=13,
+        authorization_data=authorization_data, environment="production",
+    )
+
+    def _urls(entity):
+        fu = getattr(entity, "FinalUrls", None)
+        if not fu:
+            return []
+        inner = getattr(fu, "string", None)
+        return [u for u in (inner if inner is not None else fu) if u]
+
+    dests, inherited = [], set()
+    campaigns = campaign_service.GetCampaignsByAccountId(
+        AccountId=int(cfg["account_id"]), CampaignType="Search")
+    for camp in (getattr(campaigns, "Campaign", []) or []):
+        if str(getattr(camp, "Status", "")) != "Active":
+            continue
+        ad_groups = campaign_service.GetAdGroupsByCampaignId(CampaignId=camp.Id)
+        for ag in (getattr(ad_groups, "AdGroup", []) or []):
+            if str(getattr(ag, "Status", "")) != "Active":
+                continue
+            ad_urls = set()
+            ads = campaign_service.GetAdsByAdGroupId(
+                AdGroupId=ag.Id,
+                AdTypes={"AdType": ["ExpandedText", "ResponsiveSearch"]})
+            for ad in (getattr(ads, "Ad", []) or []):
+                if str(getattr(ad, "Status", "")) == "Active":
+                    ad_urls.update(_urls(ad))
+            kws = campaign_service.GetKeywordsByAdGroupId(AdGroupId=ag.Id)
+            for kw in (getattr(kws, "Keyword", []) or []):
+                if str(getattr(kw, "Status", "")) != "Active":
+                    continue
+                own = _urls(kw)
+                targets = own or sorted(ad_urls)
+                if not own:
+                    inherited.add((ag.Name, kw.Text))
+                if not targets:
+                    dests.append((ag.Name, kw.Text, None))
+                for u in targets:
+                    dests.append((ag.Name, kw.Text, u))
+    return dests, inherited
+
+
+url_rows, url_stats, url_error = [], None, None
+try:
+    _dests, _inherited = collect_bing_destinations()
+    if _dests:
+        _results = url_health.check_all(u for _, _, u in _dests)
+        _problems, url_rows, url_stats = url_health.summarize(
+            _dests, _results, inherited=_inherited)
+except Exception as e:
+    url_error = str(e)[:200]
+
+if url_rows and url_stats:
+    url_health.render_html(h, url_rows, url_stats)
+    for line in url_health.render_md(url_rows, url_stats):
+        m(line)
+elif url_error:
+    h('<div class="section"><h2>Landing Page Health</h2>'
+      f'<div style="color:#d29922;font-size:13px;">Could not read keyword and ad URLs '
+      f'from Campaign Management: {url_error}</div></div>')
+    m(f"\n## Landing Page Health\n\nCould not read URLs from Campaign Management: {url_error}\n")
 
 # --- 6. What to Do This Week ---
 h('<div class="section"><h2>What to Do This Week</h2>')
