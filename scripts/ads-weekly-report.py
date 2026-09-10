@@ -36,6 +36,7 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db
+import url_health
 
 # Parsed early (before any state is touched) so --dry-run can guard the
 # Supabase run-tracking call immediately below, not just the email send.
@@ -467,6 +468,49 @@ def bucket_hours(hdata):
     return result
 
 hour_blocks = bucket_hours(hour_data)
+
+# --- 9b. Landing page health ---
+# Added 2026-09-09. The web dev team edits final URLs and tracking fields
+# directly in the account (they did on 2026-08-31 and 2026-09-01). A broken
+# destination is invisible in the normal metrics: the ad still serves and the
+# click is still billed. This resolves the page every live keyword actually
+# sends traffic to and requests it.
+def collect_url_destinations():
+    ad_urls, dests, inherited = {}, [], set()
+    for row in safe_query("""
+        SELECT ad_group.id, ad_group.name, ad_group_ad.ad.final_urls
+        FROM ad_group_ad
+        WHERE campaign.status = 'ENABLED' AND ad_group.status = 'ENABLED'
+          AND ad_group_ad.status = 'ENABLED'
+    """):
+        ad_urls.setdefault(row.ad_group.id, set()).update(row.ad_group_ad.ad.final_urls)
+
+    for row in safe_query("""
+        SELECT ad_group.id, ad_group.name, ad_group_criterion.keyword.text,
+               ad_group_criterion.final_urls, ad_group_criterion.negative
+        FROM ad_group_criterion
+        WHERE campaign.status = 'ENABLED' AND ad_group.status = 'ENABLED'
+          AND ad_group_criterion.status = 'ENABLED'
+          AND ad_group_criterion.type = 'KEYWORD'
+    """):
+        k = row.ad_group_criterion
+        if k.negative:
+            continue
+        own = list(k.final_urls)
+        kw_urls = own or sorted(ad_urls.get(row.ad_group.id, []))
+        if not own:
+            inherited.add((row.ad_group.name, k.keyword.text))
+        if not kw_urls:
+            dests.append((row.ad_group.name, k.keyword.text, None))
+        for u in kw_urls:
+            dests.append((row.ad_group.name, k.keyword.text, u))
+    return dests, inherited
+
+
+url_destinations, url_inherited = collect_url_destinations()
+url_results = url_health.check_all(u for _, _, u in url_destinations)
+url_problems, url_rows, url_stats = url_health.summarize(
+    url_destinations, url_results, inherited=url_inherited)
 
 # Section 10 removed 2026-08-12: get_aspire_revenue() and its WhatConverts
 # contact map were superseded by get_aspire_revenue_v2() below, which reads
@@ -1241,6 +1285,10 @@ if (headlines or descriptions) and SHOW_AD_COPY:
         h('</table>')
     h('</div>')
 
+# --- Landing page health ---
+if url_rows:
+    url_health.render_html(h, url_rows, url_stats)
+
 # --- Device & timing ---
 if (device_data or hour_blocks) and SHOW_DEVICE_TIMING:
     DEVICE_NAMES = {"MOBILE": "Mobile", "DESKTOP": "Desktop", "TABLET": "Tablet", "CONNECTED_TV": "Connected TV", "OTHER": "Other"}
@@ -1635,6 +1683,9 @@ if qs_keywords:
     _below5 = sum(1 for kw in qs_keywords if kw["qs"] < 5)
     _avg_qs = sum(kw["qs"] for kw in qs_keywords) / len(qs_keywords)
     _qs_line = f" | Avg QS {_avg_qs:.1f} ({_below5} of {len(qs_keywords)} below 5)"
+
+if url_rows:
+    md.extend(url_health.render_md(url_rows, url_stats))
 
 md.append(f"---\n*Targets: CPA <= ${TARGET_CPA:.0f} | Impr Share >= {TARGET_IMPR_SHARE:.0f}%{_qs_line}*")
 
