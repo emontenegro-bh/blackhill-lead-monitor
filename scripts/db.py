@@ -123,7 +123,19 @@ def _request(method, path, body=None, prefer=None, retries=3):
             last_err = DatabaseError(f"{method} {path} -> {type(e).__name__}: {e}")
 
         if attempt < retries - 1:
-            time.sleep(2 ** attempt)  # 1s, 2s
+            # 2s, 8s -- about 10s of cover, up from the 3s that 2**attempt gave.
+            #
+            # Supabase returned HTTP 504 three times between 2026-09-11 and
+            # 09-13. Every one healed by the next run two minutes later, but
+            # each failed the whole run and emailed Evelin, and nothing ever
+            # told her it had recovered -- so a database hiccup read as three
+            # separate outages.
+            #
+            # Bounded deliberately. phone-lead-monitor runs under
+            # signal.alarm(120) and TIMEOUT is 30, so the worst case here is
+            # 3 * 30 + 10 = 100s and still fits inside that alarm. Do not add a
+            # fourth attempt without raising the alarm first.
+            time.sleep((2, 8)[attempt] if attempt < 2 else 8)
 
     raise last_err
 
