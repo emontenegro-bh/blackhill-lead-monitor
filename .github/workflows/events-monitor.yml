@@ -64,6 +64,8 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           EVENTS_MAILBOX: ${{ vars.EVENTS_MAILBOX || 'evelin@blackhilltx.com' }}
           EVENTS_RECIPIENTS: ${{ vars.EVENTS_RECIPIENTS || 'evelin@blackhilltx.com' }}
+          # Invites are one email each. Raise this to drain a backlog faster.
+          EVENTS_MAX_INVITES_PER_RUN: ${{ vars.EVENTS_MAX_INVITES_PER_RUN || '8' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/events-monitor.py ${{ steps.mode.outputs.flag }}

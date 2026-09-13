@@ -13,14 +13,19 @@ Two sources:
      that never appear on a public page.
   2. Association websites (DFW CAI, AATC, BOMA Fort Worth, FWHCC, GFWBA).
 
-Output: a digest email with, per event, the date, full street address, cost
-(member and non-member where known), registration link, and any deadline. Each
-event ships as an .ics attachment so one tap adds it to the Outlook calendar.
+Output: one email per event, each carrying exactly one .ics invitation, so each
+event lands on the calendar as its own bookable entry on its own day. Mail clients
+render only one invitation per message - a digest with sixteen .ics parts attached
+arrives as a single invite - so invites are never batched. Events that need a
+ticket or an early registration are titled with the cost and the cutoff up front
+and carry a reminder set against the registration deadline, not the event date.
 Deliberately no Graph calendar-write permission needed.
 
 Modes:
-  --monthly   Full look-ahead digest of everything in the window. Runs the 1st.
-  (default)   New-events-only alert. Silent when nothing new, like bid-monitor.
+  --monthly   Invites for anything not yet invited, plus an attachment-free
+              summary email of the whole look-ahead window. Runs the 1st.
+  (default)   Invites for anything not yet invited. Silent when there is nothing,
+              like bid-monitor. No summary email.
   --dry-run   Print the digest, send nothing, save no state.
   --test      Verify Graph auth and per-source reachability, then exit.
 
@@ -67,6 +72,11 @@ MAX_SEEN = 2000
 # 45-day window, so actual volume is ~44/day. 20 pages covers it with headroom.
 # The cap is a runaway guard; hitting it is reported in the digest, not silent.
 MAX_INBOX_PAGES = 20
+
+# Invites go out one per email, so a backlog would arrive as a wall of mail. The
+# cap defers the tail to the next run (Mon/Thu) rather than dropping it; invites
+# are sent soonest-event-first so nothing imminent waits behind a November webinar.
+MAX_INVITES_PER_RUN = int(os.environ.get("EVENTS_MAX_INVITES_PER_RUN", "8"))
 
 # CivicPlus/Akamai-style WAFs return a silent zero for bot user-agents, so send
 # the complete Chrome header set. A source returning nothing means blocked, not empty.
@@ -188,6 +198,27 @@ MONTHS.update({m.lower(): i for i, m in enumerate(
 MONTHS["sept"] = 9
 
 COST_PATTERN = re.compile(r"\$\s?([\d,]+(?:\.\d{2})?)")
+
+# "Register by September 20", "RSVP by 9/20", "tickets close Sept 20",
+# "sponsorship deadline is October 3", "early bird ends Sep 15". A hit means the
+# decision has its own date, earlier than the event, and missing it means not going.
+DEADLINE_PATTERN = re.compile(
+    r"(?:register|registration|rsvp|reserve|tickets?|early[\s-]?bird|sponsorship)"
+    r"[^.!?\n]{0,40}?"
+    r"(?:\bby\b|\bbefore\b|\bends?\b|\bcloses?\b|\bdeadline(?:\s+is)?\b)\s*:?\s*"
+    r"((?:January|February|March|April|May|June|July|August|September|October|November|"
+    r"December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.?\s+\d{1,2}"
+    r"(?:st|nd|rd|th)?(?:,?\s*\d{4})?|\d{1,2}/\d{1,2}(?:/\d{2,4})?)",
+    re.I)
+
+# Language that means a seat has to be claimed ahead of the day, even when no
+# dollar figure or explicit date was parsed.
+TICKET_WORDS = (
+    "ticket", "buy your", "purchase your", "seats are limited", "space is limited",
+    "limited seating", "sold out", "early bird", "registration closes",
+    "register by", "rsvp by", "pre-register", "sponsorship deadline",
+    "advance registration", "registration deadline",
+)
 TIME_PATTERN = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?", re.I)
 # Street address: number + words + suffix, optionally through city/state/zip.
 ADDRESS_PATTERN = re.compile(
@@ -216,6 +247,7 @@ def save_state(state):
     if DRY_RUN:
         return
     state["seen"] = state["seen"][-MAX_SEEN:]
+    state["invited"] = state.get("invited", [])[-MAX_SEEN:]
     db.save_state(STATE_NAME, state)
 
 
@@ -275,6 +307,32 @@ def parse_costs(text):
     return out[:4]
 
 
+def parse_deadline(text, today):
+    """The date she has to act by, when the listing states one.
+
+    Reuses parse_dates on just the matched fragment so the two date vocabularies
+    cannot drift apart.
+    """
+    for m in DEADLINE_PATTERN.finditer(text):
+        found = parse_dates(m.group(1), today)
+        if found:
+            return found[0]
+    return None
+
+
+def needs_advance_purchase(text, costs, deadline):
+    """True when showing up requires a decision before the day of the event.
+
+    Money changing hands counts, and so does a registration window that closes
+    early: both mean seeing the invite the morning of is already too late. This
+    is the flag Evelin plans around, so it errs toward flagging.
+    """
+    if deadline or costs:
+        return True
+    low = text.lower()
+    return any(w in low for w in TICKET_WORDS)
+
+
 def parse_address(text):
     m = ADDRESS_PATTERN.search(text)
     if m:
@@ -301,7 +359,8 @@ def parse_time(text):
 # Navigation and archive links that read like events but aren't one.
 JUNK_TITLES = re.compile(
     r"^\s*(past|upcoming|all|view|more|previous)?\s*events?\s*$|^\s*event calendar\s*$|"
-    r"^\s*calendar\s*$|^\s*register\s*$|^\s*learn more\s*$|^\s*read more\s*$", re.I)
+    r"^\s*calendar\s*$|^\s*register\s*$|^\s*(learn|read|see|show|find out) more\s*$|"
+    r"^\s*(more info(rmation)?|details|view (event|details)|sign up|rsvp)\s*$", re.I)
 
 # Venue names when no street address is given ("Join us at the Petroleum Club").
 VENUE_PATTERN = re.compile(
@@ -391,14 +450,31 @@ def build_event(org, title, text, url, today, source_label, tier=2, src=None):
     dates = parse_dates(text, today)
     if not dates:
         return None
+
+    # A registration deadline falls BEFORE the event, and parse_dates returns
+    # soonest first, so "Rock the Boat on October 9, register by September 25"
+    # was scheduling the boat cruise on the 25th. Take the deadline out of the
+    # running for the event date first. If it was the only date in the text it
+    # is the event date, not a deadline.
+    deadline = parse_deadline(text, today)
+    if deadline:
+        rest = [d for d in dates if d.date() != deadline.date()]
+        if rest:
+            dates = rest
+        else:
+            deadline = None
+
     when = dates[0]
     if when > today + timedelta(days=LOOKAHEAD_DAYS):
         return None
+    if deadline and deadline.date() >= when.date():
+        deadline = None
     tod = parse_time(text)
     if tod:
         when = when.replace(hour=tod[0], minute=tod[1])
     address = parse_address(text)
     travel, city = classify_travel(text, address)
+    costs = parse_costs(text)
     return {
         "org": org,
         "tier": tier,
@@ -410,7 +486,9 @@ def build_event(org, title, text, url, today, source_label, tier=2, src=None):
         "start": when.isoformat(),
         "has_time": bool(tod),
         "address": address,
-        "costs": parse_costs(text),
+        "costs": costs,
+        "deadline_iso": deadline.strftime("%Y-%m-%d") if deadline else None,
+        "needs_ticket": needs_advance_purchase(text, costs, deadline),
         "url": url,
         "source": source_label,
         "snippet": " ".join(text.split())[:400],
@@ -515,13 +593,19 @@ def scan_inbox(today):
     # "event" titled "Industry Events - August 2026 (4 upcoming)".
     self_addr = os.environ.get("GMAIL_EMAIL", "").strip().lower()
     SELF_SUBJECTS = ("industry events -", "new industry event", "new industry events")
+    # Invite emails are now subject-titled after the event itself, so a subject
+    # prefix can no longer carry this guard alone. Every message this script sends
+    # contains SELF_MARKER in its body, which makes the guard subject-shape
+    # independent.
+    SELF_MARKER = "black hill events monitor"
 
     for msg in messages:
         addr = ((msg.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
         subject = msg.get("subject") or "(no subject)"
-        if (self_addr and self_addr in addr) or subject.lower().startswith(SELF_SUBJECTS):
-            continue
         preview = msg.get("bodyPreview") or ""
+        if (self_addr and self_addr in addr) or subject.lower().startswith(SELF_SUBJECTS) \
+                or SELF_MARKER in f"{subject} {preview}".lower():
+            continue
         text = f"{subject}\n{preview}"
 
         # Match sender + subject + body together. Sender alone is not enough:
@@ -548,13 +632,22 @@ def scan_inbox(today):
         # figures - everything the parser needs to fabricate a plausible event.
         if not is_invitation(subject, text):
             continue
-        elif any(h in text.lower() for h in LOCAL_HINTS):
-            # Unlisted sender, but it reads like a local event. Surface it rather
-            # than silently drop it, flagged so Evelin can decide if it's worth adding.
+
+        # This was an `elif` chained onto the invitation check, and that single
+        # keyword cost every inbox event its identity: a KNOWN association's
+        # invitation fell into the unlisted-sender branch and had `org` overwritten
+        # with "Unlisted (shared1.ccsend.com)", then got dropped outright whenever
+        # the body carried no local hint. Every calendar invite from the inbox
+        # arrived titled "Unlisted". The fallback belongs only to senders that
+        # matched no known source.
+        if not src:
+            if not any(h in text.lower() for h in LOCAL_HINTS):
+                continue
+            # Reads like a local event from a sender we do not track. Surface it
+            # rather than drop it, named after the sending domain so it is obvious
+            # the org is a guess.
             org = f"Unlisted ({addr.split('@')[-1]})"
             tier = 2
-        else:
-            continue
 
         ev = build_event(org, subject, text, msg.get("webLink"), today, "inbox", tier, src)
         if ev:
@@ -618,6 +711,41 @@ def scan_sites(today):
 
 # ---------------------------------------------------------------- output
 
+def ticket_flag(ev):
+    """Short bracket tag naming the reason she could miss this one.
+
+    Outlook shows roughly the first 30 characters of a title in month view, so the
+    money and the cutoff go in front of the event name, not after the org.
+    """
+    if not ev.get("needs_ticket"):
+        return ""
+    cost = f"${ev['costs'][0][0]:,.0f}" if ev.get("costs") else ""
+    by = (datetime.fromisoformat(ev["deadline_iso"]).strftime("%b %-d").upper()
+          if ev.get("deadline_iso") else "")
+    if cost and by:
+        return f"[TICKET {cost} BY {by}]"
+    if cost:
+        return f"[TICKET {cost}]"
+    if by:
+        return f"[REGISTER BY {by}]"
+    return "[REGISTER AHEAD]"
+
+
+def event_label(ev):
+    """One string used as both the calendar title and the email subject, so the
+    invite she accepts and the mail it arrived in cannot disagree.
+
+    "Unlisted (shared1.ccsend.com)" is a parser diagnostic, not an organization,
+    and it has no business in a calendar title - it stays in the email body where
+    it tells her the org is a guess.
+    """
+    label = ev["title"]
+    org = ev.get("org") or ""
+    if org and not org.startswith("Unlisted"):
+        label = f"{label} - {org}"
+    return f"{ticket_flag(ev)} {label}".strip()
+
+
 def make_ics(ev):
     """All-day unless the listing gave a time, in which case a 2-hour block."""
     start = datetime.fromisoformat(ev["start"])
@@ -633,11 +761,40 @@ def make_ics(ev):
     def esc(s):
         return (s or "").replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace("\n", "\\n")
 
-    desc = ev["snippet"]
-    if ev["costs"]:
-        desc += "\n\nCost: " + "; ".join(f"${v:,.0f}" for v, _ in ev["costs"])
+    # The action goes first. She opens this on a phone, where the description is
+    # truncated, so "register by the 20th" has to survive the truncation.
+    desc_lines = []
+    if ev.get("needs_ticket"):
+        act = "ACTION NEEDED: register/buy in advance"
+        if ev.get("deadline_iso"):
+            act += " by " + datetime.fromisoformat(ev["deadline_iso"]).strftime("%B %-d")
+        if ev["costs"]:
+            act += " - " + "; ".join(f"${v:,.0f}" for v, _ in ev["costs"])
+        desc_lines += [act, ""]
+    elif ev["costs"]:
+        desc_lines += ["Cost: " + "; ".join(f"${v:,.0f}" for v, _ in ev["costs"]), ""]
     if ev["url"]:
-        desc += f"\n\n{ev['url']}"
+        desc_lines += [f"Registration and details: {ev['url']}", ""]
+    desc_lines.append(ev["snippet"])
+    desc = "\n".join(desc_lines)
+
+    # An alarm on a ticketed event fires against the REGISTRATION cliff, not the
+    # event: a reminder the morning of a sold-out luncheon is useless.
+    if ev.get("needs_ticket"):
+        if ev.get("deadline_iso"):
+            warn = datetime.fromisoformat(ev["deadline_iso"]) - timedelta(days=1)
+            trigger = f"TRIGGER;VALUE=DATE-TIME:{warn.strftime('%Y%m%dT140000Z')}"
+        else:
+            trigger = "TRIGGER:-P7D"
+        alarm_text = f"Register / buy ticket: {ev['title']}"
+    else:
+        trigger, alarm_text = "TRIGGER:-P1D", ev["title"]
+    alarm = ["BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:{esc(alarm_text)}",
+             trigger, "END:VALARM"]
+
+    # These are candidates, not commitments. Marking them busy would black out her
+    # calendar with events she has not decided to attend.
+    categories = "Networking" + (",Ticket Required" if ev.get("needs_ticket") else "")
 
     # METHOD:REQUEST, not PUBLISH. A PUBLISH .ics is a valid calendar file but
     # Outlook and Superhuman render it as a plain file attachment with no
@@ -657,14 +814,17 @@ def make_ics(ev):
         dt_start, dt_end,
         f"ORGANIZER;CN=Black Hill Events Monitor:mailto:{organizer}",
         *attendee_lines,
-        f"SUMMARY:{esc(ev['org'] + ' - ' + ev['title'])}",
+        f"SUMMARY:{esc(event_label(ev))}",
         f"LOCATION:{esc(ev['address'] or 'See registration link')}",
         f"DESCRIPTION:{esc(desc)}",
+        f"CATEGORIES:{categories}",
+        "TRANSP:TRANSPARENT", "X-MICROSOFT-CDO-BUSYSTATUS:FREE",
+        *alarm,
         "END:VEVENT", "END:VCALENDAR",
     ])
 
 
-def render(events, errors, monthly):
+def render(events, errors, monthly, heading=None):
     today = datetime.now(timezone.utc)
     # Tier first (a property-manager luncheon beats a peer webinar), then travel
     # (a far event is a whole day), then date.
@@ -673,9 +833,9 @@ def render(events, errors, monthly):
     events = sorted(events, key=lambda e: (e.get("tier", 2),
                                            TRAVEL_RANK.get(e.get("travel"), 1),
                                            e["date_iso"]))
-    title = "Upcoming Industry Events" if monthly else "New Event Found"
+    title = heading or ("Upcoming Industry Events" if monthly else "New Event Found")
 
-    plain = [f"{title} - {today.strftime('%B %d, %Y')}", ""]
+    plain = ["Black Hill Events Monitor", f"{title} - {today.strftime('%B %d, %Y')}", ""]
     rows = []
     for ev in events:
         d = datetime.fromisoformat(ev["start"])
@@ -690,6 +850,10 @@ def render(events, errors, monthly):
                 if ev["address"] else "")
 
         badges = ""
+        if ev.get("needs_ticket"):
+            badges += ("<span style='background:#fdf3d7;color:#7a5c11;font-size:11px;"
+                       "padding:2px 7px;border-radius:9px;margin-left:6px'>"
+                       f"{html_mod.escape(ticket_flag(ev).strip('[]'))}</span>")
         if ev.get("women"):
             badges += ("<span style='background:#f3e8f7;color:#6b3f7a;font-size:11px;"
                        "padding:2px 7px;border-radius:9px;margin-left:6px'>Women-focused</span>")
@@ -703,6 +867,8 @@ def render(events, errors, monthly):
                        f"{' - ' + ev['city'] if ev.get('city') else ''}</span>")
 
         flags_plain = ""
+        if ev.get("needs_ticket"):
+            flags_plain += f" {ticket_flag(ev)}"
         if ev.get("women"):
             flags_plain += " [WOMEN-FOCUSED]"
         if ev.get("travel") == "far":
@@ -735,15 +901,17 @@ def render(events, errors, monthly):
 
     html = f"""<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:660px;margin:0 auto;padding:22px;background:#fffdf8">
       <h1 style="font-size:21px;color:#1a1a1a;margin:0 0 4px">{title}</h1>
-      <p style="color:#777;font-size:13px;margin:0 0 16px">{today.strftime('%B %d, %Y')} &middot; next {LOOKAHEAD_DAYS} days &middot; calendar invites attached</p>
+      <p style="color:#777;font-size:13px;margin:0 0 16px">Black Hill Events Monitor &middot; {today.strftime('%B %d, %Y')} &middot; next {LOOKAHEAD_DAYS} days</p>
       <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e8e4dd">{''.join(rows)}</table>
       {footer}
-      <p style="color:#999;font-size:11px;margin-top:18px">Each event is attached as a .ics file. Open the attachment to add it to your Outlook calendar.</p>
+      <p style="color:#999;font-size:11px;margin-top:18px">Black Hill Events Monitor. Each event arrives as its own separate calendar invite; this summary carries no attachments.</p>
     </div>"""
     return "\n".join(plain), html
 
 
-def send(subject, plain, html, events):
+def send_message(subject, plain, html, ics=None, ics_name="event.ics"):
+    """Send one email, carrying at most ONE calendar part. The single-part limit
+    is the whole point - see send_invites."""
     user = os.environ.get("GMAIL_EMAIL", "").strip()
     pw = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
     if not (user and pw):
@@ -759,12 +927,11 @@ def send(subject, plain, html, events):
     alt.attach(MIMEText(html, "html"))
     msg.attach(alt)
 
-    for ev in events[:20]:
-        part = MIMEBase("text", "calendar", method="REQUEST", name="event.ics")
-        part.set_payload(make_ics(ev))
+    if ics:
+        part = MIMEBase("text", "calendar", method="REQUEST", name=ics_name)
+        part.set_payload(ics)
         encoders.encode_base64(part)
-        safe = re.sub(r"[^A-Za-z0-9]+", "-", f"{ev['org']}-{ev['date_iso']}").strip("-")[:60]
-        part.add_header("Content-Disposition", "attachment", filename=f"{safe}.ics")
+        part.add_header("Content-Disposition", "attachment", filename=ics_name)
         msg.attach(part)
 
     with smtplib.SMTP("smtp.gmail.com", 587, timeout=30) as s:
@@ -772,6 +939,42 @@ def send(subject, plain, html, events):
         s.login(user, pw)
         s.sendmail(user, RECIPIENTS, msg.as_string())
     return True
+
+
+def send_digest(subject, plain, html):
+    """The monthly reading list. No calendar part, on purpose: a digest that
+    carries invitations is the bug this file was split up to fix."""
+    return send_message(subject, plain, html)
+
+
+def send_invites(events):
+    """One email, one event, one invite.
+
+    Outlook collapses a message carrying several text/calendar REQUEST parts into
+    a SINGLE meeting request. The September digest went out with sixteen attached
+    and arrived as one invite titled after whichever part Outlook picked, which
+    made fifteen events unbookable and is why this loops instead of batching.
+    However valid the MIME, no mail client renders more than one invitation per
+    message.
+
+    Soonest first: the per-run cap defers the tail to the next run, and an event
+    nine days out cannot wait behind a November webinar.
+    """
+    sent = []
+    for ev in sorted(events, key=lambda e: e["date_iso"])[:MAX_INVITES_PER_RUN]:
+        subject = event_label(ev)[:160]
+        plain, html = render([ev], [], monthly=False, heading=subject)
+        name = re.sub(r"[^A-Za-z0-9]+", "-", f"{ev['org']}-{ev['date_iso']}").strip("-")[:60]
+        try:
+            if send_message(subject, plain, html, ics=make_ics(ev),
+                            ics_name=f"{name or 'event'}.ics"):
+                sent.append(ev)
+        except Exception as e:
+            # One bad address or one SMTP hiccup must not cost the other invites.
+            # An event that failed here stays out of `invited`, so the next run
+            # retries it.
+            print(f"Invite failed for {ev['title'][:60]}: {e}", file=sys.stderr)
+    return sent
 
 
 # ---------------------------------------------------------------- main
@@ -807,33 +1010,64 @@ def main():
     for ev in inbox_events + site_events:
         merged.setdefault(event_key(ev), ev)
 
+    # event_key includes the title, so one listing scraped twice - once as the link
+    # text, once as the surrounding blurb - survives as two entries with the same
+    # org and date. That was tolerable when everything shared one digest email; now
+    # that each entry costs its own calendar invite it is a duplicate on her
+    # calendar. Collapse by org+date, keeping the shorter title: the link text is
+    # the event's name, the blurb is a paragraph that happens to start with it.
+    by_day = {}
+    for key, ev in merged.items():
+        slot = (ev["org"].lower(), ev["date_iso"])
+        best = by_day.get(slot)
+        if best is None or len(ev["title"]) < len(merged[best]["title"]):
+            by_day[slot] = key
+    merged = {k: merged[k] for k in by_day.values()}
+
     seen = set(state.get("seen", []))
     new_keys = [k for k in merged if k not in seen]
 
-    if args.monthly:
-        to_report = list(merged.values())
-        subject = f"Industry Events - {today.strftime('%B %Y')} ({len(to_report)} upcoming)"
-    else:
-        to_report = [merged[k] for k in new_keys]
-        subject = f"New industry event: {to_report[0]['title'][:60]}" if len(to_report) == 1 \
-            else f"{len(to_report)} new industry events"
+    # `invited` is tracked separately from `seen`. An event can be known (so it
+    # stops being announced as new) yet still owe Evelin a calendar invite,
+    # which is exactly the state everything found before this change is in.
+    invited = set(state.get("invited", []))
+    to_invite = [ev for k, ev in merged.items() if k not in invited]
+    deferred = max(0, len(to_invite) - MAX_INVITES_PER_RUN)
 
+    to_report = list(merged.values()) if args.monthly else [merged[k] for k in new_keys]
+    subject = f"Industry Events - {today.strftime('%B %Y')} ({len(to_report)} upcoming)"
     plain, html = render(to_report, errors, args.monthly)
+    if deferred:
+        note = (f"{deferred} more invite(s) held back this run and sent on the next one "
+                f"(cap {MAX_INVITES_PER_RUN}).")
+        plain += "\n\n" + note
+        html = html.replace("</div>", f"<p style='color:#999;font-size:11px'>{note}</p></div>", 1)
 
     if args.dry_run:
         print(plain)
-        print(f"\n[dry-run] {len(merged)} known, {len(new_keys)} new, {len(errors)} source errors")
+        for ev in sorted(to_invite, key=lambda e: e["date_iso"])[:MAX_INVITES_PER_RUN]:
+            print(f"  [invite] {event_label(ev)}")
+        print(f"\n[dry-run] {len(merged)} known, {len(new_keys)} new, "
+              f"{len(to_invite)} uninvited ({deferred} deferred), {len(errors)} source errors")
         return 0
 
-    # Silent when there is nothing new, same contract as bid-monitor.
-    if not to_report and not args.monthly:
+    # Silent when there is nothing to do, same contract as bid-monitor.
+    if not to_invite and not args.monthly:
         print(f"No new events ({len(merged)} known). No email sent.")
-        save_state({**state, "seen": list(seen | set(merged))})
+        save_state({**state, "seen": list(seen | set(merged)), "invited": list(invited)})
         return 0
 
-    if send(subject, plain, html, to_report):
-        print(f"Sent: {subject}")
+    # Invites first. If the digest send fails, she still has the bookable events.
+    sent = send_invites(to_invite)
+    print(f"Sent {len(sent)} invite(s){f', {deferred} deferred' if deferred else ''}")
+
+    # The digest is a monthly reading list only, and carries no calendar parts.
+    # Attaching them here is what produced one invite for sixteen events.
+    if args.monthly and send_digest(subject, plain, html):
+        print(f"Sent digest: {subject}")
+
     state["seen"] = list(seen | set(merged))
+    state["invited"] = list(invited | {event_key(ev) for ev in sent})
     if args.monthly:
         state["last_monthly"] = today.strftime("%Y-%m-%d")
     save_state(state)
