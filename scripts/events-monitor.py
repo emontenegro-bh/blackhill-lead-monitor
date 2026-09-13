@@ -252,7 +252,8 @@ def save_state(state):
     if DRY_RUN:
         return
     state["seen"] = state["seen"][-MAX_SEEN:]
-    state["invited"] = state.get("invited", [])[-MAX_SEEN:]
+    inv = state.get("invited") or {}
+    state["invited"] = dict(list(inv.items())[-MAX_SEEN:])
     db.save_state(STATE_NAME, state)
 
 
@@ -1042,7 +1043,14 @@ def main():
     # `invited` is tracked separately from `seen`. An event can be known (so it
     # stops being announced as new) yet still owe Evelin a calendar invite,
     # which is exactly the state everything found before this change is in.
-    invited = set(state.get("invited", []))
+    # A dict, not a set of keys. Repairing an entry already on the calendar means
+    # resending its exact UID, and the UID is a hash - it does not reverse. Keeping
+    # the record that produced it is what makes events-fixup.py able to address the
+    # entry at all; the September mess had to be reconstructed off the calendar by
+    # hand because this was only ever a list of hashes.
+    invited = state.get("invited") or {}
+    if isinstance(invited, list):  # pre-2026-09-13 shape
+        invited = {k: {} for k in invited}
     to_invite = [ev for k, ev in merged.items() if k not in invited]
     deferred = max(0, len(to_invite) - MAX_INVITES_PER_RUN)
 
@@ -1066,7 +1074,7 @@ def main():
     # Silent when there is nothing to do, same contract as bid-monitor.
     if not to_invite and not args.monthly:
         print(f"No new events ({len(merged)} known). No email sent.")
-        save_state({**state, "seen": list(seen | set(merged)), "invited": list(invited)})
+        save_state({**state, "seen": list(seen | set(merged)), "invited": invited})
         return 0
 
     # Invites first. If the digest send fails, she still has the bookable events.
@@ -1079,7 +1087,15 @@ def main():
         print(f"Sent digest: {subject}")
 
     state["seen"] = list(seen | set(merged))
-    state["invited"] = list(invited | {event_key(ev) for ev in sent})
+    for ev in sent:
+        key = event_key(ev)
+        invited[key] = {
+            "uid": f"{key}@blackhilltx.com",
+            "org": ev["org"], "title": ev["title"], "date_iso": ev["date_iso"],
+            "summary": event_label(ev), "sequence": 0,
+            "sent_at": today.strftime("%Y-%m-%d"),
+        }
+    state["invited"] = invited
     if args.monthly:
         state["last_monthly"] = today.strftime("%Y-%m-%d")
     save_state(state)

@@ -1,0 +1,59 @@
+name: Networking Events Calendar Fixup
+
+# Manual only, and deliberately so. This sends cancellations and corrections for
+# calendar entries the events monitor already created; it is a repair tool, not
+# a schedule. Run it after editing scripts/events-fixup-manifest.json, with
+# dry_run first.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print the iCalendar payloads, send nothing'
+        type: boolean
+        default: true
+
+concurrency:
+  group: events-fixup
+  cancel-in-progress: false
+
+jobs:
+  fixup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      # events-fixup.py imports events-monitor.py to share its UID maths, and
+      # that module imports requests/bs4 at load time.
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Validate the manifest
+        run: python -c "import json; d=json.load(open('scripts/events-fixup-manifest.json')); print(len(d['entries']), 'entries')"
+
+      - name: Send fixups
+        env:
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EVENTS_RECIPIENTS: ${{ vars.EVENTS_RECIPIENTS || 'evelin@blackhilltx.com' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "false" ]; then
+            python scripts/events-fixup.py
+          else
+            python scripts/events-fixup.py --dry-run
+          fi
+
+  notify-failure:
+    needs: [fixup]
+    if: failure() || cancelled()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Networking Events Calendar Fixup"
+    secrets: inherit

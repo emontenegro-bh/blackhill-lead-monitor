@@ -1,0 +1,81 @@
+{
+  "_comment": [
+    "Repairs the UPCOMING calendar entries the events monitor got wrong. The nine",
+    "entries it created for dates already past are left alone deliberately.",
+    "",
+    "uid_basis is org|date_iso|title exactly as the monitor held them when it first",
+    "sent the invite, NOT as they should have been. Change a character and the UID",
+    "stops matching and the fixup addresses nothing. dtstart_raw on a cancel is the",
+    "original floating-local stamp for the same reason: match the entry on the",
+    "calendar, do not correct it.",
+    "",
+    "Source for the IWIRE details: the association's own email of 2026-09-01,",
+    "'IWIRE 10/15 Inwood Design District Tour & Insights Panel 9/15 - Data Centers'."
+  ],
+  "entries": [
+    {
+      "action": "cancel",
+      "why": "One calendar entry welded two separate IWIRE events together: it took its title from both, its date from the September panel, its time from the October tour, and its address from the October tour. Following it would have sent her to Inwood Rd on the 15th for an event held at Trammell Crow Center.",
+      "uid_basis": {
+        "org": "Unlisted (iwirenorthtexas.com)",
+        "date_iso": "2026-09-15",
+        "title": "IWIRE 10/15 Inwood Design District Tour & Insights Panel 9/15 - Data Centers"
+      },
+      "dtstart_raw": "20260915T160000",
+      "dtend_raw": "20260915T180000",
+      "sequence": 1,
+      "summary": "IWIRE 10/15 Inwood Design District Tour & Insights Panel 9/15 - Data Centers"
+    },
+    {
+      "action": "reissue",
+      "why": "The monitor found this one correctly on 2026-09-01, but it was one of fifteen invitations demoted to file attachments when Outlook promoted a single .ics out of that digest, so it never reached the calendar.",
+      "uid_basis": {
+        "org": "Unlisted (iwirenorthtexas.com)",
+        "date_iso": "2026-09-15",
+        "title": "IWIRE Insights Panel 9/15 - Data Centers - Power, Land, & the Race to Build"
+      },
+      "sequence": 1,
+      "summary": "[REGISTER - MEMBERS ONLY] IWIRE Insights Panel: Data Centers in North Texas",
+      "start": "2026-09-15T11:30:00",
+      "end": "2026-09-15T13:00:00",
+      "location": "Trammell Crow Center, 2001 Ross Ave, Dallas, TX",
+      "categories": "Networking,Ticket Required",
+      "alarm_trigger": "TRIGGER:-P1D",
+      "description": "ACTION NEEDED: register in advance. Open to IWIRE North Texas members only.\n\nRegister: https://www.iwirenorthtexas.com/event-details-registration/iwire-insights-panel-data-centers-in-north-texas\n\nPanel on the market dynamics shaping the next generation of data center projects across North Texas: site selection, infrastructure challenges, and leadership opportunities for women in industrial real estate.\n\nLong drive: Dallas, budget most of the middle of the day."
+    },
+    {
+      "action": "reissue",
+      "why": "The October tour was never extracted as an event of its own. It existed only as half of the merged September entry, so nothing on the calendar pointed at October 15 at all.",
+      "uid_basis": {
+        "org": "IWIRE North Texas",
+        "date_iso": "2026-10-15",
+        "title": "Inwood Design District Tour with M2G Ventures"
+      },
+      "sequence": 0,
+      "summary": "[REGISTER - MEMBERS ONLY] IWIRE Inwood Design District Tour with M2G Ventures",
+      "start": "2026-10-15T16:00:00",
+      "end": "2026-10-15T17:30:00",
+      "location": "Inwood Design District, 1130 Inwood Rd, Dallas, TX 75247",
+      "categories": "Networking,Ticket Required",
+      "alarm_trigger": "TRIGGER:-P7D",
+      "description": "ACTION NEEDED: register in advance. Open to IWIRE North Texas members only.\n\nRegister: https://www.iwirenorthtexas.com/event-details-registration/inwood-design-district\n\nTour of a 740,000 sq ft adaptive reuse development where M2G Ventures turned an industrial warehouse campus into showroom, retail, restaurant and creative space. Drinks and networking follow the tour.\n\nCONFLICT: CCC Fort Worth After Hours starts at 5:00 PM the same evening on Davis Blvd. Pick one.\n\nLong drive: Dallas."
+    },
+    {
+      "action": "reissue",
+      "why": "Right event, wrong time. The invite wrote 5:00 PM as a floating local stamp with no timezone and Outlook read it as UTC, so it sat on the calendar at noon. The title also carried the 'Unlisted' parser placeholder.",
+      "uid_basis": {
+        "org": "Unlisted (11459012.brevosend.com)",
+        "date_iso": "2026-10-15",
+        "title": "CCC Fort Worth Invites You to After Hours: Built to Connect"
+      },
+      "sequence": 1,
+      "summary": "[REGISTER] CCC Fort Worth After Hours: Built to Connect",
+      "start": "2026-10-15T17:00:00",
+      "end": "2026-10-15T19:00:00",
+      "location": "6608 Davis Blvd, Fort Worth, TX",
+      "categories": "Networking,Ticket Required",
+      "alarm_trigger": "TRIGGER:-P7D",
+      "description": "Cost was not listed in the announcement, so confirm before going.\n\nCONFLICT: the IWIRE Inwood Design District tour runs 4:00 to 5:30 PM in Dallas the same day. Pick one.\n\nDetails came from the CCC Fort Worth announcement of 2026-09-10, which is no longer in the mailbox to re-check."
+    }
+  ]
+}
