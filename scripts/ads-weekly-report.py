@@ -2026,6 +2026,12 @@ if DRY_RUN:
     print(f"HTML written to: {dryrun_html_path}")
     print(f"Markdown written to: {dryrun_md_path}")
     print("=" * 70)
+    print("VERIFY_WORDCOUNT total_words=%d" % len(report_text.split()))
+    if commentary:
+        print("VERIFY_WORDCOUNT commentary_words=%d" % len(commentary.split()))
+        print("VERIFY_COMMENTARY_START")
+        print(commentary)
+        print("VERIFY_COMMENTARY_END")
     _run.done()
     sys.exit(0)
 
