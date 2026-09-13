@@ -44,6 +44,7 @@ import smtplib
 import sys
 import uuid
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -64,6 +65,10 @@ GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 MAILBOX = os.environ.get("EVENTS_MAILBOX", "evelin@blackhilltx.com")
 RECIPIENTS = [e.strip() for e in os.environ.get(
     "EVENTS_RECIPIENTS", "evelin@blackhilltx.com").split(",") if e.strip()]
+
+# Every event this monitor finds happens in Tarrant or Dallas county. Times are
+# parsed as local wall-clock and must be stamped as such: see make_ics.
+LOCAL_TZ = ZoneInfo(os.environ.get("EVENTS_TIMEZONE", "America/Chicago"))
 
 LOOKAHEAD_DAYS = int(os.environ.get("EVENTS_LOOKAHEAD_DAYS", "75"))
 INBOX_LOOKBACK_DAYS = int(os.environ.get("EVENTS_INBOX_LOOKBACK_DAYS", "45"))
@@ -752,8 +757,15 @@ def make_ics(ev):
     uid = f"{event_key(ev)}@blackhilltx.com"
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     if ev["has_time"]:
-        dt_start = f"DTSTART:{start.strftime('%Y%m%dT%H%M%S')}"
-        dt_end = f"DTEND:{(start + timedelta(hours=2)).strftime('%Y%m%dT%H%M%S')}"
+        # A bare DTSTART with no TZID and no Z is "floating" local time, and Outlook
+        # read it as UTC instead: CCC Fort Worth's 5:00 PM After Hours landed on the
+        # calendar at noon, five hours early, and every timed invite was wrong the
+        # same way. The listing time is Fort Worth wall-clock, so attach the local
+        # zone and convert to UTC. Emitting Z avoids shipping a VTIMEZONE block.
+        local = start.replace(tzinfo=LOCAL_TZ)
+        utc_start = local.astimezone(timezone.utc)
+        dt_start = f"DTSTART:{utc_start.strftime('%Y%m%dT%H%M%S')}Z"
+        dt_end = f"DTEND:{(utc_start + timedelta(hours=2)).strftime('%Y%m%dT%H%M%S')}Z"
     else:
         dt_start = f"DTSTART;VALUE=DATE:{start.strftime('%Y%m%d')}"
         dt_end = f"DTEND;VALUE=DATE:{(start + timedelta(days=1)).strftime('%Y%m%d')}"
