@@ -1731,34 +1731,64 @@ Writing rules:
 - Never use em dashes.
 - Do not restate numbers already in the report unless you are interpreting them.
 - If the data is insufficient to support a conclusion, say so. Never speculate as fact.
-- No markdown tables. Use short bullets and numbered lists only.
+- No markdown tables, no headings. Output plain bullets only.
 
-Output EXACTLY these four markdown sections and nothing else:
-### The Big Picture
-(3-5 sentences: the real story of the week against the 4-week trend)
-### Anomalies & Watch Items
-(bullets; anything unusual in spend, CPC, QS, schedule, devices; say "Nothing unusual this week." if clean)
-### Web Dev Team Change Review
-(bullets reviewing umairmg3417 changes for errors; say "No web dev team changes this week." if none)
-### Priority Actions
-(numbered, max 5, most important first; end each with "Confidence: high/medium/low")
+Output EXACTLY three markdown bullets and nothing else. No headings, no preamble, no \
+sign-off, no blank commentary before or after the bullets. Each bullet is capped at roughly \
+35 words; do not run long.
 
-Priority Actions rules. These are strict:
-- First identify the single binding constraint this week: the one thing most limiting leads \
-(examples: impression share lost to ad rank, lost to budget, low QS on the highest-spend \
-keywords, weak landing page experience, bad search term waste). Action 1 must attack that \
-constraint directly.
-- Every action must be executable this week and name the specific campaign, keyword, ad \
-group, or setting it applies to, with a concrete change (a number, a bid, a specific \
-negative keyword, a specific headline swap).
-- If the blocker is ad rank, do not say "consider improving quality score". Say which QS \
-component is low on which high-spend keywords and the specific fix (e.g. rewrite ad group X \
-headlines to include keyword Y, raise bids Z% on campaign W, fix landing page mismatch on \
-URL V), and what result to expect by next week's report.
-- Ban vague verbs: consider, explore, monitor, review, evaluate, keep an eye on. If an \
-action cannot be stated concretely, it does not belong in the list.
-- State the expected payoff of each action in plain terms (more impressions, lower CPA, \
-more calls), so the owner knows why it is worth doing."""
+- Bullet 1 (the binding constraint): the single thing that actually mattered this week, \
+named as the one binding constraint most limiting leads (examples: impression share lost to \
+ad rank, lost to budget, low QS on the highest-spend keywords, weak landing page experience, \
+bad search term waste).
+- Bullet 2 (anomalies and web dev review): anything unusual in spend, CPC, QS, schedule, or \
+devices, AND anything wrong in umairmg3417's changes this week (typo'd keywords, broken \
+ValueTrack syntax, inconsistent match types, delete-then-recreate of a keyword). If both are \
+clean, say "Nothing unusual this week." Remember: quote marks and UNSPECIFIED match type in \
+the raw change log are not damage, only delete-then-recreate is.
+- Bullet 3 (the one action): the single highest-value action, executable this week, naming \
+the specific campaign, keyword, ad group, or setting and a concrete change (a number, a \
+specific negative keyword, a specific headline swap). Ban vague verbs: consider, explore, \
+monitor, review, evaluate, keep an eye on. State the expected payoff in plain terms. End the \
+bullet with "Confidence: high/medium/low"."""
+
+# Hard cap enforced in code below: only the first three bullet lines from the model's
+# response are ever used, and any heading lines are dropped, so a model that ignores the
+# instruction above cannot lengthen the report.
+MAX_COMMENTARY_BULLETS = 3
+
+
+def _enforce_bullet_cap(text, max_bullets=MAX_COMMENTARY_BULLETS):
+    """Keep only the first `max_bullets` bullet lines; drop headings and everything else.
+
+    This does not trust the model to follow the "three bullets, no headings" instruction.
+    Any ### heading, blank line, or stray prose is discarded; numbered/dashed bullet lines
+    are collected in order and truncated to the cap so a verbose generation can never blow
+    past the three-bullet limit.
+    """
+    import re as _re
+    bullets = []
+    in_bullet = False  # true only while reading unbroken continuation lines of the
+                        # current bullet; a blank line ends it, so a sign-off paragraph
+                        # after the bullets can never get glued onto the last one.
+    for raw in text.splitlines():
+        s = raw.strip()
+        if not s or s.startswith("#"):
+            in_bullet = False
+            continue
+        m = _re.match(r"^(?:[-*]|\d+\.)\s+(.*)$", s)
+        if m:
+            if len(bullets) >= max_bullets:
+                # A marker starting bullet N+1: everything from here on is beyond
+                # the cap, including its own wrapped continuation lines.
+                break
+            bullets.append(m.group(1).strip())
+            in_bullet = True
+        elif in_bullet:
+            # Wrapped continuation of the last bullet, no blank line in between.
+            bullets[-1] = f"{bullets[-1]} {s}"
+        # else: stray prose with no active bullet to attach to; drop it.
+    return "\n".join(f"- {b}" for b in bullets[:max_bullets])
 
 
 def _collect_change_events():
@@ -1882,6 +1912,11 @@ def _call_fable(user_prompt):
         text = "".join(
             b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"
         ).strip()
+        if text:
+            # Do not trust the model to honor the "three bullets, no headings"
+            # instruction: enforce the cap here so a long generation can never
+            # blow past it regardless of which model produced it.
+            text = _enforce_bullet_cap(text)
         if text:
             commentary_model = model
             if model != FABLE_MODEL:
