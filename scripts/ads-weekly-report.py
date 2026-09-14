@@ -71,6 +71,39 @@ SHOW_QS_TRACKER = False         # slow-moving; the one-line summary is kept
 TARGET_CPA = 80.0
 TARGET_IMPR_SHARE = 50.0
 
+# --- Commercial Maintenance rebuild watch (added 2026-09-13) ---
+# BH_CommercialMaint_Search was reactivated 2026-09-13 after a keyword and ad
+# rebuild: HOA ad group retired (19 keywords, 2 impressions in 9 months), 53
+# negatives added, 30 city-pattern keywords added, two new ad groups created
+# (Commercial Sprinkler & Irrigation, Commercial Tree Care), and all four ad
+# groups given new RSAs with every unsubstantiated claim removed (500+
+# properties, 98% retention, 18 years, since 2008, 38 reviews).
+SHOW_COMMERCIAL_WATCH = True
+CM_CAMPAIGN = "BH_CommercialMaint_Search"
+CM_RELAUNCH = "2026-09-13"
+# Pre-relaunch benchmarks, measured 2026-09-13 over Mar-Jul 2026 (the only
+# months the campaign ran): $774.44 spend / 10 conversions / $77.44 CPL.
+CM_BASELINE_CPL = 77.44
+# Account headline-asset CTR baseline at relaunch, used to judge watched assets.
+CM_ASSET_BASELINE_CTR = 2.45
+# Assets under explicit watch, with why. Edit this list as tests conclude.
+CM_WATCH_ASSETS = {
+    "One Contract, Every Site": (
+        "near-identical 'One Standard, Every Site' ran at 2.01% (0.82x baseline). "
+        "Swap it out if this one also trails."),
+    "Tired of Rotating Crews?": "problem-first hook, untested. The pattern behind Drainage at 7.12%.",
+    "Complaints Start at the Curb": "problem-first hook, untested.",
+    "Board-Ready Reporting": "untested PM benefit.",
+    "Liability Starts Overhead": "untested, commercial tree angle.",
+}
+# RSAs loaded 2026-09-13, tracked individually until they have 4 weeks of data.
+CM_NEW_ADS = {
+    824495071665: "Commercial Property Maintenance",
+    824495162814: "Property Manager Solutions",
+    824495162820: "Commercial Sprinkler & Irrigation",
+    824620070282: "Commercial Tree Care",
+}
+
 # Repo root (works both locally and on GitHub Actions)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
@@ -406,6 +439,125 @@ for v in asset_agg.values():
 
 headlines = sorted([v for v in asset_agg.values() if v["type"] == "HEADLINE"], key=lambda x: -x["impressions"])
 descriptions = sorted([v for v in asset_agg.values() if v["type"] == "DESCRIPTION"], key=lambda x: -x["impressions"])
+
+# --- 7b. Current live RSA roster (headlines/descriptions/pins/status) ---
+# Added 2026-09-13. Section 7 above only pulls performance (impressions/CTR)
+# for assets that already served, via ad_group_ad_asset_view. It never told
+# the Fable commentary what is CURRENTLY live, so for four weeks running it
+# recommended adding a headline ("Lawn Sprinkler Repair Experts") that was
+# already pinned to HEADLINE_1 on ad 821785710366 the whole time. This
+# collects the full live roster -- every headline/description and its pinned
+# position, for every enabled ad in an enabled ad group in an enabled
+# campaign -- so the model can check "is this already live" before it
+# recommends adding anything. This is AI context only; it does not feed any
+# metric in the rendered report.
+live_ad_roster = []
+rows = safe_query("""
+    SELECT campaign.name, ad_group.name, ad_group_ad.ad.id, ad_group_ad.status,
+           ad_group_ad.ad.responsive_search_ad.headlines,
+           ad_group_ad.ad.responsive_search_ad.descriptions
+    FROM ad_group_ad
+    WHERE campaign.status = 'ENABLED'
+      AND ad_group.status = 'ENABLED'
+      AND ad_group_ad.status = 'ENABLED'
+""")
+for row in rows:
+    rsa = row.ad_group_ad.ad.responsive_search_ad
+    live_ad_roster.append({
+        "campaign": row.campaign.name,
+        "ad_group": row.ad_group.name,
+        "ad_id": row.ad_group_ad.ad.id,
+        "status": row.ad_group_ad.status.name,
+        "headlines": [
+            {"text": a.text, "pinned": getattr(a.pinned_field, "name", "UNSPECIFIED")}
+            for a in rsa.headlines
+        ],
+        "descriptions": [
+            {"text": a.text, "pinned": getattr(a.pinned_field, "name", "UNSPECIFIED")}
+            for a in rsa.descriptions
+        ],
+    })
+
+def _format_live_ad_roster(roster):
+    if not roster:
+        return "(no enabled RSAs found)"
+    lines = []
+    for ad in roster:
+        lines.append(f'{ad["campaign"]} | {ad["ad_group"]} | ad {ad["ad_id"]} ({ad["status"]})')
+        for h in ad["headlines"]:
+            pin = f' [pinned: {h["pinned"]}]' if h["pinned"] != "UNSPECIFIED" else " [unpinned]"
+            lines.append(f'  headline: "{h["text"]}"{pin}')
+        for d in ad["descriptions"]:
+            pin = f' [pinned: {d["pinned"]}]' if d["pinned"] != "UNSPECIFIED" else " [unpinned]"
+            lines.append(f'  description: "{d["text"]}"{pin}')
+    return "\n".join(lines)
+
+# --- 7c. Current target CPA values (ad group and campaign level) ---
+# Same root cause as 7b: the commentary has been asking the owner to go find
+# ad-group target CPA values that were readable by API the whole time (e.g.
+# $75 on all three enabled BH_PC_Irrigationservice ad groups). Pull both the
+# ad-group-level override and the campaign-level Maximize Conversions target
+# so the model can just state them instead of asking her to look them up.
+target_cpa_data = []
+rows = safe_query("""
+    SELECT campaign.name, campaign.maximize_conversions.target_cpa_micros,
+           ad_group.name, ad_group.status,
+           ad_group.target_cpa_micros, ad_group.effective_target_cpa_micros
+    FROM ad_group
+    WHERE campaign.status = 'ENABLED' AND ad_group.status = 'ENABLED'
+""")
+for row in rows:
+    campaign_tcpa = row.campaign.maximize_conversions.target_cpa_micros
+    ag_tcpa = row.ad_group.target_cpa_micros
+    ag_eff_tcpa = row.ad_group.effective_target_cpa_micros
+    target_cpa_data.append({
+        "campaign": row.campaign.name,
+        "campaign_tcpa": (campaign_tcpa / 1_000_000) if campaign_tcpa else None,
+        "ad_group": row.ad_group.name,
+        "ad_group_tcpa": (ag_tcpa / 1_000_000) if ag_tcpa else None,
+        "ad_group_effective_tcpa": (ag_eff_tcpa / 1_000_000) if ag_eff_tcpa else None,
+    })
+
+def _format_target_cpa(data):
+    if not data:
+        return "(no target CPA data found)"
+    lines = []
+    for d in data:
+        ctcpa = f'${d["campaign_tcpa"]:.2f}' if d["campaign_tcpa"] else "not set at campaign level"
+        agtcpa = f'${d["ad_group_effective_tcpa"]:.2f}' if d["ad_group_effective_tcpa"] else "not set"
+        lines.append(
+            f'{d["campaign"]} (campaign target CPA: {ctcpa}) | '
+            f'{d["ad_group"]} (effective target CPA: {agtcpa})'
+        )
+    return "\n".join(lines)
+
+# --- 7d. Commercial Maintenance rebuild watch (added 2026-09-13) ---
+# Per-ad numbers for the four RSAs loaded at relaunch, so we can see whether the
+# rebuild beat what it replaced rather than inferring it from campaign totals.
+cm_ad_perf = {}
+rows = safe_query(f"""
+    SELECT ad_group.name, ad_group_ad.ad.id,
+           metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros
+    FROM ad_group_ad
+    WHERE campaign.name = '{CM_CAMPAIGN}'
+      AND segments.date BETWEEN '{this_week_start}' AND '{this_week_end}'
+""")
+for row in rows:
+    aid = row.ad_group_ad.ad.id
+    if aid not in CM_NEW_ADS:
+        continue
+    d = cm_ad_perf.setdefault(aid, {"ad_group": row.ad_group.name, "impressions": 0,
+                                    "clicks": 0, "conversions": 0, "cost": 0.0})
+    d["impressions"] += row.metrics.impressions
+    d["clicks"] += row.metrics.clicks
+    d["conversions"] += row.metrics.conversions
+    d["cost"] += row.metrics.cost_micros / 1e6
+
+# Watched assets: pull them by name from the asset aggregate built in section 7.
+cm_watch_perf = {}
+for (text, ftype), v in asset_agg.items():
+    if ftype == "HEADLINE" and text in CM_WATCH_ASSETS:
+        cm_watch_perf[text] = v
 
 # --- 8. Device breakdown ---
 device_data = {}
@@ -1581,6 +1733,73 @@ if _irr and SHOW_IRRIGATION_PROMO:
     md.append(f"\n*Read: Irrigation CTR is {_ctr_call} the pre-promo baseline.*")
     md.append("")
 
+# --- Commercial Maintenance Rebuild Watch (relaunched 2026-09-13) ---
+if SHOW_COMMERCIAL_WATCH:
+    _cm = camp_data.get(CM_CAMPAIGN, {}).get("this", {})
+    md.append("## Commercial Maintenance Rebuild Watch")
+    md.append(f"*Campaign relaunched {CM_RELAUNCH} after a keyword and ad rebuild. "
+              f"Pre-relaunch benchmark was ${CM_BASELINE_CPL:.2f} CPL over Mar-Jul 2026. "
+              f"Read the trend over 3-4 weeks, not one. Asset CTR is directional only: "
+              f"RSA clicks are credited to the whole ad, not the headline that earned them.*")
+    md.append("")
+    if _cm:
+        _sp = _cm.get("cost", _cm.get("spend", 0)) or 0
+        _cv = _cm.get("conversions", 0) or 0
+        _cpl = (_sp / _cv) if _cv else 0
+        _cpl_str = f"${_cpl:.2f}" if _cv else "no conversions yet"
+        _call = ("better than" if _cv and _cpl < CM_BASELINE_CPL - 5
+                 else "worse than" if _cv and _cpl > CM_BASELINE_CPL + 5
+                 else "in line with" if _cv else "not yet comparable to")
+        md.append("| Metric | This week | Pre-relaunch benchmark |")
+        md.append("|--------|-----------|------------------------|")
+        md.append(f"| Spend | ${_sp:.2f} | -- |")
+        md.append(f"| Conversions | {_cv:.0f} | -- |")
+        md.append(f"| CPL | {_cpl_str} | ${CM_BASELINE_CPL:.2f} |")
+        md.append(f"| Impr share | {_cm.get('impr_share',0):.0f}% | -- |")
+        md.append(f"| Lost to rank | {_cm.get('lost_rank',0):.0f}% | 83% at relaunch |")
+        md.append(f"| Lost to budget | {_cm.get('lost_budget',0):.0f}% | 0% at relaunch |")
+        md.append(f"\n*Read: CPL is {_call} the pre-relaunch benchmark. "
+                  f"Lost-to-budget staying near 0% means more budget still cannot spend; "
+                  f"ad rank is the constraint.*")
+        md.append("")
+    if cm_ad_perf:
+        md.append("**New ads loaded at relaunch**")
+        md.append("")
+        md.append("| Ad group | Ad | Impr | Clicks | CTR | Conv | Spend |")
+        md.append("|----------|----|------|--------|-----|------|-------|")
+        for aid, name in CM_NEW_ADS.items():
+            d = cm_ad_perf.get(aid)
+            if not d:
+                md.append(f"| {name} | {aid} | no impressions yet | | | | |")
+                continue
+            _ctr = (d["clicks"] / d["impressions"] * 100) if d["impressions"] else 0
+            md.append(f"| {name} | {aid} | {d['impressions']} | {d['clicks']} | "
+                      f"{_ctr:.2f}% | {d['conversions']:.0f} | ${d['cost']:.2f} |")
+        md.append("")
+    md.append("**Assets under watch**")
+    md.append("")
+    md.append(f"| Headline | Impr | CTR | vs {CM_ASSET_BASELINE_CTR:.2f}% baseline | Verdict | Why watched |")
+    md.append("|----------|------|-----|------------|---------|-------------|")
+    for text, why in CM_WATCH_ASSETS.items():
+        v = cm_watch_perf.get(text)
+        if not v or not v["impressions"]:
+            md.append(f"| {text} | no impressions yet | | | hold | {why} |")
+            continue
+        _x = v["ctr"] / CM_ASSET_BASELINE_CTR if CM_ASSET_BASELINE_CTR else 0
+        if v["impressions"] < 100:
+            _verdict = "too early"
+        elif _x >= 1.15:
+            _verdict = "keep"
+        elif _x <= 0.85:
+            _verdict = "**swap out**"
+        else:
+            _verdict = "flat"
+        md.append(f"| {text} | {v['impressions']} | {v['ctr']:.2f}% | {_x:.2f}x | {_verdict} | {why} |")
+    md.append("")
+    md.append("*Verdict needs 100+ impressions before it means anything. "
+              "'swap out' means the asset is running at 0.85x baseline or worse.*")
+    md.append("")
+
 if converting_terms:
     md.append("## Converting Search Terms")
     md.append(f"| Search Term | Conv | Spend | Clicks | CTR | Campaign |")
@@ -1725,6 +1944,12 @@ target CPA while conversion volume is low. All recommendations must be efficienc
 Quality Score, landing page relevance, negatives, ad copy, cutting wasted schedule or device \
 spend. If the binding constraint can only be fixed with more spend, say so plainly and stop \
 there; do not turn it into a recommendation.
+- The user message includes a CURRENT LIVE AD ROSTER (every headline and description that is \
+actually live right now, with its pinned position) and CURRENT TARGET CPA VALUES. These are \
+ground truth as of today, not last week. Check both before writing Priority Actions: never \
+recommend adding, testing, or pinning a headline or description that already appears in the \
+roster, and never tell the owner to go find or check a target CPA value that is already \
+listed there. State the value directly instead.
 
 Writing rules:
 - Plain language for a busy non-technical owner. No jargon without a one-phrase explanation.
@@ -1938,9 +2163,12 @@ _report_dir = os.path.join(REPO_ROOT, ".claude", "reports", "marketing", "google
 change_events = _collect_change_events()
 prior_reports = _load_prior_reports(_report_dir)
 events_text = "\n".join(change_events) if change_events else "(no change events in the account this week)"
+live_ad_roster_text = _format_live_ad_roster(live_ad_roster)
+target_cpa_text = _format_target_cpa(target_cpa_data)
 
 fable_prompt = f"""Here is this week's deterministic Google Ads report, the prior weekly reports
-for trend context, and the raw account change log for the week. Write your analyst commentary.
+for trend context, the raw account change log for the week, the current live ad roster, and the
+current target CPA values. Write your analyst commentary.
 
 ===== THIS WEEK'S REPORT =====
 {report_text}
@@ -1948,7 +2176,13 @@ for trend context, and the raw account change log for the week. Write your analy
 {prior_reports}
 
 ===== ACCOUNT CHANGE LOG (past 7 days, newest first) =====
-{events_text}"""
+{events_text}
+
+===== CURRENT LIVE AD ROSTER (as of today; do not recommend adding anything already listed here) =====
+{live_ad_roster_text}
+
+===== CURRENT TARGET CPA VALUES (as of today; state these, do not ask the owner to look them up) =====
+{target_cpa_text}"""
 
 commentary = _call_fable(fable_prompt)
 if commentary:
