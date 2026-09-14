@@ -1786,5 +1786,83 @@
       "website_clicks": 0,
       "direction_requests": 0
     }
+  },
+  {
+    "date": "2026-09-14",
+    "date_range": "2026-09-05 to 2026-09-11",
+    "gsc": {
+      "impressions": 12078,
+      "clicks": 52,
+      "ctr": 0.43,
+      "avg_position": 12.44
+    },
+    "priority_keywords": [
+      {
+        "query": "sprinkler repair near me",
+        "position": 8.3,
+        "impressions": 57,
+        "clicks": 1
+      },
+      {
+        "query": "sprinkler repair arlington tx",
+        "position": 7.2,
+        "impressions": 36,
+        "clicks": 1
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 10.2,
+        "impressions": 32,
+        "clicks": 0
+      },
+      {
+        "query": "sod installation fort worth",
+        "position": 6.6,
+        "impressions": 27,
+        "clicks": 1
+      },
+      {
+        "query": "arlington commercial landscaping",
+        "position": 4.2,
+        "impressions": 27,
+        "clicks": 0
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 2.1,
+        "impressions": 24,
+        "clicks": 8
+      },
+      {
+        "query": "fort worth landscaping",
+        "position": 10.7,
+        "impressions": 17,
+        "clicks": 1
+      },
+      {
+        "query": "24/7 emergency tree removal",
+        "position": 4.8,
+        "impressions": 13,
+        "clicks": 0
+      },
+      {
+        "query": "arlington lawn services",
+        "position": 50.9,
+        "impressions": 12,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscaping",
+        "position": 23.6,
+        "impressions": 11,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 110,
+      "calls": 4,
+      "website_clicks": 5,
+      "direction_requests": 9
+    }
   }
 ]
