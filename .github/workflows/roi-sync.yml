@@ -42,4 +42,6 @@ jobs:
     uses: ./.github/workflows/notify-failure.yml
     with:
       workflow_name: "ROI Sync"
+      # Runs every few minutes; one blip self-heals on the next tick.
+      only_if_previous_failed: true
     secrets: inherit
