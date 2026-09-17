@@ -876,6 +876,28 @@ def _is_spam_form(lead_data):
     return False, ""
 
 
+NO_SURNAME = "(no surname given)"
+
+
+def _ensure_last_name(last_name):
+    """Aspire rejects a contact with no surname. Never let that lose a lead.
+
+    Aspire's POST /Contacts returns 400 ['Last Name is required'] when the
+    surname is blank, and that is NOT transient -- retrying fails forever. On
+    2026-09-16 a real drainage enquiry (WC #258531241, a 1-acre lot in Aston
+    Meadows) was rejected for exactly this, because the person typed only "Rob"
+    in the form's Name field. It reached HubSpot and stopped there, and because
+    the lead was already marked processed nothing ever retried it. It had to be
+    entered by hand the next day.
+
+    A visible placeholder is deliberately better than a clever guess. Deriving a
+    surname from the email local part would have produced "Sitton" here and
+    would be wrong often enough elsewhere to matter, and a wrong surname in the
+    CRM is harder to spot than an obviously missing one.
+    """
+    return (last_name or "").strip() or NO_SURNAME
+
+
 def parse_wc_lead(lead_data):
     """Parse a WhatConverts lead into our standard lead dict."""
     is_call = lead_data.get("lead_type", "").lower() == "phone call"
@@ -898,6 +920,7 @@ def _parse_form_lead(lead_data):
         parts = full_name.split(None, 1)
         first_name = parts[0] if parts else ""
         last_name = parts[1] if len(parts) > 1 else ""
+    last_name = _ensure_last_name(last_name)
 
     # Email
     email = (fields.get("Email", "") or lead_data.get("contact_email_address", "")).strip()
@@ -963,6 +986,8 @@ def _parse_call_lead(lead_data):
         parts = caller_name.split(None, 1)
         first_name = parts[0] if parts else ""
         last_name = parts[1].rstrip(".") if len(parts) > 1 else ""
+    # Carrier caller ID is frequently one word, so this path hits it too.
+    last_name = _ensure_last_name(last_name)
 
     # Phone
     phone = (lead_data.get("caller_number") or lead_data.get("contact_phone_number") or "").strip()
@@ -1976,8 +2001,11 @@ def _alert_aspire_failures(config, failures):
     html_body = f"""<h3>Aspire sync failure</h3>
 <p>{n} lead(s) were captured this run but did <b>not</b> create an Aspire contact.
 They are saved in HubSpot and the owner was emailed, so nothing is lost, but they
-need to be added to Aspire manually. A transient cause (Aspire API/auth blip) will
-retry on the next run.</p>
+<b>must be added to Aspire by hand</b>.</p>
+<p><b>Nothing will retry these.</b> The lead is marked processed as soon as the run
+finishes, so the next run skips it. This email is the only notice you get. The
+previous wording promised a retry that never happens, which stranded two real
+drainage enquiries on 2026-09-16 and 09-17.</p>
 <table border="1" cellpadding="6" cellspacing="0">
 <tr><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Lead</th></tr>
 {rows}
