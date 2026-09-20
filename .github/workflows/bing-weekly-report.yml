@@ -43,6 +43,11 @@ jobs:
           BING_ADS_REFRESH_TOKEN: ${{ secrets.BING_ADS_REFRESH_TOKEN }}
           BING_ADS_CUSTOMER_ID: ${{ secrets.BING_ADS_CUSTOMER_ID }}
           BING_ADS_ACCOUNT_ID: ${{ secrets.BING_ADS_ACCOUNT_ID }}
+          # Needed by the once-a-day send guard. Without these the guard falls
+          # back to sending (it fails open on purpose), so a missing secret
+          # costs a duplicate email rather than a missing report.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           BING_ADS_REDIRECT_URI: ${{ secrets.BING_ADS_REDIRECT_URI }}
           ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
           ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
