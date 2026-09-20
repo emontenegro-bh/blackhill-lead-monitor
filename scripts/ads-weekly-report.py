@@ -2044,6 +2044,38 @@ if not gmail_email or not gmail_password:
     _run.done()
     sys.exit(0)
 
+# Send at most once a day.
+#
+# This workflow has TWO triggers: its own GitHub cron and a cron-job.org job
+# POSTing workflow_dispatch. The dispatcher exists because GitHub's scheduler
+# dropped the report entirely on 2026-09-13. The cron stays as a backstop for
+# the reverse case, a cron-job.org outage, and both a 403 and a 500 have
+# already been seen from that service.
+#
+# The cost of keeping both is that when they BOTH fire, Evelin gets the report
+# twice, which is what happened on 2026-09-20 (dispatch 14:07, cron 18:10).
+# Redundant triggers are worth keeping; a redundant email is not.
+#
+# Recorded AFTER a successful send, never before, so a failed send leaves the
+# day open for the other trigger to retry.
+SEND_STATE = "ads-weekly-report-sent"
+FORCE_SEND = "--force" in sys.argv
+_today_key = datetime.now().strftime("%Y-%m-%d")
+if not DRY_RUN and not FORCE_SEND:
+    # Fail OPEN, for the same reason as the Bing report: if the state lookup
+    # breaks, send. A duplicate is an annoyance; a missing report is the thing
+    # the dispatcher exists to prevent.
+    try:
+        _sent = db.load_state(SEND_STATE, default={}) or {}
+    except Exception as _e:
+        print(f"Could not read send state ({_e}); sending rather than risk skipping.")
+        _sent = {}
+    if _sent.get("last_sent_date") == _today_key:
+        print(f"Report already sent today ({_today_key}) by the other trigger; "
+              f"not sending again. Use --force to override.")
+        _run.done()
+        sys.exit(0)
+
 from email.utils import formataddr
 msg = MIMEMultipart("alternative")
 msg["Subject"] = f"Weekly Google Ads Report - {today_fmt}"
@@ -2059,8 +2091,12 @@ try:
         server.login(gmail_email, gmail_password)
         server.sendmail(gmail_email, TO_EMAILS, msg.as_string())
     print("Email sent successfully via Gmail!")
+    if not DRY_RUN:
+        db.save_state(SEND_STATE, {"last_sent_date": _today_key,
+                                   "sent_at": datetime.now().isoformat()})
 except Exception as e:
     print(f"Email send failed: {e}")
     print("Report was saved to file but email delivery failed.")
+    print("Today is left open so the other trigger can still deliver it.")
 
 _run.done()

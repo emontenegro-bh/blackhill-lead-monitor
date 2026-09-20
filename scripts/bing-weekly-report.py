@@ -41,6 +41,7 @@ from bingads.v13.reporting import ReportingServiceManager, ReportingDownloadPara
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import url_health
+import db
 
 
 # --- Global timeout: kill the process if it runs longer than 12 minutes ---
@@ -888,6 +889,31 @@ if not gmail_email or not gmail_password:
     print("No GMAIL_EMAIL / GMAIL_APP_PASSWORD configured. Report saved but email not sent.")
     sys.exit(0)
 
+# Send at most once a day. Same reasoning as ads-weekly-report.py: this
+# workflow has two triggers, its own GitHub cron and a cron-job.org dispatch,
+# and on 2026-09-20 both fired (dispatch 13:22, cron 17:29) so the report was
+# emailed twice. Keeping both triggers is deliberate, since each covers the
+# other's outage. Sending twice is not.
+#
+# Recorded only after a successful send, so a failure leaves the day open for
+# the other trigger.
+SEND_STATE = "bing-weekly-report-sent"
+FORCE_SEND = "--force" in sys.argv
+_today_key = datetime.now().strftime("%Y-%m-%d")
+if not FORCE_SEND:
+    # Fail OPEN. If the state lookup breaks, send. A duplicate report is a
+    # minor annoyance; a missing one is the failure this whole dispatcher
+    # arrangement exists to prevent, and it is not worth risking to dedupe.
+    try:
+        _sent = db.load_state(SEND_STATE, default={}) or {}
+    except Exception as _e:
+        print(f"Could not read send state ({_e}); sending rather than risk skipping.")
+        _sent = {}
+    if _sent.get("last_sent_date") == _today_key:
+        print(f"Report already sent today ({_today_key}) by the other trigger; "
+              f"not sending again. Use --force to override.")
+        sys.exit(0)
+
 msg = MIMEMultipart("alternative")
 msg["Subject"] = f"Weekly Bing Ads Report - {today_fmt}"
 msg["From"] = formataddr(("Black Hill Assistant", gmail_email))
@@ -901,6 +927,9 @@ try:
         server.login(gmail_email, gmail_password)
         server.sendmail(gmail_email, TO_EMAILS, msg.as_string())
     print("Email sent successfully via Gmail!")
+    db.save_state(SEND_STATE, {"last_sent_date": _today_key,
+                               "sent_at": datetime.now().isoformat()})
 except Exception as e:
     print(f"Email send failed: {e}")
+    print("Today is left open so the other trigger can still deliver it.")
     print("Report was saved to file but email delivery failed.")
