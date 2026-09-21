@@ -287,5 +287,22 @@
     "title_issues": 0,
     "h1_issues": 0,
     "meta_issues": 0
+  },
+  "2026-09-21": {
+    "score": 78,
+    "pages_live": 219,
+    "pages_missing": 0,
+    "total_issues": 329,
+    "alt_text_pct": 35.8,
+    "images_total": 10258,
+    "images_good": 3671,
+    "images_poor": 438,
+    "images_missing": 6149,
+    "schema_local_business": 186,
+    "schema_faq": 184,
+    "schema_aggregate_rating": 184,
+    "title_issues": 82,
+    "h1_issues": 0,
+    "meta_issues": 22
   }
 }
