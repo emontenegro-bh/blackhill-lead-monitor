@@ -1864,5 +1864,83 @@
       "website_clicks": 5,
       "direction_requests": 9
     }
+  },
+  {
+    "date": "2026-09-21",
+    "date_range": "2026-09-12 to 2026-09-18",
+    "gsc": {
+      "impressions": 9375,
+      "clicks": 80,
+      "ctr": 0.85,
+      "avg_position": 12.3
+    },
+    "priority_keywords": [
+      {
+        "query": "arlington commercial landscaping",
+        "position": 8.5,
+        "impressions": 38,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 12.5,
+        "impressions": 21,
+        "clicks": 0
+      },
+      {
+        "query": "landscapers arlington tx",
+        "position": 7.9,
+        "impressions": 17,
+        "clicks": 2
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1.1,
+        "impressions": 14,
+        "clicks": 6
+      },
+      {
+        "query": "arlington landscaping",
+        "position": 18.8,
+        "impressions": 13,
+        "clicks": 0
+      },
+      {
+        "query": "2-wire irrigation system repair arlington, tx",
+        "position": 36.5,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "aledo tree trimming in aledo",
+        "position": 28.8,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "arlington sprinkler repair",
+        "position": 7.8,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "24/7 emergency tree removal fort worth tx",
+        "position": 2.2,
+        "impressions": 6,
+        "clicks": 0
+      },
+      {
+        "query": "blackhill landscaping",
+        "position": 2.2,
+        "impressions": 5,
+        "clicks": 4
+      }
+    ],
+    "gbp": {
+      "total_views": 57,
+      "calls": 0,
+      "website_clicks": 0,
+      "direction_requests": 10
+    }
   }
 ]
