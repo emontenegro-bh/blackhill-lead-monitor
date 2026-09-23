@@ -593,7 +593,14 @@ def main():
             # Also stamp the domain, so the next rotation of a spoofing
             # source is suppressed rather than treated as news.
             alerted[f"domain:{key[1]}"] = now.isoformat()
-        cutoff = now.timestamp() - SUPPRESS_DAYS * 2 * 86400
+        # Retention must outlast the LONGEST suppression window, or the window
+        # is a lie. This line used to read SUPPRESS_DAYS * 2, i.e. 14 days,
+        # which silently capped the 30-day domain window added on 2026-09-07:
+        # the domain:meangreenlawncare.com stamp was pruned at 14 days, so when
+        # ColoCrossing forged the domain again on 09-23, 16 days later, the
+        # check found no history and alerted as though it were news. The
+        # suppression was never wrong; its memory was too short to reach.
+        cutoff = now.timestamp() - max(SUPPRESS_DAYS, DOMAIN_SUPPRESS_DAYS) * 2 * 86400
         state["alerted_sources"] = {
             k: v for k, v in alerted.items()
             if _iso_ts(v) >= cutoff
