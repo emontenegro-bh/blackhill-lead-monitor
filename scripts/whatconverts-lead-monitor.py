@@ -1795,17 +1795,36 @@ def assign_lead_owner(lead, state):
     message = (lead.get("message", "") or "").lower()
 
     # Commercial bid requests go to Evelin, and this has to be tested first.
-    # The old order asked "commercial" AND "maint" of the service field only,
-    # but the website form has no Commercial Maintenance option -- every
-    # commercial RFP arrives as "Landscaping" and fell through to round-robin.
+    #
+    # The form DOES now offer "Commercial Maintenance" and 31 of 232 web form
+    # leads between 2026-06-01 and 09-23 selected it, so the service test below
+    # carries most of these on its own. An older comment here claimed the
+    # option did not exist; that is no longer true.
+    #
+    # The message test is kept deliberately, as the ONE exception to routing on
+    # the selected service. Commercial RFPs still arrive filed as "Landscaping"
+    # when the sender does not think of themselves as buying maintenance, and
     # Sheri Manabat's request for bids on four multi-family properties was
-    # assigned by coin flip on 2026-09-03. Testing the message too, via the
-    # same procurement check the spam filter uses, is what makes the rule mean
-    # what it says. It also has to outrank the irrigation rule below: an RFP
-    # that happens to mention irrigation is still a commercial bid.
+    # assigned by coin flip on 2026-09-03 for exactly that reason. A bid
+    # request is high enough value to be worth one exception.
+    #
+    # It must outrank the sprinkler rule below: an RFP that happens to mention
+    # irrigation is still a commercial bid.
     if _is_procurement_request(message, service) or ("commercial" in service and "maint" in service):
         return OWNER_EVELIN_HUBSPOT_ID
-    if "irrigation" in service or "sprinkler" in service or "irrigation" in message:
+    # Route on the service the person SELECTED, never on what they wrote.
+    #
+    # This used to read `or "irrigation" in message`, which quietly sent
+    # drainage and landscaping enquiries to Denisse whenever the description
+    # happened to mention irrigation. People describing a wet yard mention
+    # sprinklers constantly: of 232 web form leads between 2026-06-01 and
+    # 09-23, 28 selected Drainage Solutions, and those are exactly the ones
+    # most likely to say the word. The selected service is a deliberate choice
+    # from a fixed menu; the message is free text that happens to contain
+    # words. Only the first should decide who owns the lead.
+    #
+    # "Sprinkler Services" is the live menu option and is what this matches.
+    if "irrigation" in service or "sprinkler" in service:
         return OWNER_DENISSE_HUBSPOT_ID
 
     rr = state.setdefault("round_robin_state", {"last_index": -1})
