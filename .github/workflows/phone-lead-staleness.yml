@@ -1,12 +1,25 @@
 name: Phone Lead Staleness Alert
 
 # Insurance: emails Evelin if the phone-lead monitor hasn't processed a new
-# lead in >= 2 business days (weekends skipped). Reads only the committed state
-# file, so it fires even if the monitor's Graph read is failing.
+# lead in >= 2 business days (weekends skipped). Reads the monitor's Supabase
+# state rather than the workbook, so it fires even when the Graph read, the
+# Forms intake, or Power Automate is broken.
 
 on:
+  # Primary trigger: cron-job.org POSTs a repository_dispatch at ~08:23 Central
+  # on weekdays. Same reason as the other dispatched workflows -- GitHub's
+  # scheduled queue lags 20-60 minutes under throttling, and on 2026-09-30 this
+  # workflow's 08:23 cron was observed firing at 13:39 and 15:08. An insurance
+  # alert that lands hours late is half an alert.
+  repository_dispatch:
+    types: [phone-lead-staleness]
+  # Late backstop, weekdays, ~90 minutes after the dispatch should have landed.
+  # Kept because this is the alert of last resort: if cron-job.org is down too,
+  # a late warning still beats silence. Duplicate runs are harmless -- the
+  # script dedupes alerts per calendar day via its own Supabase state, so the
+  # second run prints "Already alerted today" and sends nothing.
   schedule:
-    - cron: '23 13 * * 1-5'   # 08:23 CT, weekdays (off-:00 so GitHub doesn't drop it)
+    - cron: '53 14 * * 1-5'   # 09:53 CT, weekdays (off-:00 so GitHub doesn't drop it)
   workflow_dispatch: {}
 
 concurrency:
