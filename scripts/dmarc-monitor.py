@@ -116,6 +116,10 @@ KNOWN_SENDING_DOMAINS = {
 # own sender needed fixing, because the SPF auth domain still reads
 # blackhilltx.com. One customer's mail forwarding generated that alarm on
 # 08-20 and again on 09-02. Nothing here is fixable from our side.
+#
+# Matched against the DKIM *and* SPF auth domains in classify(). Lamar signs as
+# lamar0.onmicrosoft.com, so DKIM alone never matched this entry -- see the note
+# there before adding a tenant name here instead of the real domain.
 KNOWN_FORWARDERS = {
     "lamar.edu",
 }
@@ -316,20 +320,34 @@ def classify(records):
         # Failed DMARC. Does any underlying check recognise a domain of ours?
         seen = {d for d, _ in r["dkim_auth"] + r["spf_auth"]}
 
-        # A DKIM signature that PASSES for a domain that is not ours means some
-        # third party signed this message on its way through, which is what
-        # forwarding looks like from the report side.
+        # A DKIM signature or an SPF pass for a domain that is not ours means
+        # some third party relayed this message, which is what forwarding looks
+        # like from the report side.
+        #
+        # Both auth results have to be checked, not just DKIM. Lamar signs as
+        # lamar0.onmicrosoft.com -- the Microsoft tenant default, since they
+        # publish no DKIM key for lamar.edu itself -- so matching passing DKIM
+        # domains against "lamar.edu" never fired, and the 2026-09-02 entry in
+        # KNOWN_FORWARDERS silenced nothing. The report on 2026-09-30 carried:
+        #
+        #     DKIM  lamar0.onmicrosoft.com  pass
+        #     DKIM  blackhilltx.com         fail
+        #     SPF   lamar.edu               pass
+        #
+        # The SPF auth domain is the forwarder itself and is the stable thing to
+        # match on. A tenant name is an implementation detail that changes when
+        # the forwarder reconfigures; the domain in their SPF record does not.
         #
         # Only the forwarders we have actually identified are silenced. An
         # unknown third-party signer could just as easily be a spoofer signing
         # with a domain of their own, and that has to keep alerting -- so
         # anything not on the list falls through to the checks below and
         # behaves exactly as it did before.
-        relay = sorted(
-            d for d, res in r["dkim_auth"]
+        relay = sorted({
+            d for d, res in r["dkim_auth"] + r["spf_auth"]
             if res == "pass" and any(d == k or d.endswith("." + k)
                                      for k in KNOWN_FORWARDERS)
-        )
+        })
         if relay:
             forwarded[(r["source_ip"], ", ".join(relay))] += r["count"]
             continue
