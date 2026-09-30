@@ -3,13 +3,21 @@
 
 Emails Evelin if the phone-lead monitor has not processed a new phone lead in
 >= THRESHOLD_BUSINESS_DAYS. Decoupled from Microsoft Graph on purpose: it reads
-only the committed state file, so it still fires even if the monitor's Graph read
-is failing. Weekends are skipped (no office phone calls Sat/Sun).
+the monitor's stored state rather than re-reading the workbook, so it still fires
+when the monitor's Graph read, the Forms intake, or Power Automate is broken.
+Weekends are skipped (no office phone calls Sat/Sun).
+
+State lives in Supabase under the monitor's own key. Until 2026-09-30 this read
+data/phone-lead-state.json from the repo instead, a path that stopped existing
+when state moved to Supabase -- so every run printed "No phone-lead state file;
+nothing to check", exited 0, and reported success. The alert was dead for months
+and nobody could tell, because a no-op and a healthy run looked identical. That
+is why an unreadable or empty state now alerts instead of returning quietly.
 
     python3 phone-lead-staleness-check.py            # send if stale (CI)
     python3 phone-lead-staleness-check.py --dry-run  # print only, no email
 """
-import json, os, sys, smtplib
+import os, sys, smtplib
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 
@@ -20,8 +28,9 @@ import db
 
 THRESHOLD_BUSINESS_DAYS = 2
 DRY = "--dry-run" in sys.argv
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATE_FILE = os.path.join(REPO_ROOT, "data", "phone-lead-state.json")
+# The monitor's state, read-only here. Must match phone-lead-monitor.STATE_NAME.
+MONITOR_STATE_NAME = "phone-lead-monitor"
+# This script's own alert-dedupe state.
 STATE_NAME = "phone-lead-staleness-check"
 ALERT_TO = os.environ.get("ALERT_RECIPIENT", "evelin@blackhilltx.com")
 
@@ -63,16 +72,39 @@ def send_email(subject, html):
 
 
 def main():
-    if not os.path.exists(STATE_FILE):
-        print("No phone-lead state file; nothing to check.")
-        return
-    state = json.load(open(STATE_FILE))
+    state = db.load_state(MONITOR_STATE_NAME, default={})
     latest = latest_processed_at(state)
-    if not latest:
-        print("No processed leads recorded; skipping.")
-        return
-    last_dt = datetime.fromisoformat(latest.replace("Z", "+00:00"))
     today = datetime.now(timezone.utc).date()
+
+    # An empty state is not "nothing to check" -- the monitor has been recording
+    # leads for months, so a state with no processed entries means the state was
+    # lost, renamed, or never written. Silence here is what hid a dead alert for
+    # months, so this path shouts instead.
+    if not latest:
+        subject = "Phone Lead Monitor state is empty or unreadable"
+        html = (f"<p>The staleness check read state <b>{MONITOR_STATE_NAME}</b> and found "
+                f"no processed phone leads at all.</p>"
+                f"<p>That is not the same as a quiet week. It means the monitor's state "
+                f"is missing, was renamed, or is not being written. Phone leads may be "
+                f"arriving and going nowhere.</p>"
+                f"<p>Check the Phone Lead Monitor workflow runs and the "
+                f"<b>automation_state</b> row named <b>{MONITOR_STATE_NAME}</b>.</p>")
+        print("EMPTY STATE ->", subject)
+        if DRY:
+            print(f"[dry-run] would email {ALERT_TO}")
+            return
+        astate = db.load_state(STATE_NAME, default={})
+        if astate.get("last_alert_date") == str(today) and astate.get("last_alert_for") == "__empty__":
+            print("Already alerted today for empty state; skipping duplicate.")
+            return
+        ok, info = send_email(subject, html)
+        print("email:", ok, info)
+        if ok:
+            db.save_state(STATE_NAME,
+                          {"last_alert_for": "__empty__", "last_alert_date": str(today)})
+        return
+
+    last_dt = datetime.fromisoformat(latest.replace("Z", "+00:00"))
     bdays = business_days_between(last_dt.date(), today)
     print(f"Latest processed: {latest} | business days since: {bdays} | threshold: {THRESHOLD_BUSINESS_DAYS}")
 
