@@ -18,7 +18,10 @@ One copy of a fragile string is a gotcha. Two copies is a recurring bug. Import
 these names; do not paste the literals into a caller.
 """
 
-# Verified against GET /ContactCustomFieldDefinitions (definition 34) on 2026-08-25.
+# Verified against GET /ContactCustomFieldDefinitions (definition 34), last on
+# 2026-10-02, when the live CustomList read:
+#   Phone Call , Website, Referral, Bing Organic, Bing Ads, Google Organic,
+#   Google Ads, Google Business Profile, Mailchimp, Postcard Mania
 PHONE_CALL = "Phone Call "          # trailing space is real -- do not strip it
 WEBSITE = "Website"
 REFERRAL = "Referral"
@@ -27,10 +30,11 @@ BING_ADS = "Bing Ads"
 GOOGLE_ORGANIC = "Google Organic"
 GOOGLE_ADS = "Google Ads"
 GOOGLE_BUSINESS_PROFILE = "Google Business Profile"
+MAILCHIMP = "Mailchimp"             # added to the Aspire picklist by Evelin 2026-10-02
 POSTCARD_MANIA = "Postcard Mania"
 
 PICKLIST = (PHONE_CALL, WEBSITE, REFERRAL, BING_ORGANIC, BING_ADS, GOOGLE_ORGANIC,
-            GOOGLE_ADS, GOOGLE_BUSINESS_PROFILE, POSTCARD_MANIA)
+            GOOGLE_ADS, GOOGLE_BUSINESS_PROFILE, MAILCHIMP, POSTCARD_MANIA)
 
 # ContactCustomFieldDefinitionID for the Lead Source picklist (looked up 2026-05-13).
 DEFINITION_ID = 34
@@ -116,6 +120,18 @@ def from_whatconverts(lead_source, lead_medium, phone_name=None):
         return BING_ADS
     if src == "bing" and med == "organic":
         return BING_ORGANIC
+    # Email campaigns. Mailchimp is the only platform Black Hill sends from, so
+    # an email medium is a Mailchimp click whatever the source string says --
+    # forwarded mail and some clients rewrite the source but keep the medium.
+    #
+    # Must sit above the referral rule: some clients present a campaign click as
+    # a referral, and crediting the Christmas campaign to word of mouth both
+    # overstates referrals and hides what the campaign actually produced. Before
+    # this existed the mapping returned None for these and the caller fell back
+    # to WEBSITE, so every Mailchimp lead was booked as generic website traffic.
+    if src == "mailchimp" or med == "email":
+        return MAILCHIMP
+
     if med == "referral":
         return REFERRAL
     return None
