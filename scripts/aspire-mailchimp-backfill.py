@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Sync new Aspire web-lead contacts (ContactTypeID 8) to Mailchimp MASTER LIST 2025.
+"""Sync new marketable Aspire contacts to Mailchimp MASTER LIST 2025.
 
 Closes the gap where contacts created in Aspire outside the WhatConverts pipeline
 (manual entry, Microsoft Bookings, builder/realtor outreach, HubSpot sync) never
 reach the Mailchimp audience.
+
+Covers customers (type 6), prospects (type 8) and untyped contacts. Until
+2026-10-02 this queried type 8 alone, so no customer ever reached Mailchimp --
+324 of them were missing when that was measured. Employees, vendors and subs are
+still excluded, as are role/AP inboxes and the municipal domains in
+mailchimp_filters.
 
 Runs daily via GitHub Actions. Stateful: tracks the highest ContactID synced in
 data/aspire-mailchimp-state.json and only queries new contacts each run.
@@ -51,9 +57,15 @@ def service_tag_from_notes(notes):
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db
 
+from mailchimp_filters import normalize_email, suppression_reason
+
 STATE_NAME = "aspire-mailchimp-backfill"
 ASPIRE_API_URL = os.environ.get("ASPIRE_API_URL", "https://cloud-api.youraspire.com")
-CONTACT_TYPE_PROSPECT = 8
+
+# ContactTypeID -> the tag that says where the contact came from. Anything not
+# listed here (7=Employee, 9=Vendor, 10=Sub) is not marketed to.
+TYPE_TAGS = {6: "aspire-customer", 8: "web-lead", None: "aspire-unclassified"}
+
 DRY_RUN = "--dry-run" in sys.argv
 
 
@@ -85,12 +97,19 @@ def aspire_authenticate():
 
 
 def aspire_get_new_contacts(token, last_contact_id, page_size=200):
-    """Return list of contacts with ContactID > last_contact_id, ContactTypeID=8."""
+    """Return contacts with ContactID > last_contact_id.
+
+    Type is filtered client-side in main(). OData comparisons against a null
+    ContactTypeID are unreliable here and untyped contacts are a real group --
+    89 of them were missing from Mailchimp on 2026-10-02 -- so the query stays
+    broad and the filtering stays in Python where it is testable.
+    """
     out = []
     skip = 0
     while True:
-        filt = f"ContactTypeID eq {CONTACT_TYPE_PROSPECT} and ContactID gt {last_contact_id}"
-        select = "ContactID,FirstName,LastName,Email,MobilePhone,Notes"
+        filt = f"ContactID gt {last_contact_id}"
+        select = ("ContactID,ContactTypeID,FirstName,LastName,Email,MobilePhone,"
+                  "Notes,Active")
         query = (
             f"$filter={filt}&$select={select}"
             f"&$orderby=ContactID asc&$top={page_size}&$skip={skip}"
@@ -114,7 +133,8 @@ def aspire_get_new_contacts(token, last_contact_id, page_size=200):
 
 # --- Mailchimp ---
 
-def mailchimp_upsert(email, first_name, last_name, phone, service_tag=None):
+def mailchimp_upsert(email, first_name, last_name, phone, service_tag=None,
+                     type_tag="web-lead"):
     api_key = os.environ.get("MAILCHIMP_API_KEY", "").strip()
     server = os.environ.get("MAILCHIMP_SERVER", "").strip()
     list_id = os.environ.get("MAILCHIMP_LIST_ID", "").strip()
@@ -132,7 +152,7 @@ def mailchimp_upsert(email, first_name, last_name, phone, service_tag=None):
             "LNAME": last_name or "",
             "PHONE": phone or "",
         },
-        "tags": ["web-lead", "aspire-sync"] + ([service_tag] if service_tag else []),
+        "tags": [type_tag, "aspire-sync"] + ([service_tag] if service_tag else []),
     }
     data = json.dumps(payload).encode()
     req = urllib.request.Request(
@@ -188,32 +208,50 @@ def main():
     log(f"Aspire returned {len(contacts)} new contacts")
 
     synced = 0
-    skipped_no_email = 0
+    skipped = {}
     errors = []
     max_id = last_id
 
+    def skip(reason):
+        skipped[reason] = skipped.get(reason, 0) + 1
+
     for c in contacts:
         cid = c.get("ContactID", 0)
+        # The cursor advances past every contact seen, including skipped ones.
+        # Leaving it behind would re-examine employees and AP inboxes forever.
         if cid > max_id:
             max_id = cid
-        email = (c.get("Email") or "").strip()
-        if not email or "@" not in email:
-            skipped_no_email += 1
+
+        ctype = c.get("ContactTypeID")
+        if ctype not in TYPE_TAGS:
+            skip("type-not-marketed")
+            continue
+        if not c.get("Active"):
+            skip("inactive")
+            continue
+
+        email = normalize_email(c.get("Email"))
+        reason = suppression_reason(email)
+        if reason:
+            skip(reason)
             continue
 
         fname = c.get("FirstName") or ""
         lname = c.get("LastName") or ""
         phone = c.get("MobilePhone") or ""
         service_tag = service_tag_from_notes(c.get("Notes") or "")
+        type_tag = TYPE_TAGS[ctype]
 
         if DRY_RUN:
-            log(f"  DRY RUN: would sync ContactID={cid} {email} service={service_tag}")
+            log(f"  DRY RUN: would sync ContactID={cid} {email} "
+                f"type={type_tag} service={service_tag}")
             synced += 1
             continue
 
         try:
-            status = mailchimp_upsert(email, fname, lname, phone, service_tag)
-            log(f"  ContactID={cid} {email} -> {status} (service={service_tag})")
+            status = mailchimp_upsert(email, fname, lname, phone, service_tag, type_tag)
+            log(f"  ContactID={cid} {email} -> {status} "
+                f"(type={type_tag} service={service_tag})")
             synced += 1
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", errors="replace")[:300] if e.fp else ""
@@ -233,7 +271,7 @@ def main():
     summary = {
         "found": len(contacts),
         "synced": synced,
-        "skipped_no_email": skipped_no_email,
+        "skipped": skipped,
         "errors": errors,
         "new_last_contact_id": max_id,
         "dry_run": DRY_RUN,
