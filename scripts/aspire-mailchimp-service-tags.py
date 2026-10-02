@@ -55,14 +55,17 @@ WON_STATUSES = {"Won", "Delivered", "Approved"}
 # the point: Evelin adds a division, the tag appears.
 #
 # Overhead is internal accounting, not work anyone bought.
-IGNORED_DIVISIONS = {"overhead"}
+IGNORED_DIVISIONS = {"overhead", "indirect"}
 
 # Divisions whose customers get a named tag instead of the svc-* default,
 # because an existing campaign segment already depends on that exact name.
-# Matched on a substring of the lowercased division, so "Christmas Lighting",
-# "Christmas Lights" and "Holiday / Christmas" all land on the same tag.
+# Matched on a substring of the lowercased division. The division Evelin
+# actually created on 2026-10-02 is named "Holiday" (DivisionID 19), so both
+# needles map to the same tag -- the Mailchimp tag keeps its original name
+# because the campaign segment already points at it.
 NAMED_DIVISION_TAGS = {
     "christmas": "Christmas_Lighting_Customers",
+    "holiday": "Christmas_Lighting_Customers",
 }
 
 
