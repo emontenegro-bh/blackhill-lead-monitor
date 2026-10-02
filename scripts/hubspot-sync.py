@@ -75,7 +75,6 @@ def assign_owner(lead):
         return pre_assigned
 
     service = normalized_service(lead).lower()
-    message = (lead.get("message", "") or "").lower()
 
     # Christmas lights -> Evelin, matching the two lead monitors.
     #
@@ -90,8 +89,21 @@ def assign_owner(lead):
     if "christmas" in service:
         return OWNER_EVELIN
 
-    # Irrigation -> Denisse
-    if "irrigation" in service or "sprinkler" in service or "irrigation" in message:
+    # Irrigation -> Denisse.
+    #
+    # Route on the service SELECTED, never on words in the message. This line
+    # used to also test `"irrigation" in message`, the same rule removed from
+    # whatconverts-lead-monitor.py on 2026-09-23. People describing a wet yard
+    # mention sprinklers constantly, so drainage enquiries were being pulled to
+    # Denisse regardless of what they chose. Deals created since 2026-09-01 ran
+    # 43 to Denisse against 14 to Evelin.
+    #
+    # Both copies had to change. In practice callers pre-assign and return
+    # above, so this fallback is rarely reached -- which is exactly why the
+    # stale copy survived the first fix and is worth correcting anyway. One
+    # rule living in two files is how the trailing-space 'Phone Call ' bug
+    # happened too: fixed in one place, left wrong in the other.
+    if "irrigation" in service or "sprinkler" in service:
         return OWNER_DENISSE
 
     # Commercial Maintenance -> Evelin
