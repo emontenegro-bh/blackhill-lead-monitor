@@ -1175,6 +1175,12 @@ def detect_service(text):
     """Detect the most likely service interest from text content."""
     text_lower = text.lower()
     service_map = {
+        # Christmas lights must be matched before anything else. "Christmas
+        # Lighting" contains "lighting" and lands on Outdoor Lighting; "christmas
+        # lights install" contains "install" and lands on Landscape Design. Both
+        # were verified wrong against this map on 2026-10-02. Division "Holiday"
+        # was created in Aspire the same day.
+        "Christmas Lights": ["christmas", "xmas", "holiday light"],
         "Lawn Care & Maintenance": ["lawn care", "mowing", "lawn maintenance", "lawn service"],
         "Landscape Design & Installation": ["landscape design", "landscaping", "landscape install"],
         "Sod Installation": ["sod", "new lawn", "sod installation"],

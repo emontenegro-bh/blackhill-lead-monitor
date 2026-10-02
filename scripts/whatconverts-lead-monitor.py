@@ -428,6 +428,12 @@ MIN_CALL_DURATION_SECONDS = 15
 
 # Service detection
 SERVICE_MAP = {
+    # Christmas lights must be matched before anything else. "Christmas
+    # Lighting" contains "lighting" and lands on Outdoor Lighting; "christmas
+    # lights install" contains "install" and lands on Landscape Design. Both
+    # were verified wrong against this map on 2026-10-02. Division "Holiday"
+    # was created in Aspire the same day.
+    "Christmas Lights": ["christmas", "xmas", "holiday light"],
     "Irrigation & Sprinklers": ["irrigation", "sprinkler", "drip system", "water line"],
     "Tree & Shrub Care": ["tree", "shrub", "stump", "trimming", "pruning"],
     "Fertilization & Weed Control": ["fertiliz", "weed", "pre-emergent", "post-emergent", "fert"],
