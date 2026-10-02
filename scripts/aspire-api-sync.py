@@ -377,9 +377,24 @@ def get_lead_source_row(contact_id, config, token):
     return None
 
 
-def set_lead_source(contact_id, value, config, token):
-    """Upsert the Lead Source custom field on a contact. Returns (success, message)."""
+def set_lead_source(contact_id, value, config, token, overwrite=False):
+    """Upsert the Lead Source custom field on a contact. Returns (success, message).
+
+    First attribution wins. A returning customer who calls again about a
+    different service must keep the Lead Source that originally won them --
+    overwriting it rewrites history and destroys the ROI attribution that the
+    WhatConverts cross-reference depends on. Evelin's instruction, 2026-10-02.
+
+    Pass overwrite=True only to correct a value known to be wrong.
+    """
     existing = get_lead_source_row(contact_id, config, token)
+    if existing and not overwrite:
+        current = (existing.get("ColumnValue") or "").strip()
+        if current:
+            if current == value:
+                return True, f"Lead Source already {current!r}"
+            return True, (f"Lead Source preserved as {current!r} "
+                          f"(not overwritten with {value!r})")
     body = {
         "ContactID": int(contact_id),
         "ContactCustomFieldDefinitionID": LEAD_SOURCE_DEFINITION_ID,

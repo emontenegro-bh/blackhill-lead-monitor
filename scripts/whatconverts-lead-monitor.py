@@ -1563,6 +1563,13 @@ def create_hubspot_contact(config, lead):
                 contact_url = response.get("contact_url", "")
                 log(f"  HubSpot: Contact + deal created ({contact_url})")
                 return contact_url or "created", owner_id
+            elif action == "new-service-deal":
+                # Known contact, service they have no deal for. hubspot-sync made
+                # a second deal routed on the NEW service; owner_id is that new
+                # owner, not the one who had them before.
+                log(f"  HubSpot: Existing contact, new service "
+                    f"{response.get('service_interest', '')!r} -> second deal created")
+                return "new-service-deal", owner_id
             elif action == "exists":
                 log(f"  HubSpot: Contact already exists")
                 return "exists", owner_id
@@ -2246,7 +2253,16 @@ def process_leads(config, state):
         add_to_mailchimp(config, lead)
 
         # Check if this is a repeat submission (contact already existed)
-        is_repeat = hubspot_status == "exists" or aspire_url == "exists"
+        #
+        # A known contact enquiring about a NEW service is excluded on purpose.
+        # HubSpot has just created a second deal for it with its own owner, so it
+        # needs the normal owner notification -- the repeat notice names the
+        # ORIGINAL assignee, which is exactly the wrong person for new business.
+        # Aspire still reports "exists" for these (the contact record is reused
+        # and its Lead Source is deliberately preserved), so that alone must not
+        # decide this.
+        new_service_deal = hubspot_status == "new-service-deal"
+        is_repeat = (hubspot_status == "exists" or aspire_url == "exists") and not new_service_deal
 
         if is_repeat:
             # Repeat submission: notify BOTH owners with original assignee info

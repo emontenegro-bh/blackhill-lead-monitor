@@ -15,7 +15,8 @@ Returns JSON to stdout:
   {"success": false, "message": "error details"}
 """
 
-import json, os, sys, urllib.request, urllib.error
+import json
+import re, os, sys, urllib.request, urllib.error
 from datetime import datetime, timezone
 
 CONFIG_FILE = os.path.expanduser("~/.config/hubspot/config.json")
@@ -53,6 +54,55 @@ def get_round_robin_next():
     return owners[next_index]
 
 
+# Values that look like a service but carry no information. The first is the
+# web form's own placeholder: the dropdown's required validation does not stop
+# it being submitted, so it arrives as if the caller had chosen it. Eight
+# Mailchimp contacts carry it as their service tag. Treating it as a real
+# service would route on nonsense and, worse, make every repeat submission look
+# like a new line of business.
+NON_SERVICES = {
+    "",
+    "general inquiry",
+    "general",
+    "n/a",
+    "none",
+    "type of service you need",
+    "what type of service do you need?",
+}
+
+
+def normalized_service(lead):
+    """The lead's service, or "" when nothing meaningful was selected."""
+    service = (lead.get("service_interest") or "").strip()
+    return "" if service.lower() in NON_SERVICES else service
+
+
+# Words that carry no distinguishing meaning in a service name.
+_SERVICE_STOPWORDS = {"and", "services", "service", "solutions", "solution",
+                      "care", "the", "of", "your", "a"}
+
+
+def service_key(service):
+    """Significant words in a service name, for comparing across channels.
+
+    The web form and the Phone Lead Intake form name the same services
+    differently -- "Sprinkler Services" versus "Irrigation & Sprinkler
+    Services", "Drainage Solutions" versus "Drainage & Erosion Solutions".
+    Comparing the raw strings would read a returning customer as new business
+    and open a duplicate deal, which is the exact thing this branch exists to
+    prevent. Comparing significant words instead makes those pairs match while
+    keeping genuinely different services apart.
+    """
+    words = re.split(r"[^a-z0-9]+", (service or "").lower())
+    return {w for w in words if w and w not in _SERVICE_STOPWORDS}
+
+
+def same_service(a, b):
+    """True when two service names refer to the same line of work."""
+    ka, kb = service_key(a), service_key(b)
+    return bool(ka and kb and ka & kb)
+
+
 def assign_owner(lead):
     """Determine deal owner based on service interest.
 
@@ -69,7 +119,7 @@ def assign_owner(lead):
     if pre_assigned:
         return pre_assigned
 
-    service = (lead.get("service_interest", "") or "").lower()
+    service = normalized_service(lead).lower()
 
     # Christmas lights -> Evelin, matching the two lead monitors.
     #
@@ -420,22 +470,70 @@ def process_lead(lead, token, portal_id=None):
     if existing:
             contact_id = existing["id"]
             contact_url = f"https://app-na2.hubspot.com/contacts/{portal_id or ''}/record/0-1/{contact_id}"
-            # Look up existing deal owner
             existing_owner_id = None
+            existing_services = set()
             try:
                 assoc_resp, assoc_status = api_request(
                     "GET", f"/crm/v3/objects/contacts/{contact_id}/associations/deals", None, token
                 )
-                if assoc_status == 200 and assoc_resp.get("results"):
-                    deal_id = assoc_resp["results"][0].get("id")
-                    if deal_id:
-                        deal_resp, deal_status = api_request(
-                            "GET", f"/crm/v3/objects/deals/{deal_id}?properties=hubspot_owner_id", None, token
-                        )
-                        if deal_status == 200:
-                            existing_owner_id = deal_resp.get("properties", {}).get("hubspot_owner_id", "")
+                results = assoc_resp.get("results", []) if assoc_status == 200 else []
+                for idx, assoc in enumerate(results):
+                    deal_id = assoc.get("id") or assoc.get("toObjectId")
+                    if not deal_id:
+                        continue
+                    deal_resp, deal_status = api_request(
+                        "GET",
+                        f"/crm/v3/objects/deals/{deal_id}"
+                        f"?properties=hubspot_owner_id,service_interest",
+                        None, token,
+                    )
+                    if deal_status != 200:
+                        continue
+                    props = deal_resp.get("properties", {})
+                    # The first association stays the "original owner" the repeat
+                    # notification reports, preserving the prior behaviour.
+                    if idx == 0:
+                        existing_owner_id = props.get("hubspot_owner_id", "")
+                    svc = (props.get("service_interest") or "").strip()
+                    if svc:
+                        existing_services.add(svc)
             except Exception:
                 pass
+
+            # A known customer asking about a service they have no deal for is a
+            # second job, not a follow-up on the first. Give it its own deal so it
+            # routes on the NEW service instead of inheriting whoever owned the old
+            # one. Evelin's decision 2026-10-02, after a Christmas lights enquiry
+            # from an existing irrigation customer silently inherited September's
+            # owner and her Christmas routing rule never got to run.
+            #
+            # Deliberately narrow. Same-service re-submissions still return
+            # "exists" and create nothing, which is the duplicate-prevention this
+            # branch was built for. A lead with no usable service (see
+            # NON_SERVICES) also creates nothing -- it carries no evidence that
+            # this is new business.
+            new_service = normalized_service(lead)
+            if new_service and not any(same_service(new_service, svc)
+                                       for svc in existing_services):
+                deal_resp, deal_status, owner_id = create_deal(lead, contact_id, token)
+                if deal_status in (200, 201):
+                    deal_id = deal_resp.get("id")
+                    return {
+                        "success": True,
+                        "action": "new-service-deal",
+                        "contact_id": contact_id,
+                        "contact_url": contact_url,
+                        "deal_id": deal_id,
+                        "deal_url": (f"https://app-na2.hubspot.com/contacts/"
+                                     f"{portal_id or ''}/record/0-3/{deal_id}") if deal_id else None,
+                        "owner_id": owner_id,
+                        "previous_owner_id": existing_owner_id,
+                        "service_interest": new_service,
+                        "message": (f"Existing contact, new service {new_service!r}: "
+                                    f"created a second deal"),
+                    }
+                # Fall through to "exists" rather than dropping the lead.
+
             return {
                 "success": True,
                 "action": "exists",
