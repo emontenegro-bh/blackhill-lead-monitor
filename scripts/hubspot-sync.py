@@ -54,53 +54,8 @@ def get_round_robin_next():
     return owners[next_index]
 
 
-# Values that look like a service but carry no information. The first is the
-# web form's own placeholder: the dropdown's required validation does not stop
-# it being submitted, so it arrives as if the caller had chosen it. Eight
-# Mailchimp contacts carry it as their service tag. Treating it as a real
-# service would route on nonsense and, worse, make every repeat submission look
-# like a new line of business.
-NON_SERVICES = {
-    "",
-    "general inquiry",
-    "general",
-    "n/a",
-    "none",
-    "type of service you need",
-    "what type of service do you need?",
-}
-
-
-def normalized_service(lead):
-    """The lead's service, or "" when nothing meaningful was selected."""
-    service = (lead.get("service_interest") or "").strip()
-    return "" if service.lower() in NON_SERVICES else service
-
-
-# Words that carry no distinguishing meaning in a service name.
-_SERVICE_STOPWORDS = {"and", "services", "service", "solutions", "solution",
-                      "care", "the", "of", "your", "a"}
-
-
-def service_key(service):
-    """Significant words in a service name, for comparing across channels.
-
-    The web form and the Phone Lead Intake form name the same services
-    differently -- "Sprinkler Services" versus "Irrigation & Sprinkler
-    Services", "Drainage Solutions" versus "Drainage & Erosion Solutions".
-    Comparing the raw strings would read a returning customer as new business
-    and open a duplicate deal, which is the exact thing this branch exists to
-    prevent. Comparing significant words instead makes those pairs match while
-    keeping genuinely different services apart.
-    """
-    words = re.split(r"[^a-z0-9]+", (service or "").lower())
-    return {w for w in words if w and w not in _SERVICE_STOPWORDS}
-
-
-def same_service(a, b):
-    """True when two service names refer to the same line of work."""
-    ka, kb = service_key(a), service_key(b)
-    return bool(ka and kb and ka & kb)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from service_names import normalized_service, same_service
 
 
 def assign_owner(lead):

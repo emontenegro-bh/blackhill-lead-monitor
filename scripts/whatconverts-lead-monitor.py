@@ -22,6 +22,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from service_names import is_real_service
 import db
 import lead_source_map
 
@@ -433,7 +434,12 @@ SERVICE_MAP = {
     # lights install" contains "install" and lands on Landscape Design. Both
     # were verified wrong against this map on 2026-10-02. Division "Holiday"
     # was created in Aspire the same day.
-    "Christmas Lights": ["christmas", "xmas", "holiday light"],
+    # "tree lighting" and "roofline" have to be matched as phrases, and here,
+    # because "tree" alone belongs to Tree & Shrub Care further down and would
+    # claim them first. A real enquiry read "Quote on tree lighting" and would
+    # otherwise have been filed as tree work.
+    "Christmas Lights": ["christmas", "xmas", "holiday light", "tree lighting",
+                         "tree lights", "roofline", "roof line", "light display"],
     "Irrigation & Sprinklers": ["irrigation", "sprinkler", "drip system", "water line"],
     "Tree & Shrub Care": ["tree", "shrub", "stump", "trimming", "pruning"],
     "Fertilization & Weed Control": ["fertiliz", "weed", "pre-emergent", "post-emergent", "fert"],
@@ -939,8 +945,16 @@ def _parse_form_lead(lead_data):
     # Service
     service = (fields.get("What Type Of Service Do You Need?", "") or "").strip()
     message_text = (fields.get("Anything else you would like to share?", "") or "").strip()
-    if not service or service.lower() in ("other", "general", ""):
-        service = detect_service(f"{service} {message_text}")
+    if not is_real_service(service):
+        # The dropdown's own prompt is a selectable option with a real value, so
+        # a visitor who never opens it submits "Type Of Service You Need" as
+        # their answer. That is not a service and must not be treated as one --
+        # it routed a Christmas enquiry by round-robin on 2026-10-02.
+        #
+        # The message is read INSTEAD OF the field, not alongside it: feeding
+        # the placeholder back into detect_service() lets its words match
+        # keywords and invent a service nobody chose.
+        service = detect_service(message_text)
 
     # Address
     address = (fields.get("Address", "") or "").strip()
