@@ -1790,6 +1790,7 @@ def assign_lead_owner(lead, state):
     GitHub Actions runs (the prior `~/.config/hubspot/round-robin.json` reset every run).
 
     Rules:
+      - Christmas lights -> Evelin
       - Irrigation/sprinkler -> Denisse
       - Commercial Maintenance -> Evelin
       - Everything else -> round-robin Evelin/Denisse
@@ -1799,6 +1800,17 @@ def assign_lead_owner(lead, state):
     """
     service = (lead.get("service_interest", "") or "").lower()
     message = (lead.get("message", "") or "").lower()
+
+    # Christmas lights go to Evelin only, decided 2026-10-02 while launching the
+    # service. Not a round-robin exception for its own sake: season one has no
+    # install history to quote from, so the pricing judgement sits with her
+    # until the work is routine. Revisit when volume justifies adding Denisse.
+    #
+    # Tested on the SELECTED service, never the message, for the same reason
+    # the sprinkler rule below is. A landscaping enquiry that happens to
+    # mention Christmas lights is still a landscaping lead.
+    if "christmas" in service:
+        return OWNER_EVELIN_HUBSPOT_ID
 
     # Commercial bid requests go to Evelin, and this has to be tested first.
     #
