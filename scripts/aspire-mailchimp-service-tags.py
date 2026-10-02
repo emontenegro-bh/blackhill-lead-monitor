@@ -10,8 +10,16 @@ Purchase history is the better source anyway. This walks won opportunities ->
 property -> property contacts -> email, and tags each contact with the divisions
 on their won work.
 
+Division names are slugged to svc-* automatically, so adding a division in
+Aspire starts tagging on the next run without a code change. NAMED_DIVISION_TAGS
+overrides that for divisions an existing campaign segment already points at by
+name, currently Christmas Lighting.
+
 Tag names are deliberately new (svc-*) rather than the pre-existing
-'irrigation-customer'. A Customer Journey trigger cannot be read through the API,
+'irrigation-customer'. Note that irrigation-customer and irrigation-no-plan are
+maintained by hand from a deliberate start date -- Evelin chose not to backfill
+older irrigation customers into them. They look undercounted against svc-irrigation
+and they are meant to. Do not "fix" them. A Customer Journey trigger cannot be read through the API,
 and journey 9056 (sprinkler drip) may listen on that tag; applying it to 158 new
 people would enrol them and send. A tag that has never existed cannot trigger a
 journey that already does. Merging svc-irrigation into irrigation-customer is a
@@ -25,6 +33,7 @@ import collections
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -41,12 +50,35 @@ HOME = os.path.expanduser("~")
 # Opportunity statuses that mean the customer actually bought the work.
 WON_STATUSES = {"Won", "Delivered", "Approved"}
 
-DIVISION_TAGS = {
-    "Irrigation": "svc-irrigation",
-    "Maintenance": "svc-maintenance",
-    "Landscape": "svc-landscape",
-    "Construction": "svc-construction",
+# Divisions are slugged to svc-<division> rather than listed, so a division
+# added in Aspire starts tagging on the next run with no code change. That is
+# the point: Evelin adds a division, the tag appears.
+#
+# Overhead is internal accounting, not work anyone bought.
+IGNORED_DIVISIONS = {"overhead"}
+
+# Divisions whose customers get a named tag instead of the svc-* default,
+# because an existing campaign segment already depends on that exact name.
+# Matched on a substring of the lowercased division, so "Christmas Lighting",
+# "Christmas Lights" and "Holiday / Christmas" all land on the same tag.
+NAMED_DIVISION_TAGS = {
+    "christmas": "Christmas_Lighting_Customers",
 }
+
+
+def division_tag(division):
+    """Tag name for an Aspire division, or None when it is not marketable."""
+    name = (division or "").strip()
+    if not name:
+        return None
+    lowered = name.lower()
+    if lowered in IGNORED_DIVISIONS:
+        return None
+    for needle, tag in NAMED_DIVISION_TAGS.items():
+        if needle in lowered:
+            return tag
+    slug = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
+    return f"svc-{slug}" if slug else None
 
 
 def log(msg):
@@ -163,7 +195,7 @@ def build_service_map(token):
     for o in opps:
         if o.get("OpportunityStatusName") not in WON_STATUSES:
             continue
-        tag = DIVISION_TAGS.get(o.get("DivisionName"))
+        tag = division_tag(o.get("DivisionName"))
         if not tag:
             continue
         for cid in prop_contacts.get(o.get("PropertyID"), ()):
@@ -235,9 +267,10 @@ def main():
     log(f"verified: {len(work) - len(unverified)}/{len(work)}")
     if unverified:
         log(f"UNVERIFIED ({len(unverified)}): {unverified[:10]}")
+    managed = set(NAMED_DIVISION_TAGS.values())
     final = collections.Counter(t for tags in after.values() for t in tags
-                                if t.startswith("svc-"))
-    log("\nfinal svc-* tag counts:")
+                                if t.startswith("svc-") or t in managed)
+    log("\nfinal service tag counts:")
     for tag, n in final.most_common():
         log(f"  {tag:24s} {n}")
     return 1 if unverified else 0
