@@ -64,3 +64,47 @@ def same_service(a, b):
     """True when two service names refer to the same line of work."""
     ka, kb = service_key(a), service_key(b)
     return bool(ka and kb and ka & kb)
+
+
+# One Mailchimp tag per service, whichever form the lead came through.
+#
+# The web form and the Phone Lead Intake form name the same work differently,
+# and slugging each name produced two tags for one service with no contact in
+# common: sprinkler-services (120) against irrigation-sprinkler-services (26),
+# drainage-solutions (51) against drainage-erosion-solutions (9). Both pairs
+# were merged by hand on 2026-10-02; this is what stops them growing back.
+#
+# Keyed on a significant word, so a new phrasing of the same service lands on
+# the existing tag instead of minting another one. Evelin chose the surviving
+# names: sprinkler over irrigation, because "sprinkler system" is the house
+# wording for residential customers.
+CANONICAL_TAG_BY_WORD = {
+    "sprinkler": "sprinkler-services",
+    "irrigation": "sprinkler-services",
+    "drainage": "drainage-solutions",
+    "erosion": "drainage-solutions",
+    "christmas": "christmas-lights",
+    "xmas": "christmas-lights",
+    "holiday": "christmas-lights",
+    "tree": "tree-care",
+    "shrub": "tree-care",
+    "commercial": "commercial-maintenance",
+    "landscaping": "landscaping",
+    "landscape": "landscaping",
+    "lawn": "lawn-services",
+}
+
+
+def service_tag(service):
+    """The Mailchimp tag for a service name, or "" when there is no service.
+
+    Falls back to a plain slug for a service with no canonical mapping, so a
+    genuinely new line of work still gets tagged rather than silently dropped.
+    """
+    if not is_real_service(service):
+        return ""
+    for word in service_key(service):
+        if word in CANONICAL_TAG_BY_WORD:
+            return CANONICAL_TAG_BY_WORD[word]
+    slug = re.sub(r"[^a-z0-9]+", "-", (service or "").lower()).strip("-")
+    return slug
