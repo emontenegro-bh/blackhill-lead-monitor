@@ -2,7 +2,9 @@ name: Aspire to Mailchimp Sync
 
 on:
   schedule:
-    - cron: '0 12 * * *'  # 6 AM CST / 7 AM CDT daily
+    - cron: '17 12 * * *'  # 6:17 AM CST / 7:17 AM CDT. Off-:00 deliberately:
+                           # GitHub deprioritises exactly-:00 crons and this job
+                           # was landing 3-7 hours late (15:29Z-19:03Z, Sep 25-Oct 2).
   workflow_dispatch: {}
 
 concurrency:

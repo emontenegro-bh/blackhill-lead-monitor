@@ -18,11 +18,12 @@ import re
 # local-part and against its first token, so "accounting", "accounting2" and
 # "accounts.payable" are all caught.
 ROLE_LOCAL_PARTS = {
-    "accounting", "accountspayable", "accountspayable", "accounts", "ap",
-    "admin", "billing", "contact", "help", "hr", "info", "invoice", "invoices",
-    "leasing", "maintenance", "manager", "no-reply", "noreply", "office",
-    "orders", "payables", "property", "receipts", "sales", "service",
-    "support",
+    "accounting", "accounts", "accountspayable", "admin", "ap", "billing",
+    "contact", "frontdesk", "hello", "help", "hoa", "hr", "info", "invoice",
+    "invoices", "leasing", "maintenance", "management", "manager", "no-reply",
+    "noreply", "office", "operations", "orders", "payables", "procurement",
+    "property", "purchasing", "receipts", "reception", "sales", "service",
+    "support", "team", "vendor", "vendors",
 }
 
 # Municipal accounts. Excluded at Evelin's direction 2026-10-02: these are
