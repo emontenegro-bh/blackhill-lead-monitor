@@ -327,9 +327,20 @@ def parse_row(row, cmap):
 # --- Assignment ---
 
 def assign_lead_owner(lead, state):
-    """Irrigation -> Denisse, Commercial Maintenance -> Evelin, else round-robin."""
+    """Christmas -> Evelin, Irrigation -> Denisse, Commercial Maint -> Evelin, else round-robin."""
     service = (lead.get("service_interest", "") or "").lower()
     notes = (lead.get("notes", "") or "").lower()
+
+    # Christmas lights go to Evelin only, decided 2026-10-02 while launching the
+    # service. Not a round-robin exception for its own sake: season one has no
+    # install history to quote from, so the pricing judgement sits with her
+    # until the work is routine. Revisit when volume justifies adding Denisse.
+    #
+    # Tested on the SELECTED service, never the message, for the same reason
+    # the sprinkler rule below is. A landscaping enquiry that happens to
+    # mention Christmas lights is still a landscaping lead.
+    if "christmas" in service:
+        return OWNER_EVELIN_HUBSPOT_ID
     if "irrigation" in service or "sprinkler" in service or "irrigation" in notes:
         return OWNER_DENISSE_HUBSPOT_ID
     if "commercial" in service and "maint" in service:
