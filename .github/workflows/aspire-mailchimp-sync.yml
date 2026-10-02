@@ -15,7 +15,7 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v6
@@ -34,6 +34,21 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python scripts/aspire-mailchimp-backfill.py
+
+      # Service tags come from won opportunities, not from the contact record,
+      # so this runs after the contact sync and re-derives the whole map each
+      # time. It only ever adds missing tags, so re-running is a no-op once
+      # everyone is current. Tags are svc-*; they are deliberately not the
+      # pre-existing irrigation-customer tag, which a Customer Journey may be
+      # triggering on.
+      - name: Tag Mailchimp contacts by purchased service division
+        env:
+          ASPIRE_CLIENT_ID: ${{ secrets.ASPIRE_CLIENT_ID }}
+          ASPIRE_SECRET: ${{ secrets.ASPIRE_SECRET }}
+          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+          MAILCHIMP_SERVER: ${{ secrets.MAILCHIMP_SERVER }}
+          MAILCHIMP_LIST_ID: ${{ secrets.MAILCHIMP_LIST_ID }}
+        run: python scripts/aspire-mailchimp-service-tags.py --live
 
       # The "Persist sync state" step is gone: the cursor lives in Supabase
       # (automation_state, 'aspire-mailchimp-backfill'). Its push loop also
