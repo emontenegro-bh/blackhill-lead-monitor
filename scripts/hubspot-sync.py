@@ -60,6 +60,7 @@ def assign_owner(lead):
     it so Aspire and HubSpot agree on routing. Otherwise fall back to local rules.
 
     Rules:
+      - Christmas lights -> Evelin
       - Irrigation -> Denisse
       - Commercial Maintenance -> Evelin
       - Everything else -> Round robin
@@ -70,6 +71,19 @@ def assign_owner(lead):
 
     service = (lead.get("service_interest", "") or "").lower()
     message = (lead.get("message", "") or "").lower()
+
+    # Christmas lights -> Evelin, matching the two lead monitors.
+    #
+    # This fallback is reached by lead-monitor.py (the sales@ mailbox path),
+    # which unlike whatconverts-lead-monitor.py and phone-lead-monitor.py never
+    # sets _assigned_hubspot_owner_id. Adding the rule to those two on
+    # 2026-10-02 left this path still round-robining Christmas leads to
+    # Denisse, which is how the gap was found.
+    #
+    # Tested on the selected service only, for the same reason given in the
+    # other two monitors.
+    if "christmas" in service:
+        return OWNER_EVELIN
 
     # Irrigation -> Denisse
     if "irrigation" in service or "sprinkler" in service or "irrigation" in message:
