@@ -22,7 +22,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from service_names import is_real_service
+from service_names import is_real_service, service_tag
 import db
 import lead_source_map
 
@@ -1635,11 +1635,12 @@ def add_to_mailchimp(config, lead):
     if lead.get("source") == "phone_call":
         tags = ["phone-lead"]
 
-    # Add service tag if detected
-    service = lead.get("service_interest", "")
-    if service and service != "General Inquiry":
-        service_tag = re.sub(r"[^a-zA-Z0-9\s]", "", service).lower().replace(" ", "-")
-        tags.append(service_tag)
+    # Add service tag if detected. Canonical, not a raw slug: the two intake
+    # forms word the same service differently and slugging each one produced
+    # two tags per service with no contact in common.
+    tag_for_service = service_tag(lead.get("service_interest", ""))
+    if tag_for_service:
+        tags.append(tag_for_service)
 
     payload = {
         "email_address": email,
