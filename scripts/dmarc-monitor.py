@@ -119,9 +119,31 @@ KNOWN_SENDING_DOMAINS = {
 #
 # Matched against the DKIM *and* SPF auth domains in classify(). Lamar signs as
 # lamar0.onmicrosoft.com, so DKIM alone never matched this entry -- see the note
-# there before adding a tenant name here instead of the real domain.
+# there.
+#
+# BOTH Lamar domains are listed, because which one appears depends on the
+# reporter. The 2026-09-30 report carried all three auth domains:
+#
+#     blackhilltx.com, lamar.edu, lamar0.onmicrosoft.com
+#
+# so matching "lamar.edu" alone was enough. Google's 2026-10-02 report for the
+# same forwarding path carried only:
+#
+#     blackhilltx.com, lamar0.onmicrosoft.com
+#
+# with no lamar.edu anywhere in it, so the entry above could not fire and the
+# message alerted as a break on 10-03. Preferring the real domain over the
+# tenant name is right when the reporter gives us both; it is not a substitute
+# for the tenant name when the reporter gives us only that.
+#
+# An exact tenant domain is safe to trust. Microsoft holds the DKIM key for
+# *.onmicrosoft.com, so a passing signature for lamar0.onmicrosoft.com can only
+# have been produced by Lamar's tenant. This is an exact-domain entry, not a
+# wildcard over onmicrosoft.com, which would silence every Microsoft tenant on
+# the internet including a spoofer's.
 KNOWN_FORWARDERS = {
     "lamar.edu",
+    "lamar0.onmicrosoft.com",
 }
 
 
@@ -334,9 +356,12 @@ def classify(records):
         #     DKIM  blackhilltx.com         fail
         #     SPF   lamar.edu               pass
         #
-        # The SPF auth domain is the forwarder itself and is the stable thing to
-        # match on. A tenant name is an implementation detail that changes when
-        # the forwarder reconfigures; the domain in their SPF record does not.
+        # The SPF auth domain is the forwarder itself and is the more stable
+        # thing to match on: a tenant name changes when the forwarder
+        # reconfigures, the domain in their SPF record does not. But it is only
+        # available when the reporter sends it. Google's 2026-10-02 report for
+        # this same path listed lamar0.onmicrosoft.com and no lamar.edu at all,
+        # so KNOWN_FORWARDERS carries both -- see the note there.
         #
         # Only the forwarders we have actually identified are silenced. An
         # unknown third-party signer could just as easily be a spoofer signing
