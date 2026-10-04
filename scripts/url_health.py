@@ -77,8 +77,14 @@ def summarize(destinations, results, inherited=None):
     Returns (problems, url_rows, stats) where problems is the list that should
     raise an alarm and url_rows is one row per distinct URL for the table.
     """
+    # Callers deliberately pass url=None for a keyword with no destination at
+    # all. Those belong in `missing`, not in the URL table: keeping them here
+    # mixed None with the URL strings, which made the sort below raise and took
+    # the whole Landing Page Health section down with it.
     by_url = {}
     for ag, kw, url in destinations:
+        if not url:
+            continue
         by_url.setdefault(url, {"ad_groups": set(), "keywords": []})
         by_url[url]["ad_groups"].add(ag)
         by_url[url]["keywords"].append(kw)
@@ -119,7 +125,7 @@ def summarize(destinations, results, inherited=None):
         if len(urls) < 2:
             continue
         if len({service_slug(u) for u in urls if u}) > 1:
-            split_groups[ag] = sorted(urls)
+            split_groups[ag] = sorted(u for u in urls if u)
 
     missing = [(ag, kw) for ag, kw, url in destinations if not url]
 

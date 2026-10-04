@@ -22,10 +22,10 @@ Two things this report does that the Microsoft UI does not:
 Dual-credential, matching the repo convention: env vars in CI, and
 ~/.config/bing-ads/config.json locally.
 
-RUN THIS IN CI ONLY. Microsoft rotates the refresh token on every redemption,
-so a local run invalidates the copy held in the BING_ADS_REFRESH_TOKEN secret
-and the next scheduled run fails. Use `--dry-run` locally only when you are
-prepared to re-set that secret afterwards.
+Safe to run locally. Microsoft rotates the refresh token on every redemption,
+but `bing_auth` keeps the only copy in Supabase and writes the rotated value
+back immediately, so a local run no longer breaks the next scheduled run. That
+used to be true when the token was split between ~/.config and a GitHub secret.
 
     python3 scripts/bing-weekly-report.py [--dry-run]
 """
@@ -42,6 +42,7 @@ from bingads.v13.reporting import ReportingServiceManager, ReportingDownloadPara
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import url_health
 import db
+import bing_auth
 
 
 # --- Global timeout: kill the process if it runs longer than 12 minutes ---
@@ -102,26 +103,18 @@ else:
     with open(os.path.expanduser("~/.config/bing-ads/config.json")) as f:
         cfg = json.load(f)
 
-if not cfg.get("refresh_token"):
+# The refresh token lives in Supabase, not here. Microsoft rotates it on every
+# redemption, so the old split between ~/.config and the GitHub secret meant a
+# local run silently killed the next CI run. bing_auth redeems and persists the
+# rotated token in one place. See scripts/bing_auth.py.
+try:
+    authorization_data = bing_auth.get_authorization_data()
+except RuntimeError as exc:
     sys.exit(
-        "No refresh_token in the Bing Ads config. Run scripts/get-bing-refresh-token.py "
-        "as a Microsoft identity that is a Super Admin on account "
-        f"{cfg.get('account_id')}, then re-run this report."
+        f"{exc}\nRun scripts/get-bing-refresh-token.py as a Microsoft identity "
+        f"that is a Super Admin on account {cfg.get('account_id')}, then re-run."
     )
-
-authentication = OAuthWebAuthCodeGrant(
-    client_id=cfg["client_id"],
-    client_secret=cfg["client_secret"],
-    redirection_uri=cfg["redirect_uri"],
-)
-authentication.request_oauth_tokens_by_refresh_token(cfg["refresh_token"])
-
-authorization_data = AuthorizationData(
-    account_id=int(cfg["account_id"]),
-    customer_id=int(cfg["customer_id"]),
-    developer_token=cfg["developer_token"],
-    authentication=authentication,
-)
+authentication = authorization_data.authentication
 
 reporting_service = ServiceClient(
     service="ReportingService", version=13,
