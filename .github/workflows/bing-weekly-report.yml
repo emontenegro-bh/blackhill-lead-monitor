@@ -41,13 +41,20 @@ jobs:
           BING_ADS_CLIENT_ID: ${{ secrets.BING_ADS_CLIENT_ID }}
           BING_ADS_CLIENT_SECRET: ${{ secrets.BING_ADS_CLIENT_SECRET }}
           BING_ADS_REFRESH_TOKEN: ${{ secrets.BING_ADS_REFRESH_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           BING_ADS_CUSTOMER_ID: ${{ secrets.BING_ADS_CUSTOMER_ID }}
           BING_ADS_ACCOUNT_ID: ${{ secrets.BING_ADS_ACCOUNT_ID }}
-          # Needed by the once-a-day send guard. Without these the guard falls
-          # back to sending (it fails open on purpose), so a missing secret
-          # costs a duplicate email rather than a missing report.
+          # Needed by the once-a-day send guard, and since 2026-10-03 by
+          # bing_auth.py, which keeps the rotating OAuth refresh token in the
+          # 'bing-ads-oauth' Supabase row. Without these the guard falls back to
+          # sending (it fails open on purpose), so a missing secret costs a
+          # duplicate email rather than a missing report.
+          #
+          # Defined ONCE. Adding a second pair higher up on 2026-10-03 took the
+          # whole workflow offline: GitHub rejects a duplicate key in an env
+          # block outright, so every run died before creating a job and every
+          # dispatch returned 422. PyYAML does not catch this -- safe_load takes
+          # the last value and reports no error -- so parsing the file locally
+          # is not a check that it will run.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           BING_ADS_REDIRECT_URI: ${{ secrets.BING_ADS_REDIRECT_URI }}

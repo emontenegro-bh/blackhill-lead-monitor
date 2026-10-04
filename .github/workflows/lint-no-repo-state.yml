@@ -19,10 +19,11 @@ on:
     branches: [main]
     paths:
       - 'scripts/**.py'
-      - '.github/workflows/lint-no-repo-state.yml'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'scripts/**.py'
+      - '.github/workflows/**'
   workflow_dispatch: {}
 
 concurrency:
@@ -47,6 +48,14 @@ jobs:
       # enough that nobody is tempted to skip it.
       - name: Check for state written into the repo
         run: python scripts/check-no-repo-state.py --list
+
+      # A duplicate key in a workflow's env block took the Bing weekly report
+      # completely offline on 2026-10-03 and nothing noticed until cron-job.org
+      # emailed a 422. The file parses fine locally -- PyYAML keeps the last
+      # value without complaint -- so only GitHub's own parser rejected it, and
+      # the first thing to ask it was the scheduled Sunday run.
+      - name: Check workflow YAML for duplicate keys
+        run: python scripts/check-workflow-yaml.py
 
       # Compiling against 3.11 specifically. Local machines here run 3.14, and
       # a backslash inside an f-string expression is legal there and a
