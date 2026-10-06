@@ -18,7 +18,13 @@ One copy of a fragile string is a gotcha. Two copies is a recurring bug. Import
 these names; do not paste the literals into a caller.
 """
 
-# Verified against GET /ContactCustomFieldDefinitions (definition 34) on 2026-08-25.
+# Verified against GET /ContactCustomFieldDefinitions (definition 34) on 2026-10-06.
+# "Mailchimp" was added to the Aspire picklist by hand some time after the
+# 2026-08-25 check and this module was never updated, so every Mailchimp lead
+# fell through from_whatconverts(), returned None, and was filed as WEBSITE by
+# the caller. Exactly one contact in 420 carried the Mailchimp value, set by
+# hand. The October 2 Christmas campaign made that a live problem: the whole
+# season is email-driven and none of it was being attributed.
 PHONE_CALL = "Phone Call "          # trailing space is real -- do not strip it
 WEBSITE = "Website"
 REFERRAL = "Referral"
@@ -27,10 +33,11 @@ BING_ADS = "Bing Ads"
 GOOGLE_ORGANIC = "Google Organic"
 GOOGLE_ADS = "Google Ads"
 GOOGLE_BUSINESS_PROFILE = "Google Business Profile"
+MAILCHIMP = "Mailchimp"
 POSTCARD_MANIA = "Postcard Mania"
 
 PICKLIST = (PHONE_CALL, WEBSITE, REFERRAL, BING_ORGANIC, BING_ADS, GOOGLE_ORGANIC,
-            GOOGLE_ADS, GOOGLE_BUSINESS_PROFILE, POSTCARD_MANIA)
+            GOOGLE_ADS, GOOGLE_BUSINESS_PROFILE, MAILCHIMP, POSTCARD_MANIA)
 
 # ContactCustomFieldDefinitionID for the Lead Source picklist (looked up 2026-05-13).
 DEFINITION_ID = 34
@@ -116,6 +123,20 @@ def from_whatconverts(lead_source, lead_medium, phone_name=None):
         return BING_ADS
     if src == "bing" and med == "organic":
         return BING_ORGANIC
+    # Mailchimp stamps utm_source=mailchimp&utm_medium=email on every campaign
+    # link, so the source names the sender and is the only thing that does.
+    #
+    # Deliberately NOT "or med == 'email'". An empty or unrecognised source with
+    # medium=email is email traffic from somebody, and Mailchimp is only one
+    # sender: the campaign links, a plain Outlook message, a forwarded link and
+    # an email-signature click all carry medium=email. Writing MAILCHIMP for any
+    # of them invents an attribution, which is the same mistake as resolving a
+    # self-referral or an "All Traffic" call to a guess. Unattributed is correct;
+    # the caller falls back to WEBSITE. Add a sender here only when a picklist
+    # value exists for it and utm_source names it.
+    if src == "mailchimp":
+        return MAILCHIMP
+
     if med == "referral":
         return REFERRAL
     return None
