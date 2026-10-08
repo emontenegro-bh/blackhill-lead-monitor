@@ -1466,13 +1466,20 @@ def create_aspire_contact(config, lead):
 # Users to @mention in the "Leads Alert" Teams channel. A mention the channel
 # can't resolve makes Power Automate's "post card" action fail the whole post,
 # so only known channel members are mentioned; anyone else degrades to plain
-# text. Both lead owners (Evelin, Denisse) are set up on the channel. Add more
-# via the TEAMS_MENTION_EMAILS env var (comma-separated).
+# text. Both lead owners (Evelin, Denisse) are set up on the channel, and
+# Carlos was added 2026-10-08. Add more via the TEAMS_MENTION_EMAILS env var
+# (comma-separated).
 TEAMS_MENTIONABLE = {
     e.strip().lower()
-    for e in ("evelin@blackhilltx.com,denisse@blackhilltx.com," + os.environ.get("TEAMS_MENTION_EMAILS", "")).split(",")
+    for e in ("evelin@blackhilltx.com,denisse@blackhilltx.com,"
+              "branchadmin@blackhilltx.com,"
+              + os.environ.get("TEAMS_MENTION_EMAILS", "")).split(",")
     if e.strip()
 }
+
+# Mentioned on every lead card no matter who owns the lead. Carlos runs intake
+# and needs the push when the lead lands, not when somebody forwards it to him.
+TEAMS_ALWAYS_NOTIFY = [("Carlos", "branchadmin@blackhilltx.com")]
 
 
 def _mention_or_text(name, email):
@@ -1490,34 +1497,81 @@ def _mention_or_text(name, email):
     return name, []
 
 
+def _always_notify_mentions(owner_email=""):
+    """Return (display_text, entities) for the standing notify list.
+
+    Skips whoever already owns the lead, so a card never mentions the same
+    person twice. Returns ("", []) when the list is empty or fully excluded,
+    which the caller treats as "add no extra line".
+    """
+    owner = (owner_email or "").strip().lower()
+    texts, entities = [], []
+    for name, email in TEAMS_ALWAYS_NOTIFY:
+        if email.strip().lower() == owner:
+            continue
+        text, ents = _mention_or_text(name, email)
+        texts.append(text)
+        entities.extend(ents)
+    return ", ".join(texts), entities
+
+
+def _strip_mentions(card):
+    """Return a copy of the card with every @mention flattened to plain text.
+
+    Power Automate fails the whole "post card" action if it cannot resolve a
+    mention, which loses the alert entirely. Falling back to a mention-free
+    card means a stale or non-member address costs the push notification, not
+    the lead.
+    """
+    plain = json.loads(json.dumps(card))  # cheap deep copy; card is pure JSON
+    content = plain["attachments"][0]["content"]
+    content.get("msteams", {}).pop("entities", None)
+    for block in content.get("body", []):
+        if isinstance(block.get("text"), str):
+            block["text"] = re.sub(r"</?at>", "", block["text"])
+    return plain
+
+
 def _post_teams_card(webhook_url, card):
     """POST an adaptive card to the Power Automate webhook, with retry.
 
     Retries transient failures (timeouts, 5xx, 429); does not retry other 4xx
     (a bad payload won't fix itself on retry). On failure raises with the
     server's error body so the real Power Automate reason lands in the logs.
+
+    One 4xx is worth a second try in a different shape: an unresolvable
+    @mention is rejected as a bad payload, and the same card without mentions
+    posts fine. Teams channel membership is not visible from here, so a person
+    leaving the channel would otherwise silently take the alerts down.
     """
-    data = json.dumps(card).encode("utf-8")
+    attempts = [("card", card)]
+    if card["attachments"][0]["content"].get("msteams", {}).get("entities"):
+        attempts.append(("card without @mentions", _strip_mentions(card)))
+
     last_err = "unknown error"
-    for attempt in range(3):
-        try:
-            req = urllib.request.Request(webhook_url, data=data,
-                                         headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                return resp.status
-        except urllib.error.HTTPError as e:
-            body = ""
+    for label, payload in attempts:
+        data = json.dumps(payload).encode("utf-8")
+        for attempt in range(3):
             try:
-                body = e.read().decode("utf-8", "replace")[:500]
-            except Exception:
-                pass
-            last_err = f"HTTP {e.code}: {body}".strip()
-            if not (e.code == 429 or 500 <= e.code < 600):
-                break  # non-retryable client error
-        except Exception as e:
-            last_err = str(e)
-        if attempt < 2:
-            time.sleep(2 * (attempt + 1))
+                req = urllib.request.Request(webhook_url, data=data,
+                                             headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    if label != "card":
+                        log(f"  WARNING: Teams rejected the mentions; posted {label}")
+                    return resp.status
+            except urllib.error.HTTPError as e:
+                body = ""
+                try:
+                    body = e.read().decode("utf-8", "replace")[:500]
+                except Exception:
+                    pass
+                last_err = f"HTTP {e.code}: {body}".strip()
+                if not (e.code == 429 or 500 <= e.code < 600):
+                    break  # non-retryable client error; try the next shape
+            except Exception as e:
+                last_err = str(e)
+            if attempt < 2:
+                time.sleep(2 * (attempt + 1))
     raise RuntimeError(last_err)
 
 
@@ -1543,6 +1597,7 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
 
     # Email leads are always assigned to Evelin; @mention only if a channel member
     mention_text, mention_entities = _mention_or_text("Evelin", "evelin@blackhilltx.com")
+    cc_text, cc_entities = _always_notify_mentions("evelin@blackhilltx.com")
 
     card = {
         "type": "message",
@@ -1566,8 +1621,12 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
                     },
                     {
                         "type": "TextBlock",
-                        "text": f"Assigned to: {mention_text}",
+                        # Mentions only render in a TextBlock, not in a FactSet
+                        # value, so the cc goes on its own line rather than
+                        # becoming another fact.
+                        "text": (f"Assigned to: {mention_text}" + (f"  |  cc: {cc_text}" if cc_text else "")),
                         "weight": "Bolder",
+                        "wrap": True,
                         "spacing": "Small"
                     },
                     {
@@ -1594,7 +1653,7 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
                         "spacing": "Small"
                     }
                 ],
-                "msteams": {"entities": mention_entities}
+                "msteams": {"entities": mention_entities + cc_entities}
             }
         }]
     }
