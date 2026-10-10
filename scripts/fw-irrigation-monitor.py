@@ -462,62 +462,59 @@ def post_card(address, parts, photo_count, dispatch_text, web_link=None):
     ]
 
     card = {
-        "type": "message",
-        "attachments": [{
-            "contentType": "application/vnd.microsoft.card.adaptive",
-            "content": {
-                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                "type": "AdaptiveCard",
-                "version": "1.4",
-                "body": [
-                    {"type": "Container", "style": "emphasis", "items": [{
-                        "type": "TextBlock",
-                        "text": "New FW Irrigation Request",
-                        "weight": "Bolder", "size": "Medium", "color": "Good"}]},
-                    {"type": "TextBlock", "text": address,
-                     "weight": "Bolder", "size": "Large", "wrap": True,
-                     "spacing": "Small"},
-                    {"type": "FactSet", "facts": facts},
-                    {"type": "TextBlock", "text": "**Parts**", "spacing": "Medium"},
-                    {"type": "TextBlock", "text": parts_text, "wrap": True,
-                     "spacing": "Small"},
-                ],
-            },
-        }],
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "body": [
+            {"type": "Container", "style": "emphasis", "items": [{
+                "type": "TextBlock",
+                "text": "New FW Irrigation Request",
+                "weight": "Bolder", "size": "Medium", "color": "Good"}]},
+            {"type": "TextBlock", "text": address,
+             "weight": "Bolder", "size": "Large", "wrap": True,
+             "spacing": "Small"},
+            {"type": "FactSet", "facts": facts},
+            {"type": "TextBlock", "text": "**Parts**", "spacing": "Medium"},
+            {"type": "TextBlock", "text": parts_text, "wrap": True,
+             "spacing": "Small"},
+        ],
     }
     if web_link:
-        card["attachments"][0]["content"]["actions"] = [{
+        card["actions"] = [{
             "type": "Action.OpenUrl",
             "title": "Open email" + (" (photos)" if photo_count else ""),
             "url": web_link,
         }]
-    return _post(card)
+    return _post({"card": card, "replyToId": ""})
 
 
 def post_po_reply(message_id, po_number, address):
     """Thread the PO under its request card. Returns True if it posted."""
-    payload = {
-        "replyToId": message_id,
-        "type": "message",
-        "attachments": [{
-            "contentType": "application/vnd.microsoft.card.adaptive",
-            "content": {
-                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                "type": "AdaptiveCard",
-                "version": "1.4",
-                "body": [{
-                    "type": "TextBlock",
-                    "text": f"**PO #{po_number} issued** - cleared to do the work.",
-                    "wrap": True,
-                }],
-            },
+    card = {
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "body": [{
+            "type": "TextBlock",
+            "text": f"**PO #{po_number} issued** - cleared to do the work.",
+            "wrap": True,
         }],
     }
-    return _post(payload) is not None
+    return _post({"card": card, "replyToId": message_id}) is not None
 
 
 def _post(payload):
     """POST to the flow. Returns the Teams message id when the flow sends one.
+
+    The payload is deliberately flat:
+
+        {"card": {<bare adaptive card>}, "replyToId": "<id or empty>"}
+
+    NOT the {"type": "message", "attachments": [...]} envelope an incoming
+    webhook takes. Power Automate's "Post card in a chat or channel" action
+    wants the bare card, so sending the envelope would make the flow dig the
+    card back out of it. One less thing to get wrong when building the flow
+    by hand.
 
     A flow with no Response action returns an empty 202, which is a success
     for the card and a None for the id. That is handled rather than treated
