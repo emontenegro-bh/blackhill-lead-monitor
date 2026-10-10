@@ -489,18 +489,16 @@ def post_card(address, parts, photo_count, dispatch_text, web_link=None):
 
 
 def post_po_reply(message_id, po_number, address):
-    """Thread the PO under its request card. Returns True if it posted."""
-    card = {
-        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-        "type": "AdaptiveCard",
-        "version": "1.4",
-        "body": [{
-            "type": "TextBlock",
-            "text": f"**PO #{po_number} issued** - cleared to do the work.",
-            "wrap": True,
-        }],
-    }
-    return _post({"card": card, "replyToId": message_id}) is not None
+    """Thread the PO under its request card. Returns True if it posted.
+
+    Sends plain text, not a card. The PO is one sentence, and Power
+    Automate's plain "Reply with a message in a channel" action is a
+    standard part of the Teams connector, whereas replying with an adaptive
+    card is not consistently available. Keeping this to text means the flow
+    can be built entirely from actions that are definitely there.
+    """
+    text = f"<b>PO #{po_number} issued</b> - cleared to do the work."
+    return _post({"text": text, "replyToId": message_id}) is not None
 
 
 def _post(payload):
