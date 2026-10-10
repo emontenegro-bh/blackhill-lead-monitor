@@ -303,17 +303,49 @@ def html_to_text(content):
     return text.strip()
 
 
+# A quoted reply history starts at one of these. Everything below is an
+# older message and says nothing about what THIS email is.
+REPLY_CUT_RE = re.compile(
+    # "From:" ... "@" ANYWHERE on the line. An earlier version required the
+    # address to be the very next token, which only matched the machine
+    # header "From: donotreply@emaximo.com" and missed every human one,
+    # "From: Payne, Alicia <Alicia.Payne@fortworthtexas.gov>".
+    r"^\s*(?:From:\s.*@|-{3,}\s*Original Message|_{10,}\s*$)",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def top_of_message(text):
+    """Return only the newly written part, above any quoted history.
+
+    THIS IS LOAD-BEARING FOR CLASSIFICATION. Fort Worth replies inside the
+    same thread, so a PO email carries the original quote request quoted
+    underneath -- including the words "provide a quote". Classifying on the
+    whole body therefore called every PO email a quote request. Caught on
+    2026-10-10 running --test over 20 days of the live mailbox: six PO and
+    clarification emails came back as [quote], which would have meant the
+    PO note never posted for any job.
+
+    Fixture tests missed it because the fixtures were built from the part
+    of each body worth reading, without the thread history real mail drags
+    along.
+    """
+    m = REPLY_CUT_RE.search(text)
+    return text[:m.start()].strip() if m else text.strip()
+
+
 def classify(text):
     """Return 'quote', 'po' or None.
 
-    Checked in that order. A single email is never both: the quote request
-    carries the Maximo requisition and no financial PO, and the PO email
-    carries the financial PO and never asks for a quote.
+    Takes the TOP of the message only; see top_of_message(). Checked in
+    that order: a quote request carries the Maximo requisition and no
+    financial PO, and a PO email carries the financial PO and does not ask
+    for a quote.
     """
-    low = text.lower()
+    low = top_of_message(text).lower()
     if QUOTE_MARKER in low:
         return "quote"
-    if any(m in low for m in PO_MARKERS) and PO_RE.search(text):
+    if any(m in low for m in PO_MARKERS) and PO_RE.search(low):
         return "po"
     return None
 
@@ -622,7 +654,12 @@ def _post(card):
 
 def handle_quote(msg, text, state):
     subject = msg.get("subject", "")
-    wo = parse_wo(text, subject)
+    # Identity comes from the newly written part. The quoted history below
+    # belongs to older messages in the thread and can name a different job
+    # (see the 2026-10-07 Japonica/Gadsden mixup). Parts are the exception:
+    # they live in the quoted Maximo dispatch, so that uses the full body.
+    top = top_of_message(text)
+    wo = parse_wo(top, subject)
     if not wo:
         log(f"  SKIP: no work order number in '{subject[:60]}'")
         return False
@@ -632,7 +669,7 @@ def handle_quote(msg, text, state):
         log(f"  WO {wo}: already carded, skipping")
         return False
 
-    address = parse_address(text, subject)
+    address = parse_address(top, subject)
     _, dispatch = split_maximo_block(text)
     parts = extract_parts(dispatch)
     photos = count_photos(msg)
@@ -660,8 +697,11 @@ def handle_quote(msg, text, state):
 
 def handle_po(msg, text, state):
     subject = msg.get("subject", "")
-    wo = parse_wo(text, subject)
-    po_match = PO_RE.search(text)
+    # Top only: the quoted history carries the ORIGINAL request, whose
+    # Maximo line would otherwise win over this email's own PO block.
+    top = top_of_message(text)
+    wo = parse_wo(top, subject)
+    po_match = PO_RE.search(top)
     if not wo or not po_match:
         log(f"  SKIP: PO email missing WO# or PO# in '{subject[:60]}'")
         return False
@@ -678,7 +718,7 @@ def handle_po(msg, text, state):
     # request, which is the most reliable form of it. Falling back to the PO
     # body matters because Patricia sometimes sends the PO as a reply on one
     # of our own proposal threads, where the subject is useless.
-    address = (entry or {}).get("address") or parse_po_address(text, subject)
+    address = (entry or {}).get("address") or parse_po_address(top, subject)
 
     log(f"  WO {wo}: PO #{po_number} -> {address}")
     # Same rule as the card: only remember the PO once it is on the channel,
