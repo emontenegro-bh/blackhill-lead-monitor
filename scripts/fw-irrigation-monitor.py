@@ -57,6 +57,22 @@ asked for address and parts only (2026-10-10). The WO# is still parsed and
 stored, because it is the dedupe key and the join between a request and its
 later PO, but it is not displayed.
 
+WHY THE PO IS NOT A THREADED REPLY
+
+It should be, and it is not, for a licensing reason. Replying under a card
+needs that card's Teams message id; the only way to get the id back is Power
+Automate's "Response" action; and Response belongs to the Request connector,
+which is premium. Checked in the tenant on 2026-10-10: the HTTP trigger, the
+HTTP action and Response all carry the premium badge, while the Microsoft
+Teams Webhook trigger and the Teams "post card" action are free. Black Hill
+has no active Premium licence -- the portal shows "Your premium flows are
+turned off" -- so the PO posts as its own one-line message instead.
+
+If a Premium licence is ever bought, the upgrade is: swap the trigger for
+"When an HTTP request is received", add a Response action returning the
+posted message id, store that id per work order, and send it back as
+replyToId. Nothing else here changes.
+
 Usage:
   python scripts/fw-irrigation-monitor.py
   python scripts/fw-irrigation-monitor.py --dry-run   # parse + print, no post
@@ -407,23 +423,33 @@ If no parts are mentioned at all, respond with exactly: NONE"""
         log(f"  WARNING: parts extraction failed ({e}), falling back to raw text")
         return []
 
-    if reply.upper().startswith("NONE"):
+    # NONE anywhere on its own line means no parts. Checked across all lines,
+    # not just the first: when the dispatch is missing (Patricia occasionally
+    # forwards without the Maximo header) the model has answered with a
+    # sentence of explanation and THEN "NONE", and a startswith() check let
+    # that explanation through onto the card as though it were a part.
+    lines = [ln.strip() for ln in reply.splitlines() if ln.strip()]
+    if any(ln.strip(" .").upper() == "NONE" for ln in lines):
         return []
 
-    # Strip bullets and ordered-list markers ONLY. An earlier version used
-    # ^[-*0-9.)\s]+ and silently ate the quantities: "4 feet soaker hose"
-    # became "feet soaker hose" and "8 feet 1\" PVC" became "feet 1\" PVC".
-    # The quantity is the part of the line the proposal actually needs, so a
-    # leading bare number must survive. Only a digit bound to a '.' or ')'
-    # and then whitespace counts as numbering.
     parts = []
-    for line in reply.splitlines():
-        line = line.strip()
+    for line in lines:
+        # Strip bullets and ordered-list markers ONLY. An earlier version
+        # used ^[-*0-9.)\s]+ and silently ate the quantities: "4 feet soaker
+        # hose" became "feet soaker hose". The quantity is the part of the
+        # line the proposal actually needs, so a leading bare number must
+        # survive; only a digit bound to a '.' or ')' counts as numbering.
+        line = re.sub(r"^(?:[-*•]|\d{1,2}[.)])\s+", "", line).strip()
         if not line:
             continue
-        line = re.sub(r"^(?:[-*•]|\d{1,2}[.)])\s+", "", line).strip()
-        if line:
-            parts.append(line)
+        # A part is a short noun phrase. Anything long enough to be a
+        # sentence, or that reads as the model talking to us, is not a part
+        # and must never reach the card.
+        if len(line) > 120:
+            continue
+        if re.match(r"(?i)^(i |i'm|sorry|there (is|are) no|no parts|the (dispatch|message|text)\b|unfortunately)", line):
+            continue
+        parts.append(line)
     return parts
 
 
@@ -485,45 +511,66 @@ def post_card(address, parts, photo_count, dispatch_text, web_link=None):
             "title": "Open email" + (" (photos)" if photo_count else ""),
             "url": web_link,
         }]
-    return _post({"card": card, "replyToId": ""})
+    return _post(card)
 
 
-def post_po_reply(message_id, po_number, address):
-    """Thread the PO under its request card. Returns True if it posted.
+def post_po_note(po_number, address):
+    """Post the PO as its own one-line message. Returns True if it posted.
 
-    Sends plain text, not a card. The PO is one sentence, and Power
-    Automate's plain "Reply with a message in a channel" action is a
-    standard part of the Teams connector, whereas replying with an adaptive
-    card is not consistently available. Keeping this to text means the flow
-    can be built entirely from actions that are definitely there.
+    NOT a reply threaded under the request card, which is what we wanted.
+    Threading needs the posted card's message id, the only way to get that
+    back is Power Automate's "Response" action, and Response belongs to the
+    premium Request connector. Verified in the tenant on 2026-10-10: the
+    HTTP trigger, the HTTP action and Response all carry the premium badge,
+    while the Microsoft Teams Webhook trigger and the Teams "post card"
+    action are free. Black Hill has no active Premium licence, so this is
+    the free shape.
+
+    Kept to a single line so it reads as a status update rather than a
+    second card competing with the request.
     """
-    text = f"<b>PO #{po_number} issued</b> - cleared to do the work."
-    return _post({"text": text, "replyToId": message_id}) is not None
+    card = {
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "body": [{
+            "type": "TextBlock",
+            "text": f"**PO #{po_number} issued** - {address} - cleared to do the work.",
+            "wrap": True,
+        }],
+    }
+    return _post(card) is not False
 
 
-def _post(payload):
-    """POST to the flow. Returns the Teams message id when the flow sends one.
+def _post(card):
+    """POST an adaptive card to the Teams webhook flow.
 
-    The payload is deliberately flat:
+    Takes the bare adaptive card and wraps it in the standard incoming
+    webhook envelope here, so callers only ever build a card.
 
-        {"card": {<bare adaptive card>}, "replyToId": "<id or empty>"}
+    The envelope matters: the free path is a Microsoft Teams Webhook trigger
+    flow, the same kind already behind "Send webhook alerts to Leads Alert",
+    and it expects {"type": "message", "attachments": [...]}. An earlier
+    revision sent a flat {"card": ..., "replyToId": ...} shape for a
+    hand-built flow using the premium HTTP trigger; that design is gone.
 
-    NOT the {"type": "message", "attachments": [...]} envelope an incoming
-    webhook takes. Power Automate's "Post card in a chat or channel" action
-    wants the bare card, so sending the envelope would make the flow dig the
-    card back out of it. One less thing to get wrong when building the flow
-    by hand.
-
-    A flow with no Response action returns an empty 202, which is a success
-    for the card and a None for the id. That is handled rather than treated
-    as an error, so the channel keeps working while the flow is being set up.
+    Returns True on success. The flow answers 202 with an empty body, so
+    there is nothing to read back, and no message id to thread a reply onto.
     """
+    payload = {
+        "type": "message",
+        "attachments": [{
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": card,
+        }],
+    }
+
     if DRY_RUN:
         log("  DRY RUN: would post to Teams")
-        return "dry-run-message-id"
+        return True
     if not TEAMS_WEBHOOK_URL:
         log("  WARNING: FW_TEAMS_WEBHOOK_URL not set, nothing posted")
-        return None
+        return False
 
     data = json.dumps(payload).encode()
     last_err = "unknown error"
@@ -533,16 +580,8 @@ def _post(payload):
                 TEAMS_WEBHOOK_URL, data=data,
                 headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=20) as resp:
-                raw = resp.read().decode("utf-8", "replace").strip()
-            if not raw:
-                return None
-            try:
-                body = json.loads(raw)
-            except ValueError:
-                return None
-            if isinstance(body, dict):
-                return body.get("id") or body.get("messageId") or body.get("message_id")
-            return None
+                log(f"  Teams post OK ({resp.status})")
+                return True
         except urllib.error.HTTPError as e:
             detail = ""
             try:
@@ -579,15 +618,13 @@ def handle_quote(msg, text, state):
     photos = count_photos(msg)
 
     log(f"  WO {wo}: {address} | {photos} photo(s) | parts: {parts or '(none extracted)'}")
-    message_id = post_card(address, parts, photos, dispatch, msg.get("webLink"))
+    post_card(address, parts, photos, dispatch, msg.get("webLink"))
+    # The address is kept so the later PO note can name the job even when the
+    # PO email arrives on a thread whose subject is one of our own proposals.
     cards[wo] = {
         "address": address,
-        "message_id": message_id,
         "carded_at": datetime.now(timezone.utc).isoformat(),
     }
-    if message_id is None:
-        log(f"  WO {wo}: card posted but the flow returned no message id; "
-            f"its PO will post as a separate card")
     return True
 
 
@@ -608,21 +645,15 @@ def handle_po(msg, text, state):
         return False
 
     # The carded address wins: it came off the MAXIMO line on the original
-    # request, which is the most reliable form of it.
+    # request, which is the most reliable form of it. Falling back to the PO
+    # body matters because Patricia sometimes sends the PO as a reply on one
+    # of our own proposal threads, where the subject is useless.
     address = (entry or {}).get("address") or parse_po_address(text, subject)
-    parent = (entry or {}).get("message_id")
 
-    if parent:
-        log(f"  WO {wo}: PO #{po_number} -> reply on existing card")
-        post_po_reply(parent, po_number, address)
-    else:
-        # Either the request predates this monitor or the flow gave us no
-        # message id. Post standalone rather than drop the PO on the floor.
-        log(f"  WO {wo}: PO #{po_number} with no parent card, posting standalone")
-        post_card(address, [f"PO #{po_number} issued - cleared to do the work."],
-                  0, "")
+    log(f"  WO {wo}: PO #{po_number} -> {address}")
+    post_po_note(po_number, address)
 
-    entry = entry or {"address": address, "message_id": None}
+    entry = entry or {"address": address}
     entry["pos"] = sorted(seen_pos | {po_number})
     cards[wo] = entry
     return True

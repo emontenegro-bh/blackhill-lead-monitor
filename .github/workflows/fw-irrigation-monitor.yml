@@ -59,11 +59,11 @@ jobs:
           # Pulls the parts list out of the quoted Maximo dispatch. Without
           # it the card still posts, showing the raw dispatch text instead.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          # Power Automate flow for the FW Irrigation channel. The flow must
-          # be "When an HTTP request is received" -> "Post card in a chat or
-          # channel" -> "Response", with the posted message's id in the
-          # response body. Without the Response action the cards still post
-          # but every PO lands as its own card instead of a reply.
+          # Power Automate flow for the FW Irrigation channel: a Microsoft
+          # Teams Webhook trigger posting the adaptive card, the same free
+          # shape as the existing "Send webhook alerts to Leads Alert" flow.
+          # Threading the PO under its request card would need the premium
+          # Request connector; see the note in fw-irrigation-monitor.py.
           FW_TEAMS_WEBHOOK_URL: ${{ secrets.FW_TEAMS_WEBHOOK_URL }}
         run: |
           FLAG=""
