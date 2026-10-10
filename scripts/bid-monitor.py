@@ -137,6 +137,52 @@ def fetch(url, **kwargs):
     return r
 
 
+def firecrawl_html(url):
+    """Fetch a page's raw HTML through Firecrawl's proxy.
+
+    Separate from scrape_firecrawl(), which turns a page into items by reading
+    markdown links. This returns HTML so an existing BeautifulSoup scraper can
+    keep its own parsing and filtering rules unchanged.
+    """
+    if not FIRECRAWL_KEY:
+        raise RuntimeError("FIRECRAWL_API_KEY not set — cannot proxy")
+    r = requests.post(
+        "https://api.firecrawl.dev/v1/scrape",
+        json={"url": url, "formats": ["rawHtml"], "onlyMainContent": False},
+        headers={"Authorization": f"Bearer {FIRECRAWL_KEY}", "Content-Type": "application/json"},
+        timeout=90,
+    )
+    r.raise_for_status()
+    html = ((r.json().get("data") or {}).get("rawHtml")) or ""
+    if not html:
+        raise RuntimeError("firecrawl returned empty html")
+    return html
+
+
+def fetch_html(url, **kwargs):
+    """fetch() a page, falling back to the Firecrawl proxy when a WAF blocks us.
+
+    Saginaw began returning 403 to the Actions runner on 2026-10-06 while
+    serving the identical page to a laptop, so it is the datacenter IP range
+    being blocked, not the request shape — the full Chrome header set in
+    HEADERS makes no difference. Three consecutive failures tripped the
+    broken-source alert on 2026-10-08.
+
+    Retrying through Firecrawl keeps the scraper, its item ids and its
+    CLOSED-- filter exactly as they were, which moving the source into
+    FIRECRAWL_SITES would not: that path builds ids from a different prefix,
+    so every historical posting would resurface as new.
+    """
+    try:
+        return fetch(url, **kwargs).text
+    except requests.HTTPError as e:
+        code = getattr(e.response, "status_code", 0)
+        if code not in (403, 406, 429, 503):
+            raise
+        log(f"  {url}: HTTP {code} direct, retrying through Firecrawl")
+        return firecrawl_html(url)
+
+
 def make_item(source, agency, bid_id, title, close="", url="", ref=""):
     return {
         "id": f"{source}:{bid_id}",
@@ -347,8 +393,7 @@ def scrape_publicpurchase(agency, url):
 # Saginaw bids mowing/grounds contracts directly here (annual ~Feb-Mar cycle).
 def scrape_saginaw():
     url = "https://www.ci.saginaw.tx.us/government/bid_opportunities.php"
-    r = fetch(url)
-    soup = BeautifulSoup(r.text, "html.parser")
+    soup = BeautifulSoup(fetch_html(url), "html.parser")
     items = []
     for a in soup.find_all("a", href=True):
         title = a.get_text(" ", strip=True)
