@@ -456,13 +456,16 @@ If no parts are mentioned at all, respond with exactly: NONE"""
 # ------------------------------------------------------------ Teams ---
 
 def post_card(address, parts, photo_count, dispatch_text, web_link=None):
-    """Post the request card. Returns the Teams message id, or None.
+    """Post the request card. Returns True once it is on the channel.
 
-    The flow behind FW_TEAMS_WEBHOOK_URL must answer with the posted
-    message's id (Power Automate: "When an HTTP request is received" ->
-    "Post card in a chat or channel" -> "Response"). Without it the card
-    still posts, but the PO can never be threaded underneath and will land
-    as its own card instead.
+    Layout follows the Leads Alert card: an emphasis header reading
+    "New Lead: <address>", then the detail. The channel is already called
+    FW Irrigation Leads, so a header repeating "FW Irrigation Request" and a
+    separate Address row below it both said what the reader already knew.
+    The address IS the headline for this kind of job (Evelin, 2026-10-10).
+
+    Order is parts first, photos last: parts are what the proposal needs,
+    the photo line is a reminder to act rather than something to read.
     """
     if parts:
         parts_text = "\n\n".join(f"- {p}" for p in parts)
@@ -474,18 +477,15 @@ def post_card(address, parts, photo_count, dispatch_text, web_link=None):
     # Photos cannot be embedded: Teams caps an Adaptive Card payload at 28 KB
     # and these attachments run 0.6-4.9 MB each, so a data: URI is off by two
     # orders of magnitude. Card images must come from an anonymously
-    # reachable HTTPS URL, which rules out SharePoint and OneDrive too.
-    # The count plus a deep link to the message is the usable version: it
-    # says whether there is anything to attach to the Aspire opportunity and
+    # reachable HTTPS URL, which rules out SharePoint and OneDrive too. The
+    # count plus the Open email button below is the usable version: it says
+    # whether there is anything to attach to the Aspire opportunity, and
     # opens the exact email in one tap.
     if photo_count:
-        photo_value = f"{photo_count} attached - add to the Aspire opportunity"
+        photo_text = (f"**{photo_count} photo{'s' if photo_count != 1 else ''} "
+                      f"attached** - add to the Aspire opportunity")
     else:
-        photo_value = "None"
-    facts = [
-        {"title": "Address", "value": address},
-        {"title": "Photos", "value": photo_value},
-    ]
+        photo_text = "_No photos attached._"
 
     card = {
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -494,15 +494,14 @@ def post_card(address, parts, photo_count, dispatch_text, web_link=None):
         "body": [
             {"type": "Container", "style": "emphasis", "items": [{
                 "type": "TextBlock",
-                "text": "New FW Irrigation Request",
-                "weight": "Bolder", "size": "Medium", "color": "Good"}]},
-            {"type": "TextBlock", "text": address,
-             "weight": "Bolder", "size": "Large", "wrap": True,
-             "spacing": "Small"},
-            {"type": "FactSet", "facts": facts},
+                "text": f"New Lead: {address}",
+                "weight": "Bolder", "size": "Medium", "color": "Good",
+                "wrap": True}]},
             {"type": "TextBlock", "text": "**Parts**", "spacing": "Medium"},
             {"type": "TextBlock", "text": parts_text, "wrap": True,
              "spacing": "Small"},
+            {"type": "TextBlock", "text": photo_text, "wrap": True,
+             "size": "Small", "spacing": "Medium"},
         ],
     }
     if web_link:
