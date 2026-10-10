@@ -305,12 +305,17 @@ def html_to_text(content):
 
 # A quoted reply history starts at one of these. Everything below is an
 # older message and says nothing about what THIS email is.
+# What actually marks the start of a quoted Outlook reply is a "From:" line
+# immediately followed by "Sent:" (or "Date:"), NOT an email address. Two
+# earlier versions keyed on the address and both failed on live mail:
+# Outlook frequently writes the header as a bare "From: Payne, Alicia" with
+# the address only on the To: line below, so nothing was ever cut and every
+# PO email still read as a quote request.
 REPLY_CUT_RE = re.compile(
-    # "From:" ... "@" ANYWHERE on the line. An earlier version required the
-    # address to be the very next token, which only matched the machine
-    # header "From: donotreply@emaximo.com" and missed every human one,
-    # "From: Payne, Alicia <Alicia.Payne@fortworthtexas.gov>".
-    r"^\s*(?:From:\s.*@|-{3,}\s*Original Message|_{10,}\s*$)",
+    r"^[ \t]*From:[ \t].*\n[ \t]*(?:Sent|Date):[ \t]"   # Outlook header block
+    r"|^[ \t]*From:[ \t].*@"                            # From line with an address
+    r"|^[ \t]*-{3,}[ \t]*Original Message"
+    r"|^[ \t]*_{10,}[ \t]*$",
     re.IGNORECASE | re.MULTILINE,
 )
 
