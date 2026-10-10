@@ -150,7 +150,11 @@ MAXIMO_RE = re.compile(
     r"[-–—\s]+"                       # separator
     r"(?P<address>.+?)\s*"                      # 7704 SHORTHORN WAY
     r"[-–—\s]+"
-    r"(?:WO|Work\s*Order)\s*#?\s*:?\s*(?P<wo>\d{2}-\d{5,6})",
+    # The "WO#" label is OPTIONAL. Patricia writes the line without it --
+    # "MAXIMO P.O.#: 6A-80115   1280 HWY 114 RD   26-93844" -- which used to
+    # fail the whole match, so the address fell back to the subject and came
+    # out as "1280 HWY 114 RD 641M" with the grid reference attached.
+    r"(?:(?:WO|Work\s*Order)\s*#?\s*:?\s*)?(?P<wo>\d{2}-\d{5,6})",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -389,6 +393,11 @@ def parse_address(text, subject):
     s = re.sub(r"\b(work\s*order|WO)\s*#?\s*:?\s*\d{2}-\d{5,6}", " ", s, flags=re.IGNORECASE)
     s = re.sub(r"(?i)\b(routine plumber( request)?|rtn plumber( req)?|need(ed)?|emg plumber( rqt)?|plumber)\b", " ", s)
     s = re.sub(r"\(\w{1,5}\)", " ", s)           # grid refs like (640R)
+    # The same reference sometimes appears bare at the end of the subject:
+    # "... @1280 HWY 114 RD 641M". Only stripped on this subject-derived
+    # path, never from a MAXIMO line, and only at the end, so a genuine
+    # unit number mid-address is untouched.
+    s = re.sub(r"\s+\d{1,3}[A-Za-z]\s*$", "", s)
     s = re.sub(r"\*[^*]*\*", " ", s)             # "*Pic Attached*"
     s = s.strip(" -–@/").strip()
     s = re.sub(r"^(at|@)\s+", "", s, flags=re.IGNORECASE)
