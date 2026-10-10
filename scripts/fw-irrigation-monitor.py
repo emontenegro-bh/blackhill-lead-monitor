@@ -112,8 +112,29 @@ SENDER_DOMAIN = "fortworthtexas.gov"
 # window is enormous overlap on purpose: a run that fails or a GitHub Actions
 # outage must not lose a job permanently, and db.is_processed() makes
 # re-reading the same message free.
-LOOKBACK_MINUTES = int(os.environ.get("FW_LOOKBACK_MINUTES", "1440"))
-MAX_MESSAGES = int(os.environ.get("FW_MAX_MESSAGES", "100"))
+def _int_env(name, default):
+    """int() an env var, treating blank or junk as unset.
+
+    An unfilled workflow_dispatch input arrives as an EMPTY STRING, not as
+    an absent variable, so os.environ.get(name, default) returns "" and
+    int("") raises. That would fail the run before it read a single email,
+    for the sake of an optional box nobody typed in.
+    """
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        # print(), not log(): this runs at import time, before log() is
+        # defined further down the module.
+        print(f"WARNING: {name}={raw!r} is not a number, using {default}",
+              flush=True)
+        return default
+
+
+LOOKBACK_MINUTES = _int_env("FW_LOOKBACK_MINUTES", 1440)
+MAX_MESSAGES = _int_env("FW_MAX_MESSAGES", 100)
 
 # Work orders are "26-105267": a two-digit fiscal year, a dash, five or six
 # digits. Seen as "WO# 26-105267", "WO#26-106087", "WO # 26-91610",

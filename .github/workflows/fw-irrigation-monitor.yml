@@ -22,6 +22,10 @@ on:
         description: 'normal | dry-run (parse and print, post nothing) | test (mailbox access only)'
         required: false
         default: 'normal'
+      lookback_minutes:
+        description: 'How far back to read. Blank uses the 1440-minute default. Raise it to replay a backlog after an outage; dedupe on the work order number makes that safe.'
+        required: false
+        default: ''
 
 concurrency:
   group: fw-irrigation-monitor
@@ -65,6 +69,8 @@ jobs:
           # Threading the PO under its request card would need the premium
           # Request connector; see the note in fw-irrigation-monitor.py.
           FW_TEAMS_WEBHOOK_URL: ${{ secrets.FW_TEAMS_WEBHOOK_URL }}
+          # Blank falls through to the script's own 1440-minute default.
+          FW_LOOKBACK_MINUTES: ${{ github.event.inputs.lookback_minutes }}
         run: |
           FLAG=""
           case "${{ github.event.inputs.mode }}" in
