@@ -618,7 +618,17 @@ def handle_quote(msg, text, state):
     photos = count_photos(msg)
 
     log(f"  WO {wo}: {address} | {photos} photo(s) | parts: {parts or '(none extracted)'}")
-    post_card(address, parts, photos, dispatch, msg.get("webLink"))
+
+    # Record the work order ONLY once the card is actually on the channel.
+    # Recording it regardless looks harmless and is not: with the webhook
+    # secret missing, _post returns False without raising, the job would be
+    # marked as carded, and it would then be skipped forever once the secret
+    # was added. The card would never appear and nothing would say so.
+    if not post_card(address, parts, photos, dispatch, msg.get("webLink")):
+        log(f"  WO {wo}: card did NOT post, leaving unrecorded so the next "
+            f"run retries it")
+        return False
+
     # The address is kept so the later PO note can name the job even when the
     # PO email arrives on a thread whose subject is one of our own proposals.
     cards[wo] = {
@@ -651,7 +661,11 @@ def handle_po(msg, text, state):
     address = (entry or {}).get("address") or parse_po_address(text, subject)
 
     log(f"  WO {wo}: PO #{po_number} -> {address}")
-    post_po_note(po_number, address)
+    # Same rule as the card: only remember the PO once it is on the channel,
+    # so a failed post is retried instead of silently swallowed.
+    if not post_po_note(po_number, address):
+        log(f"  WO {wo}: PO #{po_number} did NOT post, leaving unrecorded")
+        return False
 
     entry = entry or {"address": address}
     entry["pos"] = sorted(seen_pos | {po_number})
