@@ -1,0 +1,84 @@
+name: FW Irrigation Monitor
+
+# Fort Worth Water sends irrigation quote requests to the
+# irrigation@blackhilltx.com shared mailbox. This posts one Teams card per
+# work order and threads the PO underneath when it arrives.
+#
+# Business hours only, weekdays. Fort Worth's Field Operations Division sends
+# between about 8am and 3pm Central; of the 13 requests in the mailbox's
+# first ten days, every one landed inside that window and nine arrived in a
+# single Tuesday afternoon. A request that does come in overnight is not
+# lost: the script looks back 24 hours and dedupes on the work order number,
+# so the first morning run picks it up.
+#
+# Off-:00 minutes because GitHub silently drops exactly-:00 crons.
+
+on:
+  schedule:
+    - cron: '7,22,37,52 11-23 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'normal | dry-run (parse and print, post nothing) | test (mailbox access only)'
+        required: false
+        default: 'normal'
+
+concurrency:
+  group: fw-irrigation-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install msal
+
+      - name: Scan the irrigation mailbox
+        env:
+          # Graph app credentials, shared with lead-monitor.py.
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          # State lives in Supabase, never in the repo: the work-order to
+          # Teams-message-id map is what lets a PO thread under its request
+          # card. See check-no-repo-state.py.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          # Pulls the parts list out of the quoted Maximo dispatch. Without
+          # it the card still posts, showing the raw dispatch text instead.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Power Automate flow for the FW Irrigation channel: a Microsoft
+          # Teams Webhook trigger posting the adaptive card, the same free
+          # shape as the existing "Send webhook alerts to Leads Alert" flow.
+          # Threading the PO under its request card would need the premium
+          # Request connector; see the note in fw-irrigation-monitor.py.
+          FW_TEAMS_WEBHOOK_URL: ${{ secrets.FW_TEAMS_WEBHOOK_URL }}
+        run: |
+          FLAG=""
+          case "${{ github.event.inputs.mode }}" in
+            dry-run) FLAG="--dry-run" ;;
+            test)    FLAG="--test" ;;
+          esac
+          python scripts/fw-irrigation-monitor.py $FLAG
+
+  notify-failure:
+    needs: [monitor]
+    # `|| cancelled()` because a job killed by timeout-minutes concludes
+    # `cancelled`, not `failure`, and plain `if: failure()` cannot see it.
+    if: failure() || cancelled()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "FW Irrigation Monitor"
+    secrets: inherit
