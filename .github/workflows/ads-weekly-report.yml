@@ -19,7 +19,38 @@ permissions:
   contents: write
 
 jobs:
+  # This workflow now has two triggers: its own GitHub cron (first chance) and a
+  # workflow_dispatch fired by the Bing report, which cron-job.org drives
+  # reliably. Either may fire on a Sunday, and the report script has no
+  # same-day send guard of its own, so without this the owner gets two
+  # identical emails. Check the run history instead of persisting state.
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      already_sent: ${{ steps.check.outputs.already_sent }}
+    steps:
+      - name: Has this workflow already succeeded today?
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          # Count successful runs of THIS workflow that started today (UTC),
+          # excluding the current one.
+          COUNT=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/ads-weekly-report.yml/runs?status=success&created=>=${TODAY}" \
+            --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }})] | length")
+          echo "Successful runs already today: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            echo "already_sent=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_sent=false" >> "$GITHUB_OUTPUT"
+          fi
+
   report:
+    needs: [guard]
+    if: needs.guard.outputs.already_sent != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
