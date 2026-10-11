@@ -41,22 +41,10 @@ jobs:
           BING_ADS_CLIENT_ID: ${{ secrets.BING_ADS_CLIENT_ID }}
           BING_ADS_CLIENT_SECRET: ${{ secrets.BING_ADS_CLIENT_SECRET }}
           BING_ADS_REFRESH_TOKEN: ${{ secrets.BING_ADS_REFRESH_TOKEN }}
-          BING_ADS_CUSTOMER_ID: ${{ secrets.BING_ADS_CUSTOMER_ID }}
-          BING_ADS_ACCOUNT_ID: ${{ secrets.BING_ADS_ACCOUNT_ID }}
-          # Needed by the once-a-day send guard, and since 2026-10-03 by
-          # bing_auth.py, which keeps the rotating OAuth refresh token in the
-          # 'bing-ads-oauth' Supabase row. Without these the guard falls back to
-          # sending (it fails open on purpose), so a missing secret costs a
-          # duplicate email rather than a missing report.
-          #
-          # Defined ONCE. Adding a second pair higher up on 2026-10-03 took the
-          # whole workflow offline: GitHub rejects a duplicate key in an env
-          # block outright, so every run died before creating a job and every
-          # dispatch returned 422. PyYAML does not catch this -- safe_load takes
-          # the last value and reports no error -- so parsing the file locally
-          # is not a check that it will run.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BING_ADS_CUSTOMER_ID: ${{ secrets.BING_ADS_CUSTOMER_ID }}
+          BING_ADS_ACCOUNT_ID: ${{ secrets.BING_ADS_ACCOUNT_ID }}
           BING_ADS_REDIRECT_URI: ${{ secrets.BING_ADS_REDIRECT_URI }}
           ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
           ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
@@ -90,6 +78,27 @@ jobs:
           done
           echo "ERROR: could not push after 5 attempts."
           exit 1
+
+  # The Google Ads report has only a GitHub `schedule` cron, and GitHub drops
+  # those routinely. It silently skipped 2026-10-11 while this workflow ran
+  # fine, because cron-job.org dispatches this one. Piggy-backing the Google
+  # report on that same reliable dispatch is cheaper than standing up a second
+  # external cron job. Runs even if the Bing report itself failed, since the two
+  # reports are independent. The Google workflow has its own same-day guard, so
+  # a double fire with its native cron sends one email, not two.
+  dispatch-google-report:
+    needs: [report]
+    if: always() && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Dispatch the Weekly Google Ads Report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ads-weekly-report.yml --ref main
 
   notify-failure:
     needs: [report]

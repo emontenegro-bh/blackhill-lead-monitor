@@ -1,0 +1,73 @@
+name: Christmas Ads Waste Alert
+
+on:
+  schedule:
+    # 7:12 AM Central reporting yesterday. Running the morning after rather than
+    # late the same evening means both platforms have settled their numbers, so
+    # the alert is complete rather than fast and wrong. Off-:00 because GitHub
+    # drops exactly-:00 crons.
+    - cron: '12 12 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'normal | dry-run (build the alert, send no email)'
+        required: false
+        default: 'normal'
+      date:
+        description: 'Day to check, YYYY-MM-DD. Defaults to yesterday.'
+        required: false
+
+concurrency:
+  group: xmas-waste-alert
+  cancel-in-progress: false
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-ads bingads
+
+      - name: Check Christmas campaign search terms
+        env:
+          GOOGLE_ADS_DEVELOPER_TOKEN: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
+          GOOGLE_ADS_CLIENT_ID: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_CLIENT_SECRET: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          GOOGLE_ADS_REFRESH_TOKEN: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+          GOOGLE_ADS_LOGIN_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
+          GOOGLE_ADS_CUSTOMER_ID: ${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
+          BING_ADS_DEVELOPER_TOKEN: ${{ secrets.BING_ADS_DEVELOPER_TOKEN }}
+          BING_ADS_CLIENT_ID: ${{ secrets.BING_ADS_CLIENT_ID }}
+          BING_ADS_CLIENT_SECRET: ${{ secrets.BING_ADS_CLIENT_SECRET }}
+          BING_ADS_REFRESH_TOKEN: ${{ secrets.BING_ADS_REFRESH_TOKEN }}
+          BING_ADS_CUSTOMER_ID: ${{ secrets.BING_ADS_CUSTOMER_ID }}
+          BING_ADS_ACCOUNT_ID: ${{ secrets.BING_ADS_ACCOUNT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.mode }}" = "dry-run" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            ARGS="$ARGS --date=${{ github.event.inputs.date }}"
+          fi
+          python3 scripts/xmas-waste-alert.py $ARGS
+
+  notify-failure:
+    needs: [alert]
+    if: failure() || cancelled()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "Christmas Ads Waste Alert"
+    secrets: inherit
