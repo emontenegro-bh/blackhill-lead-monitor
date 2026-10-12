@@ -768,14 +768,31 @@ def main():
     messages = fetch_recent(token)
     log(f"{len(messages)} message(s) in the last {LOOKBACK_MINUTES} minutes")
 
-    quotes = pos = 0
-    for msg in messages:
-        sender = ((msg.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
-        if not sender.endswith(SENDER_DOMAIN):
-            continue
+    # Only Fort Worth sends work here; everything else in the mailbox is us
+    # talking in the thread.
+    from_fw = [m for m in messages
+               if ((m.get("from") or {}).get("emailAddress") or {})
+               .get("address", "").lower().endswith(SENDER_DOMAIN)]
 
+    # ONE database round trip for the whole batch, not one per message.
+    # The lookback is 24 hours and the cadence is every couple of minutes,
+    # so the same dozen messages are re-read all day: per-message
+    # db.is_processed() calls meant roughly 4,000 queries a day to learn
+    # nothing. filter_unprocessed() answers the same question in one.
+    if DRY_RUN:
+        todo_ids = {m.get("id", "") for m in from_fw}
+    else:
+        todo_ids = set(db.filter_unprocessed(
+            SCRIPT_NAME, [m.get("id", "") for m in from_fw if m.get("id")]))
+
+    skipped = len(from_fw) - len(todo_ids)
+    if skipped:
+        log(f"{skipped} already processed, {len(todo_ids)} new")
+
+    quotes = pos = 0
+    for msg in from_fw:
         msg_id = msg.get("id", "")
-        if not DRY_RUN and db.is_processed(SCRIPT_NAME, msg_id):
+        if msg_id not in todo_ids:
             continue
 
         text = html_to_text(msg.get("body", {}).get("content", ""))

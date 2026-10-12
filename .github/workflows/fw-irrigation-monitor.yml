@@ -4,18 +4,29 @@ name: FW Irrigation Monitor
 # irrigation@blackhilltx.com shared mailbox. This posts one Teams card per
 # work order and threads the PO underneath when it arrives.
 #
-# Business hours only, weekdays. Fort Worth's Field Operations Division sends
-# between about 8am and 3pm Central; of the 13 requests in the mailbox's
-# first ten days, every one landed inside that window and nine arrived in a
-# single Tuesday afternoon. A request that does come in overnight is not
-# lost: the script looks back 24 hours and dedupes on the work order number,
-# so the first morning run picks it up.
+# THE REAL CADENCE COMES FROM cron-job.org, NOT FROM THE CRON BELOW.
+#
+# GitHub delivers scheduled workflows best-effort and drops them under load;
+# this repo measured 98 workflow_dispatch runs against 2 schedule runs in
+# one window. This workflow shipped on the native cron and proved the point
+# the hard way: between 2026-10-10 and 2026-10-12 not one scheduled slot
+# fired, and six Fort Worth quote requests sat unannounced until a manual
+# dispatch picked them up. Same pattern as phone-lead-monitor.yml.
+#
+# The cron below is a BACKSTOP only, deliberately slower than the external
+# dispatcher so the two do not race. The 24-hour lookback plus work-order
+# dedupe means a backstop run after a dispatcher outage catches up rather
+# than duplicating.
+#
+# Business hours, weekdays. Fort Worth's Field Operations Division sends
+# between about 8am and 3pm Central. A request arriving overnight is not
+# lost: the lookback covers it on the first morning run.
 #
 # Off-:00 minutes because GitHub silently drops exactly-:00 crons.
 
 on:
   schedule:
-    - cron: '7,22,37,52 11-23 * * 1-5'
+    - cron: '13,43 11-23 * * 1-5'
   workflow_dispatch:
     inputs:
       mode:
