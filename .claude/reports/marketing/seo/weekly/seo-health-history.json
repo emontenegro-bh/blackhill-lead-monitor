@@ -2020,5 +2020,83 @@
       "website_clicks": 7,
       "direction_requests": 7
     }
+  },
+  {
+    "date": "2026-10-12",
+    "date_range": "2026-10-03 to 2026-10-09",
+    "gsc": {
+      "impressions": 5505,
+      "clicks": 34,
+      "ctr": 0.62,
+      "avg_position": 14.0
+    },
+    "priority_keywords": [
+      {
+        "query": "arlington commercial landscaping",
+        "position": 5.2,
+        "impressions": 30,
+        "clicks": 0
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1.5,
+        "impressions": 21,
+        "clicks": 8
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 9.0,
+        "impressions": 21,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape",
+        "position": 16.6,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "arlington lawn service",
+        "position": 25.9,
+        "impressions": 8,
+        "clicks": 0
+      },
+      {
+        "query": "aledo stormwater drainage contractors",
+        "position": 9.8,
+        "impressions": 6,
+        "clicks": 0
+      },
+      {
+        "query": "black hills landscaping",
+        "position": 1,
+        "impressions": 5,
+        "clicks": 4
+      },
+      {
+        "query": "aledo brush hog services",
+        "position": 22.2,
+        "impressions": 5,
+        "clicks": 0
+      },
+      {
+        "query": "arlington lawn services",
+        "position": 25.5,
+        "impressions": 4,
+        "clicks": 0
+      },
+      {
+        "query": "blackhill landscaping",
+        "position": 1,
+        "impressions": 3,
+        "clicks": 2
+      }
+    ],
+    "gbp": {
+      "total_views": 115,
+      "calls": 4,
+      "website_clicks": 6,
+      "direction_requests": 12
+    }
   }
 ]
