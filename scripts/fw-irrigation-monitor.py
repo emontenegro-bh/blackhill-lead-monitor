@@ -373,6 +373,79 @@ def split_maximo_block(text):
     return text[:m.start()].strip(), text[m.start():].strip()
 
 
+def sender_name(msg):
+    """Readable name of the Fort Worth staffer who sent the request.
+
+    Graph gives "Payne, Alicia"; the card reads better as "Alicia Payne".
+    Falls back to the address, then to a placeholder, because the sender
+    line should never render as an empty row.
+    """
+    frm = (msg.get("from") or {}).get("emailAddress") or {}
+    name = (frm.get("name") or "").strip()
+    if name:
+        if "," in name:
+            last, _, first = name.partition(",")
+            name = f"{first.strip()} {last.strip()}".strip()
+        return name
+    return (frm.get("address") or "Fort Worth Water").strip()
+
+
+# Lines of the Maximo header block, and the sign-off the dispatcher adds.
+# Dropped from the detail because they say nothing about the job.
+_DISPATCH_NOISE = re.compile(
+    r"^\s*(?:From|Sent|To|Cc|Bcc|Subject)\s*:",
+    re.IGNORECASE,
+)
+
+
+def dispatch_detail(dispatch_text, limit=1400):
+    """The Maximo work order as readable lines for the card.
+
+    Maximo sends the same content twice: one run-on paragraph, then the
+    same facts again split line by line. Showing both doubles the card and
+    reads like a stutter, so the run-on summary is dropped in favour of the
+    broken-out version, which is the legible one.
+
+    A line is treated as that summary when it CONTAINS two or more of the
+    other lines verbatim. Nothing else about the text is assumed, so a work
+    order that happens not to repeat itself passes through untouched.
+    """
+    lines = []
+    for raw in dispatch_text.splitlines():
+        line = " ".join(raw.split())
+        if not line or _DISPATCH_NOISE.match(line):
+            continue
+        lines.append(line)
+
+    # Drop exact repeats, keeping first appearance.
+    seen, unique = set(), []
+    for line in lines:
+        key = re.sub(r"[^a-z0-9]+", "", line.lower())
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(line)
+
+    def is_summary(candidate):
+        key = re.sub(r"[^a-z0-9]+", "", candidate.lower())
+        contained = 0
+        for other in unique:
+            if other is candidate:
+                continue
+            okey = re.sub(r"[^a-z0-9]+", "", other.lower())
+            if len(okey) >= 15 and okey in key:
+                contained += 1
+                if contained >= 2:
+                    return True
+        return False
+
+    kept = [l for l in unique if not is_summary(l)]
+    if not kept:
+        kept = unique
+
+    out = "\n\n".join(kept)
+    return out[:limit].rstrip() + ("..." if len(out) > limit else "")
+
+
 def parse_address(text, subject):
     """Address from the MAXIMO line, falling back to the subject.
 
@@ -522,7 +595,8 @@ If no parts are mentioned at all, respond with exactly: NONE"""
 
 # ------------------------------------------------------------ Teams ---
 
-def post_card(address, parts, photo_count, dispatch_text, web_link=None):
+def post_card(address, parts, photo_count, dispatch_text, web_link=None,
+              requested_by=None, detail=None):
     """Post the request card. Returns True once it is on the channel.
 
     Layout follows the Leads Alert card: an emphasis header reading
@@ -559,18 +633,35 @@ def post_card(address, parts, photo_count, dispatch_text, web_link=None):
         "type": "AdaptiveCard",
         "version": "1.4",
         "body": [
-            {"type": "Container", "style": "emphasis", "items": [{
-                "type": "TextBlock",
-                "text": f"New Lead: {address}",
-                "weight": "Bolder", "size": "Medium", "color": "Good",
-                "wrap": True}]},
+            {"type": "Container", "style": "emphasis", "items": [
+                {"type": "TextBlock",
+                 "text": f"New Lead: {address}",
+                 "weight": "Bolder", "size": "Medium", "color": "Good",
+                 "wrap": True},
+                # Who at Fort Worth sent it, directly under the address, so
+                # a reply goes to the right person without opening the mail.
+                {"type": "TextBlock",
+                 "text": f"Requested by {requested_by}" if requested_by else " ",
+                 "size": "Small", "isSubtle": True, "wrap": True,
+                 "spacing": "None"},
+            ]},
             {"type": "TextBlock", "text": "**Parts**", "spacing": "Medium"},
             {"type": "TextBlock", "text": parts_text, "wrap": True,
              "spacing": "Small"},
-            {"type": "TextBlock", "text": photo_text, "wrap": True,
-             "size": "Small", "spacing": "Medium"},
         ],
     }
+    # The work order as Fort Worth wrote it: damage, cause, crew, customer
+    # name and phone. Parts stay broken out above because they go straight
+    # into the proposal; this is the context behind them.
+    if detail:
+        card["body"].append(
+            {"type": "TextBlock", "text": "**Work order**", "spacing": "Medium"})
+        card["body"].append(
+            {"type": "TextBlock", "text": detail, "wrap": True,
+             "size": "Small", "spacing": "Small"})
+    card["body"].append(
+        {"type": "TextBlock", "text": photo_text, "wrap": True,
+         "size": "Small", "spacing": "Medium"})
     if web_link:
         card["actions"] = [{
             "type": "Action.OpenUrl",
@@ -695,7 +786,9 @@ def handle_quote(msg, text, state):
     # secret missing, _post returns False without raising, the job would be
     # marked as carded, and it would then be skipped forever once the secret
     # was added. The card would never appear and nothing would say so.
-    if not post_card(address, parts, photos, dispatch, msg.get("webLink")):
+    if not post_card(address, parts, photos, dispatch, msg.get("webLink"),
+                     requested_by=sender_name(msg),
+                     detail=dispatch_detail(dispatch)):
         log(f"  WO {wo}: card did NOT post, leaving unrecorded so the next "
             f"run retries it")
         return False
