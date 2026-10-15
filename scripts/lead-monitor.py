@@ -1521,6 +1521,29 @@ def _post_teams_card(webhook_url, card):
     raise RuntimeError(last_err)
 
 
+def source_label(lead):
+    """What to show in the card's Source row.
+
+    This used to be the hardcoded string "Email Inquiry", which was not a
+    marketing source at all -- it described how THIS SCRIPT found the lead
+    (sitting in the inquiry@ mailbox) and said the same thing on every card
+    regardless of where the customer came from.
+
+    Worse, it actively hid a real problem. This card only fires from the
+    web-form safety net, i.e. when WhatConverts never received the
+    submission, so by definition the attribution is MISSING. Printing a
+    plausible-looking channel name made a gap look like an answer.
+
+    The Elementor form carries a "Traffic Source" field that is already
+    parsed into lead["traffic_source"], so use it when it is there, and say
+    plainly that nothing was captured when it is not.
+    """
+    raw = (lead.get("traffic_source") or "").strip()
+    if raw and raw.lower() not in ("---", "n/a", "na", "none", "unknown", "direct"):
+        return raw
+    return "Not captured - form did not reach WhatConverts"
+
+
 def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=None):
     """Send lead alert to Microsoft Teams via Power Automate webhook."""
     webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
@@ -1540,6 +1563,7 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
 
     aspire_text = f"Contact ID: {aspire_id}" if aspire_id else "Not added"
     hubspot_text = f"Deal: {hubspot_id}" if hubspot_id else "Not added"
+    source_text = source_label(lead)
 
     # Email leads are always assigned to Evelin; @mention only if a channel member
     mention_text, mention_entities = _mention_or_text("Evelin", "evelin@blackhilltx.com")
@@ -1577,7 +1601,7 @@ def send_teams_notification(lead, lead_type="lead", aspire_id=None, hubspot_id=N
                             {"title": "Email", "value": email},
                             {"title": "Address", "value": address_line},
                             {"title": "Service", "value": service},
-                            {"title": "Source", "value": "Email Inquiry"},
+                            {"title": "Source", "value": source_text},
                         ]
                     },
                     {
@@ -1678,7 +1702,8 @@ Message:
 {aspire_line}
 {mc_line}
 Auto-reply: Sent
-Source: {lead.get('original_subject', '')}
+Source: {source_label(lead)}
+Email subject: {lead.get('original_subject', '')}
 Received: {lead.get('received_at', '')}
 """
     send_notification(config, subject, body, recipients)
