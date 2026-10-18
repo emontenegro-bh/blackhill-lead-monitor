@@ -29,7 +29,7 @@ used to be true when the token was split between ~/.config and a GitHub secret.
 
     python3 scripts/bing-weekly-report.py [--dry-run]
 """
-import json, os, sys, smtplib, tempfile, signal, urllib.parse, urllib.request
+import json, os, re, sys, smtplib, tempfile, signal, urllib.parse, urllib.request
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -401,24 +401,48 @@ def get_aspire_bing_revenue(start_date, end_date):
         WON = "OpportunityStatusName eq 'Won'"
         sel = ("$select=WonDollars,OpportunityName,OpportunityNumber,OpportunityID,"
                "BillingContactID,PropertyID,WonDate")
+
+        # First won date per property, ALL TIME. Needed to tell acquisition from
+        # expansion, and it has to be all-time rather than since LAUNCH_DATE: a
+        # customer first won in 2025 would otherwise look newly acquired the
+        # first time they bought again in 2026. Cheap query, two fields.
+        first_won = {}
+        for o in paged("Opportunities", f"$filter={WON}&$select=PropertyID,WonDate"):
+            pid, wd = o.get("PropertyID"), str(o.get("WonDate") or "")[:10]
+            if not pid or not wd:
+                continue
+            if pid not in first_won or wd < first_won[pid]:
+                first_won[pid] = wd
+
         opps = paged("Opportunities", f"$filter={WON} and WonDate ge {LAUNCH_DATE}T00:00:00Z&{sel}")
 
         week, life = [], [0, 0.0]
         by_customer = {}
+        # [count, dollars] for acquisition (customer's first ever won job) and
+        # expansion (every later job from a customer the ads already won).
+        acq, exp = [0, 0.0], [0, 0.0]
+        wk_acq, wk_exp = [0, 0.0], [0, 0.0]
         for o in opps:
             if origin(o.get("BillingContactID"), o.get("PropertyID")) != ASPIRE_SOURCE:
                 continue
             dollars = float(o.get("WonDollars", 0) or 0)
             won_on = str(o.get("WonDate") or "")[:10]
+            pid = o.get("PropertyID")
+            is_new = bool(pid) and first_won.get(pid) == won_on
             life[0] += 1
             life[1] += dollars
-            pid = o.get("PropertyID")
+            (acq if is_new else exp)[0] += 1
+            (acq if is_new else exp)[1] += dollars
             if pid is not None:
                 by_customer[pid] = by_customer.get(pid, 0.0) + dollars
             if start_date <= won_on <= end_date:
                 oid = o.get("OpportunityID")
+                (wk_acq if is_new else wk_exp)[0] += 1
+                (wk_acq if is_new else wk_exp)[1] += dollars
                 week.append({"name": o.get("OpportunityName") or "Unnamed opportunity",
                              "dollars": dollars, "won_on": won_on,
+                             "is_new_customer": is_new,
+                             "first_won": first_won.get(pid),
                              "url": f"https://cloud.youraspire.com/app/opportunities/{oid}" if oid else None})
         week.sort(key=lambda x: -x["dollars"])
         top_dollars = max(by_customer.values()) if by_customer else 0.0
@@ -429,7 +453,11 @@ def get_aspire_bing_revenue(start_date, end_date):
                 "life_dollars": life[1],
                 "customers": len(by_customer),
                 "top_customer_dollars": top_dollars,
-                "ex_top_dollars": life[1] - top_dollars}
+                "ex_top_dollars": life[1] - top_dollars,
+                "acq_count": acq[0], "acq_dollars": acq[1],
+                "exp_count": exp[0], "exp_dollars": exp[1],
+                "week_acq_count": wk_acq[0], "week_acq_dollars": wk_acq[1],
+                "week_exp_count": wk_exp[0], "week_exp_dollars": wk_exp[1]}
     except Exception as e:
         print(f"Aspire revenue warning: {e}", file=sys.stderr)
         return None
@@ -614,12 +642,27 @@ if aspire_rev:
     life_roas = (aspire_rev["life_dollars"] / life_spend) if life_spend else 0
     h('<table><tr><th>Won revenue attributed to Bing Ads</th>'
       '<th class="right">This Week</th><th class="right">Since Feb 19</th></tr>')
+    # Acquisition vs expansion. The roll-up credits a tagged customer's LATER
+    # work to Bing too, so a repeat job on an ads-won customer reads identically
+    # to a brand new customer unless the two are shown apart. On 2026-10-18 the
+    # Google report presented a seasonal job as ads revenue when it was a repeat
+    # purchase by a customer won months earlier, which is a fair lifetime credit
+    # and no evidence at all that the new campaign works.
+    acq_roas = (aspire_rev.get("acq_dollars", 0) / life_spend) if life_spend else 0
     rev_rows = [
         ("Won opportunities", f"{aspire_rev['week_count']:,}", f"{aspire_rev['life_count']:,}"),
         ("Won revenue", f"${aspire_rev['week_dollars']:,.2f}", f"${aspire_rev['life_dollars']:,.2f}"),
+        ("&nbsp;&nbsp;of which NEW customer (acquisition)",
+         f"${aspire_rev.get('week_acq_dollars', 0):,.2f} ({aspire_rev.get('week_acq_count', 0)})",
+         f"${aspire_rev.get('acq_dollars', 0):,.2f} ({aspire_rev.get('acq_count', 0)})"),
+        ("&nbsp;&nbsp;of which REPEAT customer (expansion)",
+         f"${aspire_rev.get('week_exp_dollars', 0):,.2f} ({aspire_rev.get('week_exp_count', 0)})",
+         f"${aspire_rev.get('exp_dollars', 0):,.2f} ({aspire_rev.get('exp_count', 0)})"),
         ("Ad spend", f"${this_week['total_spend']:,.2f}", f"${life_spend:,.2f}"),
         ("Return on spend", f"{wk_roas:,.1f}x" if this_week["total_spend"] else "--",
          f"{life_roas:,.1f}x" if life_spend else "--"),
+        ("Return on spend, acquisition only", "--",
+         f"{acq_roas:,.1f}x" if life_spend else "--"),
     ]
     m("| Won revenue attributed to Bing Ads | This Week | Since Feb 19 |")
     m("|---|---|---|")
@@ -652,16 +695,26 @@ if aspire_rev:
         m("\nWon this week:\n")
         for o in aspire_rev["week_opps"]:
             link = f'<a href="{o["url"]}" style="color:#9cf;text-decoration:none;">{o["name"]}</a>' if o["url"] else o["name"]
+            if o.get("is_new_customer"):
+                tag_h = '<span style="color:#27ae60;font-weight:600;">NEW CUSTOMER</span>'
+                tag_m = "**NEW CUSTOMER**"
+            else:
+                tag_h = (f'<span style="color:#e67e22;font-weight:600;">REPEAT</span>'
+                         f'<span style="color:#777;"> (first won {o.get("first_won") or "unknown"})</span>')
+                tag_m = f"REPEAT (first won {o.get('first_won') or 'unknown'})"
             h(f'<div style="margin-top:6px;padding:8px 12px;background:#1a1a1a;border-radius:4px;font-size:12px;">'
-              f'{o["won_on"]} &middot; <strong>${o["dollars"]:,.2f}</strong> &middot; {link}</div>')
-            m(f"- {o['won_on']}  ${o['dollars']:,.2f}  {o['name']}")
+              f'{o["won_on"]} &middot; <strong>${o["dollars"]:,.2f}</strong> &middot; {link} &middot; {tag_h}</div>')
+            m(f"- {o['won_on']}  ${o['dollars']:,.2f}  {o['name']}  {tag_m}")
     else:
         h('<div style="margin-top:10px;font-size:12px;color:#888;">No Bing-attributed opportunities '
           'were won this week. Won dates lag the clicks that caused them.</div>')
         m("\nNo Bing-attributed opportunities were won this week.")
 
     caveat = ("Attribution is first touch by customer origin, from the Lead Source field in Aspire. "
-              "A customer tagged Bing Ads has all their won work counted here, including later jobs. "
+              "A customer tagged Bing Ads has all their won work counted here, including later jobs, "
+              "which is why acquisition and expansion are split out above: only the acquisition line is "
+              "evidence that the ads are currently winning customers. NEW means the job is that "
+              "customer's first ever won work, checked against all-time history, not just since February. "
               "Most won opportunities carry no lead source at all, so treat this as a floor.")
     h(f'<div style="margin-top:12px;padding:10px 14px;background:#1a1a1a;border-left:3px solid #666;'
       f'border-radius:4px;font-size:11px;color:#888;">{caveat}</div>')
@@ -863,10 +916,39 @@ report_text = "\n".join(m_parts)
 # ============================================================
 # SAVE & SEND
 # ============================================================
+# ============================================================
+# ARCHIVE REDACTION
+# ============================================================
+# This repository is PUBLIC. The emailed report carries everything; the copy
+# committed to .claude/reports/ must not carry revenue figures, CRM deep links
+# or opportunity numbers. Ad cost, clicks, impressions, CTR, conversions and
+# counts are all preserved so the archive stays useful for trend comparisons.
+_RD_MONEY = re.compile(r"\$\s?\d[\d,]*(?:\.\d+)?")
+_RD_REV = re.compile(r"won|revenue|contract value|\bACV\b|acquisition|expansion"
+                     r"|concentration|from ads|from organic|organic win|return on spend"
+                     r"|closed this week|largest is|new customer|first won", re.I)
+_RD_KEEP = re.compile(r"ad spend|^\| spend \||cost per contact|cpa|cpc|cost per click"
+                      r"|cost per lead|wasted|budget", re.I)
+_RD_ASPIRE = re.compile(r"\[([^\]]*)\]\(https://cloud\.youraspire\.com[^)]*\)")
+_RD_OPPNUM = re.compile(r"#\s?\d{3,6}")
+
+
+def redact_for_archive(md):
+    """Strip revenue, CRM links and opportunity numbers from the committed copy."""
+    out = []
+    for line in md.split("\n"):
+        l = _RD_ASPIRE.sub("[redacted]", line)
+        if _RD_REV.search(l) and not _RD_KEEP.search(l):
+            l = _RD_OPPNUM.sub("#[redacted]", l)
+            l = _RD_MONEY.sub("$[redacted]", l)
+            l = re.sub(r"\b\d+(?:\.\d+)?x\b", "[redacted]x", l)
+        out.append(l)
+    return "\n".join(out)
+
 os.makedirs(REPORT_DIR, exist_ok=True)
 report_file = os.path.join(REPORT_DIR, f"{now.strftime('%Y-%m-%d')}.md")
 with open(report_file, "w") as f:
-    f.write(report_text)
+    f.write(redact_for_archive(report_text))
 print(f"Report saved: {report_file}")
 
 if "--dry-run" in sys.argv:
