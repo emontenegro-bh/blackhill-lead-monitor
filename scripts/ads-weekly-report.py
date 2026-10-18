@@ -521,7 +521,7 @@ url_problems, url_rows, url_stats = url_health.summarize(
 # --- 10b. Aspire won revenue by Lead Source custom field (def 34) ---
 # Customer-origin, property-level: a customer belongs to one origin source and ALL
 # their won opps roll up to it. Replaces the WhatConverts billing-contact map (which
-# missed commercial deals where the billing contact != the lead contact, e.g. Restore Church).
+# missed commercial deals where the billing contact != the lead contact).
 _PAID_SRC = {"Google Ads", "Bing Ads"}
 _ORGANIC_SRC = {"Google Organic", "Bing Organic", "Google Business Profile"}
 _SRC_COLOR = {"Google Ads": "#27ae60", "Bing Ads": "#16a085", "Google Organic": "#3498db",
@@ -594,7 +594,23 @@ def get_aspire_revenue_v2(start_date, end_date):
 
         WON = "OpportunityStatusName eq 'Won'"
         sel = ("$select=WonDollars,ActualEarnedRevenue,OpportunityType,CompleteDate,"
-               "OpportunityName,OpportunityNumber,OpportunityID,BillingContactID,PropertyID")
+               "OpportunityName,OpportunityNumber,OpportunityID,BillingContactID,PropertyID,WonDate")
+
+        # First won date per property, ALL TIME. This is what separates a
+        # customer the ads just won from a customer the ads won months ago who
+        # bought again. It must be all-time: scoped to 2026-02-19 a customer
+        # first won in 2025 reads as newly acquired the next time they buy.
+        # 2026-10-18: a seasonal job was reported as ads revenue when it was a
+        # repeat purchase by a customer first won seven months earlier. Fair
+        # lifetime credit, but no evidence the new campaign works, and the
+        # report could not tell the two apart.
+        first_won = {}
+        for o in paged("Opportunities", f"$filter={WON}&$select=PropertyID,WonDate"):
+            pid, wd = o.get("PropertyID"), str(o.get("WonDate") or "")[:10]
+            if not pid or not wd:
+                continue
+            if pid not in first_won or wd < first_won[pid]:
+                first_won[pid] = wd
 
         def opp_revenue(o):
             """The honest dollar figure for one won opportunity.
@@ -604,11 +620,11 @@ def get_aspire_revenue_v2(start_date, end_date):
 
             One-time work: WonDollars is what was AGREED, ActualEarnedRevenue
             is what was BILLED, and for irrigation they are deliberately not
-            the same number -- the model is a $150 diagnosis followed by the
-            repair, invoiced on the same opportunity without the agreed figure
-            ever being revised. 14 of 34 paid-search diagnoses billed more than
-            they were won for ($150 -> $861 on one). Across all irrigation won
-            since February that is $69,070 agreed against $79,392 billed.
+            the same number -- the model is a diagnosis followed by the repair,
+            invoiced on the same opportunity without the agreed figure ever
+            being revised. 14 of 34 paid-search diagnoses billed more than they
+            were won for, several by a wide margin, so agreed and billed diverge
+            materially across the irrigation book.
 
             Contracts: the opposite. WonDollars is the ANNUAL value and
             ActualEarnedRevenue is merely how much of the year has elapsed, so
@@ -621,11 +637,11 @@ def get_aspire_revenue_v2(start_date, end_date):
             # ActualEarnedRevenue is only the finished number once the job IS
             # finished. On work still in progress it is whatever has been
             # earned so far, which is the same "elapsed, not sized" trap that
-            # makes it wrong for contracts. Opportunity #3250, "Spiraling
-            # Junipers": won $1,100, earned $57.84, no completion date -- the
-            # crew has barely started. 148 of 1,680 won work orders are open,
-            # 57 of them showing less earned than won, and valuing those at
-            # their partial earnings understates by $258,702.
+            # makes it wrong for contracts. A won job with no completion date
+            # can show a tiny fraction earned simply because the crew has barely
+            # started. 148 of 1,680 won work orders are open, 57 of them showing
+            # less earned than won, and valuing those at their partial earnings
+            # understates the book substantially.
             actual = float(o.get("ActualEarnedRevenue", 0) or 0)
             if o.get("CompleteDate") and actual > 0:
                 return actual
@@ -635,38 +651,52 @@ def get_aspire_revenue_v2(start_date, end_date):
             # Buckets are [count, one-time cash, annual contract value]. The
             # last two are NEVER added together: one is money received once,
             # the other recurs every year until cancelled. Summing them is what
-            # let a single $30,759 maintenance agreement outweigh twelve real
+            # let a single large maintenance agreement outweigh twelve real
             # installs and flatter whichever channel happened to win it.
             by = {}
             opp_list = []
+            # Paid-search acquisition vs expansion, [count, one-time, ACV] each.
+            acq = [0, 0.0, 0.0]
+            exp = [0, 0.0, 0.0]
             for o in paged("Opportunities", params):
                 s = origin(o.get("BillingContactID"), o.get("PropertyID"))
                 dollars = opp_revenue(o)
                 is_contract = (o.get("OpportunityType") or "") == "Contract"
+                pid = o.get("PropertyID")
+                won_on = str(o.get("WonDate") or "")[:10]
+                is_new = bool(pid) and bool(won_on) and first_won.get(pid) == won_on
                 b = by.setdefault(s or "(no source)", [0, 0.0, 0.0])
                 b[0] += 1
                 b[2 if is_contract else 1] += dollars
+                if s in _PAID_SRC:
+                    t = acq if is_new else exp
+                    t[0] += 1
+                    t[2 if is_contract else 1] += dollars
                 if want_opps and s:
                     oid = o.get("OpportunityID")
                     opp_list.append({"name": o.get("OpportunityName") or "Unnamed opportunity",
                                      "dollars": dollars, "number": o.get("OpportunityNumber"),
                                      "is_contract": is_contract,
                                      "source_label": s,
+                                     "is_new_customer": is_new,
+                                     "first_won": first_won.get(pid),
                                      "url": f"https://cloud.youraspire.com/app/opportunities/{oid}" if oid else None})
-            return by, opp_list
+            return by, opp_list, acq, exp
 
-        week_by, week_opps = attribute(
+        week_by, week_opps, week_acq, week_exp = attribute(
             f"$filter={WON} and WonDate ge {start_date}T00:00:00Z and WonDate le {end_date}T23:59:59Z&{sel}",
             want_opps=True)
-        grand_by, _ = attribute(
+        grand_by, _, grand_acq, grand_exp = attribute(
             f"$filter={WON} and WonDate ge 2026-02-19T00:00:00Z and WonDate le {end_date}T23:59:59Z"
             # CompleteDate matters here too. Without it opp_revenue can never
             # take the completion branch, so every one-time job in the
-            # season-to-date figure silently falls back to its quoted amount --
-            # $979,821 instead of $1,017,021 across the 342 wins since Feb 19.
-            # The week-level select already carries it; this one was missed.
+            # season-to-date figure silently falls back to its quoted amount
+            # rather than what was billed, understating the total across every
+            # win since Feb 19. The week-level select already carries it; this
+            # one was missed.
+            # WonDate is here for the acquisition/expansion split.
             "&$select=WonDollars,ActualEarnedRevenue,OpportunityType,CompleteDate,"
-            "BillingContactID,PropertyID")
+            "BillingContactID,PropertyID,WonDate")
 
         cpc = [0, 0.0, 0.0]
         org = [0, 0.0, 0.0]
@@ -694,6 +724,13 @@ def get_aspire_revenue_v2(start_date, end_date):
             "won_opps": week_opps,
             "week_by_source": week_by,
             "grand_by_source": grand_by,
+            # Acquisition = the job is that customer's first ever won work.
+            # Expansion = a later job from a customer paid search already won.
+            # Only the acquisition line says anything about current performance.
+            "week_acq_count": week_acq[0], "week_acq_won": week_acq[1], "week_acq_acv": week_acq[2],
+            "week_exp_count": week_exp[0], "week_exp_won": week_exp[1], "week_exp_acv": week_exp[2],
+            "life_acq_count": grand_acq[0], "life_acq_won": grand_acq[1], "life_acq_acv": grand_acq[2],
+            "life_exp_count": grand_exp[0], "life_exp_won": grand_exp[1], "life_exp_acv": grand_exp[2],
         }
     except Exception as e:
         print(f"Aspire revenue v2 query skipped: {e}", file=sys.stderr)
@@ -923,9 +960,9 @@ def generate_verdict():
     # -- Revenue tie-in --
     # ROI compares one-time cash against one week of spend, which is the only
     # like-for-like comparison available. Contract wins are called out
-    # separately rather than folded in: a $19,028 annual agreement is not a
-    # week's return, and adding it here would make a single signature look like
-    # a 900% week.
+    # separately rather than folded in: an annual agreement is not a week's
+    # return, and adding it here would make a single signature look like a
+    # 900% week.
     cpc_acv = aspire_revenue["cpc_acv"] if aspire_revenue else 0
     if cpc_rev > 0:
         roi = ((cpc_rev - spend) / spend * 100) if spend > 0 else 0
@@ -1138,9 +1175,14 @@ if aspire_revenue and acct_this:
                 name_html = f'<a href="{opp["url"]}" style="color:#fff;text-decoration:underline;">{opp["name"]}{num}</a>'
             else:
                 name_html = f'{opp["name"]}{num}'
+            if opp.get("is_new_customer"):
+                tag_h = '<span style="color:#27ae60;font-weight:600;"> NEW CUSTOMER</span>'
+            else:
+                tag_h = (f'<span style="color:#e67e22;font-weight:600;"> REPEAT</span>'
+                         f'<span style="color:#777;"> (first won {opp.get("first_won") or "unknown"})</span>')
             h(f'<div style="margin-bottom:4px;padding:8px 12px;background:#1a1a1a;border-radius:4px;font-size:12px;">')
             h(f'<span style="color:{lcolor};font-weight:700;">[{s}]</span> {name_html} '
-              f'<span style="color:#27ae60;font-weight:600;">${opp["dollars"]:,.0f}</span></div>')
+              f'<span style="color:#27ae60;font-weight:600;">${opp["dollars"]:,.0f}</span>{tag_h}</div>')
         h('</div>')
     if organic_opps:
         _organic_total = sum(o["dollars"] for o in organic_opps)
@@ -1487,8 +1529,25 @@ if aspire_revenue and acct_this:
     md.append(f"| One-Time Revenue Won This Week | ${aspire_revenue['total_won']:,.0f} ({aspire_revenue['count']} opportunities) |")
     md.append(f"| Annual Contract Value Won This Week | ${aspire_revenue['total_acv']:,.0f} (recurring, not added to the above) |")
     md.append(f"| One-Time from Ads | ${aspire_revenue['cpc_won']:,.0f} ({aspire_revenue['cpc_count']} opps) |")
+    md.append(f"| &nbsp;&nbsp;of which NEW customer (acquisition) | "
+              f"${aspire_revenue.get('week_acq_won', 0):,.0f} ({aspire_revenue.get('week_acq_count', 0)} opps) |")
+    md.append(f"| &nbsp;&nbsp;of which REPEAT customer (expansion) | "
+              f"${aspire_revenue.get('week_exp_won', 0):,.0f} ({aspire_revenue.get('week_exp_count', 0)} opps) |")
     md.append(f"| One-Time from Organic | ${aspire_revenue['organic_won']:,.0f} ({aspire_revenue['organic_count']} opps) |")
     md.append("")
+    # Since Feb 19, acquisition vs expansion. Expansion is real money and a fair
+    # lifetime credit, but only acquisition tells you the ads are still working.
+    la_won = aspire_revenue.get("life_acq_won", 0)
+    le_won = aspire_revenue.get("life_exp_won", 0)
+    if la_won or le_won:
+        tot_pd = la_won + le_won
+        share = (la_won / tot_pd * 100) if tot_pd else 0
+        md.append(f"**Paid search since Feb 19**: ${la_won:,.0f} one-time from "
+                  f"{aspire_revenue.get('life_acq_count', 0)} newly acquired customers "
+                  f"(+ ${aspire_revenue.get('life_acq_acv', 0):,.0f} annual contract value), against "
+                  f"${le_won:,.0f} from {aspire_revenue.get('life_exp_count', 0)} repeat jobs by customers "
+                  f"paid search had already won. Acquisition is {share:.0f}% of one-time cash.")
+        md.append("")
     grand = aspire_revenue.get("grand_by_source") or {}
     if grand:
         ranked_srcs = sorted(
@@ -1509,7 +1568,11 @@ if aspire_revenue and acct_this:
         for opp in ads_opps:
             num = f" #{opp['number']}" if opp.get("number") else ""
             link = f"[{opp['name']}{num}]({opp['url']})" if opp.get("url") else f"{opp['name']}{num}"
-            md.append(f"- **[{opp['source_label']}]** {link} -- ${opp['dollars']:,.0f}")
+            if opp.get("is_new_customer"):
+                tag = " -- **NEW CUSTOMER**"
+            else:
+                tag = f" -- REPEAT, first won {opp.get('first_won') or 'unknown'}"
+            md.append(f"- **[{opp['source_label']}]** {link} -- ${opp['dollars']:,.0f}{tag}")
         md.append("")
     if organic_opps:
         organic_total = sum(o["dollars"] for o in organic_opps)
