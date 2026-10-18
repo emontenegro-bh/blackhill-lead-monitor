@@ -29,7 +29,7 @@ used to be true when the token was split between ~/.config and a GitHub secret.
 
     python3 scripts/bing-weekly-report.py [--dry-run]
 """
-import json, os, sys, smtplib, tempfile, signal, urllib.parse, urllib.request
+import json, os, re, sys, smtplib, tempfile, signal, urllib.parse, urllib.request
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -916,10 +916,39 @@ report_text = "\n".join(m_parts)
 # ============================================================
 # SAVE & SEND
 # ============================================================
+# ============================================================
+# ARCHIVE REDACTION
+# ============================================================
+# This repository is PUBLIC. The emailed report carries everything; the copy
+# committed to .claude/reports/ must not carry revenue figures, CRM deep links
+# or opportunity numbers. Ad cost, clicks, impressions, CTR, conversions and
+# counts are all preserved so the archive stays useful for trend comparisons.
+_RD_MONEY = re.compile(r"\$\s?\d[\d,]*(?:\.\d+)?")
+_RD_REV = re.compile(r"won|revenue|contract value|\bACV\b|acquisition|expansion"
+                     r"|concentration|from ads|from organic|organic win|return on spend"
+                     r"|closed this week|largest is|new customer|first won", re.I)
+_RD_KEEP = re.compile(r"ad spend|^\| spend \||cost per contact|cpa|cpc|cost per click"
+                      r"|cost per lead|wasted|budget", re.I)
+_RD_ASPIRE = re.compile(r"\[([^\]]*)\]\(https://cloud\.youraspire\.com[^)]*\)")
+_RD_OPPNUM = re.compile(r"#\s?\d{3,6}")
+
+
+def redact_for_archive(md):
+    """Strip revenue, CRM links and opportunity numbers from the committed copy."""
+    out = []
+    for line in md.split("\n"):
+        l = _RD_ASPIRE.sub("[redacted]", line)
+        if _RD_REV.search(l) and not _RD_KEEP.search(l):
+            l = _RD_OPPNUM.sub("#[redacted]", l)
+            l = _RD_MONEY.sub("$[redacted]", l)
+            l = re.sub(r"\b\d+(?:\.\d+)?x\b", "[redacted]x", l)
+        out.append(l)
+    return "\n".join(out)
+
 os.makedirs(REPORT_DIR, exist_ok=True)
 report_file = os.path.join(REPORT_DIR, f"{now.strftime('%Y-%m-%d')}.md")
 with open(report_file, "w") as f:
-    f.write(report_text)
+    f.write(redact_for_archive(report_text))
 print(f"Report saved: {report_file}")
 
 if "--dry-run" in sys.argv:
