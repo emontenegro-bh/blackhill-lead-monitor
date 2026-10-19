@@ -2098,5 +2098,83 @@
       "website_clicks": 6,
       "direction_requests": 12
     }
+  },
+  {
+    "date": "2026-10-19",
+    "date_range": "2026-10-10 to 2026-10-16",
+    "gsc": {
+      "impressions": 5154,
+      "clicks": 31,
+      "ctr": 0.6,
+      "avg_position": 14.79
+    },
+    "priority_keywords": [
+      {
+        "query": "arlington commercial landscaping",
+        "position": 5.0,
+        "impressions": 49,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 15.4,
+        "impressions": 21,
+        "clicks": 0
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1.1,
+        "impressions": 17,
+        "clicks": 7
+      },
+      {
+        "query": "arlington lawn care",
+        "position": 28.4,
+        "impressions": 10,
+        "clicks": 0
+      },
+      {
+        "query": "haslet landscaping",
+        "position": 5.9,
+        "impressions": 7,
+        "clicks": 1
+      },
+      {
+        "query": "erosion control fort worth",
+        "position": 1.7,
+        "impressions": 6,
+        "clicks": 1
+      },
+      {
+        "query": "aledo stormwater drainage contractors",
+        "position": 11,
+        "impressions": 6,
+        "clicks": 0
+      },
+      {
+        "query": "landscaping companies near me",
+        "position": 1,
+        "impressions": 4,
+        "clicks": 2
+      },
+      {
+        "query": "24/7 emergency tree removal fort worth tx",
+        "position": 1.8,
+        "impressions": 4,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscaping",
+        "position": 34,
+        "impressions": 4,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 140,
+      "calls": 4,
+      "website_clicks": 8,
+      "direction_requests": 3
+    }
   }
 ]
