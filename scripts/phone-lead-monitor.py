@@ -484,6 +484,19 @@ def _run_sync(script_path, lead):
         return {"success": False, "message": str(e)[:200]}
 
 
+# Aspire rejects a contact with no surname: 400 ['Last Name is required'].
+# Callers routinely refuse to give one, so without a stand-in those leads
+# reach HubSpot, Teams and the owner email but never reach Aspire -- which is
+# where the work actually gets scheduled. Seen live on phone lead #100
+# (2026-10-22), a caller who gave only "Ricardo".
+#
+# The placeholder says WHY the field is empty, so whoever opens the contact
+# can tell a refused surname from a data-entry slip. It is applied only on the
+# Aspire payload; the Teams card and the owner email still show the caller
+# exactly as Carlos typed it.
+ASPIRE_SURNAME_PLACEHOLDER = "(not provided)"
+
+
 def create_aspire_contact(lead, aspire_owner_id):
     # WhatConverts decides. Only when it has no attributable call for this number do
     # we fall back to naming the channel.
@@ -493,9 +506,14 @@ def create_aspire_contact(lead, aspire_owner_id):
     if wc_note:
         note += f" {wc_note}"
 
+    last_name = (lead.get("last_name") or "").strip()
+    if not last_name:
+        last_name = ASPIRE_SURNAME_PLACEHOLDER
+        log.info(f"  Aspire: caller gave no surname, using {last_name!r}")
+
     payload = {
         "first_name": lead["first_name"],
-        "last_name": lead["last_name"],
+        "last_name": last_name,
         "email": lead.get("email", ""),
         "phone": lead.get("phone", ""),
         "message": lead.get("notes", ""),
