@@ -158,10 +158,12 @@ MAXIMO_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
-# "PO #: 45747", "PO #45667", "PO#: 45740". Distinct from the Maximo number,
-# which is the internal requisition; this is the financial PO that authorises
-# the work.
-PO_RE = re.compile(r"\bPO\s*#\s*:?\s*(\d{4,6})\b", re.IGNORECASE)
+# "PO #: 45747", "PO #45667", "PO#: 45740", and "PO: 45958" with no "#"
+# (2026-10-16), which the "#"-only pattern classified as noise, so
+# that PO never posted and the job sat looking unapproved. Distinct from the
+# Maximo number ("MAXIMO P.O.#: 6A-80431"), which is the internal
+# requisition; this is the financial PO that authorises the work.
+PO_RE = re.compile(r"\bPO\s*(?:#\s*:?|:)\s*(\d{4,6})\b", re.IGNORECASE)
 
 # PO emails sandwich the address between the PO number and the work order:
 #   "PO #: 45740 / 16000 Rein Ave / Work Order 26-109588"
@@ -171,7 +173,7 @@ PO_RE = re.compile(r"\bPO\s*#\s*:?\s*(\d{4,6})\b", re.IGNORECASE)
 # thread, where the subject is "Proposal for your review #3804 ..." and the
 # subject fallback would put our own subject line on the card.
 PO_ADDRESS_RE = re.compile(
-    r"\bPO\s*#\s*:?\s*\d{4,6}\b\s*"
+    r"\bPO\s*(?:#\s*:?|:)\s*\d{4,6}\b\s*"
     r"(?P<address>.+?)\s*"
     r"(?:Work\s*Order|WO)\s*#?\s*:?\s*\d{2}-\d{5,6}",
     re.IGNORECASE | re.DOTALL,
