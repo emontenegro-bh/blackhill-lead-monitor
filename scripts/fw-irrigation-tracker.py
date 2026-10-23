@@ -614,6 +614,14 @@ def build_rows(api):
         r["Needs Attention"] = "; ".join(filter(None, [
             f"PO {hit['po']} came in {hit['date']:%m/%d}: {todo}", r["Needs Attention"]]))
 
+    # Manual holds, e.g. "wait until we talk to Jon": {"<opp #>": "reason"} in
+    # Supabase state, so a job can be parked without touching Aspire.
+    holds = db.load_state("fw-irrigation-tracker-holds", {}) if db.is_configured() else {}
+    for r in rows:
+        why = holds.get(str(r["Contract Opp #"]))
+        if why:
+            r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", r["Needs Attention"]]))
+
     rows.sort(key=lambda r: (r["Stage"], -(r["Contract Opp #"] or 0), r["Address"]))
     return rows
 
