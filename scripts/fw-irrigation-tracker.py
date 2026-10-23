@@ -148,6 +148,10 @@ def po_of(opp, desc):
 
 ASSESSMENT_SERVICE_ID = 149
 INVOICE_DUE_DAYS = 30
+# From 2026-10-23 the contract is built and won before the assessment, so Jon
+# clocks straight onto it and there is no quick ticket or time move. The
+# repair waits for the City's PO, sent after his parts are added.
+WON_FIRST_START = "2026-10-23"
 REPRICE_TOLERANCE = 5.00      # actual vs PO difference that needs a revised PO
 
 # The City's sequence, one row per job:
@@ -277,9 +281,13 @@ def build_rows(api):
     times = api.get_in("WorkTicketTimes", "WorkTicketID", [t["WorkTicketID"] for t in tickets])
     # Re-approving an estimate after it was emailed resets Aspire's status to
     # Approved, so the emailed-proposal activity is the reliable "sent" signal.
-    approved = [o["OpportunityID"] for o in opps if o["OpportunityStatusName"] == "Approved"]
-    emailed = {a["OpportunityID"] for a in api.get_in("Activities", "OpportunityID", approved)
-               if (a.get("Subject") or "").startswith("Proposal for your review")}
+    approved = [o["OpportunityID"] for o in opps if o["OpportunityStatusName"] == "Approved"
+                or (o["OpportunityStatusName"] == "Won" and o["CreatedDateTime"][:10] >= WON_FIRST_START)]
+    sent_on = {}
+    for a in api.get_in("Activities", "OpportunityID", approved):
+        if (a.get("Subject") or "").startswith("Proposal for your review") and a.get("SentDate"):
+            sent_on[a["OpportunityID"]] = max(sent_on.get(a["OpportunityID"], ""), a["SentDate"])
+    emailed = set(sent_on)
     log(f"Fetched {len(opps)} opportunities, {len(tickets)} tickets, "
         f"{len(visits)} visits, {len(invoices)} invoices")
 
@@ -388,6 +396,9 @@ def build_rows(api):
                                          or ALREADY_REPAIRED.search(jon_notes)))
         billed_on_qt = bool(main_opp and qt_invs and not invs)
         time_moved = a_hours > 0 or (qt_tickets and qt_hours == 0 and not qt_open)
+        won_first = bool(main_opp and status == "Won" and not qts
+                         and main_opp["CreatedDateTime"][:10] >= WON_FIRST_START
+                         and not po_of(main_opp, desc))
         flags = []
 
         if main_opp is None:
@@ -419,12 +430,30 @@ def build_rows(api):
             flags.append("Emailed to the City, but Aspire still shows Approved; mark it Delivered")
         elif status in ("Bidding", "Approved"):
             code = "04"
-            if status == "Approved":
+            if main_opp["CreatedDateTime"][:10] >= WON_FIRST_START and not qts:
+                flags.append("Mark it Won and put the assessment on Jon's schedule")
+            elif status == "Approved":
                 flags.append("Approved but not emailed to the City yet")
         elif status == "Delivered":
             code = "05"
         elif status != "Won":
             code = None
+        elif won_first:
+            wf_next, wf_last = visit_state(assess_t, v_by_t, today)
+            wf_done = [day(t["CompleteDate"]) for t in assess_t if t.get("CompleteDate")]
+            sent = sent_on.get(main_opp["OpportunityID"], "")
+            if not assess_t or len(wf_done) < len(assess_t):
+                code = "02" if wf_next or wf_last else "01"
+                if not (wf_next or wf_last):
+                    flags.append("Put the assessment on Jon's schedule")
+                elif wf_last and a_hours > 0:
+                    flags.append(f"Jon logged {a_hours} hr on the assessment; mark it complete")
+            elif sent and day(sent) >= max(wf_done):
+                code = "05"
+            else:
+                code = "03"
+                flags.append("Add Jon's parts to the repair service and send to the City for the PO; "
+                             "keep the repair off the schedule until the PO is in")
         elif qts and not time_moved:
             code = "06"
             flags.append(f"Move quick ticket time ({qt_hours} hr) to the contract")
@@ -574,11 +603,16 @@ def build_rows(api):
         hit = by_wo.get(r["_wo"]) or by_key.get(addr_key(r["Address"]))
         if not hit or hit["po"] == r["PO #"]:
             continue
-        r["Stage"] = stage("06")
         r["PO #"] = hit["po"]
+        if r["Contract Status"] == "Won":
+            r["Stage"] = stage("07")
+            todo = f"add the PO to #{r['Contract Opp #']} and put the repair on Jon's schedule"
+        else:
+            r["Stage"] = stage("06")
+            todo = (f"mark #{r['Contract Opp #']} Won, move the assessment time, "
+                    f"put the repair on Jon's schedule")
         r["Needs Attention"] = "; ".join(filter(None, [
-            f"PO {hit['po']} came in {hit['date']:%m/%d}: mark #{r['Contract Opp #']} Won, "
-            f"move the assessment time, put the repair on Jon's schedule", r["Needs Attention"]]))
+            f"PO {hit['po']} came in {hit['date']:%m/%d}: {todo}", r["Needs Attention"]]))
 
     rows.sort(key=lambda r: (r["Stage"], -(r["Contract Opp #"] or 0), r["Address"]))
     return rows
