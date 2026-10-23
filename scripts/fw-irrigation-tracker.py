@@ -4,15 +4,15 @@
 Every opportunity on the "FW Irrigation Repairs" property (PropertyID 1096),
 one row each, with the stage it is at right now: estimate in progress, sent
 for PO, scheduled, complete, invoiced, sent, paid. Emails Evelin and Carlos an
-.xlsx twice a day (7am and 5pm Central, Mon-Sat).
+.xlsx twice a day (6:45am and 3pm Central, Mon-Fri).
 
 Stage comes from live Aspire data on every run, so nothing is stored between
 runs. "Changed" marks rows whose opportunity, ticket or invoice was touched
 in the last 24 hours.
 
-cron-job.org dispatches the workflow at 7:05 and 17:05 Central; GitHub's own
+cron-job.org dispatches the workflow at 6:45 and 15:00 Central; GitHub's own
 cron is only a backstop, since its scheduler drops runs in this repo. The
-script sends only when the Central hour is 7 or 17, and only once per slot:
+script sends only on weekdays when the Central hour is 6 or 15, and only once per slot:
 the first run records the slot in Supabase and every later run skips it.
 
 Usage:
@@ -55,7 +55,7 @@ RECIPIENTS = [
 ]
 ASPIRE_PORTAL = "https://cloud.youraspire.com"
 FW_PROPERTY_ID = 1096
-SEND_HOURS = (7, 17)          # Central
+SEND_HOURS = (6, 15)          # Central; slots are 6:45am and 3pm
 STALE_COMPLETE_DAYS = 3       # complete but not invoiced longer than this gets flagged
 CENTRAL = ZoneInfo("America/Chicago")
 
@@ -771,6 +771,9 @@ def send_email(subject, html_body, plain_body, xlsx_bytes, xlsx_filename):
 def main(run):
     log("FW Irrigation Tracker starting")
     generated = datetime.now(CENTRAL)
+    if not FORCE and not DRY_RUN and generated.weekday() >= 5:
+        log("Skipping - weekend")
+        return
     if not FORCE and not DRY_RUN and generated.hour not in SEND_HOURS:
         log(f"Skipping - Central hour is {generated.hour:02d}, only send at {SEND_HOURS}")
         return
