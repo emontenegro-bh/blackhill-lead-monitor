@@ -160,6 +160,7 @@ REPRICE_TOLERANCE = 5.00      # actual vs PO difference that needs a revised PO
 #   -> quick-ticket time moved to the contract -> repair scheduled and done
 #   -> revised PO if the actual differs -> invoiced -> paid within 30 days.
 STAGES = {
+    "00": "New request - create opportunity",
     "01": "Assessment - needs scheduling",
     "02": "Assessment scheduled",
     "03": "Assessed - build estimate",
@@ -244,13 +245,24 @@ def inbox_pos():
             url = page.get("@odata.nextLink")
     except Exception as e:
         log(f"Inbox PO check skipped: {e}")
-        return {}, {}
-    by_wo, by_key = {}, {}
+        return {}, {}, {}
+    by_wo, by_key, requests = {}, {}, {}
     for m in sorted(msgs, key=lambda m: m["receivedDateTime"]):
         text = mon.html_to_text((m.get("body") or {}).get("content", ""))
-        if mon.classify(text) != "po":
-            continue
+        kind = mon.classify(text)
         top = mon.top_of_message(text)
+        if kind == "quote":
+            wo = mon.parse_wo(text, m.get("subject", ""))
+            addr = mon.parse_address(text, m.get("subject", ""))
+            subj = mon.parse_address("", m.get("subject", ""))
+            if addr_key(subj) and addr_key(subj) != addr_key(addr):
+                addr = f"{subj} / {addr}"      # City sometimes pastes the wrong one
+            key = wo or addr_key(addr)
+            if key and key not in requests:
+                requests[key] = {"wo": wo, "address": addr, "date": day(m["receivedDateTime"])}
+            continue
+        if kind != "po":
+            continue
         po = mon.PO_RE.search(top)
         wo = mon.parse_wo(top, m.get("subject", ""))
         addr = mon.parse_po_address(top, m.get("subject", ""))
@@ -261,8 +273,8 @@ def inbox_pos():
             by_wo[wo] = hit
         if addr_key(addr):
             by_key[addr_key(addr)] = hit
-    log(f"Inbox: {len(msgs)} messages, {len(by_wo)} PO emails")
-    return by_wo, by_key
+    log(f"Inbox: {len(msgs)} messages, {len(by_wo)} PO emails, {len(requests)} quote requests")
+    return by_wo, by_key, requests
 
 
 def build_rows(api):
@@ -596,7 +608,7 @@ def build_rows(api):
 
     # A PO in the inbox for a job Aspire still shows as awaiting one means
     # the City approved it: the repair is cleared and needs scheduling.
-    by_wo, by_key = inbox_pos()
+    by_wo, by_key, requests = inbox_pos()
     for r in rows:
         if r["Stage"][:2] not in ("03", "04", "05") or not r["Contract Opp #"]:
             continue
@@ -614,6 +626,25 @@ def build_rows(api):
         r["Needs Attention"] = "; ".join(filter(None, [
             f"PO {hit['po']} came in {hit['date']:%m/%d}: {todo}", r["Needs Attention"]]))
 
+    # A quote request in the inbox with no opportunity anywhere on the
+    # property (open or closed) has not been entered yet: show it on top.
+    known_wo = set()
+    known_key = set()
+    for o in opps:
+        known_wo.update(re.findall(r"\b\d{2}-\d{5,6}\b", strip_html(o.get("ProposalDescription1"))))
+        known_key.add(addr_key(address_of(o["OpportunityName"])))
+    for q in requests.values():
+        keys = {addr_key(a) for a in q["address"].split(" / ")}
+        if (q["wo"] and q["wo"] in known_wo) or keys & known_key:
+            continue
+        r = {c: None for c in (rows[0] if rows else COLS)}
+        r.update({"Stage": stage("00"), "Address": q["address"], "Contract Opp #": None,
+                  "_wo": q["wo"], "_qt_id": None, "_main_id": None,
+                  "Needs Attention": f"City asked for a quote {q['date']:%m/%d}"
+                                     f"{' (WO ' + q['wo'] + ')' if q['wo'] else ''}: "
+                                     "create the FW Assessment & Repair opportunity and schedule the assessment"})
+        rows.append(r)
+
     # Manual holds, e.g. "wait until we talk to Jon": {"<opp #>": "reason"} in
     # Supabase state, so a job can be parked without touching Aspire.
     holds = db.load_state("fw-irrigation-tracker-holds", {}) if db.is_configured() else {}
@@ -629,7 +660,7 @@ def build_rows(api):
 # --- Excel ---
 
 STAGE_COLORS = {
-    "00": "D9D9D9",
+    "00": "FF9999",
     "01": "FFF2CC", "02": "FFF2CC", "03": "FFE699",          # assessment
     "04": "FCE4D6", "05": "F8CBAD",                          # estimate / PO
     "06": "F4B183",                                          # PO in, move time
@@ -744,7 +775,9 @@ def build_xlsx(rows, generated):
 # --- Email ---
 
 def job_ref(r):
-    return f"#{r['Contract Opp #']}" if r["Contract Opp #"] else f"QT #{r['Quick Ticket Opp #']}"
+    if r["Contract Opp #"]:
+        return f"#{r['Contract Opp #']}"
+    return f"QT #{r['Quick Ticket Opp #']}" if r["Quick Ticket Opp #"] else "NEW"
 
 
 def build_email(rows, summary, generated):
