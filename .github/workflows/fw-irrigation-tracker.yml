@@ -1,0 +1,77 @@
+name: FW Irrigation Tracker
+
+# THE REAL CADENCE COMES FROM cron-job.org, NOT FROM THE CRON BELOW.
+#
+# GitHub drops scheduled runs in this repo (see fw-irrigation-monitor.yml),
+# so cron-job.org POSTs workflow_dispatch with body {"ref":"main"} at 7:05
+# and 17:05 America/Chicago, Mon-Sat. Do not rename this file: the POST
+# targets it by filename and a rename 404s silently.
+#
+# The cron below is a BACKSTOP at :37, after the dispatcher. The script sends
+# once per slot (recorded in Supabase), so whichever run comes second skips.
+# Each slot has a CDT and a CST UTC time; the Central-hour guard drops the
+# wrong one.
+
+on:
+  schedule:
+    - cron: '37 12 * * 1-6'
+    - cron: '37 13 * * 1-6'
+    - cron: '37 22 * * 1-6'
+    - cron: '37 23 * * 1-6'
+  workflow_dispatch:
+    inputs:
+      force_send:
+        description: 'Send now, outside 7am/5pm Central (does not count as the slot send)'
+        required: false
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Build the spreadsheet but do not email it'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: fw-irrigation-tracker
+  cancel-in-progress: false
+
+jobs:
+  tracker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install openpyxl msal
+
+      - name: Build and email tracker
+        env:
+          ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
+          ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          TRACKER_OUT_DIR: ${{ runner.temp }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.force_send }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python scripts/fw-irrigation-tracker.py $ARGS
+
+  notify-failure:
+    needs: [tracker]
+    if: failure() || cancelled()
+    uses: ./.github/workflows/notify-failure.yml
+    with:
+      workflow_name: "FW Irrigation Tracker"
+    secrets: inherit
