@@ -180,6 +180,21 @@ for r in rows("""SELECT campaign.name, metrics.cost_micros FROM campaign
         )
 
 # 5b. Sustained waste over 3 days.
+#
+# A campaign on Maximize Conversions with NO target CPA has no target to compare
+# against, so the `tcpa` branch below would silently never fire and the campaign
+# would run unmonitored on the CPA dimension. That is exactly the state
+# BH_PC_Irrigationservice was put into on 2026-10-25 (target removed to test
+# whether it was throttling impression share). CPA_CEILING supplies an explicit
+# alarm level for those campaigns. Keep an entry here for every campaign running
+# without a target.
+CPA_CEILING = {
+    "BH_PC_Irrigationservice": 150.0,   # old target was $75; alarm at 2x
+}
+# $100 was too high a floor: a campaign spending $25/day clears only ~$75 over
+# three days and was skipped entirely, zero-conversion runs included.
+MIN_SPEND_TO_JUDGE = 75.0
+
 _g_end = datetime.now().strftime("%Y-%m-%d")
 _g_start = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
 for r in rows(f"""SELECT campaign.name, metrics.cost_micros, metrics.conversions
@@ -190,16 +205,24 @@ for r in rows(f"""SELECT campaign.name, metrics.cost_micros, metrics.conversions
     cost = r.metrics.cost_micros / 1e6
     conv = r.metrics.conversions
     tcpa = camp_settings.get(name, {}).get("tcpa", 0)
-    if cost < 100:
+    ceiling = 2.5 * tcpa if tcpa else CPA_CEILING.get(name, 0)
+    basis = f"2.5x its ${tcpa:.0f} target" if tcpa else f"its ${ceiling:.0f} no-target ceiling"
+    if cost < MIN_SPEND_TO_JUDGE:
         continue
     if conv == 0:
         findings.append(
             f"RUNAWAY WATCH: {name} spent ${cost:.0f} over the last 3 days with 0 conversions."
         )
-    elif tcpa and (cost / conv) > 2.5 * tcpa:
+    elif ceiling and (cost / conv) > ceiling:
         findings.append(
-            f"RUNAWAY WATCH: {name} 3-day CPA is ${cost/conv:.0f}, over 2.5x its ${tcpa:.0f} target "
+            f"RUNAWAY WATCH: {name} 3-day CPA is ${cost/conv:.0f}, over {basis} "
             f"(${cost:.0f} spend, {conv:.1f} conv). Possible ballistic bidding."
+        )
+    elif not tcpa and name not in CPA_CEILING:
+        findings.append(
+            f"UNMONITORED: {name} runs with no target CPA and has no CPA_CEILING entry "
+            f"in ads-daily-guard.py, so its cost per lead is not being watched. "
+            f"${cost:.0f} spend, {conv:.1f} conv over 3 days."
         )
 
 # --- Save snapshot (always) ---
