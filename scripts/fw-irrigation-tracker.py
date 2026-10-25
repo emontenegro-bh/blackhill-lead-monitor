@@ -674,12 +674,12 @@ FLAG_FILL = PatternFill("solid", fgColor="FF9999")
 CHANGED_FILL = PatternFill("solid", fgColor="FFFF00")
 MONEY = '"$"#,##0.00'
 COLS = [
-    "Stage", "Address",
+    "Stage", "Address", "Needs Attention",
     "Quick Ticket Opp #", "Assessment Ticket #", "Assessment Scheduled", "Assessment Done",
     "Contract Opp #", "Contract Type", "Contract Status", "PO #", "Won Date",
     "Time Moved", "Repair Ticket #", "Repair Scheduled", "Repair Done",
     "Invoice #", "Invoice Date", "Invoiced $", "Invoice Email Status",
-    "Needs Attention", "Changed (24h)", "Last Activity"]
+    "Changed (24h)", "Last Activity"]
 DATE_COLS = ("Assessment Scheduled", "Assessment Done", "Won Date", "Repair Scheduled", "Repair Done",
              "Invoice Date")
 WIDTHS = {"Stage": 38, "Address": 28, "Needs Attention": 50, "Last Activity": 17,
@@ -713,12 +713,14 @@ def write_table(ws, rows):
             elif c in DATE_COLS:
                 cell.number_format = "m/d/yy"
         if r["Needs Attention"]:
-            ws.cell(i, COLS.index("Needs Attention") + 1).fill = FLAG_FILL
+            note = ws.cell(i, COLS.index("Needs Attention") + 1)
+            note.fill = FLAG_FILL
+            note.alignment = Alignment(wrap_text=True, vertical="top")
         if r["Changed (24h)"]:
             ws.cell(i, COLS.index("Changed (24h)") + 1).fill = CHANGED_FILL
     for j, c in enumerate(COLS, 1):
         ws.column_dimensions[get_column_letter(j)].width = WIDTHS.get(c, 12)
-    ws.freeze_panes = "C2"
+    ws.freeze_panes = "D2"      # Stage, Address and Needs Attention stay in view
     ws.auto_filter.ref = ws.dimensions
 
 
