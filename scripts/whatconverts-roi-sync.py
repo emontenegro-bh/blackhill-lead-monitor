@@ -175,10 +175,10 @@ def opp_revenue(o):
     if (o.get("OpportunityType") or "") == "Contract":
         return float(o.get("WonDollars", 0) or 0)
     # And only once the job is COMPLETE. On work in progress
-    # ActualEarnedRevenue is just what has been earned so far -- opportunity
-    # #3250 "Spiraling Junipers" is won at $1,100 with $57.84 earned and no
-    # completion date. A dry run of this script proposed writing $58 to
-    # WhatConverts for it. 148 of 1,680 won work orders are still open.
+    # ActualEarnedRevenue is just what has been earned so far -- a job can be
+    # won for a four-figure sum with barely anything earned and no completion
+    # date. A dry run of this script proposed writing that near-zero figure to
+    # WhatConverts. 148 of 1,680 won work orders are still open.
     actual = float(o.get("ActualEarnedRevenue", 0) or 0)
     if o.get("CompleteDate") and actual > 0:
         return actual
@@ -421,9 +421,9 @@ def sync_lead(wc_config, aspire_config, aspire_token, wc_lead_id, mapping, sync_
     # Revise only the SAME opportunity. best_opp is "first Won in CreatedDateTime
     # desc", i.e. the customer's NEWEST win, so once re-checking is enabled a
     # second job silently replaces the first in this lead's sales_value rather
-    # than adding to it. A dry run showed exactly that: a lead recorded at
-    # $8,890 would have been rewritten to $800 because opportunity #3428 was
-    # created later. That is a different bug -- one lead, one opportunity, by
+    # than adding to it. A dry run showed exactly that: a lead recorded at a
+    # four-figure sale would have been rewritten down to a much smaller later
+    # job. That is a different bug -- one lead, one opportunity, by
     # design -- and quietly shrinking a recorded sale is worse than the stale
     # figure this change set out to fix.
     same_opp = str(synced.get("opp_number") or "") == str(opp_num)
