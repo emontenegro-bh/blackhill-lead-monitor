@@ -217,6 +217,7 @@ def visit_state(ts, v_by_t, today):
 
 
 INBOX_LOOKBACK_DAYS = 45
+EXPEDITE_RE = re.compile(r"\b(expedite[ds]?|emergency|safety issue)\b", re.I)
 
 
 def inbox_pos():
@@ -245,12 +246,21 @@ def inbox_pos():
             url = page.get("@odata.nextLink")
     except Exception as e:
         log(f"Inbox PO check skipped: {e}")
-        return {}, {}, {}
-    by_wo, by_key, requests = {}, {}, {}
+        return {}, {}, {}, {}
+    by_wo, by_key, requests, rush = {}, {}, {}, {}
     for m in sorted(msgs, key=lambda m: m["receivedDateTime"]):
         text = mon.html_to_text((m.get("body") or {}).get("content", ""))
         kind = mon.classify(text)
         top = mon.top_of_message(text)
+        # The City marks rush jobs "EXPEDITE" or "EMERGENCY"/"SAFETY ISSUE",
+        # in the subject or at the top of a follow-up.
+        if EXPEDITE_RE.search(m.get("subject", "")) or EXPEDITE_RE.search(top[:300]):
+            r_wo = mon.parse_wo(text, m.get("subject", ""))
+            subj = re.sub(r"\b\d{2}-\d{5,6}\b", " ", m.get("subject", ""))
+            hit_addr = re.search(r"\b\d{3,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z]+", subj)
+            r_key = addr_key(hit_addr.group(0)) if hit_addr else None
+            for k in filter(None, (r_wo, r_key)):
+                rush.setdefault(k, day(m["receivedDateTime"]))
         if kind == "quote":
             wo = mon.parse_wo(text, m.get("subject", ""))
             addr = mon.parse_address(text, m.get("subject", ""))
@@ -274,7 +284,7 @@ def inbox_pos():
         if addr_key(addr):
             by_key[addr_key(addr)] = hit
     log(f"Inbox: {len(msgs)} messages, {len(by_wo)} PO emails, {len(requests)} quote requests")
-    return by_wo, by_key, requests
+    return by_wo, by_key, requests, rush
 
 
 def build_rows(api):
@@ -608,7 +618,7 @@ def build_rows(api):
 
     # A PO in the inbox for a job Aspire still shows as awaiting one means
     # the City approved it: the repair is cleared and needs scheduling.
-    by_wo, by_key, requests = inbox_pos()
+    by_wo, by_key, requests, rush = inbox_pos()
     for r in rows:
         if r["Stage"][:2] not in ("03", "04", "05") or not r["Contract Opp #"]:
             continue
@@ -644,6 +654,14 @@ def build_rows(api):
                                      f"{' (WO ' + q['wo'] + ')' if q['wo'] else ''}: "
                                      "create the FW Assessment & Repair opportunity and schedule the assessment"})
         rows.append(r)
+
+    # City rush requests: flag every open job (before invoicing) they touch.
+    for r in rows:
+        if r["Stage"][:2] >= "11":
+            continue
+        when = rush.get(r["_wo"]) or rush.get(addr_key(r["Address"].split(" / ")[0]))
+        if when:
+            r["Needs Attention"] = "; ".join(filter(None, [f"EXPEDITE (City, {when:%m/%d})", r["Needs Attention"]]))
 
     # Manual holds, e.g. "wait until we talk to Jon": {"<opp #>": "reason"} in
     # Supabase state, so a job can be parked without touching Aspire.
