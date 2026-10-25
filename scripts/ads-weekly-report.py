@@ -48,6 +48,11 @@ _RD_KEEP = re.compile(r"ad spend|^\| spend \||cost per contact|cpa|cpc|cost per 
                       r"|cost per lead|wasted|budget", re.I)
 _RD_ASPIRE = re.compile(r"\[([^\]]*)\]\(https://cloud\.youraspire\.com[^)]*\)")
 _RD_OPPNUM = re.compile(r"#\s?\d{3,6}")
+# A per-opportunity win line, e.g. "- **[Google Ads]** [Job #123](aspire) -- $2,910".
+# These name no revenue keyword, so _RD_REV alone left the amount in place; every
+# bullet of this shape in the archive is a lead-source win line, never a
+# recommendation (those open with plain prose).
+_RD_WINLINE = re.compile(r"^\s*[-*]\s*\*\*\[")
 
 
 def redact_for_archive(md):
@@ -55,7 +60,16 @@ def redact_for_archive(md):
     out = []
     for line in md.split("\n"):
         l = _RD_ASPIRE.sub("[redacted]", line)
-        if _RD_REV.search(l) and not _RD_KEEP.search(l):
+        had_crm_link = l != line
+        # A per-opportunity win line is always revenue, so the metric keep-list
+        # does not get a vote on it. It must not: the lead source "CPC" is a
+        # literal substring of the kept metric "cpc", so running _RD_KEEP over
+        # a "- **[CPC]** ... -- $30,759" bullet exempted the amount entirely.
+        if had_crm_link or _RD_WINLINE.match(l):
+            redact = True
+        else:
+            redact = bool(_RD_REV.search(l)) and not _RD_KEEP.search(l)
+        if redact:
             l = _RD_OPPNUM.sub("#[redacted]", l)
             l = _RD_MONEY.sub("$[redacted]", l)
             l = re.sub(r"\b\d+(?:\.\d+)?x\b", "[redacted]x", l)
