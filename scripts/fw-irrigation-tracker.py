@@ -267,7 +267,7 @@ def inbox_pos():
             subj = mon.parse_address("", m.get("subject", ""))
             if addr_key(subj) and addr_key(subj) != addr_key(addr):
                 addr = f"{subj} / {addr}"      # City sometimes pastes the wrong one
-            key = wo or addr_key(addr)
+            key = f"{wo}|{addr_key(addr)}"     # one WO can cover two houses
             if key and key not in requests:
                 requests[key] = {"wo": wo, "address": addr, "date": day(m["receivedDateTime"])}
             continue
@@ -640,12 +640,16 @@ def build_rows(api):
     # property (open or closed) has not been entered yet: show it on top.
     known_wo = set()
     known_key = set()
+    known_names = [o["OpportunityName"].lower() for o in opps]
     for o in opps:
         known_wo.update(re.findall(r"\b\d{2}-\d{5,6}\b", strip_html(o.get("ProposalDescription1"))))
         known_key.add(addr_key(address_of(o["OpportunityName"])))
     for q in requests.values():
         keys = {addr_key(a) for a in q["address"].split(" / ")}
-        if (q["wo"] and q["wo"] in known_wo) or keys & known_key:
+        # One opportunity can cover two houses, e.g. "4117 & 4120 Twinleaf Dr".
+        named = any(k and k.split()[0] in n and " ".join(k.split()[1:]) in n
+                    for k in keys for n in known_names)
+        if (q["wo"] and q["wo"] in known_wo) or keys & known_key or named:
             continue
         r = {c: None for c in (rows[0] if rows else COLS)}
         r.update({"Stage": stage("00"), "Address": q["address"], "Contract Opp #": None,
