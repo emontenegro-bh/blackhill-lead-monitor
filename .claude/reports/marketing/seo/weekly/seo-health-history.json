@@ -2176,5 +2176,83 @@
       "website_clicks": 8,
       "direction_requests": 3
     }
+  },
+  {
+    "date": "2026-10-26",
+    "date_range": "2026-10-17 to 2026-10-23",
+    "gsc": {
+      "impressions": 4611,
+      "clicks": 21,
+      "ctr": 0.46,
+      "avg_position": 19.39
+    },
+    "priority_keywords": [
+      {
+        "query": "arlington commercial landscaping",
+        "position": 10.0,
+        "impressions": 25,
+        "clicks": 0
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1.2,
+        "impressions": 24,
+        "clicks": 6
+      },
+      {
+        "query": "arlington lawn care",
+        "position": 19.8,
+        "impressions": 10,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscaping",
+        "position": 21.4,
+        "impressions": 7,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 18.2,
+        "impressions": 6,
+        "clicks": 0
+      },
+      {
+        "query": "24 hour tree service fort worth",
+        "position": 17.6,
+        "impressions": 5,
+        "clicks": 0
+      },
+      {
+        "query": "aledo stormwater drainage contractors",
+        "position": 25.2,
+        "impressions": 5,
+        "clicks": 0
+      },
+      {
+        "query": "arlington lawn care service",
+        "position": 40.4,
+        "impressions": 5,
+        "clicks": 0
+      },
+      {
+        "query": "aledo landscaping",
+        "position": 5,
+        "impressions": 4,
+        "clicks": 1
+      },
+      {
+        "query": "arlington lawn care companies",
+        "position": 49.8,
+        "impressions": 4,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 124,
+      "calls": 2,
+      "website_clicks": 7,
+      "direction_requests": 8
+    }
   }
 ]
