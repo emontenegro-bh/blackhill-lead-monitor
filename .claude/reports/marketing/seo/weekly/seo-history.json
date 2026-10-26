@@ -372,5 +372,22 @@
     "title_issues": 82,
     "h1_issues": 0,
     "meta_issues": 23
+  },
+  "2026-10-26": {
+    "score": 78,
+    "pages_live": 222,
+    "pages_missing": 0,
+    "total_issues": 334,
+    "alt_text_pct": 34.4,
+    "images_total": 10564,
+    "images_good": 3632,
+    "images_poor": 444,
+    "images_missing": 6488,
+    "schema_local_business": 186,
+    "schema_faq": 185,
+    "schema_aggregate_rating": 184,
+    "title_issues": 84,
+    "h1_issues": 0,
+    "meta_issues": 22
   }
 }
