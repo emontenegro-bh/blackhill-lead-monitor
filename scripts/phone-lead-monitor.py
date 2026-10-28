@@ -24,7 +24,7 @@ Usage:
     python3 phone-lead-monitor.py --status   # Show processing stats
 """
 
-import base64, json, logging, os, re, signal, smtplib, subprocess, sys, urllib.request, urllib.error, urllib.parse
+import base64, json, logging, os, re, signal, smtplib, subprocess, sys, time, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -145,23 +145,60 @@ def get_token(config):
 
 # --- Graph API ---
 
+# Graph statuses worth trying again rather than failing the run. 0 is this
+# module's code for "the request never got an HTTP answer" -- a timeout or a
+# reset -- which is the common one.
+GRAPH_RETRY_STATUSES = {0, 429, 500, 502, 503, 504}
+GRAPH_ATTEMPTS = 3
+
+
 def graph_request(endpoint, token):
+    """GET from Graph, retrying transient failures.
+
+    Every caller is a read, so a retry cannot double anything.
+
+    Without this a single blip failed the whole run and emailed an alert.
+    On 2026-10-28 at 08:12 one read timed out -- "Workbook listing failed:
+    0 - {'error': 'The read operation timed out'}" -- and the run two
+    minutes later succeeded, as did the ~400 around it. At a two-minute
+    cadence that is an alert for something that repaired itself before
+    anyone could open the mail, and alerts that cry wolf are how the real
+    one gets ignored.
+    """
     url = f"{GRAPH_BASE}{endpoint}"
-    req = urllib.request.Request(url, headers={
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    })
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read()), resp.status
-    except urllib.error.HTTPError as e:
-        body = e.read().decode() if e.fp else ""
+    last = ({"error": "no attempt made"}, 0)
+    for attempt in range(GRAPH_ATTEMPTS):
+        req = urllib.request.Request(url, headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        })
         try:
-            return json.loads(body), e.code
-        except Exception:
-            return {"error": body or str(e)}, e.code
-    except Exception as e:
-        return {"error": str(e)}, 0
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read()), resp.status
+        except urllib.error.HTTPError as e:
+            body = e.read().decode() if e.fp else ""
+            try:
+                last = (json.loads(body), e.code)
+            except Exception:
+                last = ({"error": body or str(e)}, e.code)
+            # Honour Retry-After on a throttle; Graph means it.
+            wait = 0
+            if e.code == 429:
+                try:
+                    wait = int((e.headers or {}).get("Retry-After", "") or 0)
+                except ValueError:
+                    wait = 0
+        except Exception as e:
+            last = ({"error": str(e)}, 0)
+            wait = 0
+
+        if last[1] not in GRAPH_RETRY_STATUSES or attempt == GRAPH_ATTEMPTS - 1:
+            break
+        delay = wait or 2 * (attempt + 1)
+        log.warning(f"Graph {endpoint.split('?')[0]} -> {last[1]}; "
+                    f"retrying in {delay}s ({attempt + 1}/{GRAPH_ATTEMPTS - 1})")
+        time.sleep(delay)
+    return last
 
 
 def find_workbook(token, user_email, file_name):
