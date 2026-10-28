@@ -363,6 +363,12 @@ def parse_row(row, cmap):
 
 # --- Assignment ---
 
+# Service values that carry no routing decision: the caller never named one,
+# or Carlos picked the catch-all. These are the ONLY cases where the notes are
+# consulted; any real service answers for itself.
+GENERIC_SERVICES = {"", "general inquiry", "general", "other", "not sure", "n/a"}
+
+
 def assign_lead_owner(lead, state):
     """Christmas -> Evelin, Irrigation -> Denisse, Commercial Maint -> Evelin, else round-robin."""
     service = (lead.get("service_interest", "") or "").lower()
@@ -396,6 +402,26 @@ def assign_lead_owner(lead, state):
     # decision, while the notes are whatever the caller happened to say.
     if "irrigation" in service or "sprinkler" in service:
         return OWNER_DENISSE_HUBSPOT_ID
+
+    # Only now, with the service having had every chance to decide and said
+    # nothing, do the notes get a say. "The service should be the deciding
+    # factor first" (Evelin, 2026-10-28) -- first, not only: a caller whose
+    # service Carlos logged as "General Inquiry" because they never gave one
+    # still deserves to reach the right person when they plainly describe a
+    # broken sprinkler.
+    #
+    # This CANNOT re-break Kevin Cook. His service was "Commercial
+    # Maintenance", which is answered above and never reaches here. Only a
+    # genuinely empty or catch-all service falls this far.
+    if service.strip() in GENERIC_SERVICES:
+        notes = (lead.get("notes", "") or "").lower()
+        if "christmas" in notes:
+            return OWNER_EVELIN_HUBSPOT_ID
+        if "commercial" in notes and "maint" in notes:
+            return OWNER_EVELIN_HUBSPOT_ID
+        if "irrigation" in notes or "sprinkler" in notes:
+            return OWNER_DENISSE_HUBSPOT_ID
+
     rr = state.setdefault("round_robin_state", {"last_index": -1})
     owners = [OWNER_EVELIN_HUBSPOT_ID, OWNER_DENISSE_HUBSPOT_ID]
     next_index = (rr.get("last_index", -1) + 1) % len(owners)
