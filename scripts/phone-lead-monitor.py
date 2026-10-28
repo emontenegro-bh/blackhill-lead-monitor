@@ -366,7 +366,6 @@ def parse_row(row, cmap):
 def assign_lead_owner(lead, state):
     """Christmas -> Evelin, Irrigation -> Denisse, Commercial Maint -> Evelin, else round-robin."""
     service = (lead.get("service_interest", "") or "").lower()
-    notes = (lead.get("notes", "") or "").lower()
 
     # Christmas lights go to Evelin only, decided 2026-10-02 while launching the
     # service. Not a round-robin exception for its own sake: season one has no
@@ -378,10 +377,25 @@ def assign_lead_owner(lead, state):
     # mention Christmas lights is still a landscaping lead.
     if "christmas" in service:
         return OWNER_EVELIN_HUBSPOT_ID
-    if "irrigation" in service or "sprinkler" in service or "irrigation" in notes:
-        return OWNER_DENISSE_HUBSPOT_ID
+    # Commercial Maintenance is tested BEFORE irrigation, matching
+    # whatconverts-lead-monitor.py: a commercial job that happens to involve
+    # irrigation is still commercial, and Evelin prices those.
+    #
+    # Kevin Cook (2026-10-28) is why. VP of an HOA, Service = "Commercial
+    # Maintenance", routed to Denisse because his notes mentioned wanting
+    # "maintenance of his irrigation system". The selected service said
+    # commercial and the rule never got to ask.
     if "commercial" in service and "maint" in service:
         return OWNER_EVELIN_HUBSPOT_ID
+    # On the SELECTED service only. The notes used to count here too, which
+    # is both what mis-routed Kevin Cook and a contradiction of the comment
+    # on the Christmas rule above, which already claimed this rule was
+    # service-only. Evelin's standing instruction (2026-09-23, reaffirmed on
+    # hubspot-sync.py) is to route on the service selected and never on words
+    # in the message: Carlos picks the service from a list, so it is a
+    # decision, while the notes are whatever the caller happened to say.
+    if "irrigation" in service or "sprinkler" in service:
+        return OWNER_DENISSE_HUBSPOT_ID
     rr = state.setdefault("round_robin_state", {"last_index": -1})
     owners = [OWNER_EVELIN_HUBSPOT_ID, OWNER_DENISSE_HUBSPOT_ID]
     next_index = (rr.get("last_index", -1) + 1) % len(owners)
