@@ -217,6 +217,11 @@ def visit_state(ts, v_by_t, today):
 
 
 INBOX_LOOKBACK_DAYS = 45
+EXPEDITE_RE = re.compile(r"\b(expedite[ds]?|emergency|safety issue)\b", re.I)
+# The City calls a job off in a reply, e.g. "Please disregard this request. A
+# supervisor confirmed it has already been repaired." (2026-10-30).
+CANCEL_RE = re.compile(r"\b(disregard|cancel(?:l?ed|ling|lation)?|already (?:been )?(?:repaired|fixed)"
+                       r"|no longer (?:need|required))\b", re.I)
 
 
 def inbox_pos():
@@ -237,7 +242,7 @@ def inbox_pos():
         since = (datetime.now(timezone.utc) - timedelta(days=INBOX_LOOKBACK_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
         url = (f"https://graph.microsoft.com/v1.0/users/{mon.MAILBOX}/messages"
                f"?$filter=receivedDateTime%20ge%20{since}"
-               f"&$select=subject,receivedDateTime,body&$top=100")
+               f"&$select=subject,receivedDateTime,body,from&$top=100")
         msgs = []
         while url and len(msgs) < 1000:
             page = mon.graph_get(token, url) or {}
@@ -245,19 +250,44 @@ def inbox_pos():
             url = page.get("@odata.nextLink")
     except Exception as e:
         log(f"Inbox PO check skipped: {e}")
-        return {}, {}, {}
-    by_wo, by_key, requests = {}, {}, {}
+        return {}, {}, {}, {}, []
+    by_wo, by_key, requests, rush, cancels = {}, {}, {}, {}, []
     for m in sorted(msgs, key=lambda m: m["receivedDateTime"]):
         text = mon.html_to_text((m.get("body") or {}).get("content", ""))
         kind = mon.classify(text)
         top = mon.top_of_message(text)
+        # The City marks rush jobs "EXPEDITE" or "EMERGENCY"/"SAFETY ISSUE",
+        # in the subject or at the top of a follow-up.
+        if EXPEDITE_RE.search(m.get("subject", "")) or EXPEDITE_RE.search(top[:300]):
+            r_wo = mon.parse_wo(text, m.get("subject", ""))
+            subj = re.sub(r"\b\d{2}-\d{5,6}\b", " ", m.get("subject", ""))
+            hit_addr = re.search(r"\b\d{3,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z]+", subj)
+            r_key = addr_key(hit_addr.group(0)) if hit_addr else None
+            for k in filter(None, (r_wo, r_key)):
+                rush.setdefault(k, day(m["receivedDateTime"]))
+        # Cancellations come from the City, never from our own replies. The
+        # reply often names no job ("disregard this request"), so fall back
+        # to the first WO quoted underneath it.
+        sender = ((m.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
+        hit_c = CANCEL_RE.search(m.get("subject", "")) or CANCEL_RE.search(top)
+        if hit_c and not sender.endswith("@blackhilltx.com"):
+            c_wo = mon.parse_wo(top, m.get("subject", ""))
+            if not c_wo:
+                q = mon.WO_RE.search(text[len(top):] if text.startswith(top) else text)
+                c_wo = q.group(1) if q else None
+            subj = re.sub(r"\b\d{2}-\d{5,6}\b", " ", m.get("subject", ""))
+            hit_addr = re.search(r"\b\d{3,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z]+", subj + " " + top)
+            sentence = next((x for x in re.split(r"(?<=[.!?])\s+|\s*\n\s*", top)
+                             if CANCEL_RE.search(x)), "")
+            cancels.append({"wo": c_wo, "key": addr_key(hit_addr.group(0)) if hit_addr else None,
+                            "date": day(m["receivedDateTime"]), "quote": " ".join(sentence.split())[:140]})
         if kind == "quote":
             wo = mon.parse_wo(text, m.get("subject", ""))
             addr = mon.parse_address(text, m.get("subject", ""))
             subj = mon.parse_address("", m.get("subject", ""))
             if addr_key(subj) and addr_key(subj) != addr_key(addr):
                 addr = f"{subj} / {addr}"      # City sometimes pastes the wrong one
-            key = wo or addr_key(addr)
+            key = f"{wo}|{addr_key(addr)}"     # one WO can cover two houses
             if key and key not in requests:
                 requests[key] = {"wo": wo, "address": addr, "date": day(m["receivedDateTime"])}
             continue
@@ -274,7 +304,7 @@ def inbox_pos():
         if addr_key(addr):
             by_key[addr_key(addr)] = hit
     log(f"Inbox: {len(msgs)} messages, {len(by_wo)} PO emails, {len(requests)} quote requests")
-    return by_wo, by_key, requests
+    return by_wo, by_key, requests, rush, cancels
 
 
 def build_rows(api):
@@ -608,7 +638,7 @@ def build_rows(api):
 
     # A PO in the inbox for a job Aspire still shows as awaiting one means
     # the City approved it: the repair is cleared and needs scheduling.
-    by_wo, by_key, requests = inbox_pos()
+    by_wo, by_key, requests, rush, cancels = inbox_pos()
     for r in rows:
         if r["Stage"][:2] not in ("03", "04", "05") or not r["Contract Opp #"]:
             continue
@@ -630,12 +660,16 @@ def build_rows(api):
     # property (open or closed) has not been entered yet: show it on top.
     known_wo = set()
     known_key = set()
+    known_names = [o["OpportunityName"].lower() for o in opps]
     for o in opps:
         known_wo.update(re.findall(r"\b\d{2}-\d{5,6}\b", strip_html(o.get("ProposalDescription1"))))
         known_key.add(addr_key(address_of(o["OpportunityName"])))
     for q in requests.values():
         keys = {addr_key(a) for a in q["address"].split(" / ")}
-        if (q["wo"] and q["wo"] in known_wo) or keys & known_key:
+        # One opportunity can cover two houses, e.g. "4117 & 4120 Twinleaf Dr".
+        named = any(k and k.split()[0] in n and " ".join(k.split()[1:]) in n
+                    for k in keys for n in known_names)
+        if (q["wo"] and q["wo"] in known_wo) or keys & known_key or named:
             continue
         r = {c: None for c in (rows[0] if rows else COLS)}
         r.update({"Stage": stage("00"), "Address": q["address"], "Contract Opp #": None,
@@ -645,6 +679,36 @@ def build_rows(api):
                                      "create the FW Assessment & Repair opportunity and schedule the assessment"})
         rows.append(r)
 
+    # City rush requests: flag every open job (before invoicing) they touch.
+    for r in rows:
+        if r["Stage"][:2] >= "11":
+            continue
+        when = rush.get(r["_wo"]) or rush.get(addr_key(r["Address"].split(" / ")[0]))
+        if when:
+            r["Needs Attention"] = "; ".join(filter(None, [f"EXPEDITE (City, {when:%m/%d})", r["Needs Attention"]]))
+
+    # City cancellations: flag the open job so it gets marked Lost. One that
+    # matches no open job is shown on its own row, unless it matches a job
+    # already closed in Aspire (handled). Aspire descriptions often lack the
+    # WO, so it maps to an address through the City's original quote request.
+    wo_addr = {q["wo"]: addr_key(q["address"].split(" / ")[0]) for q in requests.values() if q["wo"]}
+    for c in cancels:
+        c["key"] = c["key"] or wo_addr.get(c["wo"])
+        hits = [r for r in rows if r["Stage"][:2] < "11" and r["Address"]
+                and ((c["wo"] and r["_wo"] == c["wo"])
+                     or (c["key"] and c["key"] == addr_key(r["Address"].split(" / ")[0])))]
+        note = f'CITY CANCELED? {c["date"]:%m/%d}: "{c["quote"]}"'
+        for r in hits:
+            todo = f"; if so, mark #{r['Contract Opp #']} Lost" if r["Contract Opp #"] else ""
+            r["Needs Attention"] = "; ".join(filter(None, [note + todo, r["Needs Attention"]]))
+        if hits or (c["wo"] and c["wo"] in known_wo) or (c["key"] and c["key"] in known_key):
+            continue
+        r = {k: None for k in (rows[0] if rows else COLS)}
+        r.update({"Stage": stage("00"), "Address": f"WO {c['wo']}" if c["wo"] else "(no job named)",
+                  "Contract Opp #": None, "_wo": c["wo"], "_qt_id": None, "_main_id": None,
+                  "Needs Attention": note + "; find the job this refers to"})
+        rows.append(r)
+
     # Manual holds, e.g. "wait until we talk to Jon": {"<opp #>": "reason"} in
     # Supabase state, so a job can be parked without touching Aspire.
     holds = db.load_state("fw-irrigation-tracker-holds", {}) if db.is_configured() else {}
@@ -652,6 +716,11 @@ def build_rows(api):
         why = holds.get(str(r["Contract Opp #"]))
         if why:
             r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", r["Needs Attention"]]))
+
+    # A paid job is finished; its notes are just noise.
+    for r in rows:
+        if r["Stage"][:2] == "13":
+            r["Needs Attention"] = ""
 
     rows.sort(key=lambda r: (r["Stage"], -(r["Contract Opp #"] or 0), r["Address"]))
     return rows
@@ -674,12 +743,12 @@ FLAG_FILL = PatternFill("solid", fgColor="FF9999")
 CHANGED_FILL = PatternFill("solid", fgColor="FFFF00")
 MONEY = '"$"#,##0.00'
 COLS = [
-    "Stage", "Address",
+    "Stage", "Address", "Needs Attention",
     "Quick Ticket Opp #", "Assessment Ticket #", "Assessment Scheduled", "Assessment Done",
     "Contract Opp #", "Contract Type", "Contract Status", "PO #", "Won Date",
     "Time Moved", "Repair Ticket #", "Repair Scheduled", "Repair Done",
     "Invoice #", "Invoice Date", "Invoiced $", "Invoice Email Status",
-    "Needs Attention", "Changed (24h)", "Last Activity"]
+    "Changed (24h)", "Last Activity"]
 DATE_COLS = ("Assessment Scheduled", "Assessment Done", "Won Date", "Repair Scheduled", "Repair Done",
              "Invoice Date")
 WIDTHS = {"Stage": 38, "Address": 28, "Needs Attention": 50, "Last Activity": 17,
@@ -713,12 +782,14 @@ def write_table(ws, rows):
             elif c in DATE_COLS:
                 cell.number_format = "m/d/yy"
         if r["Needs Attention"]:
-            ws.cell(i, COLS.index("Needs Attention") + 1).fill = FLAG_FILL
+            note = ws.cell(i, COLS.index("Needs Attention") + 1)
+            note.fill = FLAG_FILL
+            note.alignment = Alignment(wrap_text=True, vertical="top")
         if r["Changed (24h)"]:
             ws.cell(i, COLS.index("Changed (24h)") + 1).fill = CHANGED_FILL
     for j, c in enumerate(COLS, 1):
         ws.column_dimensions[get_column_letter(j)].width = WIDTHS.get(c, 12)
-    ws.freeze_panes = "C2"
+    ws.freeze_panes = "D2"      # Stage, Address and Needs Attention stay in view
     ws.auto_filter.ref = ws.dimensions
 
 
