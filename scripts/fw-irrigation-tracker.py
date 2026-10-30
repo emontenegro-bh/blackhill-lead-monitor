@@ -717,6 +717,11 @@ def build_rows(api):
         if why:
             r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", r["Needs Attention"]]))
 
+    # A paid job is finished; its notes are just noise.
+    for r in rows:
+        if r["Stage"][:2] == "13":
+            r["Needs Attention"] = ""
+
     rows.sort(key=lambda r: (r["Stage"], -(r["Contract Opp #"] or 0), r["Address"]))
     return rows
 
