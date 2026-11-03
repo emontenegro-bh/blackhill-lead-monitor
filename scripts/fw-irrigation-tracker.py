@@ -222,6 +222,7 @@ EXPEDITE_RE = re.compile(r"\b(expedite[ds]?|emergency|safety issue)\b", re.I)
 # supervisor confirmed it has already been repaired." (2026-10-30).
 CANCEL_RE = re.compile(r"\b(disregard|cancel(?:l?ed|ling|lation)?|already (?:been )?(?:repaired|fixed)"
                        r"|no longer (?:need|required))\b", re.I)
+CORRECTION_RE = re.compile(r"\b(?:send|sending|resend)\b.{0,30}\bcorrect", re.I)
 
 
 def inbox_pos():
@@ -270,6 +271,10 @@ def inbox_pos():
         # to the first WO quoted underneath it.
         sender = ((m.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
         hit_c = CANCEL_RE.search(m.get("subject", "")) or CANCEL_RE.search(top)
+        # "Disregard this request, I will send the correct one" is a resend,
+        # not a cancellation (2026-11-02).
+        if hit_c and CORRECTION_RE.search(top):
+            hit_c = None
         if hit_c and not sender.endswith("@blackhilltx.com"):
             c_wo = mon.parse_wo(top, m.get("subject", ""))
             if not c_wo:
@@ -699,7 +704,8 @@ def build_rows(api):
                      or (c["key"] and c["key"] == addr_key(r["Address"].split(" / ")[0])))]
         note = f'CITY CANCELED? {c["date"]:%m/%d}: "{c["quote"]}"'
         for r in hits:
-            todo = f"; if so, mark #{r['Contract Opp #']} Lost" if r["Contract Opp #"] else ""
+            todo = (f"; if so, close out #{r['Contract Opp #']}: bill any trip already made, "
+                    "otherwise mark it Lost") if r["Contract Opp #"] else ""
             r["Needs Attention"] = "; ".join(filter(None, [note + todo, r["Needs Attention"]]))
         if hits or (c["wo"] and c["wo"] in known_wo) or (c["key"] and c["key"] in known_key):
             continue
