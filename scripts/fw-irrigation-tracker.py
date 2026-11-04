@@ -350,8 +350,10 @@ def build_rows(api):
     for inv in invoices:
         if inv.get("InvoiceVoid") == "Y":
             continue
-        for io_ in inv.get("InvoiceOpportunities") or []:
-            i_by_opp.setdefault(io_["OpportunityID"], []).append(inv)
+        # One invoice carries a line per invoice type (T&M + the Fixed Payment
+        # assessment), so count it once per job, not once per line.
+        for oid in {io_["OpportunityID"] for io_ in inv.get("InvoiceOpportunities") or []}:
+            i_by_opp.setdefault(oid, []).append(inv)
 
     def hrs(ts):
         return round(sum(hours_by_t.get(t["WorkTicketID"], 0) for t in ts), 2)
