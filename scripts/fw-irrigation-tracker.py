@@ -735,7 +735,7 @@ def build_rows(api):
 # --- Excel ---
 
 STAGE_COLORS = {
-    "00": "FF9999",
+    "00": "E4DFEC",                                          # new request
     "01": "FFF2CC", "02": "FFF2CC", "03": "FFE699",          # assessment
     "04": "FCE4D6", "05": "F8CBAD",                          # estimate / PO
     "06": "F4B183",                                          # PO in, move time
@@ -789,7 +789,9 @@ def write_table(ws, rows):
                 cell.number_format = "m/d/yy"
         if r["Needs Attention"]:
             note = ws.cell(i, COLS.index("Needs Attention") + 1)
-            note.fill = FLAG_FILL
+            # Red is reserved for jobs on hold, so it stands out.
+            if "ON HOLD" in r["Needs Attention"]:
+                note.fill = FLAG_FILL
             note.alignment = Alignment(wrap_text=True, vertical="top")
         if r["Changed (24h)"]:
             ws.cell(i, COLS.index("Changed (24h)") + 1).fill = CHANGED_FILL
