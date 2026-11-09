@@ -509,6 +509,11 @@ def build_rows(api):
                 code = "03"
                 flags.append("Add Jon's parts to the repair service and send to the City for the PO; "
                              "keep the repair off the schedule until the PO is in")
+        elif qts and not time_moved and not po_of(main_opp, desc):
+            # Marked Won before the City sent a PO: still waiting on it.
+            code = "05"
+            flags.append(f"Won in Aspire but no PO yet; when it comes, move quick ticket time ({qt_hours} hr) "
+                         f"to the contract")
         elif qts and not time_moved:
             code = "06"
             flags.append(f"Move quick ticket time ({qt_hours} hr) to the contract")
@@ -664,7 +669,10 @@ def build_rows(api):
         if not hit or hit["po"] == r["PO #"]:
             continue
         r["PO #"] = hit["po"]
-        if r["Contract Status"] == "Won":
+        if r["Contract Status"] == "Won" and "move quick ticket time" in (r["Needs Attention"] or ""):
+            r["Stage"] = stage("06")
+            todo = f"add the PO to #{r['Contract Opp #']} and move the quick ticket time to it"
+        elif r["Contract Status"] == "Won":
             r["Stage"] = stage("07")
             todo = f"add the PO to #{r['Contract Opp #']} and put the repair on Jon's schedule"
         else:
@@ -734,7 +742,9 @@ def build_rows(api):
     for r in rows:
         why = holds.get(str(r["Contract Opp #"]))
         if why:
-            r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", r["Needs Attention"]]))
+            # The hold note is the current plan; drop the cancel prompt it already answers.
+            rest = re.sub(r'CITY CANCELED\? .*?otherwise mark it Lost(; )?', "", r["Needs Attention"] or "")
+            r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", rest.strip("; ")]))
 
     # A paid job is finished; its notes are just noise.
     for r in rows:
