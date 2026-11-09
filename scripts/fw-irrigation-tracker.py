@@ -445,9 +445,15 @@ def build_rows(api):
                                          or ALREADY_REPAIRED.search(jon_notes)))
         billed_on_qt = bool(main_opp and qt_invs and not invs)
         time_moved = a_hours > 0 or (qt_tickets and qt_hours == 0 and not qt_open)
+        # Every repair ticket canceled (already repaired, or the City called it
+        # off): only the assessment is left to bill, so skip the estimate step.
+        repair_canceled = bool(repair_t) and all(t["WorkTicketStatusName"] == "Canceled" for t in repair_t)
+        if repair_canceled:
+            a_done = [day(t["CompleteDate"]) for t in assess_t if t.get("CompleteDate")]
+            complete = max(a_done) if assess_t and len(a_done) == len(assess_t) else None
         won_first = bool(main_opp and status == "Won" and not qts
                          and main_opp["CreatedDateTime"][:10] >= WON_FIRST_START
-                         and not po_of(main_opp, desc))
+                         and not po_of(main_opp, desc) and not repair_canceled)
         flags = []
 
         if main_opp is None:
@@ -523,8 +529,13 @@ def build_rows(api):
             else:
                 code = "07"
                 flags.append("Repair not on the schedule yet")
+        elif repair_canceled and not complete and not invs:
+            code = "02"
+            flags.append("Repair canceled; mark the assessment complete so it can be invoiced")
         elif not invs:
             code = "10"
+            if repair_canceled and not po_of(main_opp, desc):
+                flags.append("Repair canceled; assessment only. Get the City's PO for the assessment, then invoice it")
             if complete and (today - complete).days > STALE_COMPLETE_DAYS:
                 flags.append(f"Complete {(today - complete).days} days, not invoiced")
         elif any(i.get("EmailStatus") != "Sent" for i in invs):
