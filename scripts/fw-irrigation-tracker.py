@@ -380,6 +380,10 @@ def build_rows(api):
 
     svc_id = {s["OpportunityServiceID"]: s.get("ServiceID") for s in services}
     has_assess = {s["OpportunityID"] for s in services if s.get("ServiceID") == ASSESSMENT_SERVICE_ID}
+    # Parts go on a won contract through a change order, which adds a service
+    # stamped with its revision; one still active means the estimate is built.
+    revised = {s["OpportunityID"] for s in services
+               if s.get("AddedOpportunityRevisionID") and not s.get("RemovedOpportunityRevisionID")}
     hours_by_t, t_by_opp, v_by_t, i_by_opp = {}, {}, {}, {}
     for tm in times:
         hours_by_t[tm["WorkTicketID"]] = hours_by_t.get(tm["WorkTicketID"], 0) + (tm.get("Hours") or 0)
@@ -547,8 +551,12 @@ def build_rows(api):
                 code = "05"
             else:
                 code = "03"
-                flags.append("Add Jon's parts to the repair service and send to the City for the PO; "
-                             "keep the repair off the schedule until the PO is in")
+                if main_opp["OpportunityID"] in revised:
+                    flags.append("Parts are on the estimate; email the proposal to the City for the PO "
+                                 "(Revision Through = latest); keep the repair off the schedule until the PO is in")
+                else:
+                    flags.append("Add Jon's parts to the repair service and send to the City for the PO; "
+                                 "keep the repair off the schedule until the PO is in")
         elif qts and not time_moved and not po_of(main_opp, desc):
             # Marked Won before the City sent a PO: still waiting on it.
             code = "05"
