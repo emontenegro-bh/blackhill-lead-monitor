@@ -217,6 +217,22 @@ def visit_state(ts, v_by_t, today):
 
 
 INBOX_LOOKBACK_DAYS = 45
+EXPEDITE_RE = re.compile(r"\b(expedite[ds]?|emergency|safety issue)\b", re.I)
+# The City calls a job off in a reply, e.g. "Please disregard this request. A
+# supervisor confirmed it has already been repaired." (2026-10-30).
+CANCEL_RE = re.compile(r"\b(disregard|cancel(?:l?ed|ling|lation)?|already (?:been )?(?:repaired|fixed)"
+                       r"|no longer (?:need|required))\b", re.I)
+CORRECTION_RE = re.compile(r"\b(?:send|sending|resend)\b.{0,30}\bcorrect", re.I)
+# The City asks for a corrected quote before it will issue the PO, e.g.
+# "Please revise po line that is off .01" (2026-11-04).
+REVISE_RE = re.compile(r"\b(revise|revising|revision|redo(?:ing)? the quote|off by|"
+                       r"not calculating correctly)\b", re.I)
+NO_REVISE_RE = re.compile(r"\b(no need to (?:revise|redo)|(?:don'?t|doesn'?t|do not|does not) need (?:to be )?revis)", re.I)
+# City replies often go only to the person who sent the proposal, not to the
+# irrigation inbox (a PO and a revision request were missed this way, 11/2026).
+EXTRA_MAILBOXES = [m.strip() for m in os.environ.get("FW_TRACKER_EXTRA_MAILBOXES",
+                                                      "evelin@blackhilltx.com").split(",") if m.strip()]
+CITY_DOMAIN = "@fortworthtexas.gov"
 
 
 def inbox_pos():
@@ -235,29 +251,88 @@ def inbox_pos():
         spec.loader.exec_module(mon)
         token = mon.get_token()
         since = (datetime.now(timezone.utc) - timedelta(days=INBOX_LOOKBACK_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        url = (f"https://graph.microsoft.com/v1.0/users/{mon.MAILBOX}/messages"
-               f"?$filter=receivedDateTime%20ge%20{since}"
-               f"&$select=subject,receivedDateTime,body&$top=100")
-        msgs = []
-        while url and len(msgs) < 1000:
-            page = mon.graph_get(token, url) or {}
-            msgs += page.get("value", [])
-            url = page.get("@odata.nextLink")
+        def fetch(box, cap):
+            url = (f"https://graph.microsoft.com/v1.0/users/{box}/messages"
+                   f"?$filter=receivedDateTime%20ge%20{since}"
+                   f"&$select=subject,receivedDateTime,body,from,internetMessageId&$top=100")
+            out = []
+            while url and len(out) < cap:
+                page = mon.graph_get(token, url) or {}
+                out += page.get("value", [])
+                url = page.get("@odata.nextLink")
+            return out
+        msgs = fetch(mon.MAILBOX, 1000)
     except Exception as e:
         log(f"Inbox PO check skipped: {e}")
-        return {}, {}, {}
-    by_wo, by_key, requests = {}, {}, {}
+        return {}, {}, {}, {}, []
+    # Other mailboxes add only City mail, and skip copies already in the
+    # irrigation inbox. A failure here must not lose the main inbox.
+    seen = {m.get("internetMessageId") for m in msgs}
+    for box in EXTRA_MAILBOXES:
+        try:
+            extra = [m for m in fetch(box, 3000)
+                     if ((m.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
+                     .endswith(CITY_DOMAIN) and m.get("internetMessageId") not in seen]
+        except Exception as e:
+            log(f"Extra mailbox {box} skipped: {e}")
+            continue
+        seen.update(m.get("internetMessageId") for m in extra)
+        msgs += extra
+    by_wo, by_key, requests, rush, cancels = {}, {}, {}, {}, []
     for m in sorted(msgs, key=lambda m: m["receivedDateTime"]):
         text = mon.html_to_text((m.get("body") or {}).get("content", ""))
         kind = mon.classify(text)
         top = mon.top_of_message(text)
+        # The City marks rush jobs "EXPEDITE" or "EMERGENCY"/"SAFETY ISSUE",
+        # in the subject or at the top of a follow-up.
+        if EXPEDITE_RE.search(m.get("subject", "")) or EXPEDITE_RE.search(top[:300]):
+            r_wo = mon.parse_wo(text, m.get("subject", ""))
+            subj = re.sub(r"\b\d{2}-\d{5,6}\b", " ", m.get("subject", ""))
+            hit_addr = re.search(r"\b\d{3,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z]+", subj)
+            r_key = addr_key(hit_addr.group(0)) if hit_addr else None
+            for k in filter(None, (r_wo, r_key)):
+                rush.setdefault(k, day(m["receivedDateTime"]))
+        # Cancellations come from the City, never from our own replies. The
+        # reply often names no job ("disregard this request"), so fall back
+        # to the first WO quoted underneath it.
+        sender = ((m.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
+        hit_c = CANCEL_RE.search(m.get("subject", "")) or CANCEL_RE.search(top)
+        # "Disregard this request, I will send the correct one" is a resend,
+        # not a cancellation (2026-11-02).
+        if hit_c and CORRECTION_RE.search(top):
+            hit_c = None
+        if hit_c and not sender.endswith("@blackhilltx.com"):
+            c_wo = mon.parse_wo(top, m.get("subject", ""))
+            if not c_wo:
+                q = mon.WO_RE.search(text[len(top):] if text.startswith(top) else text)
+                c_wo = q.group(1) if q else None
+            subj = re.sub(r"\b\d{2}-\d{5,6}\b", " ", m.get("subject", ""))
+            hit_addr = re.search(r"\b\d{3,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z]+", subj + " " + top)
+            sentence = next((x for x in re.split(r"(?<=[.!?])\s+|\s*\n\s*", top)
+                             if CANCEL_RE.search(x)), "")
+            cancels.append({"wo": c_wo, "key": addr_key(hit_addr.group(0)) if hit_addr else None,
+                            "date": day(m["receivedDateTime"]), "quote": " ".join(sentence.split())[:140]})
+        # "Only off by .06 ... no need to revise" is an approval, not a request.
+        hit_r = REVISE_RE.search(top) and not NO_REVISE_RE.search(top)
+        if hit_r and not hit_c and sender.endswith(CITY_DOMAIN):
+            r_wo = mon.parse_wo(top, m.get("subject", ""))
+            if not r_wo:
+                q = mon.WO_RE.search(text[len(top):] if text.startswith(top) else text)
+                r_wo = q.group(1) if q else None
+            subj = re.sub(r"\b\d{2}-\d{5,6}\b", " ", m.get("subject", ""))
+            hit_addr = re.search(r"\b\d{3,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z]+", subj + " " + top)
+            sentence = next((x for x in re.split(r"(?<=[.!?])\s+|\s*\n\s*", top)
+                             if REVISE_RE.search(x)), "")
+            cancels.append({"wo": r_wo, "key": addr_key(hit_addr.group(0)) if hit_addr else None,
+                            "date": day(m["receivedDateTime"]), "quote": " ".join(sentence.split())[:140],
+                            "kind": "revise"})
         if kind == "quote":
             wo = mon.parse_wo(text, m.get("subject", ""))
             addr = mon.parse_address(text, m.get("subject", ""))
             subj = mon.parse_address("", m.get("subject", ""))
             if addr_key(subj) and addr_key(subj) != addr_key(addr):
                 addr = f"{subj} / {addr}"      # City sometimes pastes the wrong one
-            key = wo or addr_key(addr)
+            key = f"{wo}|{addr_key(addr)}"     # one WO can cover two houses
             if key and key not in requests:
                 requests[key] = {"wo": wo, "address": addr, "date": day(m["receivedDateTime"])}
             continue
@@ -274,7 +349,7 @@ def inbox_pos():
         if addr_key(addr):
             by_key[addr_key(addr)] = hit
     log(f"Inbox: {len(msgs)} messages, {len(by_wo)} PO emails, {len(requests)} quote requests")
-    return by_wo, by_key, requests
+    return by_wo, by_key, requests, rush, cancels
 
 
 def build_rows(api):
@@ -315,8 +390,10 @@ def build_rows(api):
     for inv in invoices:
         if inv.get("InvoiceVoid") == "Y":
             continue
-        for io_ in inv.get("InvoiceOpportunities") or []:
-            i_by_opp.setdefault(io_["OpportunityID"], []).append(inv)
+        # One invoice carries a line per invoice type (T&M + the Fixed Payment
+        # assessment), so count it once per job, not once per line.
+        for oid in {io_["OpportunityID"] for io_ in inv.get("InvoiceOpportunities") or []}:
+            i_by_opp.setdefault(oid, []).append(inv)
 
     def hrs(ts):
         return round(sum(hours_by_t.get(t["WorkTicketID"], 0) for t in ts), 2)
@@ -408,9 +485,15 @@ def build_rows(api):
                                          or ALREADY_REPAIRED.search(jon_notes)))
         billed_on_qt = bool(main_opp and qt_invs and not invs)
         time_moved = a_hours > 0 or (qt_tickets and qt_hours == 0 and not qt_open)
+        # Every repair ticket canceled (already repaired, or the City called it
+        # off): only the assessment is left to bill, so skip the estimate step.
+        repair_canceled = bool(repair_t) and all(t["WorkTicketStatusName"] == "Canceled" for t in repair_t)
+        if repair_canceled:
+            a_done = [day(t["CompleteDate"]) for t in assess_t if t.get("CompleteDate")]
+            complete = max(a_done) if assess_t and len(a_done) == len(assess_t) else None
         won_first = bool(main_opp and status == "Won" and not qts
                          and main_opp["CreatedDateTime"][:10] >= WON_FIRST_START
-                         and not po_of(main_opp, desc))
+                         and not po_of(main_opp, desc) and not repair_canceled)
         flags = []
 
         if main_opp is None:
@@ -466,6 +549,11 @@ def build_rows(api):
                 code = "03"
                 flags.append("Add Jon's parts to the repair service and send to the City for the PO; "
                              "keep the repair off the schedule until the PO is in")
+        elif qts and not time_moved and not po_of(main_opp, desc):
+            # Marked Won before the City sent a PO: still waiting on it.
+            code = "05"
+            flags.append(f"Won in Aspire but no PO yet; when it comes, move quick ticket time ({qt_hours} hr) "
+                         f"to the contract")
         elif qts and not time_moved:
             code = "06"
             flags.append(f"Move quick ticket time ({qt_hours} hr) to the contract")
@@ -486,8 +574,13 @@ def build_rows(api):
             else:
                 code = "07"
                 flags.append("Repair not on the schedule yet")
+        elif repair_canceled and not complete and not invs:
+            code = "02"
+            flags.append("Repair canceled; mark the assessment complete so it can be invoiced")
         elif not invs:
             code = "10"
+            if repair_canceled and not po_of(main_opp, desc):
+                flags.append("Repair canceled; assessment only. Get the City's PO for the assessment, then invoice it")
             if complete and (today - complete).days > STALE_COMPLETE_DAYS:
                 flags.append(f"Complete {(today - complete).days} days, not invoiced")
         elif any(i.get("EmailStatus") != "Sent" for i in invs):
@@ -608,7 +701,7 @@ def build_rows(api):
 
     # A PO in the inbox for a job Aspire still shows as awaiting one means
     # the City approved it: the repair is cleared and needs scheduling.
-    by_wo, by_key, requests = inbox_pos()
+    by_wo, by_key, requests, rush, cancels = inbox_pos()
     for r in rows:
         if r["Stage"][:2] not in ("03", "04", "05") or not r["Contract Opp #"]:
             continue
@@ -616,7 +709,10 @@ def build_rows(api):
         if not hit or hit["po"] == r["PO #"]:
             continue
         r["PO #"] = hit["po"]
-        if r["Contract Status"] == "Won":
+        if r["Contract Status"] == "Won" and "move quick ticket time" in (r["Needs Attention"] or ""):
+            r["Stage"] = stage("06")
+            todo = f"add the PO to #{r['Contract Opp #']} and move the quick ticket time to it"
+        elif r["Contract Status"] == "Won":
             r["Stage"] = stage("07")
             todo = f"add the PO to #{r['Contract Opp #']} and put the repair on Jon's schedule"
         else:
@@ -630,12 +726,16 @@ def build_rows(api):
     # property (open or closed) has not been entered yet: show it on top.
     known_wo = set()
     known_key = set()
+    known_names = [o["OpportunityName"].lower() for o in opps]
     for o in opps:
         known_wo.update(re.findall(r"\b\d{2}-\d{5,6}\b", strip_html(o.get("ProposalDescription1"))))
         known_key.add(addr_key(address_of(o["OpportunityName"])))
     for q in requests.values():
         keys = {addr_key(a) for a in q["address"].split(" / ")}
-        if (q["wo"] and q["wo"] in known_wo) or keys & known_key:
+        # One opportunity can cover two houses, e.g. "100 & 102 Main St".
+        named = any(k and k.split()[0] in n and " ".join(k.split()[1:]) in n
+                    for k in keys for n in known_names)
+        if (q["wo"] and q["wo"] in known_wo) or keys & known_key or named:
             continue
         r = {c: None for c in (rows[0] if rows else COLS)}
         r.update({"Stage": stage("00"), "Address": q["address"], "Contract Opp #": None,
@@ -645,13 +745,60 @@ def build_rows(api):
                                      "create the FW Assessment & Repair opportunity and schedule the assessment"})
         rows.append(r)
 
+    # City rush requests: flag every open job (before invoicing) they touch.
+    for r in rows:
+        if r["Stage"][:2] >= "11":
+            continue
+        when = rush.get(r["_wo"]) or rush.get(addr_key(r["Address"].split(" / ")[0]))
+        if when:
+            r["Needs Attention"] = "; ".join(filter(None, [f"EXPEDITE (City, {when:%m/%d})", r["Needs Attention"]]))
+
+    # City cancellations: flag the open job so it gets marked Lost. One that
+    # matches no open job is shown on its own row, unless it matches a job
+    # already closed in Aspire (handled). Aspire descriptions often lack the
+    # WO, so it maps to an address through the City's original quote request.
+    wo_addr = {q["wo"]: addr_key(q["address"].split(" / ")[0]) for q in requests.values() if q["wo"]}
+    for c in cancels:
+        c["key"] = c["key"] or wo_addr.get(c["wo"])
+        hits = [r for r in rows if r["Stage"][:2] < "11" and r["Address"]
+                and ((c["wo"] and r["_wo"] == c["wo"])
+                     or (c["key"] and c["key"] == addr_key(r["Address"].split(" / ")[0])))]
+        revise = c.get("kind") == "revise"
+        if revise:
+            # Only matters while the quote is still waiting on the City.
+            hits = [r for r in hits if r["Stage"][:2] in ("04", "05")]
+        note = (f'CITY ASKED FOR A REVISED QUOTE {c["date"]:%m/%d}: "{c["quote"]}"' if revise
+                else f'CITY CANCELED? {c["date"]:%m/%d}: "{c["quote"]}"')
+        for r in hits:
+            if revise:
+                todo = (f"; fix it with a change order on #{r['Contract Opp #']} and re-send"
+                        if r["Contract Opp #"] else "")
+            else:
+                todo = (f"; if so, close out #{r['Contract Opp #']}: bill any trip already made, "
+                        "otherwise mark it Lost") if r["Contract Opp #"] else ""
+            r["Needs Attention"] = "; ".join(filter(None, [note + todo, r["Needs Attention"]]))
+        if hits or revise or (c["wo"] and c["wo"] in known_wo) or (c["key"] and c["key"] in known_key):
+            continue
+        r = {k: None for k in (rows[0] if rows else COLS)}
+        r.update({"Stage": stage("00"), "Address": f"WO {c['wo']}" if c["wo"] else "(no job named)",
+                  "Contract Opp #": None, "_wo": c["wo"], "_qt_id": None, "_main_id": None,
+                  "Needs Attention": note + "; find the job this refers to"})
+        rows.append(r)
+
     # Manual holds, e.g. "wait until we talk to Jon": {"<opp #>": "reason"} in
     # Supabase state, so a job can be parked without touching Aspire.
     holds = db.load_state("fw-irrigation-tracker-holds", {}) if db.is_configured() else {}
     for r in rows:
         why = holds.get(str(r["Contract Opp #"]))
         if why:
-            r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", r["Needs Attention"]]))
+            # The hold note is the current plan; drop the cancel prompt it already answers.
+            rest = re.sub(r'CITY CANCELED\? .*?otherwise mark it Lost(; )?', "", r["Needs Attention"] or "")
+            r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", rest.strip("; ")]))
+
+    # A paid job is finished; its notes are just noise.
+    for r in rows:
+        if r["Stage"][:2] == "13":
+            r["Needs Attention"] = ""
 
     rows.sort(key=lambda r: (r["Stage"], -(r["Contract Opp #"] or 0), r["Address"]))
     return rows
@@ -660,7 +807,7 @@ def build_rows(api):
 # --- Excel ---
 
 STAGE_COLORS = {
-    "00": "FF9999",
+    "00": "E4DFEC",                                          # new request
     "01": "FFF2CC", "02": "FFF2CC", "03": "FFE699",          # assessment
     "04": "FCE4D6", "05": "F8CBAD",                          # estimate / PO
     "06": "F4B183",                                          # PO in, move time
@@ -674,12 +821,12 @@ FLAG_FILL = PatternFill("solid", fgColor="FF9999")
 CHANGED_FILL = PatternFill("solid", fgColor="FFFF00")
 MONEY = '"$"#,##0.00'
 COLS = [
-    "Stage", "Address",
+    "Stage", "Address", "Needs Attention",
     "Quick Ticket Opp #", "Assessment Ticket #", "Assessment Scheduled", "Assessment Done",
     "Contract Opp #", "Contract Type", "Contract Status", "PO #", "Won Date",
     "Time Moved", "Repair Ticket #", "Repair Scheduled", "Repair Done",
     "Invoice #", "Invoice Date", "Invoiced $", "Invoice Email Status",
-    "Needs Attention", "Changed (24h)", "Last Activity"]
+    "Changed (24h)", "Last Activity"]
 DATE_COLS = ("Assessment Scheduled", "Assessment Done", "Won Date", "Repair Scheduled", "Repair Done",
              "Invoice Date")
 WIDTHS = {"Stage": 38, "Address": 28, "Needs Attention": 50, "Last Activity": 17,
@@ -713,12 +860,16 @@ def write_table(ws, rows):
             elif c in DATE_COLS:
                 cell.number_format = "m/d/yy"
         if r["Needs Attention"]:
-            ws.cell(i, COLS.index("Needs Attention") + 1).fill = FLAG_FILL
+            note = ws.cell(i, COLS.index("Needs Attention") + 1)
+            # Red is reserved for jobs on hold, so it stands out.
+            if "ON HOLD" in r["Needs Attention"]:
+                note.fill = FLAG_FILL
+            note.alignment = Alignment(wrap_text=True, vertical="top")
         if r["Changed (24h)"]:
             ws.cell(i, COLS.index("Changed (24h)") + 1).fill = CHANGED_FILL
     for j, c in enumerate(COLS, 1):
         ws.column_dimensions[get_column_letter(j)].width = WIDTHS.get(c, 12)
-    ws.freeze_panes = "C2"
+    ws.freeze_panes = "D2"      # Stage, Address and Needs Attention stay in view
     ws.auto_filter.ref = ws.dimensions
 
 
