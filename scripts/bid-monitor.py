@@ -527,6 +527,114 @@ ESBD_KEYWORDS = ["mowing", "landscape", "landscaping", "grounds", "irrigation"]
 ESBD_SERVICE = "/app/extensions/CPA/CPAMain/1.0.0/services/ESBD.Service.ss?c=852252&n=2"
 
 
+# --- TxDOT (ESBD agency 601) maintenance contracts -------------------------
+# Titles look like "LOCAL LET MAINTENANCE CONTRACT, COLLIN CO, MOWING HIGHWAY
+# RIGHT OF WAY"; the detail record's description carries COUNTY/HIGHWAY/TYPE/
+# EST. COST lines. These bypass REGION_TERMS and EXCLUDE_KEYWORDS (state-let
+# CONSTRUCTION is still excluded: it never carries "MAINTENANCE CONTRACT").
+TXDOT_AGENCY = "601"
+TXDOT_QUERIES = ["MAINTENANCE CONTRACT", "LANDSCAPE"]   # agencyNumber=601&status=1
+TXDOT_MAX_PAGES = 8                                      # 24 rows/page, ~91 open today
+TXDOT_DFW_COUNTIES = {
+    "TARRANT", "DALLAS", "COLLIN", "DENTON", "ELLIS", "JOHNSON", "PARKER", "WISE",
+    "HOOD", "KAUFMAN", "ROCKWALL", "ERATH", "PALO PINTO", "SOMERVELL", "JACK", "NAVARRO",
+}
+_TXDOT_TITLE = re.compile(r"^(STATE|LOCAL)\s+LET\s+MAINTENANCE\s+CONTRACT,\s*(.+?)\s+CO,\s*(.+)$", re.I)
+_TXDOT_DFW_TYPES = re.compile(
+    r"^(MOWING|LITTER|HERBICIDE|TREE|VEGETATION|SEEDING|SODDING|IRRIGATION|LANDSCAPE)|SEEDING\s*(/|AND|&)\s*SODDING", re.I)
+_MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+           "August", "September", "October", "November", "December"]
+
+
+def classify_txdot(title):
+    """Return dict(let, county, work_type, priority) for a landscape-type TxDOT
+    maintenance posting, or None. priority=True for LANDSCAPE work (any county)."""
+    m = _TXDOT_TITLE.match(" ".join((title or "").split()))
+    if not m:
+        return None
+    let, county, wtype = m.group(1).upper(), m.group(2).upper(), m.group(3).strip().upper()
+    if wtype.startswith("LANDSCAPE"):
+        return {"let": let, "county": county, "work_type": wtype, "priority": True}
+    if county in TXDOT_DFW_COUNTIES and _TXDOT_DFW_TYPES.search(wtype):
+        return {"let": let, "county": county, "work_type": wtype, "priority": False}
+    return None
+
+
+def txdot_plans_hint(let, sol_id, due):
+    """Text hint for TxDOT Plans Online (not fetched; login is public)."""
+    year = month = None
+    m = re.search(r"_(\d{2})(\d{2})$", sol_id or "")
+    if m:
+        month, year = int(m.group(1)), 2000 + int(m.group(2))
+    else:
+        d = re.match(r"(\d{1,2})/\d{1,2}/(\d{4})", due or "")
+        if d:
+            month, year = int(d.group(1)), int(d.group(2))
+    if not (month and 1 <= month <= 12):
+        return ""
+    kind = "State-Let-Maintenance" if let == "STATE" else "Local-Let-Maintenance"
+    return f"https://ftp.txdot.gov/plans/{kind}/{year}/{month:02d} {_MONTHS[month - 1]}/"
+
+
+def _txdot_detail(page, sol_id):
+    """Fetch the ESBD detail record from page context (same-origin, real browser)."""
+    return page.evaluate(
+        """async (id) => {
+            const r = await fetch('/app/extensions/CPA/CPAMain/1.0.0/services/ESBD.Details.Service.ss?c=852252&n=2&urlRoot=esbd&identification=' + encodeURIComponent(id));
+            if (!r.ok) return null;
+            return await r.json();
+        }""", sol_id)
+
+
+def scrape_txdot(page, seen):
+    """Query ESBD for open TxDOT maintenance contracts; keep landscape-type ones."""
+    items = []
+    for kw in TXDOT_QUERIES:
+        got = 0
+        for pg_no in range(1, TXDOT_MAX_PAGES + 1):
+            with page.expect_response(lambda r: "ESBD.Service.ss" in r.url, timeout=300000) as resp_info:
+                page.goto(f"https://www.txsmartbuy.gov/esbd?agencyNumber={TXDOT_AGENCY}&status=1"
+                          f"&keyword={quote(kw)}&page={pg_no}",
+                          wait_until="domcontentloaded", timeout=60000)
+            data = resp_info.value.json() or {}
+            lines = data.get("lines", [])
+            total = int(data.get("totalRecordsFound") or 0)
+            for l in lines:
+                got += 1
+                if l.get("statusName") != "Posted" or str(l.get("agencyNumber")) != TXDOT_AGENCY:
+                    continue
+                sid = str(l.get("internalid"))
+                if sid in seen:
+                    continue
+                seen.add(sid)
+                cls = classify_txdot(l.get("title", ""))
+                if not cls:
+                    continue
+                sol_id = l.get("solicitationId", "")
+                item = make_item("esbd", "Texas Department of Transportation", sid, l.get("title", ""),
+                                 close=l.get("responseDue", ""), url=f"https://www.txsmartbuy.gov/esbd/{sol_id}",
+                                 ref=sol_id)
+                item.update({"txdot": True, "county": cls["county"], "work_type": cls["work_type"],
+                             "priority": cls["priority"], "due_time": l.get("responseTime", "")})
+                try:
+                    det = _txdot_detail(page, sol_id) or {}
+                    cost = re.search(r"EST\.?\s*COST:\s*([^<]+)", det.get("description", "") or "", re.I)
+                    if cost:
+                        item["est_cost"] = cost.group(1).strip()
+                    elif det.get("value"):
+                        item["est_cost"] = f"${float(det['value']):,.2f}"
+                except Exception as e:  # detail is a nicety; never lose the posting over it
+                    log(f"TxDOT detail fetch failed for {sol_id}: {e}")
+                hint = txdot_plans_hint(cls["let"], sol_id, l.get("responseDue", ""))
+                if hint:
+                    item["plans_hint"] = hint
+                items.append(item)
+            if not lines or got >= total:
+                break
+    log(f"TxDOT: {len(items)} landscape-type maintenance posting(s)")
+    return items
+
+
 def scrape_esbd():
     try:
         from playwright.sync_api import sync_playwright
@@ -541,6 +649,9 @@ def scrape_esbd():
             # Present as regular Chrome and let the SPA make its own service
             # call, then intercept the response.
             page = browser.new_page(user_agent=HEADERS["User-Agent"])
+            # TxDOT first: its ids go into `seen` so the generic loop below
+            # does not re-add them as ordinary (region-filtered) rows.
+            items.extend(scrape_txdot(page, seen))
             for kw in ESBD_KEYWORDS:
                 # The NetSuite backend throttles ~66s per query before
                 # responding; this is normal, not a hang.
@@ -555,6 +666,8 @@ def scrape_esbd():
                     if sid in seen:
                         continue
                     seen.add(sid)
+                    if str(l.get("agencyNumber")) == TXDOT_AGENCY and "MAINTENANCE CONTRACT" in (l.get("title") or "").upper():
+                        continue  # TxDOT maintenance is handled (and filtered) by scrape_txdot
                     hay = f"{l.get('title', '')} {l.get('agencyName', '')}".lower()
                     if not any(t in hay for t in REGION_TERMS):
                         continue
@@ -684,6 +797,8 @@ def _norm_title(t):
 
 
 def is_relevant(item):
+    if item.get("txdot"):
+        return True  # already classified by classify_txdot(); skip the veto list
     text = item["title"].lower()
     if not any(kw in text for kw in SERVICE_KEYWORDS):
         return False
@@ -720,8 +835,28 @@ def esc(s):
 
 def build_email(relevant, errors, total_sources, ok_sources):
     today = now_utc().astimezone().strftime("%B %-d, %Y")
+    def txdot_row(it):
+        due = it["close"] + (f" {it['due_time']}" if it.get("due_time") else "")
+        bits = [f"<strong>{esc(it['county'].title())} Co</strong>", esc(it["work_type"].title())]
+        if it.get("est_cost"):
+            bits.append(f"est. cost {esc(it['est_cost'])}")
+        if due.strip():
+            bits.append(f"due {esc(due.strip())}")
+        flag = ('<span style="background:#c9a227;color:#000;font-weight:bold;padding:1px 6px;'
+                'margin-right:6px;">LANDSCAPE MAINTENANCE</span>') if it.get("priority") else ""
+        hint = ""
+        if it.get("plans_hint"):
+            hint = (f'<br><span style="color:#666;font-size:12px;">Full proposal/plans: TxDOT Plans Online '
+                    f'(login planuser / txdotplans, public) &mdash; {esc(it["plans_hint"])}</span>')
+        return (f'<li style="margin-bottom:12px;">{flag}<a href="{esc(it["url"])}">{esc(it["title"])}</a>'
+                f'<br><span style="color:#333;font-size:13px;">{" &middot; ".join(bits)}</span>'
+                f'<br><span style="color:#666;font-size:12px;">{esc(it["ref"])} &middot; TxDOT / ESBD</span>{hint}</li>')
+
+    txdot_items = sorted((it for it in relevant if it.get("txdot")),
+                         key=lambda x: (not x.get("priority"), x["county"], x["work_type"]))
+    other_items = [it for it in relevant if not it.get("txdot")]
     rows = []
-    for it in sorted(relevant, key=lambda x: (x["agency"], x["title"])):
+    for it in sorted(other_items, key=lambda x: (x["agency"], x["title"])):
         ref = f" &middot; {esc(it['ref'])}" if it["ref"] else ""
         close = f" &middot; closes {esc(it['close'])}" if it["close"] else ""
         agency_link = f' &middot; <a href="{esc(it["agency_url"])}" style="color:#666;">agency site</a>' if it.get("agency_url") else ""
@@ -730,6 +865,15 @@ def build_email(relevant, errors, total_sources, ok_sources):
             f'<li style="margin-bottom:10px;"><strong>{esc(it["agency"])}</strong> &mdash; {link}'
             f'<br><span style="color:#666;font-size:13px;">{esc(it["id"].split(":")[0])}{ref}{close}{agency_link}</span></li>'
         )
+    txdot_html = ""
+    if txdot_items:
+        txdot_html = (
+            '<h3 style="color:#1a1a1a;border-bottom:2px solid #c9a227;padding-bottom:4px;">TxDOT maintenance contracts '
+            f'({len(txdot_items)})</h3><ul style="padding-left:20px;">{"".join(txdot_row(i) for i in txdot_items)}</ul>')
+    other_html = ""
+    if rows:
+        head = '<h3 style="color:#1a1a1a;border-bottom:2px solid #c9a227;padding-bottom:4px;">Cities, counties and other agencies</h3>' if txdot_items else ""
+        other_html = f'{head}<ul style="padding-left:20px;">{"".join(rows)}</ul>'
     error_html = ""
     if errors:
         lis = "".join(f"<li>{esc(name)}: {esc(err)}</li>" for name, err in sorted(errors.items()))
@@ -743,20 +887,36 @@ def build_email(relevant, errors, total_sources, ok_sources):
       New Bid Opportunities &mdash; {today}</h2>
     <p style="color:#444;">{len(relevant)} new landscaping / grounds-maintenance posting(s) found across
       {ok_sources} sources scanned.</p>
-    <ul style="padding-left:20px;">{''.join(rows)}</ul>
+    {txdot_html}
+    {other_html}
     {error_html}
     <p style="color:#999;font-size:12px;margin-top:32px;">Black Hill bid monitor &middot; runs daily &middot;
       emails only when new matching opportunities appear</p>
     </body></html>
     """
     plain_lines = [f"New bid opportunities — {today}", ""]
-    for it in relevant:
+    if txdot_items:
+        plain_lines.append("TXDOT MAINTENANCE CONTRACTS")
+        for it in txdot_items:
+            cost = f" | est. {it['est_cost']}" if it.get("est_cost") else ""
+            due = f" | due {it['close']}" if it["close"] else ""
+            plain_lines.append(f"- {'[LANDSCAPE MAINTENANCE] ' if it.get('priority') else ''}{it['title']}{cost}{due}")
+            plain_lines.append(f"  {it['url']}")
+            if it.get("plans_hint"):
+                plain_lines.append(f"  plans: {it['plans_hint']} (login planuser / txdotplans)")
+        if other_items:
+            plain_lines += ["", "OTHER AGENCIES"]
+    for it in other_items:
         plain_lines.append(f"- {it['agency']}: {it['title']}" + (f" (closes {it['close']})" if it["close"] else ""))
         if it["url"]:
             plain_lines.append(f"  {it['url']}")
         if it.get("agency_url"):
             plain_lines.append(f"  agency site: {it['agency_url']}")
     subject = f"{len(relevant)} new bid opportunit{'y' if len(relevant) == 1 else 'ies'} — {today}"
+    if any(it.get("priority") for it in txdot_items):
+        subject = "TxDOT LANDSCAPE MAINTENANCE: " + subject
+    elif txdot_items:
+        subject += f" ({len(txdot_items)} TxDOT)"
     return subject, "\n".join(plain_lines), html_body
 
 
@@ -814,6 +974,11 @@ def main():
             seen[it["id"]] = {"title": it["title"][:120], "first_seen": today}
 
     relevant = [it for it in new_items if is_relevant(it)]
+    if DRY_RUN:
+        # Dry run ignores the seen-map for TxDOT so the section can be verified
+        # against everything currently open, not just what is new today.
+        have = {it["id"] for it in relevant}
+        relevant += [it for it in all_items if it.get("txdot") and it["id"] not in have]
     log(f"total open: {len(all_items)} | new: {len(new_items)} | relevant new: {len(relevant)} | errors: {len(errors)}")
 
     if relevant:
