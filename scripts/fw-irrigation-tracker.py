@@ -732,7 +732,7 @@ def build_rows(api):
         known_key.add(addr_key(address_of(o["OpportunityName"])))
     for q in requests.values():
         keys = {addr_key(a) for a in q["address"].split(" / ")}
-        # One opportunity can cover two houses, e.g. "4117 & 4120 Twinleaf Dr".
+        # One opportunity can cover two houses, e.g. "100 & 102 Main St".
         named = any(k and k.split()[0] in n and " ".join(k.split()[1:]) in n
                     for k in keys for n in known_names)
         if (q["wo"] and q["wo"] in known_wo) or keys & known_key or named:
