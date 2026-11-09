@@ -223,6 +223,16 @@ EXPEDITE_RE = re.compile(r"\b(expedite[ds]?|emergency|safety issue)\b", re.I)
 CANCEL_RE = re.compile(r"\b(disregard|cancel(?:l?ed|ling|lation)?|already (?:been )?(?:repaired|fixed)"
                        r"|no longer (?:need|required))\b", re.I)
 CORRECTION_RE = re.compile(r"\b(?:send|sending|resend)\b.{0,30}\bcorrect", re.I)
+# The City asks for a corrected quote before it will issue the PO, e.g.
+# "Please revise po line that is off .01" (2026-11-04).
+REVISE_RE = re.compile(r"\b(revise|revising|revision|redo(?:ing)? the quote|off by|"
+                       r"not calculating correctly)\b", re.I)
+NO_REVISE_RE = re.compile(r"\b(no need to (?:revise|redo)|(?:don'?t|doesn'?t|do not|does not) need (?:to be )?revis)", re.I)
+# City replies often go only to the person who sent the proposal, not to the
+# irrigation inbox (a PO and a revision request were missed this way, 11/2026).
+EXTRA_MAILBOXES = [m.strip() for m in os.environ.get("FW_TRACKER_EXTRA_MAILBOXES",
+                                                      "evelin@blackhilltx.com").split(",") if m.strip()]
+CITY_DOMAIN = "@fortworthtexas.gov"
 
 
 def inbox_pos():
@@ -241,17 +251,33 @@ def inbox_pos():
         spec.loader.exec_module(mon)
         token = mon.get_token()
         since = (datetime.now(timezone.utc) - timedelta(days=INBOX_LOOKBACK_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        url = (f"https://graph.microsoft.com/v1.0/users/{mon.MAILBOX}/messages"
-               f"?$filter=receivedDateTime%20ge%20{since}"
-               f"&$select=subject,receivedDateTime,body,from&$top=100")
-        msgs = []
-        while url and len(msgs) < 1000:
-            page = mon.graph_get(token, url) or {}
-            msgs += page.get("value", [])
-            url = page.get("@odata.nextLink")
+        def fetch(box, cap):
+            url = (f"https://graph.microsoft.com/v1.0/users/{box}/messages"
+                   f"?$filter=receivedDateTime%20ge%20{since}"
+                   f"&$select=subject,receivedDateTime,body,from,internetMessageId&$top=100")
+            out = []
+            while url and len(out) < cap:
+                page = mon.graph_get(token, url) or {}
+                out += page.get("value", [])
+                url = page.get("@odata.nextLink")
+            return out
+        msgs = fetch(mon.MAILBOX, 1000)
     except Exception as e:
         log(f"Inbox PO check skipped: {e}")
         return {}, {}, {}, {}, []
+    # Other mailboxes add only City mail, and skip copies already in the
+    # irrigation inbox. A failure here must not lose the main inbox.
+    seen = {m.get("internetMessageId") for m in msgs}
+    for box in EXTRA_MAILBOXES:
+        try:
+            extra = [m for m in fetch(box, 3000)
+                     if ((m.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
+                     .endswith(CITY_DOMAIN) and m.get("internetMessageId") not in seen]
+        except Exception as e:
+            log(f"Extra mailbox {box} skipped: {e}")
+            continue
+        seen.update(m.get("internetMessageId") for m in extra)
+        msgs += extra
     by_wo, by_key, requests, rush, cancels = {}, {}, {}, {}, []
     for m in sorted(msgs, key=lambda m: m["receivedDateTime"]):
         text = mon.html_to_text((m.get("body") or {}).get("content", ""))
@@ -286,6 +312,20 @@ def inbox_pos():
                              if CANCEL_RE.search(x)), "")
             cancels.append({"wo": c_wo, "key": addr_key(hit_addr.group(0)) if hit_addr else None,
                             "date": day(m["receivedDateTime"]), "quote": " ".join(sentence.split())[:140]})
+        # "Only off by .06 ... no need to revise" is an approval, not a request.
+        hit_r = REVISE_RE.search(top) and not NO_REVISE_RE.search(top)
+        if hit_r and not hit_c and sender.endswith(CITY_DOMAIN):
+            r_wo = mon.parse_wo(top, m.get("subject", ""))
+            if not r_wo:
+                q = mon.WO_RE.search(text[len(top):] if text.startswith(top) else text)
+                r_wo = q.group(1) if q else None
+            subj = re.sub(r"\b\d{2}-\d{5,6}\b", " ", m.get("subject", ""))
+            hit_addr = re.search(r"\b\d{3,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z]+", subj + " " + top)
+            sentence = next((x for x in re.split(r"(?<=[.!?])\s+|\s*\n\s*", top)
+                             if REVISE_RE.search(x)), "")
+            cancels.append({"wo": r_wo, "key": addr_key(hit_addr.group(0)) if hit_addr else None,
+                            "date": day(m["receivedDateTime"]), "quote": " ".join(sentence.split())[:140],
+                            "kind": "revise"})
         if kind == "quote":
             wo = mon.parse_wo(text, m.get("subject", ""))
             addr = mon.parse_address(text, m.get("subject", ""))
@@ -723,12 +763,21 @@ def build_rows(api):
         hits = [r for r in rows if r["Stage"][:2] < "11" and r["Address"]
                 and ((c["wo"] and r["_wo"] == c["wo"])
                      or (c["key"] and c["key"] == addr_key(r["Address"].split(" / ")[0])))]
-        note = f'CITY CANCELED? {c["date"]:%m/%d}: "{c["quote"]}"'
+        revise = c.get("kind") == "revise"
+        if revise:
+            # Only matters while the quote is still waiting on the City.
+            hits = [r for r in hits if r["Stage"][:2] in ("04", "05")]
+        note = (f'CITY ASKED FOR A REVISED QUOTE {c["date"]:%m/%d}: "{c["quote"]}"' if revise
+                else f'CITY CANCELED? {c["date"]:%m/%d}: "{c["quote"]}"')
         for r in hits:
-            todo = (f"; if so, close out #{r['Contract Opp #']}: bill any trip already made, "
-                    "otherwise mark it Lost") if r["Contract Opp #"] else ""
+            if revise:
+                todo = (f"; fix it with a change order on #{r['Contract Opp #']} and re-send"
+                        if r["Contract Opp #"] else "")
+            else:
+                todo = (f"; if so, close out #{r['Contract Opp #']}: bill any trip already made, "
+                        "otherwise mark it Lost") if r["Contract Opp #"] else ""
             r["Needs Attention"] = "; ".join(filter(None, [note + todo, r["Needs Attention"]]))
-        if hits or (c["wo"] and c["wo"] in known_wo) or (c["key"] and c["key"] in known_key):
+        if hits or revise or (c["wo"] and c["wo"] in known_wo) or (c["key"] and c["key"] in known_key):
             continue
         r = {k: None for k in (rows[0] if rows else COLS)}
         r.update({"Stage": stage("00"), "Address": f"WO {c['wo']}" if c["wo"] else "(no job named)",
