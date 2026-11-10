@@ -574,7 +574,9 @@ def build_rows(api):
         elif not repair_t and not ts:
             code = "07"
             flags.append("Won, but no work ticket yet")
-        elif r_open or (assess_t and not repair_t and est > 100.005):
+        # A single-ticket contract priced above the assessment usually still owes
+        # a repair, unless it was a trip charge that has already been invoiced.
+        elif r_open or (assess_t and not repair_t and est > 100.005 and not invs):
             if r_next:
                 code = "08"
             elif r_last and r_hours > 0:
