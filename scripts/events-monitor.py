@@ -670,7 +670,7 @@ def fetch_via_firecrawl(url):
         return None
     try:
         r = requests.post(
-            "https://api.firecrawl.dev/v1/scrape",
+            "https://api.firecrawl.dev/v2/scrape",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             json={"url": url, "formats": ["html"]}, timeout=60)
         r.raise_for_status()

@@ -147,7 +147,7 @@ def firecrawl_html(url):
     if not FIRECRAWL_KEY:
         raise RuntimeError("FIRECRAWL_API_KEY not set — cannot proxy")
     r = requests.post(
-        "https://api.firecrawl.dev/v1/scrape",
+        "https://api.firecrawl.dev/v2/scrape",
         json={"url": url, "formats": ["rawHtml"], "onlyMainContent": False},
         headers={"Authorization": f"Bearer {FIRECRAWL_KEY}", "Content-Type": "application/json"},
         timeout=90,
@@ -261,8 +261,10 @@ CIVICPLUS_SITES = [
 
 
 def scrape_civicplus(agency, url):
-    r = fetch(url)
-    soup = BeautifulSoup(r.text, "html.parser")
+    # Haslet and Cleburne went behind a Cloudflare managed challenge on
+    # 2026-11-07 and now 403 the runner; fetch_html falls back to the proxy.
+    html = fetch_html(url)
+    soup = BeautifulSoup(html, "html.parser")
     items = []
     seen_ids = set()
     for a in soup.find_all("a", href=re.compile(r"bids\.aspx\?bidID=\d+", re.I)):
@@ -277,7 +279,7 @@ def scrape_civicplus(agency, url):
             f"civicplus-{agency.lower().replace(' ', '')}", agency, m.group(1),
             title, url=urljoin(url, a["href"]),
         ))
-    if not items and "no open bid postings" not in r.text.lower():
+    if not items and "no open bid postings" not in html.lower():
         raise RuntimeError("no bid links and no empty-state marker — possible WAF block or markup change")
     return items
 
@@ -632,7 +634,7 @@ def scrape_firecrawl(agency, url):
     if not FIRECRAWL_KEY:
         raise RuntimeError("FIRECRAWL_API_KEY not set — source skipped")
     r = requests.post(
-        "https://api.firecrawl.dev/v1/scrape",
+        "https://api.firecrawl.dev/v2/scrape",
         json={"url": url, "formats": ["markdown"]},
         headers={"Authorization": f"Bearer {FIRECRAWL_KEY}", "Content-Type": "application/json"},
         timeout=90,
