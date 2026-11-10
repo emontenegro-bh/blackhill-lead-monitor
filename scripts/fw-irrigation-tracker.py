@@ -411,6 +411,10 @@ def build_rows(api):
     closed = ("Lost", "Canceled", "Cancelled")
     by_key = {}
     for o in opps:
+        # Canceling a won contract leaves OpportunityStatusName "Won" and
+        # records the cancel only in JobStatusName.
+        if o.get("JobStatusName") in closed:
+            o["OpportunityStatusName"] = o["JobStatusName"]
         o["_kind"] = kind_of(o["OpportunityName"])
         # An assessment-named opportunity that never got a ticket and was not
         # created Won is the assessment-only estimate sent for a PO, not a
