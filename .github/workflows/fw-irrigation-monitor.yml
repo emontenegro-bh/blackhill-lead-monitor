@@ -110,15 +110,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
-          # The two most recent *completed* runs before this one. If either
-          # succeeded, this is a blip and the next run will recover.
-          prev=$(gh api "repos/$REPO/actions/workflows/fw-irrigation-monitor.yml/runs?status=completed&per_page=3" \
-                 --jq '[.workflow_runs[] | select(.id != ${{ github.run_id }}) | .conclusion] | .[0:2] | join(",")')
-          echo "previous two conclusions: ${prev:-none}"
-          case "$prev" in
-            *success*|"") echo "alert=false" >> "$GITHUB_OUTPUT" ;;
-            *)            echo "alert=true"  >> "$GITHUB_OUTPUT" ;;
-          esac
+          # Alert on the *transition* into a sustained failure, not on every
+          # failure after it. Look at the three completed runs before this
+          # one: alert only when the nearest two also failed and the one
+          # before them succeeded. That is exactly one email per outage
+          # episode, however long the outage runs, and a fresh one if it
+          # recovers and breaks again.
+          read -r p1 p2 p3 <<<"$(gh api \
+            "repos/$REPO/actions/workflows/fw-irrigation-monitor.yml/runs?status=completed&per_page=5" \
+            --jq '[.workflow_runs[] | select(.id != ${{ github.run_id }}) | .conclusion] | .[0:3] | join(" ")')"
+          echo "three previous conclusions: ${p1:-none} ${p2:-none} ${p3:-none}"
+          if [ "$p1" != "success" ] && [ -n "$p1" ] \
+             && [ "$p2" != "success" ] && [ -n "$p2" ] \
+             && [ "$p3" = "success" ]; then
+            echo "alert=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "alert=false" >> "$GITHUB_OUTPUT"
+          fi
 
   notify-failure:
     needs: [gate]
@@ -128,5 +136,5 @@ jobs:
     if: needs.gate.outputs.alert == 'true'
     uses: ./.github/workflows/notify-failure.yml
     with:
-      workflow_name: "FW Irrigation Monitor (3+ consecutive failures)"
+      workflow_name: "FW Irrigation Monitor (failing repeatedly)"
     secrets: inherit
