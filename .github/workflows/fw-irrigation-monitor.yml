@@ -44,6 +44,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   monitor:
@@ -90,12 +91,42 @@ jobs:
           esac
           python scripts/fw-irrigation-monitor.py $FLAG
 
-  notify-failure:
+  # This workflow runs every couple of minutes against a mailbox that is
+  # occasionally slow or 5xx on Microsoft's side, and the run is idempotent:
+  # a failed scan is picked up by the next one a few minutes later. Alerting
+  # on each failure meant 53 emails in two hours on 2026-11-12 for a problem
+  # nobody could act on. Only alert once the failure has actually persisted,
+  # the same rule bid-monitor.py applies to a broken source.
+  gate:
     needs: [monitor]
-    # `|| cancelled()` because a job killed by timeout-minutes concludes
-    # `cancelled`, not `failure`, and plain `if: failure()` cannot see it.
     if: failure() || cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      alert: ${{ steps.check.outputs.alert }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          # The two most recent *completed* runs before this one. If either
+          # succeeded, this is a blip and the next run will recover.
+          prev=$(gh api "repos/$REPO/actions/workflows/fw-irrigation-monitor.yml/runs?status=completed&per_page=3" \
+                 --jq '[.workflow_runs[] | select(.id != ${{ github.run_id }}) | .conclusion] | .[0:2] | join(",")')
+          echo "previous two conclusions: ${prev:-none}"
+          case "$prev" in
+            *success*|"") echo "alert=false" >> "$GITHUB_OUTPUT" ;;
+            *)            echo "alert=true"  >> "$GITHUB_OUTPUT" ;;
+          esac
+
+  notify-failure:
+    needs: [gate]
+    # `|| cancelled()` on the monitor job because a job killed by
+    # timeout-minutes concludes `cancelled`, not `failure`, and plain
+    # `if: failure()` cannot see it. The gate job encodes that already.
+    if: needs.gate.outputs.alert == 'true'
     uses: ./.github/workflows/notify-failure.yml
     with:
-      workflow_name: "FW Irrigation Monitor"
+      workflow_name: "FW Irrigation Monitor (3+ consecutive failures)"
     secrets: inherit
