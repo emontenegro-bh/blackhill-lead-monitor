@@ -44,6 +44,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   monitor:
@@ -90,12 +91,50 @@ jobs:
           esac
           python scripts/fw-irrigation-monitor.py $FLAG
 
-  notify-failure:
+  # This workflow runs every couple of minutes against a mailbox that is
+  # occasionally slow or 5xx on Microsoft's side, and the run is idempotent:
+  # a failed scan is picked up by the next one a few minutes later. Alerting
+  # on each failure meant 53 emails in two hours on 2026-11-12 for a problem
+  # nobody could act on. Only alert once the failure has actually persisted,
+  # the same rule bid-monitor.py applies to a broken source.
+  gate:
     needs: [monitor]
-    # `|| cancelled()` because a job killed by timeout-minutes concludes
-    # `cancelled`, not `failure`, and plain `if: failure()` cannot see it.
     if: failure() || cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      alert: ${{ steps.check.outputs.alert }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Alert on the *transition* into a sustained failure, not on every
+          # failure after it. Look at the three completed runs before this
+          # one: alert only when the nearest two also failed and the one
+          # before them succeeded. That is exactly one email per outage
+          # episode, however long the outage runs, and a fresh one if it
+          # recovers and breaks again.
+          read -r p1 p2 p3 <<<"$(gh api \
+            "repos/$REPO/actions/workflows/fw-irrigation-monitor.yml/runs?status=completed&per_page=5" \
+            --jq '[.workflow_runs[] | select(.id != ${{ github.run_id }}) | .conclusion] | .[0:3] | join(" ")')"
+          echo "three previous conclusions: ${p1:-none} ${p2:-none} ${p3:-none}"
+          if [ "$p1" != "success" ] && [ -n "$p1" ] \
+             && [ "$p2" != "success" ] && [ -n "$p2" ] \
+             && [ "$p3" = "success" ]; then
+            echo "alert=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "alert=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  notify-failure:
+    needs: [gate]
+    # `|| cancelled()` on the monitor job because a job killed by
+    # timeout-minutes concludes `cancelled`, not `failure`, and plain
+    # `if: failure()` cannot see it. The gate job encodes that already.
+    if: needs.gate.outputs.alert == 'true'
     uses: ./.github/workflows/notify-failure.yml
     with:
-      workflow_name: "FW Irrigation Monitor"
+      workflow_name: "FW Irrigation Monitor (failing repeatedly)"
     secrets: inherit
