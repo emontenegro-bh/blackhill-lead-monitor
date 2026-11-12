@@ -227,7 +227,7 @@ def graph_get(token, url):
     req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=45) as resp:
                 return json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
             body = ""
@@ -248,22 +248,40 @@ def graph_get(token, url):
     return None
 
 
+# $expand with an explicit $select on attachments keeps contentBytes out of
+# the response. Without the inner $select Graph inlines every attachment as
+# base64, and these carry 4-5 MB job photos.
+_FULL_FIELDS = ("$select=id,subject,from,receivedDateTime,body,hasAttachments,webLink"
+                "&$expand=attachments($select=name,contentType,isInline,size)")
+
+
 def fetch_recent(token):
-    """Messages into the irrigation mailbox within the lookback window."""
+    """Envelopes only: who sent what, when, within the lookback window.
+
+    Deliberately omits body and attachments. The lookback is 24 hours and the
+    cadence is every couple of minutes, so this query ran 720 times a day
+    pulling the same full message bodies to discover nothing new. Graph took
+    longer than the 30s read timeout on roughly a quarter of those runs
+    (2026-11-12), and three retries later the run died. Bodies now come from
+    fetch_full() for the handful of messages that are actually new.
+    """
     since = datetime.now(timezone.utc).timestamp() - LOOKBACK_MINUTES * 60
     since_iso = datetime.fromtimestamp(since, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    # $expand with an explicit $select on attachments keeps contentBytes out
-    # of the response. Without the inner $select Graph inlines every
-    # attachment as base64, and these carry 4-5 MB job photos.
     url = (
         f"https://graph.microsoft.com/v1.0/users/{MAILBOX}/messages"
         f"?$filter=receivedDateTime%20ge%20{since_iso}"
-        f"&$select=id,subject,from,receivedDateTime,body,hasAttachments,webLink"
-        f"&$expand=attachments($select=name,contentType,isInline,size)"
+        f"&$select=id,subject,from,receivedDateTime,hasAttachments,webLink"
         f"&$orderby=receivedDateTime%20desc"
         f"&$top={MAX_MESSAGES}"
     )
     return (graph_get(token, url) or {}).get("value", [])
+
+
+def fetch_full(token, msg_id):
+    """One message with its body and attachment metadata."""
+    url = (f"https://graph.microsoft.com/v1.0/users/{MAILBOX}/messages/{msg_id}"
+           f"?{_FULL_FIELDS}")
+    return graph_get(token, url)
 
 
 def count_photos(msg):
@@ -854,7 +872,8 @@ def main():
         log(f"[OK] {MAILBOX} reachable, {len(msgs)} message(s) in the last "
             f"{LOOKBACK_MINUTES} minutes")
         for m in msgs[:10]:
-            text = html_to_text(m.get("body", {}).get("content", ""))
+            full = fetch_full(token, m.get("id", "")) or m
+            text = html_to_text(full.get("body", {}).get("content", ""))
             kind = classify(text) or "-"
             log(f"  [{kind:5}] {m.get('subject', '')[:70]}")
         return 0
@@ -890,6 +909,18 @@ def main():
         if msg_id not in todo_ids:
             continue
 
+        # Flag-and-continue: a slow Graph response on one message must not
+        # abandon the rest of the batch. Leaving it unprocessed is safe, the
+        # next run picks it up.
+        try:
+            full = fetch_full(token, msg_id)
+        except Exception as e:
+            log(f"  ERROR fetching '{msg.get('subject', '')[:60]}': {e}")
+            continue
+        if not full:
+            log(f"  ERROR fetching '{msg.get('subject', '')[:60]}': empty response")
+            continue
+        msg = full
         text = html_to_text(msg.get("body", {}).get("content", ""))
         kind = classify(text)
         if kind is None:
