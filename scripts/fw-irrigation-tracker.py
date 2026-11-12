@@ -23,6 +23,7 @@ Usage:
 
 import io, json, os, re, sys, signal, smtplib, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timezone, timedelta
+from decimal import Decimal, ROUND_HALF_UP
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -357,6 +358,21 @@ def build_rows(api):
     opp_ids = [o["OpportunityID"] for o in opps]
     tickets = api.get_in("WorkTickets", "OpportunityID", opp_ids)
     services = api.get_in("OpportunityServices", "OpportunityID", opp_ids)
+    # The City checks that each printed unit price x qty equals the line total.
+    # Aspire's own line (cost x 1.35) often misses by a cent, so FW estimates
+    # carry small P/P overrides, and marking a job Won can re-price a line whose
+    # override did not stick. Flag any active part line that no longer adds up.
+    live_svc = [s["OpportunityServiceID"] for s in services if not s.get("RemovedOpportunityRevisionID")]
+    line_math = {}
+    svc_opp = {s["OpportunityServiceID"]: s["OpportunityID"] for s in services}
+    for it in api.get_in("OpportunityServiceItems", "OpportunityServiceID", live_svc):
+        qty, ext = it.get("ItemQuantity") or 0, it.get("ExtendedPrice") or 0
+        if it.get("ItemType") == "Labor" or qty <= 1:
+            continue
+        unit = float(Decimal(str(ext / qty)).quantize(Decimal("0.01"), ROUND_HALF_UP))
+        if abs(unit * qty - ext) > 0.005:
+            line_math.setdefault(svc_opp[it["OpportunityServiceID"]], []).append(
+                f"{it.get('ItemName')} {qty:g} x ${unit:.2f} = ${unit * qty:.2f}, not ${ext:.2f}")
     visits = api.get_in("WorkTicketVisits", "WorkTicketID", [t["WorkTicketID"] for t in tickets])
     # Jon's visit notes, e.g. "looks to be already completed", flag a job
     # where the repair was done before he got there.
@@ -612,6 +628,9 @@ def build_rows(api):
         # Only the new process (Assessment & Repair contract, PO after the
         # quote) needs a revised PO. Old repair-only jobs bill at actual.
         # Under the PO just bills actual; only an overrun needs a new PO.
+        if main_opp and code and "03" <= code <= "08" and line_math.get(main_opp["OpportunityID"]):
+            flags.append("Estimate line doesn't add up, fix the P/P before it goes to the City: "
+                         + "; ".join(line_math[main_opp["OpportunityID"]]))
         if code in ("09", "10") and est and tm_calc and tm_calc - est > REPRICE_TOLERANCE \
                 and main_opp["_kind"] == "Assessment + Repair":
             flags.append(f"Actual ${tm_calc:,.2f} is over the ${est:,.2f} PO; get a revised PO")
