@@ -19,6 +19,9 @@ Usage:
   python3 fw-irrigation-tracker.py              # Run and email
   python3 fw-irrigation-tracker.py --force      # Skip the Central-hour guard
   python3 fw-irrigation-tracker.py --dry-run    # Build the file, don't email
+  python3 fw-irrigation-tracker.py --draft-test # Print both drafts, create nothing
+  python3 fw-irrigation-tracker.py --seed-completions  # Mark worked repairs as emailed
+  python3 fw-irrigation-tracker.py --force --drafts=schedule,completion
 """
 
 import io, json, os, re, sys, signal, smtplib, urllib.request, urllib.error, urllib.parse
@@ -62,6 +65,14 @@ CENTRAL = ZoneInfo("America/Chicago")
 
 DRY_RUN = "--dry-run" in sys.argv
 FORCE = "--force" in sys.argv
+# Build both drafts from live data and print them; no Graph, no state, no email.
+DRAFT_TEST = "--draft-test" in sys.argv
+# Mark every repair worked so far as already emailed, then exit.
+SEED_COMPLETIONS = "--seed-completions" in sys.argv
+# Which drafts to make on a --force run: --drafts=schedule,completion (or none).
+# Unset, the slot decides: 15:00 makes the schedule draft, 6:00 the
+# completion draft plus the schedule draft when an EMERGENCY job is waiting.
+DRAFTS_ARG = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--drafts=")), None)
 
 
 def log(msg):
@@ -353,6 +364,10 @@ def inbox_pos():
     return by_wo, by_key, requests, rush, cancels
 
 
+# Raw data build_rows fetched, reused by the drafts so they need no second pull.
+CTX = {}
+
+
 def build_rows(api):
     opps = api.get("Opportunities", f"PropertyID eq {FW_PROPERTY_ID}")
     opp_ids = [o["OpportunityID"] for o in opps]
@@ -395,6 +410,10 @@ def build_rows(api):
         f"{len(visits)} visits, {len(invoices)} invoices")
 
     svc_id = {s["OpportunityServiceID"]: s.get("ServiceID") for s in services}
+    # "FW Emergency During Normal Hours" and its kin mark a rush repair.
+    emergency = {s["OpportunityID"] for s in services if not s.get("RemovedOpportunityRevisionID")
+                 and "emergency" in (s.get("DisplayName") or "").lower()}
+    CTX.update(times=times, visits=visits)
     has_assess = {s["OpportunityID"] for s in services if s.get("ServiceID") == ASSESSMENT_SERVICE_ID}
     # Parts go on a won contract through a change order, which adds a service
     # stamped with its revision; one still active means the estimate is built.
@@ -712,6 +731,11 @@ def build_rows(api):
             "_qt_id": qts[0]["OpportunityID"] if qts else None,
             "_wo": (re.search(r"\b(\d{2}-\d{5,6})\b", desc) or [None, None])[1],
             "_main_id": main_opp["OpportunityID"] if main_opp else None,
+            # Kept for the drafts built after the sheet (see drafts section).
+            "_opp_no": (main_opp or qts[0])["OpportunityNumber"],
+            "_assess_t": assess_tickets,
+            "_repair_t": repair_t,
+            "_emergency": any(o["OpportunityID"] in emergency for o in all_opps),
         })
 
     # An open estimate with a newer job at the same address was superseded.
@@ -735,6 +759,7 @@ def build_rows(api):
     # A PO in the inbox for a job Aspire still shows as awaiting one means
     # the City approved it: the repair is cleared and needs scheduling.
     by_wo, by_key, requests, rush, cancels = inbox_pos()
+    CTX.update(by_wo=by_wo, by_key=by_key, requests=requests)
     for r in rows:
         if r["Stage"][:2] not in ("03", "04", "05") or not r["Contract Opp #"]:
             continue
@@ -1025,11 +1050,499 @@ def send_email(subject, html_body, plain_body, xlsx_bytes, xlsx_filename):
     log(f"Email sent to {len(RECIPIENTS)} recipients with {xlsx_filename} attached")
 
 
+# --- Drafts ---
+#
+# Two Outlook drafts, created in Evelin's mailbox through Graph and never sent.
+# She reviews and sends each one herself.
+#
+#   3pm run: "jobs ready to schedule" to the ops manager, listing every FW
+#            ticket that is not on Jon's schedule yet. Also on the 6:45am run
+#            when an EMERGENCY job is waiting.
+#   6:45am run: "Completed:" to the City for the repairs Jon worked since the
+#            last run, one table row per repair, each backed by a completed
+#            CompanyCam checklist. The checklist PDFs are exported later by a
+#            local session from the queue in Supabase (CompanyCam's API has no
+#            PDF export), and Evelin attaches them.
+
+DRAFT_MAILBOX = os.environ.get("FW_DRAFT_MAILBOX", "evelin@blackhilltx.com")
+SCHEDULE_TO = ["opsmanager@blackhilltx.com"]
+SCHEDULE_CC = ["Denisse@blackhilltx.com"]
+SCHEDULE_SUBJECT = "FW Irrigation: jobs ready to schedule for Jon"
+SCHEDULE_STATE = "fw-schedule-draft"
+COMPLETION_CC = ["BranchAdmin@blackhilltx.com", "irrigation@blackhilltx.com", "Denisse@blackhilltx.com"]
+COMPLETION_STATE = "fw-completion-drafts"
+PDF_QUEUE_STATE = "fw-completion-pdf-queue"
+PENDING_DAYS = 21             # a flagged repair is retried this long, then dropped
+COMPANYCAM_BASE = "https://api.companycam.com/v2"
+COMPANYCAM_FW_PROJECT = os.environ.get("FW_COMPANYCAM_PROJECT_ID", "116203662")
+OPEN_TICKET = lambda t: t.get("WorkTicketStatusName") not in ("Complete", "Canceled")
+
+
+def city_contacts():
+    """(to, greeting) for the City completion email. Kept out of this public
+    repo: FW_CITY_TO (comma-separated) and FW_CITY_GREETING (the first names,
+    e.g. "Name1, Name2, Name3") come from secrets in CI, and from
+    ~/.config/fw-irrigation/config.json ({"city_to": [...], "city_greeting": "..."})
+    locally."""
+    to = [a.strip() for a in os.environ.get("FW_CITY_TO", "").split(",") if a.strip()]
+    greeting = os.environ.get("FW_CITY_GREETING", "").strip()
+    path = os.path.expanduser("~/.config/fw-irrigation/config.json")
+    if not (to and greeting) and os.path.exists(path):
+        with open(path) as f:
+            cfg = json.load(f)
+        to = to or cfg.get("city_to", [])
+        greeting = greeting or cfg.get("city_greeting", "")
+    if not (to and greeting):
+        raise RuntimeError("FW_CITY_TO / FW_CITY_GREETING not set")
+    return to, greeting
+
+
+
+def _li(items):
+    if not items:
+        return "<p>None</p>"
+    return "<ol>" + "".join(f"<li>{escape(x)}</li>" for x in items) + "</ol>"
+
+
+def schedule_lists(api, rows):
+    """(assessments, repairs, has_emergency) not on Jon's schedule.
+
+    Candidates come from the stage (01, or 07 with a PO), then every ticket is
+    re-checked against Aspire: still open, and no WorkTicketVisit with a
+    ScheduledDate. A repair without a PO is never listed."""
+    cands = []
+    for r in rows:
+        code = r["Stage"][:2]
+        if code == "01":
+            cands += [("a", r, t) for t in r.get("_assess_t") or [] if OPEN_TICKET(t)]
+        elif code == "07" and r.get("PO #"):
+            cands += [("r", r, t) for t in r.get("_repair_t") or [] if OPEN_TICKET(t)]
+    ids = [t["WorkTicketID"] for _, _, t in cands]
+    fresh = {t["WorkTicketID"]: t for t in api.get_in("WorkTickets", "WorkTicketID", ids)}
+    on_sched = {v["WorkTicketID"] for v in api.get_in("WorkTicketVisits", "WorkTicketID", ids)
+                if v.get("ScheduledDate")}
+    out = {"a": [], "r": []}
+    for kind, r, t in cands:
+        tid = t["WorkTicketID"]
+        if tid in on_sched or not OPEN_TICKET(fresh.get(tid, t)):
+            continue
+        line = f"{r['Address']}, Opp #{r['_opp_no']}, WT {t['WorkTicketNumber']}"
+        out[kind].append((not r.get("_emergency"), line + (" (EMERGENCY)" if r.get("_emergency") else "")))
+    a = [x for _, x in sorted(out["a"])]        # emergencies first
+    rp = [x for _, x in sorted(out["r"])]
+    return a, rp, any(x.endswith("(EMERGENCY)") for x in a + rp)
+
+
+def schedule_draft(assess, repairs):
+    html = ("<html><body style=\"font-family:Arial,sans-serif;font-size:14px\">"
+            "<p>Hi Aaron,</p>"
+            "<p><b>Assessments to schedule</b></p>" + _li(assess) +
+            "<p><b>Repairs to schedule (PO received)</b></p>" + _li(repairs) +
+            "<p>Thanks,<br>Evelin</p></body></html>")
+    return SCHEDULE_SUBJECT, html
+
+
+def _addr_parts(addr):
+    m = re.match(r"\s*(\d+)\s+(.*)", addr or "")
+    if not m:
+        return None, ""
+    return m.group(1), re.sub(r"[^a-z]", "", m.group(2).lower())
+
+
+def _same_street(a, b):
+    """First street word on one side, the street run together on the other:
+    "oakhollow" matches "Oak Hollow Dr", "elm way" matches "Elm Dr"."""
+    _, sa = _addr_parts(a)
+    _, sb = _addr_parts(b)
+    wa = re.match(r"\s*\d+\s+([A-Za-z]+)", a or "")
+    wb = re.match(r"\s*\d+\s+([A-Za-z]+)", b or "")
+    if not (wa and wb and sa and sb):
+        return False
+    wa, wb = wa.group(1).lower(), wb.group(1).lower()
+    return wa == wb or sb.startswith(wa) or sa.startswith(wb)
+
+
+class CompanyCam:
+    def __init__(self):
+        token = os.environ.get("COMPANYCAM_TOKEN", "").strip()
+        if not token:
+            with open(os.path.expanduser("~/.config/companycam/config.json")) as f:
+                token = json.load(f)["access_token"]
+        self.token = token
+
+    def get(self, path):
+        req = urllib.request.Request(COMPANYCAM_BASE + path,
+                                     headers={"Authorization": f"Bearer {self.token}"})
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            body = e.read().decode() if e.fp else ""
+            raise RuntimeError(f"CompanyCam {path} {e.code}: {body[:300]}") from e
+
+    def checklists(self):
+        out, page = [], 1
+        while page <= 20:
+            batch = self.get(f"/projects/{COMPANYCAM_FW_PROJECT}/checklists?per_page=100&page={page}")
+            out += batch or []
+            if not batch or len(batch) < 100:
+                break
+            page += 1
+        return out
+
+    def property_answer(self, checklist_id):
+        d = self.get(f"/projects/{COMPANYCAM_FW_PROJECT}/checklists/{checklist_id}")
+        tasks = list(d.get("sectionless_tasks") or [])
+        for sec in d.get("sections") or []:
+            tasks += sec.get("tasks") or []
+        for t in tasks:
+            if "property address" in (t.get("title") or "").lower():
+                return " ".join(filter(None, (s.get("answer_text") for s in t.get("sub_tasks") or [])))
+        return ""
+
+
+def _central_date(epoch):
+    return datetime.fromtimestamp(epoch, timezone.utc).astimezone(CENTRAL).date() if epoch else None
+
+
+def worked_repairs(rows, state, now):
+    """Repair tickets Jon worked since the watermark (plus earlier ones still
+    pending a checklist), minus those already drafted. Worked = a time entry
+    with hours, or a visit dated in the window (before today: a visit dated
+    today has not happened yet at 6:45am). Returns [(row, ticket, date)]."""
+    today = now.astimezone(CENTRAL).date()
+    wm = parse_dt(state["watermark"])
+    wm_date = wm.astimezone(CENTRAL).date()
+    done = set(state.get("processed", []))
+    pending = {int(k) for k in state.get("pending", {})}
+    times, visits = CTX.get("times", []), CTX.get("visits", [])
+    out = []
+    for r in rows:
+        for t in r.get("_repair_t") or []:
+            tid = t["WorkTicketID"]
+            if tid in done or t.get("WorkTicketStatusName") == "Canceled":
+                continue
+            hit = []
+            for tm in times:
+                if tm["WorkTicketID"] != tid or not (tm.get("Hours") or 0) > 0:
+                    continue
+                d = day(tm.get("WorkTicketTimeDate") or tm.get("StartTime"))
+                made = parse_dt(tm.get("CreatedDateTime"))
+                if made and not made.tzinfo:
+                    made = made.replace(tzinfo=timezone.utc)
+                if (d and d >= wm_date) or (made and made >= wm) or tid in pending:
+                    hit.append(d)
+            for v in visits:
+                if v["WorkTicketID"] != tid or not v.get("ScheduledDate"):
+                    continue
+                d = day(v["ScheduledDate"])
+                if (wm_date <= d < today) or (tid in pending and d < today):
+                    hit.append(d)
+            hit = [d for d in hit if d]
+            if hit:
+                out.append((r, t, max(hit)))
+    return out
+
+
+def all_worked_repair_ids(rows):
+    times, visits = CTX.get("times", []), CTX.get("visits", [])
+    worked = {tm["WorkTicketID"] for tm in times if (tm.get("Hours") or 0) > 0}
+    worked |= {v["WorkTicketID"] for v in visits if v.get("ScheduledDate")}
+    return sorted(t["WorkTicketID"] for r in rows for t in r.get("_repair_t") or []
+                  if t["WorkTicketID"] in worked)
+
+
+def match_checklist(cc, lists, address, work_date):
+    """(checklist, problem). Prefer a completed checklist created on or after
+    the repair date for this street; older ones at the address are the
+    assessment or an earlier job. The house number must agree with Aspire in
+    both the checklist name and Jon's "Property Address" answer."""
+    num, _ = _addr_parts(address)
+    street = [c for c in lists if _same_street(c.get("name") or "", address)
+              and _central_date(c.get("created_at")) and _central_date(c["created_at"]) >= work_date]
+    if not street:
+        return None, "no CompanyCam checklist"
+    street.sort(key=lambda c: c["created_at"])
+    exact = [c for c in street if _addr_parts(c.get("name"))[0] == num]
+    c = (exact or street)[0]
+    if not c.get("completed_at"):
+        return None, f"CompanyCam checklist \"{c.get('name')}\" is not completed"
+    if _addr_parts(c.get("name"))[0] != num:
+        return None, f"checklist address says {_addr_parts(c.get('name'))[0]}, Aspire says {num}"
+    answer = cc.property_answer(c["id"])
+    a_num = (re.match(r"\s*(\d+)", answer or "") or [None, None])[1]
+    if a_num and a_num != num:
+        return None, f"checklist address says {a_num}, Aspire says {num}"
+    return c, None
+
+
+def wo_po_for(r):
+    """The City's WO and PO for a row: inbox first, then the opportunity."""
+    by_wo, by_key = CTX.get("by_wo", {}), CTX.get("by_key", {})
+    key = addr_key(r["Address"])
+    wo = r.get("_wo")
+    if not wo:
+        hit = by_key.get(key)
+        wo = hit["wo"] if hit and hit.get("wo") else None
+    if not wo:
+        wo = next((q["wo"] for q in CTX.get("requests", {}).values()
+                   if q.get("wo") and key and key in {addr_key(a) for a in q["address"].split(" / ")}), None)
+    hit = (by_wo.get(wo) if wo else None) or by_key.get(key)
+    aspire_po = re.sub(r"^\s*P\.?\s*O\.?\s*#?\s*:?\s*", "", r.get("PO #") or "", flags=re.I).strip()
+    po = hit["po"] if hit else aspire_po
+    flags = []
+    if hit and aspire_po and hit["po"] != aspire_po:
+        flags.append(f"City email has PO {hit['po']}, Aspire has {aspire_po}; check the completion draft")
+    return wo or "", po, flags
+
+
+def completion_draft(jobs, greeting):
+    """jobs: [{address, wo, po, date}]"""
+    if len(jobs) == 1:
+        j = jobs[0]
+        subject = f"Completed: {j['address']}, Work Order {j['wo']}, PO {j['po']}"
+    else:
+        subject = f"Completed: {len(jobs)} Irrigation Work Orders, Completion Pictures Attached"
+    cell = "border:1px solid #000;padding:4px 10px"
+    head = "".join(f"<th style=\"{cell};text-align:left\">{h}</th>"
+                   for h in ("Address", "Work Order", "PO", "Date completed"))
+    body = "".join("<tr>" + "".join(f"<td style=\"{cell}\">{escape(str(x))}</td>"
+                                    for x in (j["address"], j["wo"], j["po"], f"{j['date']:%m/%d/%Y}"))
+                   + "</tr>" for j in jobs)
+    html = ("<html><body style=\"font-family:Arial,sans-serif;font-size:14px\">"
+            f"<p>Hello {escape(greeting)},</p>"
+            "<p>The irrigation repairs below have been completed. The completion pictures for each "
+            "address are attached for your records.</p>"
+            f"<table style=\"border-collapse:collapse;border:1px solid #000\"><tr>{head}</tr>{body}</table>"
+            "<p>Thank you,<br>Evelin</p></body></html>")
+    return subject, html
+
+
+def plan_completions(rows, state, now):
+    """(jobs, flags_by_row). Each job carries its checklist for the PDF queue."""
+    cands = worked_repairs(rows, state, now)
+    if not cands:
+        return [], []
+    cc = CompanyCam()
+    lists = cc.checklists()
+    jobs, flags = [], []
+    for r, t, d in cands:
+        wt = t["WorkTicketNumber"]
+        try:
+            c, problem = match_checklist(cc, lists, r["Address"], d)
+        except Exception as e:          # flag and continue per record
+            c, problem = None, f"CompanyCam lookup failed ({e})"
+        if problem:
+            flags.append((r, t, f"Completion email: repair WT {wt} left out, {problem}"))
+            continue
+        wo, po, notes = wo_po_for(r)
+        if not wo:
+            notes.append(f"Completion draft: no City work order found for WT {wt}; fill it in")
+        for n in notes:
+            flags.append((r, None, n))
+        jobs.append({"address": r["Address"], "wo": wo, "po": po, "date": d,
+                     "wt_id": t["WorkTicketID"], "wt": wt, "checklist_id": str(c["id"]),
+                     "checklist_name": c.get("name")})
+    jobs.sort(key=lambda j: (j["date"], j["address"]))
+    return jobs, flags
+
+
+# --- Graph (drafts only; never sends) ---
+
+def graph_call(token, method, path, body=None):
+    """Returns (status, json). 404 comes back as (404, None) so a draft that
+    was sent or deleted can be told apart from a real failure."""
+    req = urllib.request.Request("https://graph.microsoft.com/v1.0" + path,
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 method=method,
+                                 headers={"Authorization": f"Bearer {token}",
+                                          "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            raw = resp.read().decode()
+            return resp.status, (json.loads(raw) if raw.strip() else {})
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return 404, None
+        detail = e.read().decode(errors="replace")[:300] if e.fp else ""
+        raise RuntimeError(f"Graph {method} {path.split('?')[0]} {e.code}: {detail}") from e
+
+
+def _recips(addrs):
+    return [{"emailAddress": {"address": a}} for a in addrs]
+
+
+def graph_token():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "fw_monitor", os.path.join(os.path.dirname(os.path.abspath(__file__)), "fw-irrigation-monitor.py"))
+    mon = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mon)
+    return mon.get_token()
+
+
+def create_draft(token, subject, html, to, cc):
+    status, msg = graph_call(token, "POST", f"/users/{DRAFT_MAILBOX}/messages", {
+        "subject": subject, "body": {"contentType": "HTML", "content": html},
+        "toRecipients": _recips(to), "ccRecipients": _recips(cc)})
+    if not msg or not msg.get("id"):
+        raise RuntimeError(f"Draft create returned {status} with no id")
+    # Read it back: a 201 is a claim, the message is the result.
+    _, back = graph_call(token, "GET", f"/users/{DRAFT_MAILBOX}/messages/{msg['id']}?$select=id,isDraft")
+    if not back or not back.get("isDraft"):
+        raise RuntimeError("Draft create did not read back as a draft")
+    return msg["id"]
+
+
+def upsert_schedule_draft(token, subject, html):
+    """One live draft at a time: patch the previous one while it is still a
+    draft, skip it if nothing changed, start a new one once it was sent or
+    deleted."""
+    import hashlib
+    digest = hashlib.sha256((subject + html).encode()).hexdigest()
+    st = db.load_state(SCHEDULE_STATE, {})
+    old = st.get("message_id")
+    if old:
+        status, msg = graph_call(token, "GET", f"/users/{DRAFT_MAILBOX}/messages/{old}?$select=id,isDraft")
+        if status != 404 and msg and msg.get("isDraft"):
+            if st.get("hash") == digest:
+                log("Schedule draft unchanged; left as is")
+                return old
+            graph_call(token, "PATCH", f"/users/{DRAFT_MAILBOX}/messages/{old}", {
+                "subject": subject, "body": {"contentType": "HTML", "content": html},
+                "toRecipients": _recips(SCHEDULE_TO), "ccRecipients": _recips(SCHEDULE_CC)})
+            db.save_state(SCHEDULE_STATE, {"message_id": old, "hash": digest,
+                                           "updated": datetime.now(timezone.utc).isoformat()})
+            log("Schedule draft updated in place")
+            return old
+    new = create_draft(token, subject, html, SCHEDULE_TO, SCHEDULE_CC)
+    db.save_state(SCHEDULE_STATE, {"message_id": new, "hash": digest,
+                                   "updated": datetime.now(timezone.utc).isoformat()})
+    log("Schedule draft created")
+    return new
+
+
+def seed_completion_state(rows, now):
+    """Mark every repair worked so far as handled and start the window now,
+    so the first live run does not re-draft jobs already emailed by hand."""
+    state = {"watermark": now.isoformat(), "processed": all_worked_repair_ids(rows), "pending": {}}
+    db.save_state(COMPLETION_STATE, state)
+    log(f"Completion state seeded: {len(state['processed'])} repair tickets marked handled")
+    return state
+
+
+def run_drafts(api, rows, which, test=False):
+    """which: subset of {"schedule", "completion", "emergency"}. Returns a list
+    of errors; per-draft failures do not stop the tracker email."""
+    now = datetime.now(timezone.utc)
+    errors, token = [], None
+
+    def tok():
+        nonlocal token
+        token = token or graph_token()
+        return token
+
+    if which & {"schedule", "emergency"}:
+        try:
+            assess, repairs, urgent = schedule_lists(api, rows)
+            if not (assess or repairs):
+                log("Schedule draft: nothing to schedule")
+            elif "schedule" not in which and not urgent:
+                log("Schedule draft: no EMERGENCY job waiting, left for the 3pm run")
+            else:
+                subject, html = schedule_draft(assess, repairs)
+                if test:
+                    print(f"\n=== DRAFT (not created) ===\nTo: {', '.join(SCHEDULE_TO)}\n"
+                          f"Cc: {', '.join(SCHEDULE_CC)}\nSubject: {subject}\n\n{strip_tags(html)}")
+                else:
+                    upsert_schedule_draft(tok(), subject, html)
+        except Exception as e:
+            log(f"Schedule draft failed: {e}")
+            errors.append(f"schedule draft: {e}")
+
+    if "completion" in which:
+        try:
+            state = db.load_state(COMPLETION_STATE, {}) if db.is_configured() else {}
+            # --draft-test-days=N previews an N-day window, ignoring what was drafted.
+            test_days = next((int(a.split("=", 1)[1]) for a in sys.argv
+                              if a.startswith("--draft-test-days=")), None)
+            if test and test_days:
+                state = {}
+            if not state.get("watermark"):
+                if test:
+                    days = test_days or 7
+                    state = {"watermark": (now - timedelta(days=days)).isoformat(), "processed": [], "pending": {}}
+                    print(f"\n(completion preview over the last {days} days, ignoring drafted state)")
+                else:
+                    seed_completion_state(rows, now)
+                    return errors
+            jobs, flags = plan_completions(rows, state, now)
+            for r, t, note in flags:
+                r["Needs Attention"] = "; ".join(filter(None, [r["Needs Attention"], note]))
+            if test:
+                for _, _, note in flags:
+                    print(f"NEEDS ATTENTION: {note}")
+            if jobs:
+                city_to, greeting = city_contacts()
+                subject, html = completion_draft(jobs, greeting)
+                if test:
+                    print(f"\n=== DRAFT (not created) ===\nTo: {', '.join(city_to)}\n"
+                          f"Cc: {', '.join(COMPLETION_CC)}\nSubject: {subject}\n\n{strip_tags(html)}")
+                    for j in jobs:
+                        print(f"  checklist {j['checklist_id']} \"{j['checklist_name']}\" "
+                              f"-> \"{j['address']} - Work Order.pdf\" (WT {j['wt']})")
+                    return errors
+                draft_id = create_draft(tok(), subject, html, city_to, COMPLETION_CC)
+                queue = db.load_state(PDF_QUEUE_STATE, {"jobs": []})
+                queue.setdefault("jobs", [])
+                queue["jobs"] += [{"draft_message_id": draft_id, "checklist_id": j["checklist_id"],
+                                   "file_name": f"{j['address']} - Work Order.pdf",
+                                   "address": j["address"], "work_ticket": j["wt"],
+                                   "queued_at": now.isoformat()} for j in jobs]
+                db.save_state(PDF_QUEUE_STATE, queue)
+                log(f"Completion draft created for {len(jobs)} repairs; PDF queue updated")
+            elif test:
+                print("\nCompletion draft: no repairs to draft")
+            if not test:
+                flagged = {str(t["WorkTicketID"]) for _, t, _ in flags if t}
+                today = now.astimezone(CENTRAL).date()
+                first = state.get("pending", {})
+                expired = {k for k, v in first.items()
+                           if (today - datetime.fromisoformat(v).date()).days > PENDING_DAYS}
+                for k in sorted(expired & flagged):
+                    log(f"Completion: WT id {k} still has no usable checklist after {PENDING_DAYS} days; dropped")
+                pending = {k: first.get(k, today.isoformat()) for k in flagged - expired}
+                state = {"watermark": now.isoformat(),
+                         "processed": sorted(set(state.get("processed", [])) | {j["wt_id"] for j in jobs}),
+                         "pending": pending}
+                db.save_state(COMPLETION_STATE, state)
+        except Exception as e:
+            log(f"Completion draft failed: {e}")
+            errors.append(f"completion draft: {e}")
+    return errors
+
+
+def strip_tags(html):
+    """Readable text of a draft for --draft-test output."""
+    t = re.sub(r"</(p|tr|li|ol|table)>|<br>", "\n", html)
+    t = re.sub(r"<li>", "  - ", t)
+    t = re.sub(r"</t[dh]>", " | ", t)
+    return re.sub(r"<[^>]+>", "", t).strip()
+
+
 # --- Main ---
 
 def main(run):
     log("FW Irrigation Tracker starting")
     generated = datetime.now(CENTRAL)
+    if DRAFT_TEST or SEED_COMPLETIONS:
+        api = Aspire(load_config())
+        rows = build_rows(api)
+        if SEED_COMPLETIONS:
+            seed_completion_state(rows, datetime.now(timezone.utc))
+        else:
+            run_drafts(api, rows, {"schedule", "completion"}, test=True)
+        return
     if not FORCE and not DRY_RUN and generated.weekday() >= 5:
         log("Skipping - weekend")
         return
@@ -1044,6 +1557,13 @@ def main(run):
     api = Aspire(load_config())
     rows = build_rows(api)
     run.records = len(rows)
+    if DRAFTS_ARG is not None:
+        which = {w.strip() for w in DRAFTS_ARG.split(",") if w.strip() and w.strip() != "none"}
+    elif FORCE or DRY_RUN:
+        which = set()
+    else:
+        which = {15: {"schedule"}, 6: {"completion", "emergency"}}.get(generated.hour, set())
+    draft_errors = run_drafts(api, rows, which) if which and not DRY_RUN else []
     xlsx_bytes, summary = build_xlsx(rows, generated)
     subject, html, plain = build_email(rows, summary, generated)
     xlsx_filename = f"FW_Irrigation_Tracker_{generated:%Y-%m-%d_%H%M}.xlsx"
@@ -1060,6 +1580,9 @@ def main(run):
     send_email(subject, html, plain, xlsx_bytes, xlsx_filename)
     if not FORCE:
         db.mark_processed("fw-irrigation-tracker", slot_key, note=subject)
+    # The tracker still went out; fail the run so notify-failure reports it.
+    if draft_errors:
+        raise RuntimeError("Draft step failed: " + "; ".join(draft_errors))
 
 
 if __name__ == "__main__":
