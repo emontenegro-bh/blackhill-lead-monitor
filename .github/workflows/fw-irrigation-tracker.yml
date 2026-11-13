@@ -30,6 +30,12 @@ on:
         required: false
         type: boolean
         default: false
+      drafts:
+        description: 'Outlook drafts to create with force_send (auto = by slot: 3pm schedule, 6:45am completion)'
+        required: false
+        type: choice
+        options: [auto, none, schedule, completion, 'schedule,completion']
+        default: auto
 
 concurrency:
   group: fw-irrigation-tracker
@@ -61,11 +67,18 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          COMPANYCAM_TOKEN: ${{ secrets.COMPANYCAM_TOKEN }}
+          # City recipients and greeting for the completion draft; kept out of this public repo.
+          FW_CITY_TO: ${{ secrets.FW_CITY_TO }}
+          FW_CITY_GREETING: ${{ secrets.FW_CITY_GREETING }}
+          # Drafts are created (never sent) in this mailbox.
+          FW_DRAFT_MAILBOX: evelin@blackhilltx.com
           TRACKER_OUT_DIR: ${{ runner.temp }}
         run: |
           ARGS=""
           if [ "${{ inputs.force_send }}" = "true" ]; then ARGS="$ARGS --force"; fi
           if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ -n "${{ inputs.drafts }}" ] && [ "${{ inputs.drafts }}" != "auto" ]; then ARGS="$ARGS --drafts=${{ inputs.drafts }}"; fi
           python scripts/fw-irrigation-tracker.py $ARGS
 
   notify-failure:
