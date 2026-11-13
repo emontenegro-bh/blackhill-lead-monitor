@@ -60,6 +60,7 @@ RECIPIENTS = [
 ASPIRE_PORTAL = "https://cloud.youraspire.com"
 FW_PROPERTY_ID = 1096
 SEND_HOURS = (6, 15)          # Central; slots are 6:45am and 3pm
+ORPHAN_CANCEL_DAYS = 7         # unmatched City cancel notes older than this are dropped
 STALE_COMPLETE_DAYS = 3       # complete but not invoiced longer than this gets flagged
 CENTRAL = ZoneInfo("America/Chicago")
 
@@ -836,6 +837,10 @@ def build_rows(api):
                         "otherwise mark it Lost") if r["Contract Opp #"] else ""
             r["Needs Attention"] = "; ".join(filter(None, [note + todo, r["Needs Attention"]]))
         if hits or revise or (c["wo"] and c["wo"] in known_wo) or (c["key"] and c["key"] in known_key):
+            continue
+        # An unmatched cancel note older than a week has been seen and dealt
+        # with; left in, it sat at the top of every run as a "new request".
+        if (today - c["date"]).days > ORPHAN_CANCEL_DAYS:
             continue
         r = {k: None for k in (rows[0] if rows else COLS)}
         r.update({"Stage": stage("00"), "Address": f"WO {c['wo']}" if c["wo"] else "(no job named)",
