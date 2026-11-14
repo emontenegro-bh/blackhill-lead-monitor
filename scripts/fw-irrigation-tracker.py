@@ -1143,7 +1143,7 @@ def schedule_draft(assess, repairs):
             "<p>Hi Aaron,</p>"
             "<p><b>Assessments to schedule</b></p>" + _li(assess) +
             "<p><b>Repairs to schedule (PO received)</b></p>" + _li(repairs) +
-            "<p>Thanks,<br>Evelin</p></body></html>")
+            "</body></html>")
     return SCHEDULE_SUBJECT, html
 
 
@@ -1319,7 +1319,7 @@ def completion_draft(jobs, greeting):
             "<p>The irrigation repairs below have been completed. The completion pictures for each "
             "address are attached for your records.</p>"
             f"<table style=\"border-collapse:collapse;border:1px solid #000\"><tr>{head}</tr>{body}</table>"
-            "<p>Thank you,<br>Evelin</p></body></html>")
+            "</body></html>")
     return subject, html
 
 
