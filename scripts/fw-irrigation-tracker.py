@@ -60,6 +60,9 @@ RECIPIENTS = [
 ASPIRE_PORTAL = "https://cloud.youraspire.com"
 FW_PROPERTY_ID = 1096
 SEND_HOURS = (6, 15)          # Central; slots are 6:45am and 3pm
+# A queued GitHub runner can start well after the dispatch (34 min on 11/16,
+# which skipped the morning run), so a late start still counts for its slot.
+SLOT_OF_HOUR = {6: 6, 7: 6, 8: 6, 15: 15, 16: 15}
 ORPHAN_CANCEL_DAYS = 7         # unmatched City cancel notes older than this are dropped
 STALE_COMPLETE_DAYS = 3       # complete but not invoiced longer than this gets flagged
 CENTRAL = ZoneInfo("America/Chicago")
@@ -1551,10 +1554,11 @@ def main(run):
     if not FORCE and not DRY_RUN and generated.weekday() >= 5:
         log("Skipping - weekend")
         return
-    if not FORCE and not DRY_RUN and generated.hour not in SEND_HOURS:
+    slot_hour = SLOT_OF_HOUR.get(generated.hour, generated.hour)
+    if not FORCE and not DRY_RUN and slot_hour not in SEND_HOURS:
         log(f"Skipping - Central hour is {generated.hour:02d}, only send at {SEND_HOURS}")
         return
-    slot_key = f"{generated:%Y-%m-%d}-{generated.hour:02d}"
+    slot_key = f"{generated:%Y-%m-%d}-{slot_hour:02d}"
     if not FORCE and not DRY_RUN and db.is_processed("fw-irrigation-tracker", slot_key):
         log(f"Skipping - the {slot_key} slot was already sent")
         return
@@ -1567,7 +1571,7 @@ def main(run):
     elif FORCE or DRY_RUN:
         which = set()
     else:
-        which = {15: {"schedule"}, 6: {"completion", "emergency"}}.get(generated.hour, set())
+        which = {15: {"schedule"}, 6: {"completion", "emergency"}}.get(slot_hour, set())
     draft_errors = run_drafts(api, rows, which) if which and not DRY_RUN else []
     xlsx_bytes, summary = build_xlsx(rows, generated)
     subject, html, plain = build_email(rows, summary, generated)
