@@ -2410,5 +2410,83 @@
       "website_clicks": 4,
       "direction_requests": 12
     }
+  },
+  {
+    "date": "2026-11-16",
+    "date_range": "2026-11-07 to 2026-11-13",
+    "gsc": {
+      "impressions": 4204,
+      "clicks": 15,
+      "ctr": 0.36,
+      "avg_position": 24.29
+    },
+    "priority_keywords": [
+      {
+        "query": "arlington commercial landscaping",
+        "position": 10.6,
+        "impressions": 28,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape maintenance",
+        "position": 34.1,
+        "impressions": 14,
+        "clicks": 0
+      },
+      {
+        "query": "best landscaping fort worth tx",
+        "position": 36,
+        "impressions": 14,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscaping",
+        "position": 14.8,
+        "impressions": 13,
+        "clicks": 0
+      },
+      {
+        "query": "backyard remodeler watauga",
+        "position": 4.5,
+        "impressions": 13,
+        "clicks": 0
+      },
+      {
+        "query": "black hill landscaping",
+        "position": 1,
+        "impressions": 12,
+        "clicks": 2
+      },
+      {
+        "query": "arlington lawn care",
+        "position": 21.8,
+        "impressions": 10,
+        "clicks": 0
+      },
+      {
+        "query": "aledo commercial foundation repair services",
+        "position": 24,
+        "impressions": 6,
+        "clicks": 0
+      },
+      {
+        "query": "arlington landscape",
+        "position": 23,
+        "impressions": 5,
+        "clicks": 0
+      },
+      {
+        "query": "benbrook sprinkler repair",
+        "position": 26.4,
+        "impressions": 5,
+        "clicks": 0
+      }
+    ],
+    "gbp": {
+      "total_views": 155,
+      "calls": 7,
+      "website_clicks": 3,
+      "direction_requests": 6
+    }
   }
 ]
