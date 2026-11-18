@@ -384,8 +384,22 @@ def build_rows(api):
     live_svc = [s["OpportunityServiceID"] for s in services if not s.get("RemovedOpportunityRevisionID")]
     line_math = {}
     svc_opp = {s["OpportunityServiceID"]: s["OpportunityID"] for s in services}
+    # Estimated repair labor per contract, so "Actual" can be rebuilt as the
+    # City is billed: (hours incl. drive x the estimate's labor rate) + parts at
+    # estimate prices. Aspire's TMCalcAmount treats an overridden multi-qty
+    # line total as a unit price and inflates parts, so it is not used.
+    svc_assess = {s["OpportunityServiceID"]: "assessment" in (s.get("DisplayName") or "").lower()
+                  for s in services}
+    est_labor, est_rate, est_assess = {}, {}, {}
     for it in api.get_in("OpportunityServiceItems", "OpportunityServiceID", live_svc):
         qty, ext = it.get("ItemQuantity") or 0, it.get("ExtendedPrice") or 0
+        if svc_assess.get(it["OpportunityServiceID"]):
+            oid = svc_opp[it["OpportunityServiceID"]]
+            est_assess[oid] = est_assess.get(oid, 0) + ext
+        elif it.get("ItemType") == "Labor" and qty:
+            oid = svc_opp[it["OpportunityServiceID"]]
+            est_labor[oid] = est_labor.get(oid, 0) + ext
+            est_rate[oid] = ext / qty
         if it.get("ItemType") == "Labor" or qty <= 1:
             continue
         unit = float(Decimal(str(ext / qty)).quantize(Decimal("0.01"), ROUND_HALF_UP))
@@ -522,6 +536,9 @@ def build_rows(api):
         tm_calc = sum(t.get("TMCalcAmount") or 0 for t in ts)
         tm_override = sum(t.get("TMOverrideAmount") or 0 for t in ts) or None
         est = (main_opp or {}).get("EstimatedDollars") or 0
+        oid_m = main_opp["OpportunityID"] if main_opp else None
+        actual = (round(est - est_labor[oid_m] + r_hours * est_rate[oid_m], 2)
+                  if oid_m in est_rate and r_hours and est else None)
         status = main_opp["OpportunityStatusName"] if main_opp else None
         desc = strip_html((main_opp or qts[0]).get("ProposalDescription1"))
         for q in qts:
@@ -654,9 +671,9 @@ def build_rows(api):
         if main_opp and code and "03" <= code <= "08" and line_math.get(main_opp["OpportunityID"]):
             flags.append("Estimate line doesn't add up, fix the P/P before it goes to the City: "
                          + "; ".join(line_math[main_opp["OpportunityID"]]))
-        if code in ("09", "10") and est and tm_calc and tm_calc - est > REPRICE_TOLERANCE \
+        if code in ("09", "10") and est and actual and actual - est > REPRICE_TOLERANCE \
                 and main_opp["_kind"] == "Assessment + Repair":
-            flags.append(f"Actual ${tm_calc:,.2f} is over the ${est:,.2f} PO; get a revised PO")
+            flags.append(f"Actual ${actual:,.2f} is over the ${est:,.2f} PO; get a revised PO")
         if code == "10" and any((t.get("TMOverrideAmount") or 0) > (t.get("TMCalcAmount") or 0) + 0.005
                                 for t in ts):
             flags.append("Override is above T&M (minimum charge?)")
@@ -722,6 +739,8 @@ def build_rows(api):
             "Repair Ticket #": ", ".join(str(t["WorkTicketNumber"]) for t in repair_t),
             "Repair Scheduled": r_next or r_last,
             "Repair Done": complete,
+            "Actual $": actual,
+            "Repair Override $": round(actual - est_assess.get(oid_m, 0), 2) if actual is not None else None,
             "T&M Calc $": round(tm_calc, 2) if ts else None,
             "Override $": tm_override,
             "Invoice #": ", ".join(str(i["InvoiceNumber"]) for i in bill_invs),
@@ -891,6 +910,7 @@ COLS = [
     "Quick Ticket Opp #", "Assessment Ticket #", "Assessment Scheduled", "Assessment Done",
     "Contract Opp #", "Contract Type", "Contract Status", "PO #", "Won Date",
     "Time Moved", "Repair Ticket #", "Repair Scheduled", "Repair Done",
+    "Estimate $", "Actual $", "Repair Override $",
     "Invoice #", "Invoice Date", "Invoiced $", "Invoice Email Status",
     "Changed (24h)", "Last Activity"]
 DATE_COLS = ("Assessment Scheduled", "Assessment Done", "Won Date", "Repair Scheduled", "Repair Done",
