@@ -168,7 +168,7 @@ INVOICE_DUE_DAYS = 30
 # clocks straight onto it and there is no quick ticket or time move. The
 # repair waits for the City's PO, sent after his parts are added.
 WON_FIRST_START = "2026-10-23"
-REPRICE_TOLERANCE = 5.00      # actual vs PO difference that needs a revised PO
+REPRICE_TOLERANCE = 100.00    # Evelin 2026-11-18: under ~$100 over PO, just invoice at actual
 
 # The City's sequence, one row per job:
 #   request email -> quick ticket (assessment visit) -> Jon assesses
@@ -668,9 +668,8 @@ def build_rows(api):
         # Only the new process (Assessment & Repair contract, PO after the
         # quote) needs a revised PO. Old repair-only jobs bill at actual.
         # Under the PO just bills actual; only an overrun needs a new PO.
-        if main_opp and code and "03" <= code <= "08" and line_math.get(main_opp["OpportunityID"]):
-            flags.append("Estimate line doesn't add up, fix the P/P before it goes to the City: "
-                         + "; ".join(line_math[main_opp["OpportunityID"]]))
+        # No "fix the P/P" flag: overriding P/P on a multi-qty line makes T&M
+        # bill the line total per unit. System prices only (2026-11-18).
         if code in ("09", "10") and est and actual and actual - est > REPRICE_TOLERANCE \
                 and main_opp["_kind"] == "Assessment + Repair":
             flags.append(f"Actual ${actual:,.2f} is over the ${est:,.2f} PO; get a revised PO")
