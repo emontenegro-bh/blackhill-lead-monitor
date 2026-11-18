@@ -384,8 +384,22 @@ def build_rows(api):
     live_svc = [s["OpportunityServiceID"] for s in services if not s.get("RemovedOpportunityRevisionID")]
     line_math = {}
     svc_opp = {s["OpportunityServiceID"]: s["OpportunityID"] for s in services}
+    # Estimated repair labor per contract, so "Actual" can be rebuilt as the
+    # City is billed: (hours incl. drive x the estimate's labor rate) + parts at
+    # estimate prices. Aspire's TMCalcAmount treats an overridden multi-qty
+    # line total as a unit price and inflates parts, so it is not used.
+    svc_assess = {s["OpportunityServiceID"]: "assessment" in (s.get("DisplayName") or "").lower()
+                  for s in services}
+    est_labor, est_rate, est_assess = {}, {}, {}
     for it in api.get_in("OpportunityServiceItems", "OpportunityServiceID", live_svc):
         qty, ext = it.get("ItemQuantity") or 0, it.get("ExtendedPrice") or 0
+        if svc_assess.get(it["OpportunityServiceID"]):
+            oid = svc_opp[it["OpportunityServiceID"]]
+            est_assess[oid] = est_assess.get(oid, 0) + ext
+        elif it.get("ItemType") == "Labor" and qty:
+            oid = svc_opp[it["OpportunityServiceID"]]
+            est_labor[oid] = est_labor.get(oid, 0) + ext
+            est_rate[oid] = ext / qty
         if it.get("ItemType") == "Labor" or qty <= 1:
             continue
         unit = float(Decimal(str(ext / qty)).quantize(Decimal("0.01"), ROUND_HALF_UP))
@@ -522,6 +536,9 @@ def build_rows(api):
         tm_calc = sum(t.get("TMCalcAmount") or 0 for t in ts)
         tm_override = sum(t.get("TMOverrideAmount") or 0 for t in ts) or None
         est = (main_opp or {}).get("EstimatedDollars") or 0
+        oid_m = main_opp["OpportunityID"] if main_opp else None
+        actual = (round(est - est_labor[oid_m] + r_hours * est_rate[oid_m], 2)
+                  if oid_m in est_rate and r_hours and est else None)
         status = main_opp["OpportunityStatusName"] if main_opp else None
         desc = strip_html((main_opp or qts[0]).get("ProposalDescription1"))
         for q in qts:
@@ -654,9 +671,9 @@ def build_rows(api):
         if main_opp and code and "03" <= code <= "08" and line_math.get(main_opp["OpportunityID"]):
             flags.append("Estimate line doesn't add up, fix the P/P before it goes to the City: "
                          + "; ".join(line_math[main_opp["OpportunityID"]]))
-        if code in ("09", "10") and est and tm_calc and tm_calc - est > REPRICE_TOLERANCE \
+        if code in ("09", "10") and est and actual and actual - est > REPRICE_TOLERANCE \
                 and main_opp["_kind"] == "Assessment + Repair":
-            flags.append(f"Actual ${tm_calc:,.2f} is over the ${est:,.2f} PO; get a revised PO")
+            flags.append(f"Actual ${actual:,.2f} is over the ${est:,.2f} PO; get a revised PO")
         if code == "10" and any((t.get("TMOverrideAmount") or 0) > (t.get("TMCalcAmount") or 0) + 0.005
                                 for t in ts):
             flags.append("Override is above T&M (minimum charge?)")
@@ -710,7 +727,7 @@ def build_rows(api):
             "Assessment Ticket #": ", ".join(str(t["WorkTicketNumber"]) for t in assess_tickets),
             "Assessment Scheduled": assess_sched,
             "Assessment Done": assess_date,
-            "Contract Opp #": main_opp["OpportunityNumber"] if main_opp else None,
+            "Opp #": main_opp["OpportunityNumber"] if main_opp else None,
             "Contract Type": ("Assessment Only (already repaired)" if assess_only
                               else main_opp["_kind"]) if main_opp else "",
             "Contract Status": status or "",
@@ -722,6 +739,8 @@ def build_rows(api):
             "Repair Ticket #": ", ".join(str(t["WorkTicketNumber"]) for t in repair_t),
             "Repair Scheduled": r_next or r_last,
             "Repair Done": complete,
+            "Actual $": actual,
+            "Repair Override $": round(actual - est_assess.get(oid_m, 0), 2) if actual is not None else None,
             "T&M Calc $": round(tm_calc, 2) if ts else None,
             "Override $": tm_override,
             "Invoice #": ", ".join(str(i["InvoiceNumber"]) for i in bill_invs),
@@ -748,14 +767,14 @@ def build_rows(api):
     newest = {}
     for r in rows:
         k = addr_key(r["Address"])
-        if k and r["Contract Opp #"] and (k not in newest or r["Contract Opp #"] > newest[k]["Contract Opp #"]):
+        if k and r["Opp #"] and (k not in newest or r["Opp #"] > newest[k]["Opp #"]):
             newest[k] = r
     kept = []
     for r in rows:
         n = newest.get(addr_key(r["Address"]))
-        if r["Stage"][:2] in ("04", "05") and r["Contract Opp #"] and n is not None and n is not r:
+        if r["Stage"][:2] in ("04", "05") and r["Opp #"] and n is not None and n is not r:
             n["Needs Attention"] = "; ".join(filter(None, [
-                n["Needs Attention"], f"Older estimate #{r['Contract Opp #']} still open; mark it lost"]))
+                n["Needs Attention"], f"Older estimate #{r['Opp #']} still open; mark it lost"]))
             continue
         kept.append(r)
     rows = kept
@@ -765,7 +784,7 @@ def build_rows(api):
     by_wo, by_key, requests, rush, cancels = inbox_pos()
     CTX.update(by_wo=by_wo, by_key=by_key, requests=requests)
     for r in rows:
-        if r["Stage"][:2] not in ("03", "04", "05") or not r["Contract Opp #"]:
+        if r["Stage"][:2] not in ("03", "04", "05") or not r["Opp #"]:
             continue
         hit = by_wo.get(r["_wo"]) or by_key.get(addr_key(r["Address"]))
         if not hit or hit["po"] == r["PO #"]:
@@ -773,13 +792,13 @@ def build_rows(api):
         r["PO #"] = hit["po"]
         if r["Contract Status"] == "Won" and "move quick ticket time" in (r["Needs Attention"] or ""):
             r["Stage"] = stage("06")
-            todo = f"add the PO to #{r['Contract Opp #']} and move the quick ticket time to it"
+            todo = f"add the PO to #{r['Opp #']} and move the quick ticket time to it"
         elif r["Contract Status"] == "Won":
             r["Stage"] = stage("07")
-            todo = f"add the PO to #{r['Contract Opp #']} and put the repair on Jon's schedule"
+            todo = f"add the PO to #{r['Opp #']} and put the repair on Jon's schedule"
         else:
             r["Stage"] = stage("06")
-            todo = (f"mark #{r['Contract Opp #']} Won, move the assessment time, "
+            todo = (f"mark #{r['Opp #']} Won, move the assessment time, "
                     f"put the repair on Jon's schedule")
         r["Needs Attention"] = "; ".join(filter(None, [
             f"PO {hit['po']} came in {hit['date']:%m/%d}: {todo}", r["Needs Attention"]]))
@@ -800,7 +819,7 @@ def build_rows(api):
         if (q["wo"] and q["wo"] in known_wo) or keys & known_key or named:
             continue
         r = {c: None for c in (rows[0] if rows else COLS)}
-        r.update({"Stage": stage("00"), "Address": q["address"], "Contract Opp #": None,
+        r.update({"Stage": stage("00"), "Address": q["address"], "Opp #": None,
                   "_wo": q["wo"], "_qt_id": None, "_main_id": None,
                   "Needs Attention": f"City asked for a quote {q['date']:%m/%d}"
                                      f"{' (WO ' + q['wo'] + ')' if q['wo'] else ''}: "
@@ -833,11 +852,11 @@ def build_rows(api):
                 else f'CITY CANCELED? {c["date"]:%m/%d}: "{c["quote"]}"')
         for r in hits:
             if revise:
-                todo = (f"; fix it with a change order on #{r['Contract Opp #']} and re-send"
-                        if r["Contract Opp #"] else "")
+                todo = (f"; fix it with a change order on #{r['Opp #']} and re-send"
+                        if r["Opp #"] else "")
             else:
-                todo = (f"; if so, close out #{r['Contract Opp #']}: bill any trip already made, "
-                        "otherwise mark it Lost") if r["Contract Opp #"] else ""
+                todo = (f"; if so, close out #{r['Opp #']}: bill any trip already made, "
+                        "otherwise mark it Lost") if r["Opp #"] else ""
             r["Needs Attention"] = "; ".join(filter(None, [note + todo, r["Needs Attention"]]))
         if hits or revise or (c["wo"] and c["wo"] in known_wo) or (c["key"] and c["key"] in known_key):
             continue
@@ -847,7 +866,7 @@ def build_rows(api):
             continue
         r = {k: None for k in (rows[0] if rows else COLS)}
         r.update({"Stage": stage("00"), "Address": f"WO {c['wo']}" if c["wo"] else "(no job named)",
-                  "Contract Opp #": None, "_wo": c["wo"], "_qt_id": None, "_main_id": None,
+                  "Opp #": None, "_wo": c["wo"], "_qt_id": None, "_main_id": None,
                   "Needs Attention": note + "; find the job this refers to"})
         rows.append(r)
 
@@ -855,7 +874,7 @@ def build_rows(api):
     # Supabase state, so a job can be parked without touching Aspire.
     holds = db.load_state("fw-irrigation-tracker-holds", {}) if db.is_configured() else {}
     for r in rows:
-        why = holds.get(str(r["Contract Opp #"]))
+        why = holds.get(str(r["Opp #"]))
         if why:
             # The hold note is the current plan; drop the cancel prompt it already answers.
             rest = re.sub(r'CITY CANCELED\? .*?otherwise mark it Lost(; )?', "", r["Needs Attention"] or "")
@@ -866,7 +885,7 @@ def build_rows(api):
         if r["Stage"][:2] == "13":
             r["Needs Attention"] = ""
 
-    rows.sort(key=lambda r: (r["Stage"], -(r["Contract Opp #"] or 0), r["Address"]))
+    rows.sort(key=lambda r: (r["Stage"], -(r["Opp #"] or 0), r["Address"]))
     return rows
 
 
@@ -887,17 +906,18 @@ FLAG_FILL = PatternFill("solid", fgColor="FF9999")
 CHANGED_FILL = PatternFill("solid", fgColor="FFFF00")
 MONEY = '"$"#,##0.00'
 COLS = [
-    "Stage", "Address", "Needs Attention",
+    "Stage", "Opp #", "Address", "Needs Attention",
     "Quick Ticket Opp #", "Assessment Ticket #", "Assessment Scheduled", "Assessment Done",
-    "Contract Opp #", "Contract Type", "Contract Status", "PO #", "Won Date",
+    "Contract Type", "Contract Status", "PO #", "Won Date",
     "Time Moved", "Repair Ticket #", "Repair Scheduled", "Repair Done",
+    "Estimate $", "Actual $", "Repair Override $",
     "Invoice #", "Invoice Date", "Invoiced $", "Invoice Email Status",
     "Changed (24h)", "Last Activity"]
 DATE_COLS = ("Assessment Scheduled", "Assessment Done", "Won Date", "Repair Scheduled", "Repair Done",
              "Invoice Date")
 WIDTHS = {"Stage": 38, "Address": 28, "Needs Attention": 50, "Last Activity": 17,
           "Contract Type": 30, "Contract Status": 12}
-LINKS = {"Quick Ticket Opp #": "_qt_id", "Contract Opp #": "_main_id"}
+LINKS = {"Quick Ticket Opp #": "_qt_id", "Opp #": "_main_id"}
 
 
 def write_table(ws, rows):
@@ -992,8 +1012,8 @@ def build_xlsx(rows, generated):
 # --- Email ---
 
 def job_ref(r):
-    if r["Contract Opp #"]:
-        return f"#{r['Contract Opp #']}"
+    if r["Opp #"]:
+        return f"#{r['Opp #']}"
     return f"QT #{r['Quick Ticket Opp #']}" if r["Quick Ticket Opp #"] else "NEW"
 
 
