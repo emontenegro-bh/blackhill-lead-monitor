@@ -223,6 +223,12 @@ def addr_key(addr):
     """House number + first street word, so "11944 Yarmouth Ln" on the
     quick ticket matches "11944 YARMOUTH LANE" on the contract."""
     m = re.match(r"\s*(\d+)\s+([A-Za-z]+)", addr or "")
+    if not m:
+        # A subject-derived address can carry text ahead of the number, e.g.
+        # "NEW PLEASE EXPEDITE - @ 7716 Captain Ln". Without this the request
+        # has no key, never joins its opportunity, and shows as a new request.
+        # Needs a 3-6 digit number not part of a work order (26-118345).
+        m = re.search(r"(?<![\d-])(\d{3,6})\s+([A-Za-z]+)", addr or "")
     return f"{m.group(1)} {m.group(2).lower()}" if m else None
 
 
