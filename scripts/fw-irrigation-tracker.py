@@ -397,6 +397,9 @@ def build_rows(api):
     svc_assess = {s["OpportunityServiceID"]: "assessment" in (s.get("DisplayName") or "").lower()
                   for s in services}
     est_labor, est_rate, est_assess = {}, {}, {}
+    # A repair with a "Licensed Irrigator" labor line needs the licensed
+    # irrigator on site, so the schedule draft tells Aaron to coordinate.
+    licensed = set()
     for it in api.get_in("OpportunityServiceItems", "OpportunityServiceID", live_svc):
         qty, ext = it.get("ItemQuantity") or 0, it.get("ExtendedPrice") or 0
         if svc_assess.get(it["OpportunityServiceID"]):
@@ -404,6 +407,8 @@ def build_rows(api):
             est_assess[oid] = est_assess.get(oid, 0) + ext
         elif it.get("ItemType") == "Labor" and qty:
             oid = svc_opp[it["OpportunityServiceID"]]
+            if "licensed" in (it.get("ItemName") or "").lower():
+                licensed.add(oid)
             est_labor[oid] = est_labor.get(oid, 0) + ext
             est_rate[oid] = ext / qty
         if it.get("ItemType") == "Labor" or qty <= 1:
@@ -764,6 +769,7 @@ def build_rows(api):
             "_assess_t": assess_tickets,
             "_repair_t": repair_t,
             "_emergency": any(o["OpportunityID"] in emergency for o in all_opps),
+            "_licensed": any(o["OpportunityID"] in licensed for o in all_opps),
         })
 
     # An open estimate with a newer job at the same address was superseded.
@@ -1175,6 +1181,8 @@ def schedule_lists(api, rows):
         if tid in on_sched or not OPEN_TICKET(fresh.get(tid, t)):
             continue
         line = f"{r['Address']}, Opp #{r['_opp_no']}, WT {t['WorkTicketNumber']}"
+        if kind == "r" and r.get("_licensed"):
+            line += " (Denisse must be on site; coordinate the date with her)"
         out[kind].append((not r.get("_emergency"), line + (" (EMERGENCY)" if r.get("_emergency") else "")))
     a = [x for _, x in sorted(out["a"])]        # emergencies first
     rp = [x for _, x in sorted(out["r"])]
