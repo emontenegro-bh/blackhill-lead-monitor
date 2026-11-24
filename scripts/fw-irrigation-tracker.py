@@ -1748,7 +1748,8 @@ def invoice_draft(ready):
                                     for x in (r["Opp #"], r["Address"])) + "</tr>" for r in ready)
     html = ("<html><body style=\"font-family:Arial,sans-serif;font-size:14px\">"
             "<p>Hi Carlos,</p>"
-            "<p>These Fort Worth irrigation jobs are ready to invoice.</p>"
+            "<p>These Fort Worth irrigation jobs are ready to invoice. Invoice both the "
+            "assessment and the repair on each one.</p>"
             + (f"<table style=\"border-collapse:collapse;border:1px solid #000\"><tr>{head}</tr>{body}</table>"
                if ready else "<p>None</p>")
             + "</body></html>")
