@@ -189,6 +189,9 @@ STAGES = {
     "10": "Complete - ready to invoice",
     "11": "Invoiced - not sent",
     "12": "Invoice sent - awaiting payment",
+    # Not a separate code: a "12" whose invoice is past INVOICE_DUE_DAYS gets
+    # this label instead, so the summary shows past-due jobs and their balance
+    # on their own line (Evelin, 2026-11-24).
     "13": "Paid",
 }
 
@@ -200,6 +203,16 @@ ALREADY_REPAIRED = re.compile(
     r"repair\w*\s+(was|were|has been|had been)\s+(already\s+)?(completed|made|done)"
     r"|completed by another|work was completed|trip charge only"
     r"|already\s+(been\s+)?(repaired|fixed|completed|made)", re.I)
+
+
+PAST_DUE_LABEL = "12. Invoice PAST DUE - not paid"
+PAST_DUE_COLOR = "FF9999"
+
+
+def stage_color(label):
+    if label == PAST_DUE_LABEL:
+        return PAST_DUE_COLOR
+    return STAGE_COLORS.get(label[:2], "FFFFFF")
 
 
 def stage(code):
@@ -570,6 +583,7 @@ def build_rows(api):
                          and main_opp["CreatedDateTime"][:10] >= WON_FIRST_START
                          and not po_of(main_opp, desc) and not repair_canceled)
         flags = []
+        past_due = False
 
         if main_opp is None:
             if qt_open and qt_next and qt_hours == 0:
@@ -671,11 +685,14 @@ def build_rows(api):
             code = "12"
             age = (today - day(invs[-1]["InvoiceDate"])).days
             if age > INVOICE_DUE_DAYS:
-                flags.append(f"Invoice is {age} days old, past the 30 day terms")
+                past_due = True
+                flags.append(f"PAST DUE: invoice is {age} days old, past the {INVOICE_DUE_DAYS} day terms")
         else:
             code = "13"
 
         stage_label = stage(code) if code else f"00. Closed - {status}"
+        if past_due:
+            stage_label = PAST_DUE_LABEL
         # Only the new process (Assessment & Repair contract, PO after the
         # quote) needs a revised PO. Old repair-only jobs bill at actual.
         # Under the PO just bills actual; only an overrun needs a new PO.
@@ -758,6 +775,10 @@ def build_rows(api):
             "Invoiced $": round(sum(i.get("Amount") or 0 for i in bill_invs), 2) if bill_invs else None,
             "Invoice Email Status": ", ".join(sorted({i.get("EmailStatus") or "" for i in bill_invs})),
             "Balance $": round(sum(i.get("AmountRemaining") or 0 for i in bill_invs), 2) if bill_invs else None,
+            # Days since the latest invoice while a balance is still owed.
+            "Days Outstanding": ((today - day(bill_invs[-1]["InvoiceDate"])).days
+                                 if bill_invs and sum(i.get("AmountRemaining") or 0 for i in bill_invs) > 0.005
+                                 else None),
             "Needs Attention": "; ".join(flags),
             "Changed (24h)": "Yes" if changed else "",
             "Last Activity": last_touch.astimezone(CENTRAL).replace(tzinfo=None) if last_touch else None,
@@ -937,7 +958,7 @@ COLS = [
     "Contract Type", "Contract Status", "PO #", "Won Date",
     "Time Moved", "Repair Ticket #", "Repair Scheduled", "Repair Done",
     "Estimate $", "Actual $", "Repair Override $",
-    "Invoice #", "Invoice Date", "Invoiced $", "Invoice Email Status",
+    "Invoice #", "Invoice Date", "Invoiced $", "Invoice Email Status", "Days Outstanding",
     "Changed (24h)", "Last Activity"]
 DATE_COLS = ("Assessment Scheduled", "Assessment Done", "Won Date", "Repair Scheduled", "Repair Done",
              "Invoice Date")
@@ -954,7 +975,7 @@ def write_table(ws, rows):
     for r in rows:
         ws.append([r[c] for c in COLS])
         i = ws.max_row
-        stage_fill = PatternFill("solid", fgColor=STAGE_COLORS.get(r["Stage"][:2], "FFFFFF"))
+        stage_fill = PatternFill("solid", fgColor=stage_color(r["Stage"]))
         # Whole row in the stage colour so a job reads across the sheet.
         for j in range(1, len(COLS) + 1):
             ws.cell(i, j).fill = stage_fill
@@ -1009,7 +1030,7 @@ def build_xlsx(rows, generated):
     summary = summarize(rows)
     for stage, s in summary.items():
         ws.append([stage, s["count"], s["estimate"], s["invoiced"] or None, s["balance"] or None])
-        ws.cell(ws.max_row, 1).fill = PatternFill("solid", fgColor=STAGE_COLORS.get(stage[:2], "FFFFFF"))
+        ws.cell(ws.max_row, 1).fill = PatternFill("solid", fgColor=stage_color(stage))
         for j in (3, 4, 5):
             ws.cell(ws.max_row, j).number_format = MONEY
     ws.append(["Total", sum(s["count"] for s in summary.values()),
@@ -1051,7 +1072,7 @@ def build_email(rows, summary, generated):
                f"{len(attention)} need attention, {len(changed)} changed")
 
     srows = "".join(
-        f"<tr><td style='padding:4px 10px;background:#{STAGE_COLORS.get(k[:2], 'FFFFFF')}'>{escape(k)}</td>"
+        f"<tr><td style='padding:4px 10px;background:#{stage_color(k)}'>{escape(k)}</td>"
         f"<td style='padding:4px 10px;text-align:right'>{v['count']}</td>"
         f"<td style='padding:4px 10px;text-align:right'>${v['balance']:,.2f}</td></tr>"
         for k, v in summary.items())
