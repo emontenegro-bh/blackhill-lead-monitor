@@ -423,5 +423,22 @@
     "title_issues": 84,
     "h1_issues": 0,
     "meta_issues": 22
+  },
+  "2026-11-24": {
+    "score": 63,
+    "pages_live": 35,
+    "pages_missing": 188,
+    "total_issues": 243,
+    "alt_text_pct": 36.3,
+    "images_total": 1770,
+    "images_good": 643,
+    "images_poor": 70,
+    "images_missing": 1057,
+    "schema_local_business": 27,
+    "schema_faq": 25,
+    "schema_aggregate_rating": 26,
+    "title_issues": 16,
+    "h1_issues": 0,
+    "meta_issues": 1
   }
 }
