@@ -1123,7 +1123,8 @@ SCHEDULE_TO = ["opsmanager@blackhilltx.com"]
 SCHEDULE_CC = ["Denisse@blackhilltx.com"]
 SCHEDULE_SUBJECT = "FW Irrigation: jobs ready to schedule for Jon"
 SCHEDULE_STATE = "fw-schedule-draft"
-COMPLETION_CC = ["BranchAdmin@blackhilltx.com", "irrigation@blackhilltx.com", "Denisse@blackhilltx.com"]
+# No Carlos or Denisse on the City completion draft (Evelin, 2026-11-24).
+COMPLETION_CC = ["irrigation@blackhilltx.com"]
 COMPLETION_STATE = "fw-completion-drafts"
 PDF_QUEUE_STATE = "fw-completion-pdf-queue"
 PENDING_DAYS = 21             # a flagged repair is retried this long, then dropped
