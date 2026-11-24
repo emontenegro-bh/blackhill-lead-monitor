@@ -907,11 +907,23 @@ def build_rows(api):
     holds = db.load_state("fw-irrigation-tracker-holds", {}) if db.is_configured() else {}
     # A hold may also be {"reason": ..., "stage": "07"} to override a stage
     # Aspire has wrong, e.g. a ticket marked Complete when the work isn't done.
+    # {"reason": ..., "until": "time_approved"} lifts itself once every time
+    # entry on the job's tickets carries an Aspire approval (Brenda's weekly
+    # time approval), so nobody has to say "Brenda's done" (2026-11-24).
+    lifted = []
     for r in rows:
         hold = holds.get(str(r["Opp #"]))
         if not hold:
             continue
         why = hold.get("reason") if isinstance(hold, dict) else hold
+        if isinstance(hold, dict) and hold.get("until") == "time_approved":
+            tids = {t["WorkTicketID"] for t in (r.get("_repair_t") or []) + (r.get("_assess_t") or [])}
+            entries = [tm for tm in times if tm["WorkTicketID"] in tids and (tm.get("Hours") or 0) > 0]
+            ok = [tm for tm in entries if tm.get("ApprovedDateTime")]
+            if entries and len(ok) == len(entries):
+                lifted.append(str(r["Opp #"]))
+                continue
+            why = f"{why} ({len(ok)} of {len(entries)} time entries approved)"
         rest = r["Needs Attention"] or ""
         if isinstance(hold, dict) and hold.get("stage"):
             r["Stage"] = stage(hold["stage"])
@@ -920,6 +932,12 @@ def build_rows(api):
         # The hold note is the current plan; drop the cancel prompt it already answers.
         rest = re.sub(r'CITY CANCELED\? .*?otherwise mark it Lost(; )?', "", rest)
         r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", rest.strip("; ")]))
+    if lifted:
+        log(f"Holds lifted, time approved in Aspire: opp {', '.join(lifted)}")
+        if not DRY_RUN and db.is_configured():
+            for k in lifted:
+                holds.pop(k, None)
+            db.save_state("fw-irrigation-tracker-holds", holds)
 
     # Emergency jobs (an FW Emergency service in Aspire) are tagged even when
     # the City's EXPEDITE email wasn't seen.
