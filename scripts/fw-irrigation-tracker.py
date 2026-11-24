@@ -1177,6 +1177,10 @@ INVOICE_TO = ["BranchAdmin@blackhilltx.com"]
 INVOICE_MAILBOX = "irrigation@blackhilltx.com"   # Carlos's list is drafted in the shared inbox
 INVOICE_SUBJECT = "FW Irrigation: jobs ready to invoice"
 INVOICE_STATE = "fw-invoice-draft"
+# Jobs whose parts differences Claude (or Evelin) reviewed and accepted:
+# {"<opp #>": "what was checked"}. Without an entry, any difference between
+# the estimate and what was allocated keeps the job off Carlos's list.
+PARTS_VERIFIED_STATE = "fw-parts-verified"
 PENDING_DAYS = 21             # a flagged repair is retried this long, then dropped
 COMPANYCAM_BASE = "https://api.companycam.com/v2"
 COMPANYCAM_FW_PROJECT = os.environ.get("FW_COMPANYCAM_PROJECT_ID", "116203662")
@@ -1603,13 +1607,40 @@ def record_parts_not_in_aspire(jobs):
             log(f"Parts ping failed: {e}")
 
 
-def invoice_check(rows):
+def parts_differences(api, ticket_ids):
+    """Estimate (WorkTicketItems) vs used (ItemAllocations) materials on the
+    repair tickets. Returns a list of readable differences; empty = match."""
+    est, used = {}, {}
+    for it in api.get_in("WorkTicketItems", "WorkTicketID", ticket_ids):
+        if it.get("ItemType") == "Material":
+            est[it["ItemName"]] = est.get(it["ItemName"], 0) + (it.get("ItemQuantityExtended") or 0)
+    for a in api.get_in("ItemAllocations", "WorkTicketID", ticket_ids):
+        if a.get("ItemType") == "Material":
+            used[a["ItemName"]] = used.get(a["ItemName"], 0) + (a.get("ItemQuantity") or 0)
+    diffs = []
+    for name in sorted(set(est) | set(used)):
+        e, u = round(est.get(name, 0), 2), round(used.get(name, 0), 2)
+        if abs(e - u) < 0.005:
+            continue
+        if not e:
+            diffs.append(f"{name}: used {u:g}, not on the estimate")
+        elif not u:
+            diffs.append(f"{name}: estimated {e:g}, none entered as used")
+        else:
+            diffs.append(f"{name}: estimated {e:g}, used {u:g}")
+    return diffs
+
+
+def invoice_check(rows, api=None):
     """Pre-invoice check on every Complete job (stage 10). A job is ready for
-    Carlos only when all of its time is approved in Aspire (Brenda), Jon's
-    Parts Not In Aspire list is cleared, it is not on hold, and actual T&M is
-    within REPRICE_TOLERANCE of the PO. Annotates rows; returns ready rows."""
+    Carlos only when, in this order: all of its time is approved in Aspire
+    (Brenda; nothing else is judged before that), Jon's Parts Not In Aspire
+    list is cleared and it is not on hold, actual T&M is within
+    REPRICE_TOLERANCE of the PO, and the parts used match the estimate or a
+    review of the differences is recorded. Annotates rows; returns ready rows."""
     times = CTX.get("times", [])
     parts = db.load_state(PARTS_STATE, {}) if db.is_configured() else {}
+    verified = db.load_state(PARTS_VERIFIED_STATE, {}) if db.is_configured() else {}
     ready = []
     for r in rows:
         if r["Stage"][:2] != "10":
@@ -1633,6 +1664,17 @@ def invoice_check(rows):
         est, actual = r.get("Estimate $"), r.get("Actual $")
         if not unapproved and est and actual and actual - est > REPRICE_TOLERANCE:
             why.append(f"${actual - est:,.2f} over the PO; waiting on the City about a new PO")
+        # Last step: the parts on the ticket are the right parts. A match with
+        # the estimate passes; any difference waits for a review recorded in
+        # PARTS_VERIFIED_STATE (Evelin, 2026-11-24).
+        if not why and api is not None:
+            rids = [t["WorkTicketID"] for t in r.get("_repair_t") or []]
+            try:
+                diffs = parts_differences(api, rids) if rids else []
+            except Exception as e:
+                diffs = [f"could not compare parts ({e})"]
+            if diffs and str(r["Opp #"]) not in verified:
+                why.append("verify parts against the estimate: " + "; ".join(diffs))
         if why:
             note = "Pre-invoice check: " + "; ".join(why)
         else:
@@ -1839,7 +1881,7 @@ def main(run):
 
     api = Aspire(load_config())
     rows = build_rows(api)
-    CTX["ready_to_invoice"] = invoice_check(rows)
+    CTX["ready_to_invoice"] = invoice_check(rows, api)
     run.records = len(rows)
     if DRAFTS_ARG is not None:
         which = {w.strip() for w in DRAFTS_ARG.split(",") if w.strip() and w.strip() != "none"}
