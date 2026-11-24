@@ -1174,6 +1174,7 @@ PDF_QUEUE_STATE = "fw-completion-pdf-queue"
 # has the part in the catalog and on the ticket).
 PARTS_STATE = "fw-parts-not-in-aspire"
 INVOICE_TO = ["BranchAdmin@blackhilltx.com"]
+INVOICE_MAILBOX = "irrigation@blackhilltx.com"   # Carlos's list is drafted in the shared inbox
 INVOICE_SUBJECT = "FW Irrigation: jobs ready to invoice"
 INVOICE_STATE = "fw-invoice-draft"
 PENDING_DAYS = 21             # a flagged repair is retried this long, then dropped
@@ -1494,14 +1495,15 @@ def graph_token():
     return mon.get_token()
 
 
-def create_draft(token, subject, html, to, cc):
-    status, msg = graph_call(token, "POST", f"/users/{DRAFT_MAILBOX}/messages", {
+def create_draft(token, subject, html, to, cc, mailbox=None):
+    mailbox = mailbox or DRAFT_MAILBOX
+    status, msg = graph_call(token, "POST", f"/users/{mailbox}/messages", {
         "subject": subject, "body": {"contentType": "HTML", "content": html},
         "toRecipients": _recips(to), "ccRecipients": _recips(cc)})
     if not msg or not msg.get("id"):
         raise RuntimeError(f"Draft create returned {status} with no id")
     # Read it back: a 201 is a claim, the message is the result.
-    _, back = graph_call(token, "GET", f"/users/{DRAFT_MAILBOX}/messages/{msg['id']}?$select=id,isDraft")
+    _, back = graph_call(token, "GET", f"/users/{mailbox}/messages/{msg['id']}?$select=id,isDraft")
     if not back or not back.get("isDraft"):
         raise RuntimeError("Draft create did not read back as a draft")
     return msg["id"]
@@ -1619,12 +1621,17 @@ def invoice_check(rows):
         entries = [tm for tm in times if tm["WorkTicketID"] in tids and (tm.get("Hours") or 0) > 0]
         unapproved = [tm for tm in entries if not tm.get("ApprovedDateTime")]
         if unapproved:
-            why.append(f"waiting on time approval ({len(entries) - len(unapproved)} of {len(entries)} entries approved)")
+            why.append(f"waiting on Brenda's time approval ({len(entries) - len(unapproved)} of {len(entries)} entries approved)")
+            # Nothing is judged over the PO until the time is approved: the
+            # overage can disappear when Brenda corrects it (Evelin, 2026-11-24).
+            r["Needs Attention"] = re.sub(
+                r"Actual \$[\d,.]+ is over the \$[\d,.]+ PO; ask the City if they need a new PO(; )?",
+                "", r["Needs Attention"] or "").strip("; ")
         p = parts.get(str(r["Opp #"]))
         if p:
             why.append(f"parts Jon listed are not in Aspire yet: {p['text']}")
         est, actual = r.get("Estimate $"), r.get("Actual $")
-        if est and actual and actual - est > REPRICE_TOLERANCE:
+        if not unapproved and est and actual and actual - est > REPRICE_TOLERANCE:
             why.append(f"${actual - est:,.2f} over the PO; waiting on the City about a new PO")
         if why:
             note = "Pre-invoice check: " + "; ".join(why)
@@ -1637,17 +1644,12 @@ def invoice_check(rows):
 
 def invoice_draft(ready):
     cell = "border:1px solid #000;padding:4px 10px"
-    head = "".join(f"<th style=\"{cell};text-align:left\">{h}</th>"
-                   for h in ("Opp #", "Address", "Work Order", "PO", "PO amount", "Actual T&M"))
-    body = "".join("<tr>" + "".join(f"<td style=\"{cell}\">{escape(str(x))}</td>" for x in (
-        r["Opp #"], r["Address"], r.get("_wo") or "", r.get("PO #") or "",
-        f"${r['Estimate $']:,.2f}" if r.get("Estimate $") else "",
-        f"${r['Actual $']:,.2f}" if r.get("Actual $") else "")) + "</tr>" for r in ready)
+    head = "".join(f"<th style=\"{cell};text-align:left\">{h}</th>" for h in ("Opp #", "Address"))
+    body = "".join("<tr>" + "".join(f"<td style=\"{cell}\">{escape(str(x))}</td>"
+                                    for x in (r["Opp #"], r["Address"])) + "</tr>" for r in ready)
     html = ("<html><body style=\"font-family:Arial,sans-serif;font-size:14px\">"
             "<p>Hi Carlos,</p>"
-            "<p>These Fort Worth irrigation jobs passed the pre-invoice check (time approved, "
-            "parts entered, within $100 of the PO) and are ready to invoice. Bill Jon's actual "
-            "T&amp;M, including distributed time.</p>"
+            "<p>These Fort Worth irrigation jobs are ready to invoice.</p>"
             + (f"<table style=\"border-collapse:collapse;border:1px solid #000\"><tr>{head}</tr>{body}</table>"
                if ready else "<p>None</p>")
             + "</body></html>")
@@ -1660,16 +1662,16 @@ def upsert_invoice_draft(token, subject, html):
     st = db.load_state(INVOICE_STATE, {})
     old = st.get("message_id")
     if old:
-        status, msg = graph_call(token, "GET", f"/users/{DRAFT_MAILBOX}/messages/{old}?$select=id,isDraft")
+        status, msg = graph_call(token, "GET", f"/users/{INVOICE_MAILBOX}/messages/{old}?$select=id,isDraft")
         if status != 404 and msg and msg.get("isDraft"):
             if st.get("hash") != digest:
-                graph_call(token, "PATCH", f"/users/{DRAFT_MAILBOX}/messages/{old}", {
+                graph_call(token, "PATCH", f"/users/{INVOICE_MAILBOX}/messages/{old}", {
                     "subject": subject, "body": {"contentType": "HTML", "content": html},
                     "toRecipients": _recips(INVOICE_TO)})
                 db.save_state(INVOICE_STATE, {"message_id": old, "hash": digest})
                 log("Invoice draft updated in place")
             return old
-    new = create_draft(token, subject, html, INVOICE_TO, [])
+    new = create_draft(token, subject, html, INVOICE_TO, [], mailbox=INVOICE_MAILBOX)
     db.save_state(INVOICE_STATE, {"message_id": new, "hash": digest})
     log("Invoice draft created")
     return new
