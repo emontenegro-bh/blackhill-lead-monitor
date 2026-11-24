@@ -180,8 +180,13 @@ PO_ADDRESS_RE = re.compile(
 )
 
 QUOTE_MARKER = "provide a quote"
+# Matched against lowercased text with curly apostrophes straightened (see
+# classify). 2026-11-24: "Here’s the PO info:" (curly apostrophe, "the" not
+# "your") matched none of the older phrasings, was filed as noise, and the PO
+# never posted. "po info" covers "PO info" and "PO information" either way.
 PO_MARKERS = ("your po information", "here's your po", "here is your po",
-              "below for your po", "your po number")
+              "below for your po", "your po number", "po info",
+              "here's the po", "here is the po")
 
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 # Haiku is plenty for pulling a parts list out of two sentences, and this runs
@@ -371,7 +376,7 @@ def classify(text):
     financial PO, and a PO email carries the financial PO and does not ask
     for a quote.
     """
-    low = top_of_message(text).lower()
+    low = top_of_message(text).lower().replace("\u2019", "'").replace("\u2018", "'")
     if QUOTE_MARKER in low:
         return "quote"
     if any(m in low for m in PO_MARKERS) and PO_RE.search(low):
