@@ -1106,7 +1106,7 @@ def send_email(subject, html_body, plain_body, xlsx_bytes, xlsx_filename):
 
 # --- Drafts ---
 #
-# Two Outlook drafts, created in the irrigation@ shared mailbox through Graph and never sent.
+# Two Outlook drafts, created in Evelin's mailbox through Graph and never sent.
 # She reviews and sends each one herself.
 #
 #   3pm run: "jobs ready to schedule" to the ops manager, listing every FW
@@ -1118,13 +1118,13 @@ def send_email(subject, html_body, plain_body, xlsx_bytes, xlsx_filename):
 #            local session from the queue in Supabase (CompanyCam's API has no
 #            PDF export), and Evelin attaches them.
 
-DRAFT_MAILBOX = os.environ.get("FW_DRAFT_MAILBOX", "irrigation@blackhilltx.com")
+DRAFT_MAILBOX = os.environ.get("FW_DRAFT_MAILBOX", "evelin@blackhilltx.com")
 SCHEDULE_TO = ["opsmanager@blackhilltx.com"]
-# No Carlos or Denisse on these drafts (Evelin, 2026-11-24).
-SCHEDULE_CC = []
+SCHEDULE_CC = ["Denisse@blackhilltx.com"]
 SCHEDULE_SUBJECT = "FW Irrigation: jobs ready to schedule for Jon"
 SCHEDULE_STATE = "fw-schedule-draft"
-COMPLETION_CC = []
+# No Carlos or Denisse on the City completion draft (Evelin, 2026-11-24).
+COMPLETION_CC = ["irrigation@blackhilltx.com"]
 COMPLETION_STATE = "fw-completion-drafts"
 PDF_QUEUE_STATE = "fw-completion-pdf-queue"
 PENDING_DAYS = 21             # a flagged repair is retried this long, then dropped

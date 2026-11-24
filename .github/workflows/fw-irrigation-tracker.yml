@@ -72,7 +72,7 @@ jobs:
           FW_CITY_TO: ${{ secrets.FW_CITY_TO }}
           FW_CITY_GREETING: ${{ secrets.FW_CITY_GREETING }}
           # Drafts are created (never sent) in this mailbox.
-          FW_DRAFT_MAILBOX: irrigation@blackhilltx.com
+          FW_DRAFT_MAILBOX: evelin@blackhilltx.com
           TRACKER_OUT_DIR: ${{ runner.temp }}
         run: |
           ARGS=""
