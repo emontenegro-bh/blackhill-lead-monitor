@@ -413,8 +413,11 @@ def build_rows(api):
     # A repair with a "Licensed Irrigator" labor line needs the licensed
     # irrigator on site, so the schedule draft tells Aaron to coordinate.
     licensed = set()
+    est_price = {}                      # {opp id: {item name: sell price per unit}}
     for it in api.get_in("OpportunityServiceItems", "OpportunityServiceID", live_svc):
         qty, ext = it.get("ItemQuantity") or 0, it.get("ExtendedPrice") or 0
+        if it.get("ItemType") == "Material" and qty:
+            est_price.setdefault(svc_opp[it["OpportunityServiceID"]], {})[it.get("ItemName")] = ext / qty
         if svc_assess.get(it["OpportunityServiceID"]):
             oid = svc_opp[it["OpportunityServiceID"]]
             est_assess[oid] = est_assess.get(oid, 0) + ext
@@ -456,6 +459,7 @@ def build_rows(api):
     emergency = {s["OpportunityID"] for s in services if not s.get("RemovedOpportunityRevisionID")
                  and "emergency" in (s.get("DisplayName") or "").lower()}
     CTX.update(times=times, visits=visits)
+    CTX.update(est_price=est_price, est_rate=est_rate, est_assess=est_assess)
     has_assess = {s["OpportunityID"] for s in services if s.get("ServiceID") == ASSESSMENT_SERVICE_ID}
     # Parts go on a won contract through a change order, which adds a service
     # stamped with its revision; one still active means the estimate is built.
@@ -1631,6 +1635,45 @@ def parts_differences(api, ticket_ids):
     return diffs
 
 
+LICENSED_RATE = 75.00        # Denisse, licensed irrigator (2026-11-23)
+FW_MATERIAL_MARKUP = 1.35    # CoFW material markup on cost
+
+
+def expected_repair_amount(api, r):
+    """(expected, aspire, detail) for the repair tickets of one row."""
+    oid = r.get("_main_id")
+    rate = CTX.get("est_rate", {}).get(oid)
+    if not rate:
+        return None, None, "no labor rate on the estimate"
+    tickets = r.get("_repair_t") or []
+    tids = [t["WorkTicketID"] for t in tickets]
+    hours = labor = 0.0
+    for tm in CTX.get("times", []):
+        if tm["WorkTicketID"] in tids and (tm.get("Hours") or 0) > 0:
+            h = tm["Hours"]
+            hours += h
+            labor += h * (LICENSED_RATE if "denisse" in (tm.get("ContactName") or "").lower() else rate)
+    prices = CTX.get("est_price", {}).get(oid, {})
+    parts = 0.0
+    for a in api.get_in("ItemAllocations", "WorkTicketID", tids):
+        if a.get("ItemType") != "Material":
+            continue
+        unit = prices.get(a["ItemName"])
+        if unit is None:
+            unit = (a.get("ItemUnitCost") or 0) * FW_MATERIAL_MARKUP
+        parts += (a.get("ItemQuantity") or 0) * unit
+    fresh = {t["WorkTicketID"]: t for t in api.get_in("WorkTickets", "WorkTicketID", tids)}
+    got = None
+    for tid in tids:
+        t = fresh.get(tid, {})
+        amt = t.get("TMOverrideAmount") or t.get("TMCalcAmount")
+        if amt is not None:
+            got = (got or 0) + amt
+    exp = round(labor + parts, 2)
+    return exp, (round(got, 2) if got is not None else None), \
+        f"{hours:.2f} hr labor ${labor:,.2f} + parts ${parts:,.2f}"
+
+
 def invoice_check(rows, api=None):
     """Pre-invoice check on every Complete job (stage 10). A job is ready for
     Carlos only when, in this order: all of its time is approved in Aspire
@@ -1675,6 +1718,20 @@ def invoice_check(rows, api=None):
                 diffs = [f"could not compare parts ({e})"]
             if diffs and str(r["Opp #"]) not in verified:
                 why.append("verify parts against the estimate: " + "; ".join(diffs))
+            # Then the amount Aspire will bill (what Invoicing Assistant pulls:
+            # T&M Override, else T&M Calc, on the repair tickets) must equal
+            # hours (incl. distributed) x rate + parts used at estimate prices.
+            if not why:
+                try:
+                    exp, got, detail = expected_repair_amount(api, r)
+                except Exception as e:
+                    exp, got, detail = None, None, f"could not compute ({e})"
+                if exp is None:
+                    why.append(f"invoice amount check: {detail}")
+                elif got is None or abs(exp - got) > 1.00:
+                    have = f"${got:,.2f}" if got is not None else "nothing (ticket not completed?)"
+                    why.append(f"invoice amount check: Aspire T&M shows {have}, expected ${exp:,.2f} "
+                               f"({detail}); set the T&M Override")
         if why:
             note = "Pre-invoice check: " + "; ".join(why)
         else:
