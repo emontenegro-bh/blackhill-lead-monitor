@@ -1135,7 +1135,9 @@ def send_email(subject, html_body, plain_body, xlsx_bytes, xlsx_filename):
 #            when an EMERGENCY job is waiting.
 #   6:45am run: "Completed:" to the City for the repairs Jon worked since the
 #            last run, one table row per repair, each backed by a completed
-#            CompanyCam checklist. The checklist PDFs are exported later by a
+#            CompanyCam checklist. Each checklist's PDF is built from the
+#            CompanyCam API (fw_checklist_pdf.py) and attached to the draft; a
+#            job whose PDF fails falls back to the queue below, exported by a
 #            local session from the queue in Supabase (CompanyCam's API has no
 #            PDF export), and Evelin attaches them.
 
@@ -1500,6 +1502,32 @@ def upsert_schedule_draft(token, subject, html):
     return new
 
 
+def attach_pdf(token, message_id, file_name, pdf):
+    import base64
+    graph_call(token, "POST", f"/users/{DRAFT_MAILBOX}/messages/{message_id}/attachments", {
+        "@odata.type": "#microsoft.graph.fileAttachment", "name": file_name,
+        "contentType": "application/pdf", "contentBytes": base64.b64encode(pdf).decode()})
+
+
+def attach_completion_pdfs(token, draft_id, jobs):
+    """Build each job's report from the CompanyCam API and attach it to the
+    draft. Returns the jobs that could not be attached; those fall back to the
+    manual PDF queue. Flag-and-continue per job."""
+    from fw_checklist_pdf import build_pdf
+    cc, failed = CompanyCam(), []
+    for j in jobs:
+        name = f"{j['address']} - Work Order.pdf"
+        try:
+            checklist = cc.get(f"/projects/{COMPANYCAM_FW_PROJECT}/checklists/{j['checklist_id']}")
+            pdf = build_pdf(checklist, j["address"])
+            attach_pdf(token, draft_id, name, pdf)
+            log(f"  attached {name} ({len(pdf):,} bytes)")
+        except Exception as e:
+            log(f"  could not attach {name}: {e}")
+            failed.append(j)
+    return failed
+
+
 def seed_completion_state(rows, now):
     """Mark every repair worked so far as handled and start the window now,
     so the first live run does not re-draft jobs already emailed by hand."""
@@ -1571,14 +1599,24 @@ def run_drafts(api, rows, which, test=False):
                               f"-> \"{j['address']} - Work Order.pdf\" (WT {j['wt']})")
                     return errors
                 draft_id = create_draft(tok(), subject, html, city_to, COMPLETION_CC)
-                queue = db.load_state(PDF_QUEUE_STATE, {"jobs": []})
-                queue.setdefault("jobs", [])
-                queue["jobs"] += [{"draft_message_id": draft_id, "checklist_id": j["checklist_id"],
-                                   "file_name": f"{j['address']} - Work Order.pdf",
-                                   "address": j["address"], "work_ticket": j["wt"],
-                                   "queued_at": now.isoformat()} for j in jobs]
-                db.save_state(PDF_QUEUE_STATE, queue)
-                log(f"Completion draft created for {len(jobs)} repairs; PDF queue updated")
+                # PDFs are built from the CompanyCam API and attached here. Only
+                # a job whose PDF fails goes to the queue for a manual export.
+                failed = attach_completion_pdfs(tok(), draft_id, jobs)
+                if failed:
+                    queue = db.load_state(PDF_QUEUE_STATE, {"jobs": []})
+                    queue.setdefault("jobs", [])
+                    queue["jobs"] += [{"draft_message_id": draft_id, "checklist_id": j["checklist_id"],
+                                       "file_name": f"{j['address']} - Work Order.pdf",
+                                       "address": j["address"], "work_ticket": j["wt"],
+                                       "queued_at": now.isoformat()} for j in failed]
+                    db.save_state(PDF_QUEUE_STATE, queue)
+                    for j in failed:
+                        r0 = next((r for r in rows if r["Address"] == j["address"]), None)
+                        if r0 is not None:
+                            r0["Needs Attention"] = "; ".join(filter(None, [
+                                r0["Needs Attention"], "Completion draft: work order PDF could not be attached; export it by hand"]))
+                log(f"Completion draft created for {len(jobs)} repairs; "
+                    f"{len(jobs) - len(failed)} PDF(s) attached, {len(failed)} queued for manual export")
             elif test:
                 print("\nCompletion draft: no repairs to draft")
             if not test:

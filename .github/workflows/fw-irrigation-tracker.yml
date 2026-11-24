@@ -54,7 +54,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install openpyxl msal
+        run: pip install openpyxl msal reportlab pillow
 
       - name: Build and email tracker
         env:
