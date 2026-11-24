@@ -186,7 +186,7 @@ STAGES = {
     "07": "Repair - needs scheduling",
     "08": "Repair scheduled",
     "09": "Repair worked - not marked complete",
-    "10": "Complete - ready to invoice",
+    "10": "Complete - pre-invoice check",
     "11": "Invoiced - not sent",
     "12": "Invoice sent - awaiting payment",
     # Not a separate code: a "12" whose invoice is past INVOICE_DUE_DAYS gets
@@ -700,7 +700,7 @@ def build_rows(api):
         # bill the line total per unit. System prices only (2026-11-18).
         if code in ("09", "10") and est and actual and actual - est > REPRICE_TOLERANCE \
                 and main_opp["_kind"] == "Assessment + Repair":
-            flags.append(f"Actual ${actual:,.2f} is over the ${est:,.2f} PO; get a revised PO")
+            flags.append(f"Actual ${actual:,.2f} is over the ${est:,.2f} PO; ask the City if they need a new PO")
         if code == "10" and any((t.get("TMOverrideAmount") or 0) > (t.get("TMCalcAmount") or 0) + 0.005
                                 for t in ts):
             flags.append("Override is above T&M (minimum charge?)")
@@ -928,7 +928,7 @@ def build_rows(api):
         if isinstance(hold, dict) and hold.get("stage"):
             r["Stage"] = stage(hold["stage"])
             # Billing prompts don't apply to unfinished work.
-            rest = re.sub(r"(Complete \d+ days, not invoiced|Actual \$[\d,.]+ is over the \$[\d,.]+ PO; get a revised PO)(; )?", "", rest)
+            rest = re.sub(r"(Complete \d+ days, not invoiced|Actual \$[\d,.]+ is over the \$[\d,.]+ PO; ask the City if they need a new PO)(; )?", "", rest)
         # The hold note is the current plan; drop the cancel prompt it already answers.
         rest = re.sub(r'CITY CANCELED\? .*?otherwise mark it Lost(; )?', "", rest)
         r["Needs Attention"] = "; ".join(filter(None, [f"ON HOLD: {why}", rest.strip("; ")]))
@@ -1168,6 +1168,14 @@ SCHEDULE_STATE = "fw-schedule-draft"
 COMPLETION_CC = ["irrigation@blackhilltx.com"]
 COMPLETION_STATE = "fw-completion-drafts"
 PDF_QUEUE_STATE = "fw-completion-pdf-queue"
+# Jon's "Parts Not In Aspire" checklist answers waiting to be entered:
+# {"<opp #>": {"address", "wt", "text", "flagged"}}. An entry blocks the job
+# from the ready-to-invoice list until it is removed (by Claude, once Evelin
+# has the part in the catalog and on the ticket).
+PARTS_STATE = "fw-parts-not-in-aspire"
+INVOICE_TO = ["BranchAdmin@blackhilltx.com"]
+INVOICE_SUBJECT = "FW Irrigation: jobs ready to invoice"
+INVOICE_STATE = "fw-invoice-draft"
 PENDING_DAYS = 21             # a flagged repair is retried this long, then dropped
 COMPANYCAM_BASE = "https://api.companycam.com/v2"
 COMPANYCAM_FW_PROJECT = os.environ.get("FW_COMPANYCAM_PROJECT_ID", "116203662")
@@ -1288,15 +1296,18 @@ class CompanyCam:
             page += 1
         return out
 
-    def property_answer(self, checklist_id):
+    def task_answer(self, checklist_id, title_part):
         d = self.get(f"/projects/{COMPANYCAM_FW_PROJECT}/checklists/{checklist_id}")
         tasks = list(d.get("sectionless_tasks") or [])
         for sec in d.get("sections") or []:
             tasks += sec.get("tasks") or []
         for t in tasks:
-            if "property address" in (t.get("title") or "").lower():
-                return " ".join(filter(None, (s.get("answer_text") for s in t.get("sub_tasks") or [])))
+            if title_part in (t.get("title") or "").lower():
+                return " ".join(filter(None, (s.get("answer_text") for s in t.get("sub_tasks") or []))).strip()
         return ""
+
+    def property_answer(self, checklist_id):
+        return self.task_answer(checklist_id, "property address")
 
 
 def _central_date(epoch):
@@ -1438,9 +1449,13 @@ def plan_completions(rows, state, now):
             notes.append(f"Completion draft: no City work order found for WT {wt}; fill it in")
         for n in notes:
             flags.append((r, None, n))
+        try:
+            parts_note = cc.task_answer(c["id"], "parts not in aspire")
+        except Exception as e:
+            parts_note = f"(could not read the Parts Not In Aspire field: {e})"
         jobs.append({"address": r["Address"], "wo": wo, "po": po, "date": d,
                      "wt_id": t["WorkTicketID"], "wt": wt, "checklist_id": str(c["id"]),
-                     "checklist_name": c.get("name")})
+                     "checklist_name": c.get("name"), "opp": r["Opp #"], "parts_note": parts_note})
     jobs.sort(key=lambda j: (j["date"], j["address"]))
     return jobs, flags
 
@@ -1546,6 +1561,120 @@ def attach_completion_pdfs(token, draft_id, jobs):
     return failed
 
 
+def teams_ping(text):
+    """@mention Evelin on the FW Teams channel (same webhook as the monitor)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "fw_monitor", os.path.join(os.path.dirname(os.path.abspath(__file__)), "fw-irrigation-monitor.py"))
+    mon = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mon)
+    tag = "<at>Evelin Montenegro</at>"
+    card = {"type": "AdaptiveCard", "version": "1.4",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "body": [{"type": "TextBlock", "wrap": True, "text": f"{tag} {text}"}],
+            "msteams": {"entities": [{"type": "mention", "text": tag,
+                                      "mentioned": {"id": "evelin@blackhilltx.com", "name": "Evelin Montenegro"}}]}}
+    return mon._post(card)
+
+
+def record_parts_not_in_aspire(jobs):
+    """Store each job's Parts Not In Aspire answer and ping Evelin once."""
+    hits = [j for j in jobs if (j.get("parts_note") or "").strip()]
+    if not hits or not db.is_configured():
+        return
+    st = db.load_state(PARTS_STATE, {})
+    new = []
+    for j in hits:
+        k = str(j.get("opp"))
+        if k in st:
+            continue
+        st[k] = {"address": j["address"], "wt": j["wt"], "text": j["parts_note"],
+                 "flagged": datetime.now(timezone.utc).isoformat()}
+        new.append(st[k])
+    db.save_state(PARTS_STATE, st)
+    if new:
+        lines = "; ".join(f"{e['address']} (WT {e['wt']}): {e['text']}" for e in new)
+        try:
+            teams_ping("FW parts to add to Aspire (catalog with Inventory, Available to Bid and "
+                       f"Allocate from Mobile checked, then onto the work ticket): {lines}")
+        except Exception as e:
+            log(f"Parts ping failed: {e}")
+
+
+def invoice_check(rows):
+    """Pre-invoice check on every Complete job (stage 10). A job is ready for
+    Carlos only when all of its time is approved in Aspire (Brenda), Jon's
+    Parts Not In Aspire list is cleared, it is not on hold, and actual T&M is
+    within REPRICE_TOLERANCE of the PO. Annotates rows; returns ready rows."""
+    times = CTX.get("times", [])
+    parts = db.load_state(PARTS_STATE, {}) if db.is_configured() else {}
+    ready = []
+    for r in rows:
+        if r["Stage"][:2] != "10":
+            continue
+        why = []
+        if "ON HOLD" in (r["Needs Attention"] or ""):
+            why.append("on hold")
+        tids = {t["WorkTicketID"] for t in (r.get("_repair_t") or []) + (r.get("_assess_t") or [])}
+        entries = [tm for tm in times if tm["WorkTicketID"] in tids and (tm.get("Hours") or 0) > 0]
+        unapproved = [tm for tm in entries if not tm.get("ApprovedDateTime")]
+        if unapproved:
+            why.append(f"waiting on time approval ({len(entries) - len(unapproved)} of {len(entries)} entries approved)")
+        p = parts.get(str(r["Opp #"]))
+        if p:
+            why.append(f"parts Jon listed are not in Aspire yet: {p['text']}")
+        est, actual = r.get("Estimate $"), r.get("Actual $")
+        if est and actual and actual - est > REPRICE_TOLERANCE:
+            why.append(f"${actual - est:,.2f} over the PO; waiting on the City about a new PO")
+        if why:
+            note = "Pre-invoice check: " + "; ".join(why)
+        else:
+            note = "READY TO INVOICE: on Carlos's list"
+            ready.append(r)
+        r["Needs Attention"] = "; ".join(filter(None, [note, r["Needs Attention"]]))
+    return ready
+
+
+def invoice_draft(ready):
+    cell = "border:1px solid #000;padding:4px 10px"
+    head = "".join(f"<th style=\"{cell};text-align:left\">{h}</th>"
+                   for h in ("Opp #", "Address", "Work Order", "PO", "PO amount", "Actual T&M"))
+    body = "".join("<tr>" + "".join(f"<td style=\"{cell}\">{escape(str(x))}</td>" for x in (
+        r["Opp #"], r["Address"], r.get("_wo") or "", r.get("PO #") or "",
+        f"${r['Estimate $']:,.2f}" if r.get("Estimate $") else "",
+        f"${r['Actual $']:,.2f}" if r.get("Actual $") else "")) + "</tr>" for r in ready)
+    html = ("<html><body style=\"font-family:Arial,sans-serif;font-size:14px\">"
+            "<p>Hi Carlos,</p>"
+            "<p>These Fort Worth irrigation jobs passed the pre-invoice check (time approved, "
+            "parts entered, within $100 of the PO) and are ready to invoice. Bill Jon's actual "
+            "T&amp;M, including distributed time.</p>"
+            + (f"<table style=\"border-collapse:collapse;border:1px solid #000\"><tr>{head}</tr>{body}</table>"
+               if ready else "<p>None</p>")
+            + "</body></html>")
+    return INVOICE_SUBJECT, html
+
+
+def upsert_invoice_draft(token, subject, html):
+    import hashlib
+    digest = hashlib.sha256((subject + html).encode()).hexdigest()
+    st = db.load_state(INVOICE_STATE, {})
+    old = st.get("message_id")
+    if old:
+        status, msg = graph_call(token, "GET", f"/users/{DRAFT_MAILBOX}/messages/{old}?$select=id,isDraft")
+        if status != 404 and msg and msg.get("isDraft"):
+            if st.get("hash") != digest:
+                graph_call(token, "PATCH", f"/users/{DRAFT_MAILBOX}/messages/{old}", {
+                    "subject": subject, "body": {"contentType": "HTML", "content": html},
+                    "toRecipients": _recips(INVOICE_TO)})
+                db.save_state(INVOICE_STATE, {"message_id": old, "hash": digest})
+                log("Invoice draft updated in place")
+            return old
+    new = create_draft(token, subject, html, INVOICE_TO, [])
+    db.save_state(INVOICE_STATE, {"message_id": new, "hash": digest})
+    log("Invoice draft created")
+    return new
+
+
 def seed_completion_state(rows, now):
     """Mark every repair worked so far as handled and start the window now,
     so the first live run does not re-draft jobs already emailed by hand."""
@@ -1583,6 +1712,22 @@ def run_drafts(api, rows, which, test=False):
         except Exception as e:
             log(f"Schedule draft failed: {e}")
             errors.append(f"schedule draft: {e}")
+
+    if "invoice" in which:
+        try:
+            ready = CTX.get("ready_to_invoice", [])
+            if not ready:
+                log("Invoice draft: nothing ready to invoice")
+            else:
+                subject, html = invoice_draft(ready)
+                if test:
+                    print(f"\n=== DRAFT (not created) ===\nTo: {', '.join(INVOICE_TO)}\n"
+                          f"Subject: {subject}\n\n{strip_tags(html)}")
+                else:
+                    upsert_invoice_draft(tok(), subject, html)
+        except Exception as e:
+            log(f"Invoice draft failed: {e}")
+            errors.append(f"invoice draft: {e}")
 
     if "completion" in which:
         try:
@@ -1633,6 +1778,7 @@ def run_drafts(api, rows, which, test=False):
                         if r0 is not None:
                             r0["Needs Attention"] = "; ".join(filter(None, [
                                 r0["Needs Attention"], "Completion draft: work order PDF could not be attached; export it by hand"]))
+                record_parts_not_in_aspire(jobs)
                 log(f"Completion draft created for {len(jobs)} repairs; "
                     f"{len(jobs) - len(failed)} PDF(s) attached, {len(failed)} queued for manual export")
             elif test:
@@ -1691,13 +1837,14 @@ def main(run):
 
     api = Aspire(load_config())
     rows = build_rows(api)
+    CTX["ready_to_invoice"] = invoice_check(rows)
     run.records = len(rows)
     if DRAFTS_ARG is not None:
         which = {w.strip() for w in DRAFTS_ARG.split(",") if w.strip() and w.strip() != "none"}
     elif FORCE or DRY_RUN:
         which = set()
     else:
-        which = {15: {"schedule"}, 6: {"completion", "emergency"}}.get(slot_hour, set())
+        which = {15: {"schedule", "invoice"}, 6: {"completion", "emergency"}}.get(slot_hour, set())
     draft_errors = run_drafts(api, rows, which) if which and not DRY_RUN else []
     xlsx_bytes, summary = build_xlsx(rows, generated)
     subject, html, plain = build_email(rows, summary, generated)
