@@ -282,6 +282,40 @@ def fetch_recent(token):
     return (graph_get(token, url) or {}).get("value", [])
 
 
+# Evelin, 2026-11-24: keep the irrigation inbox to the last two weeks. Older
+# messages move to the mailbox's Archive folder (reversible, nothing deleted).
+# Safe for this monitor and the tracker: both read /messages across every
+# folder, not the Inbox alone.
+ARCHIVE_AFTER_DAYS = _int_env("FW_ARCHIVE_AFTER_DAYS", 14)
+
+
+def archive_old_inbox(token):
+    """Move Inbox messages older than ARCHIVE_AFTER_DAYS to Archive.
+    Returns how many moved. Flag-and-continue per message."""
+    cutoff = datetime.fromtimestamp(
+        datetime.now(timezone.utc).timestamp() - ARCHIVE_AFTER_DAYS * 86400, timezone.utc
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    url = (f"https://graph.microsoft.com/v1.0/users/{MAILBOX}/mailFolders/inbox/messages"
+           f"?$filter=receivedDateTime%20lt%20{cutoff}&$select=id,subject&$top=100")
+    moved = 0
+    for _ in range(20):  # at most 2,000 per run; the rest goes next day
+        batch = (graph_get(token, url) or {}).get("value", [])
+        if not batch:
+            break
+        for m in batch:
+            req = urllib.request.Request(
+                f"https://graph.microsoft.com/v1.0/users/{MAILBOX}/messages/{m['id']}/move",
+                data=json.dumps({"destinationId": "archive"}).encode(), method="POST",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+            try:
+                with urllib.request.urlopen(req, timeout=45):
+                    moved += 1
+            except Exception as e:
+                log(f"  archive failed for '{(m.get('subject') or '')[:60]}': {e}")
+                return moved
+    return moved
+
+
 def fetch_full(token, msg_id):
     """One message with its body and attachment metadata."""
     url = (f"https://graph.microsoft.com/v1.0/users/{MAILBOX}/messages/{msg_id}"
@@ -948,6 +982,17 @@ def main():
 
         if not DRY_RUN:
             db.mark_processed(SCRIPT_NAME, [msg_id], kind=kind)
+
+    # Once a day is enough; the 2-minute cadence would otherwise re-query
+    # an empty result 700 times.
+    today_ct = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if not DRY_RUN and state.get("archived_on") != today_ct:
+        try:
+            n = archive_old_inbox(token)
+            log(f"Archived {n} inbox message(s) older than {ARCHIVE_AFTER_DAYS} days")
+            state["archived_on"] = today_ct
+        except Exception as e:
+            log(f"  ERROR archiving old inbox mail: {e}")
 
     if not DRY_RUN:
         db.save_state(SCRIPT_NAME, state)
