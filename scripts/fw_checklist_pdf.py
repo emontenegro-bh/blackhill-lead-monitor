@@ -2,15 +2,15 @@
 
 CompanyCam has no PDF export endpoint, so the export used to be clicked
 through in a browser on a laptop every day. Everything the export shows is in
-the checklist API: each field's answer and its photos with capture times.
-This rebuilds the same report (photos included, sections marked N/A and empty
+the checklist API: each field's answer and its photos.
+This rebuilds the report (photos included, no technician name or times, sections marked N/A and empty
 fields left out, three photos per row) as a PDF in memory, so the tracker can
 attach it to the completion draft itself.
 
 Graph's simple attachment POST caps a file at 3 MB, so photos are shrunk and
 recompressed here. (CompanyCam's photo URLs are signed: editing their
-`rs:fit:W:H` size segment returns 403, so the original is downloaded once.) build_pdf() raises if the result still will not fit,
-and the caller falls back to the manual PDF queue for that job.
+`rs:fit:W:H` size segment returns 403, so the original is downloaded once.)
+build_pdf() raises if the result still will not fit, and the caller falls back to the manual PDF queue for that job.
 """
 import io
 import urllib.request
@@ -33,7 +33,6 @@ _TITLE = ParagraphStyle("t", fontName="Helvetica-Bold", fontSize=16, leading=20)
 _SUB = ParagraphStyle("s", fontName="Helvetica", fontSize=10, leading=13, textColor=HexColor("#555555"))
 _FIELD = ParagraphStyle("f", fontName="Helvetica-Bold", fontSize=12, leading=15, spaceBefore=10)
 _ANSWER = ParagraphStyle("a", fontName="Helvetica", fontSize=11, leading=14)
-_CAPTION = ParagraphStyle("c", fontName="Helvetica", fontSize=7.5, leading=9, textColor=HexColor("#555555"))
 
 
 def _esc(s):
@@ -69,21 +68,6 @@ def _fetch_photo(url, px, quality):
     return out
 
 
-def _captured(photo):
-    ts = photo.get("captured_at") or photo.get("uploaded_at")
-    if not ts:
-        return ""
-    try:
-        if isinstance(ts, (int, float)):
-            dt = datetime.fromtimestamp(ts, timezone.utc)
-        else:
-            dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
-        from zoneinfo import ZoneInfo
-        return dt.astimezone(ZoneInfo("America/Chicago")).strftime("%m/%d/%Y %I:%M %p")
-    except Exception:
-        return ""
-
-
 def _render(checklist, title, px, quality):
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=0.6 * inch, rightMargin=0.6 * inch,
@@ -91,9 +75,6 @@ def _render(checklist, title, px, quality):
     width = doc.width
     story = [Paragraph(_esc(title), _TITLE),
              Paragraph("Fort Worth Irrigation Repairs - Black Hill Landscaping", _SUB)]
-    done = checklist.get("completed_at")
-    if done:
-        story.append(Paragraph(f"Completed {_captured({'captured_at': done})}", _SUB))
     story.append(Spacer(1, 8))
 
     tasks = list(checklist.get("sectionless_tasks") or [])
@@ -105,6 +86,9 @@ def _render(checklist, title, px, quality):
     img_w = cell_w - 8
     for t in tasks:
         if t.get("not_applicable") or t.get("marked_not_applicable"):
+            continue
+        # Evelin, 2026-11-24: no technician name and no times on the City's copy.
+        if "technician" in (t.get("title") or "").lower():
             continue
         ans, photos = _answer(t), t.get("photos") or []
         if not ans and not photos:
@@ -122,7 +106,7 @@ def _render(checklist, title, px, quality):
                 img_w2, h = 2.6 * inch * iw / ih, 2.6 * inch
             else:
                 img_w2 = img_w
-            cells.append([RLImage(data, width=img_w2, height=h), Paragraph(_captured(p), _CAPTION)])
+            cells.append(RLImage(data, width=img_w2, height=h))
         rows = [cells[i:i + PER_ROW] for i in range(0, len(cells), PER_ROW)]
         for row in rows:
             row += [""] * (PER_ROW - len(row))
