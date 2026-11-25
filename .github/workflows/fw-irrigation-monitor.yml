@@ -59,11 +59,13 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install msal
+        run: pip install msal pillow
 
       - name: Scan the irrigation mailbox
         env:
           # Graph app credentials, shared with lead-monitor.py.
+          ASPIRE_REPORTING_CLIENT_ID: ${{ secrets.ASPIRE_REPORTING_CLIENT_ID }}
+          ASPIRE_REPORTING_SECRET: ${{ secrets.ASPIRE_REPORTING_SECRET }}
           MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
           MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}

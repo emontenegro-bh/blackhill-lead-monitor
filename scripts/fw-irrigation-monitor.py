@@ -257,7 +257,7 @@ def graph_get(token, url):
 # the response. Without the inner $select Graph inlines every attachment as
 # base64, and these carry 4-5 MB job photos.
 _FULL_FIELDS = ("$select=id,subject,from,receivedDateTime,body,hasAttachments,webLink"
-                "&$expand=attachments($select=name,contentType,isInline,size)")
+                "&$expand=attachments($select=id,name,contentType,isInline,size)")
 
 
 def fetch_recent(token):
@@ -816,6 +816,73 @@ def _post(card):
 
 # ------------------------------------------------------------- Main ---
 
+# Set in main(); handle_quote needs it to download photo attachments.
+GRAPH_TOKEN = None
+# The Aspire opportunity is created from each new request (2026-11-24). Off
+# switch for a bad day: FW_CREATE_OPPS=0.
+CREATE_OPPS = os.environ.get("FW_CREATE_OPPS", "1").strip() != "0"
+
+
+def _photo_attachments(msg):
+    """(name, bytes) for each job photo on the email (not the inline logos)."""
+    out = []
+    for att in msg.get("attachments") or []:
+        name = att.get("name") or ""
+        if att.get("isInline") or not att.get("id"):
+            continue
+        if not ((att.get("contentType") or "").lower().startswith("image/")
+                or name.lower().endswith((".jpg", ".jpeg", ".png", ".heic"))):
+            continue
+        full = graph_get(GRAPH_TOKEN, f"https://graph.microsoft.com/v1.0/users/{MAILBOX}/messages/"
+                                      f"{msg['id']}/attachments/{att['id']}")
+        if full and full.get("contentBytes"):
+            import base64
+            out.append((name, base64.b64decode(full["contentBytes"])))
+    return out
+
+
+def make_opportunity(msg, subject, wo, address, dispatch, state):
+    """Create (or find) the Aspire opportunity and upload the City photos.
+    Returns (opp_number, emergency) or (None, emergency). Never raises."""
+    import fw_opportunity as fo
+    emergency = fo.is_emergency(subject, dispatch)
+    opps = state.setdefault("opps", {})
+    if wo in opps:
+        return opps[wo].get("opp_no"), emergency
+    if not CREATE_OPPS or DRY_RUN:
+        return None, emergency
+    try:
+        api = fo.Aspire()
+        found = fo.find_existing(api, wo, address)
+        if found:
+            log(f"  WO {wo}: opportunity #{found['OpportunityNumber']} already exists; not creating another")
+            opps[wo] = {"opp_id": found["OpportunityID"], "opp_no": found["OpportunityNumber"], "existing": True}
+            return found["OpportunityNumber"], emergency
+        received = datetime.fromisoformat((msg.get("receivedDateTime") or "").replace("Z", "+00:00")) \
+            if msg.get("receivedDateTime") else datetime.now(timezone.utc)
+        lines = fo.description_lines(dispatch_detail(dispatch, limit=4000).replace("\n\n", "\n"), wo)
+        opp_id, opp_no = fo.create_opportunity(api, address, lines, received, emergency)
+        opps[wo] = {"opp_id": opp_id, "opp_no": opp_no}
+        log(f"  WO {wo}: created opportunity #{opp_no}{' (EMERGENCY)' if emergency else ''}")
+        uploaded = 0
+        for name, data in _photo_attachments(msg):
+            try:
+                fo.upload_photo(api, opp_id, name, data)
+                uploaded += 1
+            except Exception as e:
+                log(f"  WO {wo}: photo {name} not uploaded: {e}")
+        opps[wo]["photos"] = uploaded
+        log(f"  WO {wo}: {uploaded} photo(s) uploaded, visible to crew")
+        fo.queue_for_finishing(db, {
+            "opp_id": opp_id, "opp_no": opp_no, "address": fo.title_address(address), "wo": wo,
+            "emergency": emergency, "photos": uploaded,
+            "created_at": datetime.now(timezone.utc).isoformat()})
+        return opp_no, emergency
+    except Exception as e:
+        log(f"  WO {wo}: opportunity NOT created: {e}")
+        return None, emergency
+
+
 def handle_quote(msg, text, state):
     subject = msg.get("subject", "")
     # Identity comes from the newly written part. The quoted history below
@@ -840,6 +907,18 @@ def handle_quote(msg, text, state):
 
     log(f"  WO {wo}: {address} | {photos} photo(s) | parts: {parts or '(none extracted)'}")
 
+    # Before the card, so the card can carry the Opp #. Failure here never
+    # blocks the card: the job still gets announced and is built by hand.
+    opp_no, emergency = make_opportunity(msg, subject, wo, address, dispatch, state)
+    detail = dispatch_detail(dispatch)
+    head = []
+    if emergency:
+        head.append("**EMERGENCY request**")
+    if opp_no:
+        head.append(f"Aspire Opp #{opp_no} created; estimate and Won to finish")
+    if head:
+        detail = "\n\n".join(head + [detail])
+
     # Record the work order ONLY once the card is actually on the channel.
     # Recording it regardless looks harmless and is not: with the webhook
     # secret missing, _post returns False without raising, the job would be
@@ -847,7 +926,7 @@ def handle_quote(msg, text, state):
     # was added. The card would never appear and nothing would say so.
     if not post_card(address, parts, photos, dispatch, msg.get("webLink"),
                      requested_by=sender_name(msg),
-                     detail=dispatch_detail(dispatch)):
+                     detail=detail):
         log(f"  WO {wo}: card did NOT post, leaving unrecorded so the next "
             f"run retries it")
         return False
@@ -905,6 +984,8 @@ def main():
         log("DRY RUN: no Teams posts, no state writes")
 
     token = get_token()
+    global GRAPH_TOKEN
+    GRAPH_TOKEN = token
 
     if TEST_MODE:
         msgs = fetch_recent(token)
